@@ -9,6 +9,7 @@ import (
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
+	"github.com/fastclaw-ai/fastclaw/internal/privacy"
 )
 
 // chatCompletionRequest mirrors the OpenAI chat completion request.
@@ -118,6 +119,18 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 	if userText == "" {
 		writeJSON(w, http.StatusBadRequest, map[string]any{
 			"error": map[string]string{"message": "no user message found", "type": "invalid_request_error"},
+		})
+		return
+	}
+
+	// Scan before building the InboundMessage so the payload never reaches the
+	// agent loop. Error shape follows the OpenAI spec so existing OpenAI clients
+	// can handle it without special-casing this endpoint.
+	if threat := privacy.ScanInput(userText); threat != nil {
+		slog.Warn("completions blocked: prompt injection detected",
+			"threat_type", threat.Type, "pattern", threat.Pattern, "context", threat.Context)
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error": map[string]string{"message": "message blocked: potential prompt injection detected", "type": "invalid_request_error"},
 		})
 		return
 	}

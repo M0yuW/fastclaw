@@ -578,7 +578,7 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 
 	messages := make([]provider.Message, 0, len(sessionMsgs)+1)
 	messages = append(messages, provider.Message{Role: "system", Content: systemPrompt})
-	messages = append(messages, sessionMsgs...)
+	messages = append(messages, applyContextIsolation(sessionMsgs)...)
 
 	toolDefs := a.registry.Definitions()
 
@@ -797,6 +797,43 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 	return "I've reached the maximum number of tool iterations. Here's what I have so far."
 }
 
+// applyContextIsolation returns a copy of msgs with each user-role message's
+// text content wrapped in <user_message> tags, matching the policy declared in
+// BuildSystemPrompt. The original slice and its elements are never mutated so
+// the session history shown in the web UI stays tag-free — wrapping only occurs
+// in the payload sent to the LLM.
+//
+// Both content shapes are handled:
+//   - plain text: Message.Content is wrapped directly
+//   - multimodal: the "text" ContentPart inside ContentParts is wrapped;
+//     image parts are left untouched
+func applyContextIsolation(msgs []provider.Message) []provider.Message {
+	out := make([]provider.Message, len(msgs))
+	copy(out, msgs)
+	for i, m := range out {
+		if m.Role != "user" {
+			continue
+		}
+		if m.Content != "" {
+			m.Content = WrapUserInput(m.Content)
+			out[i] = m
+			continue
+		}
+		if len(m.ContentParts) > 0 {
+			parts := make([]provider.ContentPart, len(m.ContentParts))
+			copy(parts, m.ContentParts)
+			for j, p := range parts {
+				if p.Type == "text" && p.Text != "" {
+					parts[j].Text = WrapUserInput(p.Text)
+				}
+			}
+			m.ContentParts = parts
+			out[i] = m
+		}
+	}
+	return out
+}
+
 // padOrphanToolResults walks the session and appends a synthetic
 // tool_result for any tool_use id from the latest assistant message that
 // doesn't already have a matching tool_result. Earlier rounds aren't
@@ -942,7 +979,7 @@ func (a *Agent) HandleMessageStream(ctx context.Context, msg bus.InboundMessage)
 
 	messages := make([]provider.Message, 0, len(sessionMsgs)+1)
 	messages = append(messages, provider.Message{Role: "system", Content: systemPrompt})
-	messages = append(messages, sessionMsgs...)
+	messages = append(messages, applyContextIsolation(sessionMsgs)...)
 
 	toolDefs := a.registry.Definitions()
 

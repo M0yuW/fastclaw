@@ -21,6 +21,8 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/session"
 	"github.com/fastclaw-ai/fastclaw/internal/store"
 	"github.com/fastclaw-ai/fastclaw/internal/users"
+
+	"github.com/fastclaw-ai/fastclaw/internal/privacy"
 )
 
 type agentChatEvent = agent.ChatEvent
@@ -665,6 +667,14 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 		return
 	}
+	// Reject before reaching the agent: HTTP callers are authenticated users
+	// who can act on the error message, so a 400 is appropriate here.
+	if threat := privacy.ScanInput(req.Message); threat != nil {
+		slog.Warn("chat blocked: prompt injection detected",
+			"threat_type", threat.Type, "pattern", threat.Pattern, "context", threat.Context)
+		jsonResponse(w, http.StatusBadRequest, map[string]any{"error": "message blocked: potential prompt injection detected"})
+		return
+	}
 	ag := s.resolveAgent(r, req.AgentID)
 	if ag == nil {
 		jsonResponse(w, http.StatusNotFound, map[string]any{"error": "agent not found"})
@@ -678,6 +688,14 @@ func (s *Server) handleChatStream(w http.ResponseWriter, r *http.Request) {
 	var req chatRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonResponse(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		return
+	}
+	// Reject before reaching the agent: HTTP callers are authenticated users
+	// who can act on the error message, so a 400 is appropriate here.
+	if threat := privacy.ScanInput(req.Message); threat != nil {
+		slog.Warn("chat stream blocked: prompt injection detected",
+			"threat_type", threat.Type, "pattern", threat.Pattern, "context", threat.Context)
+		jsonResponse(w, http.StatusBadRequest, map[string]any{"error": "message blocked: potential prompt injection detected"})
 		return
 	}
 	ag := s.resolveAgent(r, req.AgentID)

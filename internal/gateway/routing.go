@@ -10,6 +10,7 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/agent/tools"
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 	"github.com/fastclaw-ai/fastclaw/internal/config"
+	"github.com/fastclaw-ai/fastclaw/internal/privacy"
 	"github.com/fastclaw-ai/fastclaw/internal/store"
 )
 
@@ -40,6 +41,18 @@ func (g *Gateway) processInbound(ctx context.Context) {
 				continue
 			}
 			msg.OwnerUserID = ownerID
+
+			if threat := privacy.ScanInput(msg.Text); threat != nil {
+				// Drop silently rather than replying with an error: at this layer we
+				// don't yet have a resolved channel adapter to send a reply through,
+				// and surfacing a "blocked" message could help an attacker tune their
+				// payload. The warn log is the only signal.
+				slog.Warn("dropping inbound: prompt injection detected",
+					"channel", msg.Channel, "chat_id", msg.ChatID,
+					"threat_type", threat.Type, "pattern", threat.Pattern,
+					"context", threat.Context)
+				continue
+			}
 
 			if msg.PeerKind != "group" {
 				g.routeDM(ctx, msg)
