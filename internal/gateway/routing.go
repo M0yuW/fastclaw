@@ -296,14 +296,15 @@ func (g *Gateway) accountIDForAgent(space *UserSpace, agentID, channel string) s
 
 // gatewaySubAgentSpawner implements tools.SubAgentSpawner. Sub-agents
 // always run inside the *same* user's agent manager — there's no cross-
-// tenant agent invocation.
+// tenant agent invocation. It depends only on the user-space registry
+// (not the whole Gateway) so it can be wired at loadUserSpace time.
 type gatewaySubAgentSpawner struct {
-	gateway *Gateway
-	userID  string
+	registry *userSpaceRegistry
+	userID   string
 }
 
 func (s *gatewaySubAgentSpawner) SpawnSubAgent(ctx context.Context, agentID string, msg bus.InboundMessage) string {
-	space, err := s.gateway.users.getOrLoad(ctx, s.userID)
+	space, err := s.registry.getOrLoad(ctx, s.userID)
 	if err != nil {
 		return fmt.Sprintf("Error: load user space: %v", err)
 	}
