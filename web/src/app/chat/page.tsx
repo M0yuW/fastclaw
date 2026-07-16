@@ -399,22 +399,48 @@ export default function ChatPage() {
               ) : (
                 <div
                   key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`flex min-w-0 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`group relative max-w-[80%] ${
+                    className={`group relative min-w-0 ${msg.role === "user" ? "max-w-[80%]" : "w-full max-w-full"} ${
                       msg.role === "user" ? "order-1" : ""
                     }`}
                   >
                     <div
-                      className={`rounded-2xl px-4 py-2.5 ${
+                      className={`overflow-hidden rounded-2xl px-4 py-2.5 ${
                         msg.role === "user"
                           ? "bg-primary text-primary-foreground rounded-br-md"
                           : "bg-muted rounded-bl-md"
                       }`}
                     >
-                      <div className="text-[15px] leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-pre:my-2 prose-ul:my-1 prose-ol:my-1">
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <div className="chat-markdown min-w-0 text-[15px] leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-pre:my-2 prose-ul:my-1 prose-ol:my-1">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            table: ({ children }) => (
+                              <div className="my-3 max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-border/60">
+                                <table className="w-max min-w-full border-collapse text-sm">
+                                  {children}
+                                </table>
+                              </div>
+                            ),
+                            th: ({ children }) => (
+                              <th className="whitespace-nowrap border-b border-border/70 bg-muted/40 px-3 py-2 text-left font-semibold">
+                                {children}
+                              </th>
+                            ),
+                            td: ({ children }) => (
+                              <td className="max-w-72 whitespace-normal break-words border-b border-border/40 px-3 py-2 align-top">
+                                {children}
+                              </td>
+                            ),
+                            pre: ({ children }) => (
+                              <pre className="max-w-full overflow-x-auto rounded-lg bg-background/80 p-3 text-sm">
+                                {children}
+                              </pre>
+                            ),
+                          }}
+                        >
                           {msg.content}
                         </ReactMarkdown>
                       </div>

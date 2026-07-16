@@ -17,15 +17,15 @@ import (
 
 // Session holds the message history for a channel_chat_id pair.
 type Session struct {
-	mu                sync.Mutex
-	Messages          []provider.Message
-	LastConsolidated  int // index of last consolidated message
-	filePath          string
-	snapshot          []provider.Message // undo snapshot
-	store             SessionStore
-	userID            string
-	agentID           string
-	sessionKey        string
+	mu               sync.Mutex
+	Messages         []provider.Message
+	LastConsolidated int // index of last consolidated message
+	filePath         string
+	snapshot         []provider.Message // undo snapshot
+	store            SessionStore
+	userID           string
+	agentID          string
+	sessionKey       string
 }
 
 // ctx returns a context tagged with this Session's user so the store layer
@@ -190,6 +190,82 @@ func (s *Session) MarkConsolidated(index int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.LastConsolidated = index
+}
+
+// NormalizeToolResults repairs provider-invalid tool call history.
+//
+// Providers require every assistant message with tool_calls to be followed
+// immediately by tool messages for each tool_call_id. Interrupted web turns can
+// leave a user message before the tool result, and late tool results can arrive
+// later as orphan tool messages. This normalizer rebuilds history so valid tool
+// results sit immediately after their assistant message, synthesizes missing
+// results, and drops duplicate/orphan tool messages elsewhere.
+func (s *Session) NormalizeToolResults() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	toolByID := make(map[string][]int)
+	for i, msg := range s.Messages {
+		if msg.Role == "tool" && msg.ToolCallID != "" {
+			toolByID[msg.ToolCallID] = append(toolByID[msg.ToolCallID], i)
+		}
+	}
+
+	used := make(map[int]bool)
+	changed := false
+	out := make([]provider.Message, 0, len(s.Messages))
+
+	for i, msg := range s.Messages {
+		if used[i] {
+			changed = true
+			continue
+		}
+		if msg.Role == "tool" {
+			changed = true
+			continue
+		}
+
+		out = append(out, msg)
+		if msg.Role != "assistant" || len(msg.ToolCalls) == 0 {
+			continue
+		}
+
+		for _, tc := range msg.ToolCalls {
+			inserted := false
+			for _, idx := range toolByID[tc.ID] {
+				if used[idx] {
+					continue
+				}
+				out = append(out, s.Messages[idx])
+				used[idx] = true
+				inserted = true
+				if idx != i+1 {
+					changed = true
+				}
+				break
+			}
+			if inserted {
+				continue
+			}
+			changed = true
+			out = append(out, provider.Message{
+				Role:       "tool",
+				ToolCallID: tc.ID,
+				Name:       tc.Function.Name,
+				Content:    "(stopped — execution was interrupted before the tool returned)",
+			})
+		}
+	}
+
+	if !changed && len(out) == len(s.Messages) {
+		return
+	}
+	s.Messages = out
+	if s.store != nil {
+		s.store.SaveSession(s.ctx(), s.agentID, s.sessionKey, s.Messages)
+	} else {
+		s.rewriteFile()
+	}
 }
 
 // ReplaceMessages replaces all session messages with the given list.

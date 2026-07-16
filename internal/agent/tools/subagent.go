@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync/atomic"
+	"time"
 
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 )
@@ -18,6 +20,8 @@ type spawnSubagentArgs struct {
 	AgentID string `json:"agentId"`
 	Task    string `json:"task"`
 }
+
+var subAgentCallCounter uint64
 
 // RegisterSubAgent registers the spawn_subagent tool.
 func RegisterSubAgent(r *Registry, spawner SubAgentSpawner, callerAgentID string) {
@@ -54,12 +58,14 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 			return "", fmt.Errorf("cannot spawn yourself as a sub-agent")
 		}
 
+		callID := fmt.Sprintf("%d-%d", time.Now().UnixNano(), atomic.AddUint64(&subAgentCallCounter, 1))
 		msg := bus.InboundMessage{
-			Channel:  "subagent",
-			ChatID:   fmt.Sprintf("subagent-%s-%s", callerAgentID, args.AgentID),
-			UserID:   callerAgentID,
-			Text:     args.Task,
-			PeerKind: "dm",
+			Channel:   "subagent",
+			ChatID:    fmt.Sprintf("subagent-%s-%s-%s", callerAgentID, args.AgentID, callID),
+			UserID:    callerAgentID,
+			Text:      args.Task,
+			MessageID: callID,
+			PeerKind:  "dm",
 		}
 
 		result := spawner.SpawnSubAgent(ctx, args.AgentID, msg)

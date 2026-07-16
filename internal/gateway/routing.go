@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
 	"github.com/fastclaw-ai/fastclaw/internal/agent/tools"
@@ -20,9 +21,10 @@ func chatKey(channel, chatID string) string {
 
 // processInbound consumes the message bus and routes each message to the
 // correct user's agent. Identity resolution order:
-//   1. msg.OwnerUserID set explicitly (cron, webhook with user_id)
-//   2. lookup the receiving channel's row in the channels table — its
-//      (scope, scope_id) tells us which user owns this conversation
+//  1. msg.OwnerUserID set explicitly (cron, webhook with user_id)
+//  2. lookup the receiving channel's row in the channels table — its
+//     (scope, scope_id) tells us which user owns this conversation
+//
 // If neither yields a user_id the message is dropped, never silently
 // routed to a default identity.
 func (g *Gateway) processInbound(ctx context.Context) {
@@ -312,7 +314,15 @@ func (s *gatewaySubAgentSpawner) SpawnSubAgent(ctx context.Context, agentID stri
 	if ag == nil {
 		return fmt.Sprintf("Error: agent %q not found", agentID)
 	}
-	return ag.HandleMessage(ctx, msg)
+
+	spawnCtx, cancel := context.WithTimeout(context.WithoutCancel(agent.ContextWithoutChatEvents(ctx)), 10*time.Minute)
+	defer cancel()
+
+	result := ag.HandleMessage(spawnCtx, msg)
+	if spawnCtx.Err() == context.DeadlineExceeded {
+		return fmt.Sprintf("Error: sub-agent %q timed out after 10m", agentID)
+	}
+	return result
 }
 
 var _ tools.SubAgentSpawner = (*gatewaySubAgentSpawner)(nil)

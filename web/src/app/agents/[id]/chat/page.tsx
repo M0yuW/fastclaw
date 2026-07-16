@@ -7,8 +7,31 @@ import { Badge } from "@/components/ui/badge";
 import { getAgent, getChatHistory, getChatSessions, listAgentFiles, renameChatSession, sendChatStream, uploadAgentFiles, getAuthToken, getSkills, type ChatHistoryMessage, type ChatStreamEvent, type SkillInfo, type ToolResultMetadata } from "@/lib/api";
 import { Bot, Send, Copy, Check, Pencil, Wrench, ChevronDown, ChevronRight, Download, X, File, FileText, Image as ImageIcon, FileCode, Film, Music, Puzzle, SlidersHorizontal, ShieldCheck, Paperclip, Square } from "lucide-react";
 import Link from "next/link";
-import ReactMarkdown, { defaultUrlTransform } from "react-markdown";
+import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
+
+const chatMarkdownComponents: Components = {
+  table: ({ children }) => (
+    <div className="my-3 w-full max-w-full overflow-x-auto overscroll-x-contain rounded-lg border border-border/60">
+      <table className="w-max min-w-full border-collapse text-sm">{children}</table>
+    </div>
+  ),
+  th: ({ children }) => (
+    <th className="whitespace-nowrap border-b border-border/70 bg-muted/40 px-3 py-2 text-left font-semibold">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="max-w-72 whitespace-normal break-words border-b border-border/40 px-3 py-2 align-top">
+      {children}
+    </td>
+  ),
+  pre: ({ children }) => (
+    <pre className="max-w-full overflow-x-auto rounded-lg bg-background/80 p-3 text-sm">
+      {children}
+    </pre>
+  ),
+};
 
 // react-markdown's default urlTransform strips any protocol not in the
 // safe-list (http, https, mailto, ircs, xmpp) — including `data:`. We want
@@ -112,7 +135,7 @@ function renderContentWithDataImages(
           );
         }
         return (
-          <ReactMarkdown key={i} remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown key={i} remarkPlugins={[remarkGfm]} components={chatMarkdownComponents}>
             {p.text}
           </ReactMarkdown>
         );
@@ -1018,15 +1041,15 @@ export default function AgentChatPage() {
               ) : (
                 <div
                   key={msg.id}
-                  className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                  className={`flex min-w-0 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
-                    className={`group relative max-w-[80%] ${
+                    className={`group relative min-w-0 max-w-[80%] ${
                       msg.role === "user" ? "order-1" : ""
                     }`}
                   >
                     <div
-                      className={`rounded-2xl px-4 py-2.5 ${
+                      className={`min-w-0 overflow-hidden rounded-2xl px-4 py-2.5 ${
                         msg.role === "user"
                           ? "bg-sidebar text-sidebar-foreground rounded-br-md"
                           : "bg-muted rounded-bl-md"
@@ -1080,14 +1103,18 @@ export default function AgentChatPage() {
                       )}
                       {msg.content && (
                         <div
-                          className={`text-[15px] leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-pre:my-2 prose-ul:my-1 prose-ol:my-1 dark:prose-invert`}
+                          className="chat-markdown min-w-0 text-[15px] leading-relaxed prose prose-sm max-w-none prose-p:my-1 prose-pre:my-2 prose-ul:my-1 prose-ol:my-1 dark:prose-invert"
                         >
                           {renderContentWithDataImages(
                             msg.content,
                             surfacedSrcs,
                             (attachedImages.get(msg.id)?.length ?? 0) > 0,
                           ) ?? (
-                            <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={makeUrlTransform(selectedAgent, sessionId)}>
+                            <ReactMarkdown
+                              remarkPlugins={[remarkGfm]}
+                              components={chatMarkdownComponents}
+                              urlTransform={makeUrlTransform(selectedAgent, sessionId)}
+                            >
                               {msg.content}
                             </ReactMarkdown>
                           )}
@@ -1391,14 +1418,18 @@ function ToolCallGroup({ msg, surfacedSrcs, agentId, sessionId }: { msg: ChatMes
     setExpandedTool((prev) => ({ ...prev, [id]: !prev[id] }));
 
   return (
-    <div className="flex justify-start">
-      <div className="max-w-[85%] space-y-2">
+    <div className="flex min-w-0 justify-start">
+      <div className="min-w-0 max-w-[85%] space-y-2">
         {/* Content before tools */}
         {msg.content && (
-          <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-2.5">
-            <div className="text-[15px] leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-1">
+          <div className="min-w-0 overflow-hidden bg-muted rounded-2xl rounded-bl-md px-4 py-2.5">
+            <div className="chat-markdown min-w-0 text-[15px] leading-relaxed prose prose-sm dark:prose-invert max-w-none prose-p:my-1">
               {renderContentWithDataImages(msg.content, surfacedSrcs) ?? (
-                <ReactMarkdown remarkPlugins={[remarkGfm]} urlTransform={makeUrlTransform(agentId, sessionId)}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={chatMarkdownComponents}
+                  urlTransform={makeUrlTransform(agentId, sessionId)}
+                >
                   {msg.content}
                 </ReactMarkdown>
               )}
