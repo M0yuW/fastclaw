@@ -5,11 +5,13 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"time"
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
 	"github.com/fastclaw-ai/fastclaw/internal/agent/tools"
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 	"github.com/fastclaw-ai/fastclaw/internal/config"
+	"github.com/fastclaw-ai/fastclaw/internal/privacy"
 	"github.com/fastclaw-ai/fastclaw/internal/store"
 )
 
@@ -19,9 +21,10 @@ func chatKey(channel, chatID string) string {
 
 // processInbound consumes the message bus and routes each message to the
 // correct user's agent. Identity resolution order:
-//   1. msg.OwnerUserID set explicitly (cron, webhook with user_id)
-//   2. lookup the receiving channel's row in the channels table — its
-//      (scope, scope_id) tells us which user owns this conversation
+//  1. msg.OwnerUserID set explicitly (cron, webhook with user_id)
+//  2. lookup the receiving channel's row in the channels table — its
+//     (scope, scope_id) tells us which user owns this conversation
+//
 // If neither yields a user_id the message is dropped, never silently
 // routed to a default identity.
 func (g *Gateway) processInbound(ctx context.Context) {
@@ -40,6 +43,18 @@ func (g *Gateway) processInbound(ctx context.Context) {
 				continue
 			}
 			msg.OwnerUserID = ownerID
+
+			if threat := privacy.ScanInput(msg.Text); threat != nil {
+				// Drop silently rather than replying with an error: at this layer we
+				// don't yet have a resolved channel adapter to send a reply through,
+				// and surfacing a "blocked" message could help an attacker tune their
+				// payload. The warn log is the only signal.
+				slog.Warn("dropping inbound: prompt injection detected",
+					"channel", msg.Channel, "chat_id", msg.ChatID,
+					"threat_type", threat.Type, "pattern", threat.Pattern,
+					"context", threat.Context)
+				continue
+			}
 
 			if msg.PeerKind != "group" {
 				g.routeDM(ctx, msg)
@@ -283,14 +298,15 @@ func (g *Gateway) accountIDForAgent(space *UserSpace, agentID, channel string) s
 
 // gatewaySubAgentSpawner implements tools.SubAgentSpawner. Sub-agents
 // always run inside the *same* user's agent manager — there's no cross-
-// tenant agent invocation.
+// tenant agent invocation. It depends only on the user-space registry
+// (not the whole Gateway) so it can be wired at loadUserSpace time.
 type gatewaySubAgentSpawner struct {
-	gateway *Gateway
-	userID  string
+	registry *userSpaceRegistry
+	userID   string
 }
 
 func (s *gatewaySubAgentSpawner) SpawnSubAgent(ctx context.Context, agentID string, msg bus.InboundMessage) string {
-	space, err := s.gateway.users.getOrLoad(ctx, s.userID)
+	space, err := s.registry.getOrLoad(ctx, s.userID)
 	if err != nil {
 		return fmt.Sprintf("Error: load user space: %v", err)
 	}
@@ -298,7 +314,15 @@ func (s *gatewaySubAgentSpawner) SpawnSubAgent(ctx context.Context, agentID stri
 	if ag == nil {
 		return fmt.Sprintf("Error: agent %q not found", agentID)
 	}
-	return ag.HandleMessage(ctx, msg)
+
+	spawnCtx, cancel := context.WithTimeout(context.WithoutCancel(agent.ContextWithoutChatEvents(ctx)), 10*time.Minute)
+	defer cancel()
+
+	result := ag.HandleMessage(spawnCtx, msg)
+	if spawnCtx.Err() == context.DeadlineExceeded {
+		return fmt.Sprintf("Error: sub-agent %q timed out after 10m", agentID)
+	}
+	return result
 }
 
 var _ tools.SubAgentSpawner = (*gatewaySubAgentSpawner)(nil)

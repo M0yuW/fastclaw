@@ -58,7 +58,41 @@ var invisibleRunes = map[rune]string{
 	'\u00AD': "SOFT HYPHEN",
 }
 
-// Scan checks text for memory safety threats.
+// ScanInput checks user-supplied input for prompt injection attempts.
+// It only flags ThreatPromptInjection and ThreatInvisibleUnicode — credential
+// patterns are intentionally excluded because users may legitimately include
+// their own credentials in a message (e.g. "here is my AWS key, help me debug").
+// Returns the first detected threat, or nil if the input appears safe.
+func ScanInput(text string) *Threat {
+	for _, re := range promptInjectionPatterns {
+		if loc := re.FindStringIndex(text); loc != nil {
+			t := Threat{
+				Type:    ThreatPromptInjection,
+				Pattern: re.String(),
+				Context: snippet(text, loc[0], loc[1]),
+			}
+			return &t
+		}
+	}
+	for i := 0; i < len(text); {
+		r, size := utf8.DecodeRuneInString(text[i:])
+		if name, ok := invisibleRunes[r]; ok {
+			t := Threat{
+				Type:    ThreatInvisibleUnicode,
+				Pattern: name,
+				Context: snippet(text, i, i+size),
+			}
+			return &t
+		}
+		i += size
+	}
+	return nil
+}
+
+// Scan checks text for memory safety threats across all threat types, including
+// credential leaks and SSH backdoor patterns. Intended for output/memory paths
+// (e.g. MEMORY.md writes) where the content originates from the LLM, not the user.
+// For user-supplied input use ScanInput instead.
 // Returns a list of detected threats (empty = safe).
 func Scan(text string) []Threat {
 	var threats []Threat

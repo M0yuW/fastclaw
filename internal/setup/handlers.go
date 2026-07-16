@@ -21,6 +21,8 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/session"
 	"github.com/fastclaw-ai/fastclaw/internal/store"
 	"github.com/fastclaw-ai/fastclaw/internal/users"
+
+	"github.com/fastclaw-ai/fastclaw/internal/privacy"
 )
 
 type agentChatEvent = agent.ChatEvent
@@ -191,7 +193,7 @@ var settingNamespaces = []settingNamespace{
 		dst:     func(c *config.Config) interface{} { return &c.Teams },
 		collect: func(c *config.Config) map[string]interface{} { return wrapKeyed(c.Teams) }},
 	{namespace: "bindings",
-		dst:     func(c *config.Config) interface{} { return &c.Bindings },
+		dst: func(c *config.Config) interface{} { return &c.Bindings },
 		collect: func(c *config.Config) map[string]interface{} {
 			if len(c.Bindings) == 0 {
 				return nil
@@ -657,6 +659,23 @@ type chatRequest struct {
 	SessionID string   `json:"sessionId"`
 	Message   string   `json:"message"`
 	Images    []string `json:"images,omitempty"`
+	ImageURLs []string `json:"imageUrls,omitempty"`
+}
+
+func (r chatRequest) imageURLs() []string {
+	if len(r.ImageURLs) > 0 {
+		return r.ImageURLs
+	}
+	return r.Images
+}
+
+func webAgentContext(r *http.Request) (context.Context, context.CancelFunc) {
+	return context.WithTimeout(context.WithoutCancel(r.Context()), 2*time.Hour)
+}
+
+func drainChatEvents(events <-chan agentChatEvent) {
+	for range events {
+	}
 }
 
 func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
@@ -665,12 +684,22 @@ func (s *Server) handleChat(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 		return
 	}
+	// Reject before reaching the agent: HTTP callers are authenticated users
+	// who can act on the error message, so a 400 is appropriate here.
+	if threat := privacy.ScanInput(req.Message); threat != nil {
+		slog.Warn("chat blocked: prompt injection detected",
+			"threat_type", threat.Type, "pattern", threat.Pattern, "context", threat.Context)
+		jsonResponse(w, http.StatusBadRequest, map[string]any{"error": "message blocked: potential prompt injection detected"})
+		return
+	}
 	ag := s.resolveAgent(r, req.AgentID)
 	if ag == nil {
 		jsonResponse(w, http.StatusNotFound, map[string]any{"error": "agent not found"})
 		return
 	}
-	reply := ag.HandleWebChat(r.Context(), req.SessionID, req.Message)
+	agentCtx, cancel := webAgentContext(r)
+	defer cancel()
+	reply := ag.HandleWebChat(agentCtx, req.SessionID, req.Message)
 	jsonResponse(w, http.StatusOK, map[string]any{"reply": reply})
 }
 
@@ -678,6 +707,14 @@ func (s *Server) handleChatStream(w http.ResponseWriter, r *http.Request) {
 	var req chatRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonResponse(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
+		return
+	}
+	// Reject before reaching the agent: HTTP callers are authenticated users
+	// who can act on the error message, so a 400 is appropriate here.
+	if threat := privacy.ScanInput(req.Message); threat != nil {
+		slog.Warn("chat stream blocked: prompt injection detected",
+			"threat_type", threat.Type, "pattern", threat.Pattern, "context", threat.Context)
+		jsonResponse(w, http.StatusBadRequest, map[string]any{"error": "message blocked: potential prompt injection detected"})
 		return
 	}
 	ag := s.resolveAgent(r, req.AgentID)
@@ -694,19 +731,32 @@ func (s *Server) handleChatStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 	flusher.Flush()
+
+	agentCtx, cancel := webAgentContext(r)
 	events := make(chan agentChatEvent, 32)
-	done := make(chan struct{})
 	go func() {
-		defer close(done)
-		for ev := range events {
-			data, _ := json.Marshal(ev)
-			fmt.Fprintf(w, "data: %s\n\n", data)
-			flusher.Flush()
-		}
+		defer close(events)
+		defer cancel()
+		_ = ag.HandleWebChatStream(agentCtx, req.SessionID, req.Message, req.imageURLs(), events)
 	}()
-	_ = ag.HandleWebChatStream(r.Context(), req.SessionID, req.Message, req.Images, events)
-	close(events)
-	<-done
+
+	for {
+		select {
+		case ev, ok := <-events:
+			if !ok {
+				return
+			}
+			data, _ := json.Marshal(ev)
+			if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+				go drainChatEvents(events)
+				return
+			}
+			flusher.Flush()
+		case <-r.Context().Done():
+			go drainChatEvents(events)
+			return
+		}
+	}
 }
 
 func (s *Server) handleChatHistory(w http.ResponseWriter, r *http.Request) {
@@ -737,7 +787,9 @@ func (s *Server) handleRenameSession(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, http.StatusNotFound, map[string]any{"error": "agent not found"})
 		return
 	}
-	var req struct{ Title string `json:"title"` }
+	var req struct {
+		Title string `json:"title"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonResponse(w, http.StatusBadRequest, map[string]any{"error": err.Error()})
 		return

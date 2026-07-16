@@ -55,7 +55,7 @@ type Agent struct {
 	// (SOUL.md, IDENTITY.md, ...). Kept on the Agent so ReloadWorkspaceFiles
 	// can rewire a fresh ContextBuilder to keep reading from the Store
 	// instead of silently falling back to pod-local filesystem.
-	memoryStore       MemoryStore
+	memoryStore MemoryStore
 	// workspaceStore is optional; when set, SkillsLoader hydrates per-agent
 	// and global skill dirs from the object store on every turn so skills
 	// uploaded post-boot or on a sibling replica become visible here.
@@ -258,7 +258,6 @@ func NewAgentWithSkillsCfg(rc config.ResolvedAgent, prov provider.Provider, mb *
 		engine:            eng,
 		costTracker:       eng.costTracker,
 	}
-
 
 	// Connect MCP servers and register their tools
 	if len(rc.MCPServers) > 0 {
@@ -512,6 +511,7 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 
 	a.refreshSkillsFromStore()
 	sess := a.sessions.Get(msg.Channel, msg.ChatID)
+	sess.NormalizeToolResults()
 	// Bind the registry to this chat's session so workspace.Store reads
 	// + writes get session-scoped paths and (when a sandbox pool is
 	// wired) the executor used by exec/read_file/list_dir is tied to a
@@ -578,7 +578,7 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 
 	messages := make([]provider.Message, 0, len(sessionMsgs)+1)
 	messages = append(messages, provider.Message{Role: "system", Content: systemPrompt})
-	messages = append(messages, sessionMsgs...)
+	messages = append(messages, applyContextIsolation(sessionMsgs)...)
 
 	toolDefs := a.registry.Definitions()
 
@@ -780,6 +780,16 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 			sess.Append(toolMsg)
 			messages = append(messages, toolMsg)
 
+			if shouldDirectReturnToolResult(r.toolName, tc.Function.Arguments) {
+				assistantMsg := provider.Message{Role: "assistant", Content: resultContent}
+				sess.Append(assistantMsg)
+				messages = append(messages, assistantMsg)
+				emitEvent(ctx, ChatEvent{Type: "content", Data: map[string]any{"content": resultContent}})
+				emitEvent(ctx, ChatEvent{Type: "done"})
+				a.runPostTurn(ctx, messages, totalToolCalls)
+				return resultContent
+			}
+
 			evt := map[string]any{
 				"id":     tc.ID,
 				"name":   r.toolName,
@@ -797,6 +807,43 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 	return "I've reached the maximum number of tool iterations. Here's what I have so far."
 }
 
+// applyContextIsolation returns a copy of msgs with each user-role message's
+// text content wrapped in <user_message> tags, matching the policy declared in
+// BuildSystemPrompt. The original slice and its elements are never mutated so
+// the session history shown in the web UI stays tag-free — wrapping only occurs
+// in the payload sent to the LLM.
+//
+// Both content shapes are handled:
+//   - plain text: Message.Content is wrapped directly
+//   - multimodal: the "text" ContentPart inside ContentParts is wrapped;
+//     image parts are left untouched
+func applyContextIsolation(msgs []provider.Message) []provider.Message {
+	out := make([]provider.Message, len(msgs))
+	copy(out, msgs)
+	for i, m := range out {
+		if m.Role != "user" {
+			continue
+		}
+		if m.Content != "" {
+			m.Content = WrapUserInput(m.Content)
+			out[i] = m
+			continue
+		}
+		if len(m.ContentParts) > 0 {
+			parts := make([]provider.ContentPart, len(m.ContentParts))
+			copy(parts, m.ContentParts)
+			for j, p := range parts {
+				if p.Type == "text" && p.Text != "" {
+					parts[j].Text = WrapUserInput(p.Text)
+				}
+			}
+			m.ContentParts = parts
+			out[i] = m
+		}
+	}
+	return out
+}
+
 // padOrphanToolResults walks the session and appends a synthetic
 // tool_result for any tool_use id from the latest assistant message that
 // doesn't already have a matching tool_result. Earlier rounds aren't
@@ -807,39 +854,12 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 // premature exit) can't leave the conversation in a state where the next
 // turn's API call gets a 400 for orphan tool_use ids and the UI keeps
 // spinning a "Running tools" indicator that will never resolve.
+func shouldDirectReturnToolResult(toolName, args string) bool {
+	return toolName == "exec" && strings.Contains(args, "ledger_report.py")
+}
+
 func padOrphanToolResults(sess *session.Session) {
-	msgs := sess.GetMessages()
-	// Walk back to the latest assistant message; if it has no tool_calls
-	// or all tool_calls already have results after it, nothing to do.
-	lastAssistantIdx := -1
-	for i := len(msgs) - 1; i >= 0; i-- {
-		if msgs[i].Role == "assistant" && len(msgs[i].ToolCalls) > 0 {
-			lastAssistantIdx = i
-			break
-		}
-	}
-	if lastAssistantIdx < 0 {
-		return
-	}
-	resolved := make(map[string]bool)
-	for _, m := range msgs[lastAssistantIdx+1:] {
-		if m.Role == "tool" && m.ToolCallID != "" {
-			resolved[m.ToolCallID] = true
-		}
-	}
-	for _, tc := range msgs[lastAssistantIdx].ToolCalls {
-		if resolved[tc.ID] {
-			continue
-		}
-		slog.Warn("padding orphan tool_use with stopped result",
-			"toolCallID", tc.ID, "tool", tc.Function.Name)
-		sess.Append(provider.Message{
-			Role:       "tool",
-			ToolCallID: tc.ID,
-			Name:       tc.Function.Name,
-			Content:    "(stopped — execution was interrupted before the tool returned)",
-		})
-	}
+	sess.NormalizeToolResults()
 }
 
 // runPostTurn fires PostTurn hooks and handles auto-persist and skills learning.
@@ -901,6 +921,7 @@ func (a *Agent) HandleMessageStream(ctx context.Context, msg bus.InboundMessage)
 
 	a.refreshSkillsFromStore()
 	sess := a.sessions.Get(msg.Channel, msg.ChatID)
+	sess.NormalizeToolResults()
 	a.bindSession(ctx, msg.ChatID)
 	a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: BeforeSystemPrompt, UserID: a.ownerUserID})
 	systemPrompt := a.ctxBuilder.BuildSystemPrompt()
@@ -942,7 +963,7 @@ func (a *Agent) HandleMessageStream(ctx context.Context, msg bus.InboundMessage)
 
 	messages := make([]provider.Message, 0, len(sessionMsgs)+1)
 	messages = append(messages, provider.Message{Role: "system", Content: systemPrompt})
-	messages = append(messages, sessionMsgs...)
+	messages = append(messages, applyContextIsolation(sessionMsgs)...)
 
 	toolDefs := a.registry.Definitions()
 

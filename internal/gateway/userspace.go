@@ -343,7 +343,11 @@ func (sp *UserSpace) EnsureAgent(ctx context.Context, st store.Store, mb *bus.Me
 //  2. layering the user's own providers + channels rows on top
 //  3. listing the user's agent rows from the DB
 //  4. building an agent.Manager that owns those agents
-func loadUserSpace(ctx context.Context, userID string, mb *bus.MessageBus, st store.Store, ws workspace.Store) (*UserSpace, error) {
+//
+// reg is the owning registry; it is threaded through so spawn_subagent can
+// be wired onto every agent (the spawner delegates back to reg.getOrLoad to
+// reach sibling agents in the same user space).
+func loadUserSpace(ctx context.Context, reg *userSpaceRegistry, userID string, mb *bus.MessageBus, st store.Store, ws workspace.Store) (*UserSpace, error) {
 	if userID == "" {
 		return nil, fmt.Errorf("loadUserSpace: userID required")
 	}
@@ -436,6 +440,16 @@ func loadUserSpace(ctx context.Context, userID string, mb *bus.MessageBus, st st
 	}
 
 	registerAgentToolChains(cfg, agentMgr.All())
+
+	// Wire spawn_subagent onto every agent so a coordinator can delegate to
+	// sibling agents in the same user space. Without this the tool is never
+	// registered — SetSubAgentSpawner had no caller in this build, so
+	// multi-agent orchestration silently degraded to single-agent behaviour.
+	if reg != nil {
+		for _, ag := range agentMgr.All() {
+			ag.SetSubAgentSpawner(&gatewaySubAgentSpawner{registry: reg, userID: userID})
+		}
+	}
 
 	pool := attachSandboxToAgents(userID, resolved, agentMgr, ws)
 
@@ -540,7 +554,7 @@ func (r *userSpaceRegistry) getOrLoad(ctx context.Context, userID string) (*User
 		e.lastUsed = time.Now()
 		return e.space, nil
 	}
-	sp, err := loadUserSpace(ctx, userID, r.bus, r.store, r.workspace)
+	sp, err := loadUserSpace(ctx, r, userID, r.bus, r.store, r.workspace)
 	if err != nil {
 		return nil, err
 	}
