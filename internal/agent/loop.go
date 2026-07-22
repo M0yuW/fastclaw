@@ -65,6 +65,7 @@ type Agent struct {
 	engine         *sdkEngine
 	costTracker    *costtracker.Tracker
 	agentID        string
+	turnGate       chan struct{} // serializes access to session-bound Registry state
 	// sandboxPool is the per-user (agent + session) sandbox pool. Set
 	// once at boot/hot-reload by attachSandboxToAgents; bindSession
 	// pulls a session-scoped executor from it at the top of every turn
@@ -103,14 +104,8 @@ func (a *Agent) SetSandboxPool(p sandbox.ExecutorPool) {
 	}
 }
 
-// bindSession wires per-turn session state into the tool registry: the
-// session-scoped sandbox executor (when a pool is configured) and the
-// sessionID workspace.Store calls use to namespace artifacts. Called at
-// the top of HandleMessage / HandleMessageStream before any tool runs.
-//
-// Mutating the shared registry across concurrent chats would race, but
-// the current invariant is one chat-in-flight per agent — the gateway
-// serializes per-agent turns. Documenting it here in case that changes.
+// bindSession mutates shared Registry state. HandleMessage and
+// HandleMessageStream hold the Agent turn gate while this binding is active.
 func (a *Agent) bindSession(ctx context.Context, sessionID string) {
 	a.registry.SetSessionID(sessionID)
 	if a.sandboxPool == nil {
@@ -257,6 +252,7 @@ func NewAgentWithSkillsCfg(rc config.ResolvedAgent, prov provider.Provider, mb *
 		messageBus:        mb,
 		engine:            eng,
 		costTracker:       eng.costTracker,
+		turnGate:          make(chan struct{}, 1),
 	}
 
 	// Connect MCP servers and register their tools
@@ -500,8 +496,23 @@ func (a *Agent) CostTracker() *costtracker.Tracker {
 	return a.costTracker
 }
 
+func (a *Agent) acquireTurn(ctx context.Context) bool {
+	select {
+	case a.turnGate <- struct{}{}:
+		return true
+	case <-ctx.Done():
+		return false
+	}
+}
+
+func (a *Agent) releaseTurn() { <-a.turnGate }
+
 // HandleMessage processes an inbound message through the ReAct loop.
 func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) string {
+	if !a.acquireTurn(ctx) {
+		return "Request cancelled before the agent turn could start."
+	}
+	defer a.releaseTurn()
 	// Check for slash commands first
 	if result := a.handleSlashCommand(msg); result.handled {
 		emitEvent(ctx, ChatEvent{Type: "content", Data: map[string]any{"content": result.reply}})
@@ -909,6 +920,10 @@ func (a *Agent) runPostTurn(ctx context.Context, messages []provider.Message, to
 // a StreamReader for the final response. Tool call iterations use non-streaming Chat;
 // the final text response uses ChatStream for true SSE streaming.
 func (a *Agent) HandleMessageStream(ctx context.Context, msg bus.InboundMessage) *provider.StreamReader {
+	if !a.acquireTurn(ctx) {
+		return a.stringStream("Request cancelled before the agent turn could start.")
+	}
+	defer a.releaseTurn()
 	// Reuse setup logic from HandleMessage
 	if result := a.handleSlashCommand(msg); result.handled {
 		ch := make(chan provider.StreamChunk, 2)
@@ -1226,7 +1241,7 @@ func extractMediaPaths(output string) []string {
 
 // sendMediaFiles sends extracted MEDIA: files to the outbound bus.
 func (a *Agent) sendMediaFiles(msg bus.InboundMessage, mediaPaths []string) {
-	if len(mediaPaths) == 0 || a.messageBus == nil {
+	if len(mediaPaths) == 0 || a.messageBus == nil || msg.Source == bus.SourceSubAgent {
 		return
 	}
 	outMsg := bus.OutboundMessage{

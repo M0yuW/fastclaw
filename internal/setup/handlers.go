@@ -20,6 +20,7 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/scope"
 	"github.com/fastclaw-ai/fastclaw/internal/session"
 	"github.com/fastclaw-ai/fastclaw/internal/store"
+	"github.com/fastclaw-ai/fastclaw/internal/taskqueue"
 	"github.com/fastclaw-ai/fastclaw/internal/users"
 
 	"github.com/fastclaw-ai/fastclaw/internal/privacy"
@@ -640,6 +641,15 @@ func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 			"chatKey":   t.ChatKey,
 			"status":    string(t.Status),
 			"createdAt": t.CreatedAt.Format(time.RFC3339),
+			"internal":  t.ResponseMode == taskqueue.ResponseInternal,
+		}
+		if t.ResponseMode == taskqueue.ResponseInternal {
+			entry["sourceAgentId"] = t.SourceAgentID
+			entry["correlationId"] = t.CorrelationID
+			entry["callPath"] = append([]string(nil), t.CallPath...)
+			if t.ParentChatKey != "" {
+				entry["parentChatKey"] = t.ParentChatKey
+			}
 		}
 		if t.StartedAt != nil && t.DoneAt != nil {
 			entry["duration"] = t.DoneAt.Sub(*t.StartedAt).Milliseconds()

@@ -48,17 +48,23 @@ func registerMessage(r *Registry) {
 
 func makeMessageTool(mb *bus.MessageBus) ToolFunc {
 	return func(ctx context.Context, rawArgs json.RawMessage) (string, error) {
+		if bus.InternalExecutionIDFromContext(ctx) != "" {
+			return "", fmt.Errorf("message tool is unavailable during internal sub-agent execution")
+		}
 		var args messageArgs
 		if err := json.Unmarshal(rawArgs, &args); err != nil {
 			return "", fmt.Errorf("parse args: %w", err)
 		}
 
-		mb.Outbound <- bus.OutboundMessage{
+		select {
+		case mb.Outbound <- bus.OutboundMessage{
 			Channel: args.Channel,
 			ChatID:  args.ChatID,
 			Text:    args.Text,
+		}:
+			return "Message sent", nil
+		case <-ctx.Done():
+			return "", ctx.Err()
 		}
-
-		return "Message sent", nil
 	}
 }

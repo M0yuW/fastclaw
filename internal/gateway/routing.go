@@ -13,6 +13,7 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/config"
 	"github.com/fastclaw-ai/fastclaw/internal/privacy"
 	"github.com/fastclaw-ai/fastclaw/internal/store"
+	"github.com/fastclaw-ai/fastclaw/internal/taskqueue"
 )
 
 func chatKey(channel, chatID string) string {
@@ -32,6 +33,8 @@ func (g *Gateway) processInbound(ctx context.Context) {
 		select {
 		case <-ctx.Done():
 			return
+		case delivery := <-g.bus.Internal:
+			g.processInternal(delivery)
 		case msg := <-g.bus.Inbound:
 			ownerID := msg.OwnerUserID
 			if ownerID == "" {
@@ -71,6 +74,77 @@ func (g *Gateway) processInbound(ctx context.Context) {
 			g.routeGroup(ctx, msg)
 		}
 	}
+}
+
+func (g *Gateway) processInternal(delivery bus.InternalDelivery) {
+	req := delivery.Request
+	fail := func(err error) {
+		g.bus.ResolveInternal(bus.InternalReply{CorrelationID: delivery.CorrelationID, Err: err})
+	}
+	if delivery.CorrelationID == "" || req.OwnerUserID == "" || req.SourceAgentID == "" || req.TargetAgentID == "" {
+		fail(fmt.Errorf("internal route: incomplete request"))
+		return
+	}
+	if len(req.CallPath) == 0 || req.CallPath[len(req.CallPath)-1] != req.SourceAgentID {
+		fail(fmt.Errorf("internal route: invalid call path"))
+		return
+	}
+	for _, id := range req.CallPath {
+		if id == req.TargetAgentID {
+			fail(fmt.Errorf("internal route: sub-agent cycle %v -> %s", req.CallPath, req.TargetAgentID))
+			return
+		}
+	}
+	source, err := g.store.GetAgent(delivery.Context, req.SourceAgentID)
+	if err != nil || source == nil || source.UserID != req.OwnerUserID {
+		fail(fmt.Errorf("internal route: source agent unavailable"))
+		return
+	}
+	target, err := g.store.GetAgent(delivery.Context, req.TargetAgentID)
+	if err != nil || target == nil || target.UserID != req.OwnerUserID {
+		fail(fmt.Errorf("internal route: target agent unavailable"))
+		return
+	}
+	space, err := g.users.getOrLoad(delivery.Context, req.OwnerUserID)
+	if err != nil {
+		fail(fmt.Errorf("internal route: load user space: %w", err))
+		return
+	}
+	if space.Agents.AgentByID(req.TargetAgentID) == nil {
+		fail(fmt.Errorf("internal route: target agent unavailable"))
+		return
+	}
+
+	msg := req.Message
+	msg.OwnerUserID = req.OwnerUserID
+	msg.Source = bus.SourceSubAgent
+	path := append(append([]string(nil), req.CallPath...), req.TargetAgentID)
+	chatKey := "subagent:" + req.OwnerUserID + ":" + req.TargetAgentID
+	parentChatKey := bus.InternalExecutionIDFromContext(delivery.Context)
+	taskID, err := g.taskQueue.SubmitInternal(delivery.Context, taskqueue.InternalTaskSpec{
+		AgentID:       req.TargetAgentID,
+		OwnerUserID:   req.OwnerUserID,
+		SourceAgentID: req.SourceAgentID,
+		CorrelationID: delivery.CorrelationID,
+		ChatKey:       chatKey,
+		ParentChatKey: parentChatKey,
+		Message:       msg,
+		CallPath:      path,
+	}, func(result taskqueue.TaskResult) {
+		g.bus.ResolveInternal(bus.InternalReply{
+			CorrelationID: delivery.CorrelationID,
+			TaskID:        result.TaskID,
+			Result:        result.Value,
+			Err:           result.Err,
+		})
+	})
+	if err != nil {
+		fail(fmt.Errorf("internal route: submit: %w", err))
+		return
+	}
+	slog.Info("internal task routed", "correlation_id", delivery.CorrelationID,
+		"task_id", taskID, "owner", req.OwnerUserID,
+		"source_agent", req.SourceAgentID, "target_agent", req.TargetAgentID)
 }
 
 // resolveChannelOwner looks up the channels table for the inbound's
@@ -296,33 +370,42 @@ func (g *Gateway) accountIDForAgent(space *UserSpace, agentID, channel string) s
 	return ""
 }
 
-// gatewaySubAgentSpawner implements tools.SubAgentSpawner. Sub-agents
-// always run inside the *same* user's agent manager — there's no cross-
-// tenant agent invocation. It depends only on the user-space registry
-// (not the whole Gateway) so it can be wired at loadUserSpace time.
+// gatewaySubAgentSpawner implements tools.SubAgentSpawner through the internal
+// MessageBus RPC path. The gateway validates ownership and queues execution.
 type gatewaySubAgentSpawner struct {
-	registry *userSpaceRegistry
-	userID   string
+	bus           *bus.MessageBus
+	userID        string
+	sourceAgentID string
 }
 
-func (s *gatewaySubAgentSpawner) SpawnSubAgent(ctx context.Context, agentID string, msg bus.InboundMessage) string {
-	space, err := s.registry.getOrLoad(ctx, s.userID)
-	if err != nil {
-		return fmt.Sprintf("Error: load user space: %v", err)
+func (s *gatewaySubAgentSpawner) SpawnSubAgent(ctx context.Context, agentID string, msg bus.InboundMessage) (string, error) {
+	if s.bus == nil {
+		return "", fmt.Errorf("internal message bus unavailable")
 	}
-	ag := space.Agents.AgentByID(agentID)
-	if ag == nil {
-		return fmt.Sprintf("Error: agent %q not found", agentID)
+	path := bus.InternalCallPathFromContext(ctx)
+	if len(path) == 0 {
+		path = []string{s.sourceAgentID}
+	} else if path[len(path)-1] != s.sourceAgentID {
+		return "", fmt.Errorf("invalid sub-agent call path")
 	}
 
-	spawnCtx, cancel := context.WithTimeout(context.WithoutCancel(agent.ContextWithoutChatEvents(ctx)), 10*time.Minute)
+	spawnCtx := agent.ContextWithoutChatEvents(ctx)
+	var cancel context.CancelFunc
+	spawnCtx, cancel = context.WithTimeout(spawnCtx, 10*time.Minute)
 	defer cancel()
-
-	result := ag.HandleMessage(spawnCtx, msg)
-	if spawnCtx.Err() == context.DeadlineExceeded {
-		return fmt.Sprintf("Error: sub-agent %q timed out after 10m", agentID)
+	msg.OwnerUserID = s.userID
+	msg.Source = bus.SourceSubAgent
+	reply, err := s.bus.CallInternal(spawnCtx, bus.InternalRequest{
+		OwnerUserID:   s.userID,
+		SourceAgentID: s.sourceAgentID,
+		TargetAgentID: agentID,
+		CallPath:      path,
+		Message:       msg,
+	})
+	if err != nil {
+		return "", err
 	}
-	return result
+	return reply.Result, nil
 }
 
 var _ tools.SubAgentSpawner = (*gatewaySubAgentSpawner)(nil)

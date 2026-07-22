@@ -2,6 +2,7 @@ package taskqueue
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -14,26 +15,60 @@ import (
 type TaskStatus string
 
 const (
-	TaskPending TaskStatus = "pending"
-	TaskRunning TaskStatus = "running"
-	TaskDone    TaskStatus = "done"
-	TaskFailed  TaskStatus = "failed"
+	TaskPending   TaskStatus = "pending"
+	TaskRunning   TaskStatus = "running"
+	TaskDone      TaskStatus = "done"
+	TaskFailed    TaskStatus = "failed"
+	TaskCancelled TaskStatus = "cancelled"
 )
+
+type ResponseMode uint8
+
+const (
+	ResponseExternal ResponseMode = iota
+	ResponseInternal
+)
+
+type TaskResult struct {
+	TaskID string
+	Value  string
+	Err    error
+}
+
+type InternalTaskSpec struct {
+	AgentID       string
+	OwnerUserID   string
+	SourceAgentID string
+	CorrelationID string
+	ChatKey       string
+	ParentChatKey string
+	Message       bus.InboundMessage
+	CallPath      []string
+}
 
 // Task represents a unit of work to be processed.
 type Task struct {
-	ID          string
-	AgentID     string
-	OwnerUserID string // owner of the agent (for user-space lookup)
-	ChatKey     string // channel:chatID — serialization key
-	Message     bus.InboundMessage
-	AccountID   string
-	Status      TaskStatus
-	CreatedAt   time.Time
-	StartedAt   *time.Time
-	DoneAt      *time.Time
-	Result      string
-	Error       error
+	ID            string
+	AgentID       string
+	OwnerUserID   string // owner of the agent (for user-space lookup)
+	ChatKey       string // channel:chatID — serialization key
+	Message       bus.InboundMessage
+	AccountID     string
+	Status        TaskStatus
+	CreatedAt     time.Time
+	StartedAt     *time.Time
+	DoneAt        *time.Time
+	Result        string
+	Error         error
+	ResponseMode  ResponseMode
+	CorrelationID string
+	SourceAgentID string
+	CallPath      []string
+	ParentChatKey string
+	requestCtx    context.Context
+	completion    func(TaskResult)
+	completeOnce  sync.Once
+	internalSlot  bool
 }
 
 // TaskHandler processes a task and returns a result or error.
@@ -51,14 +86,15 @@ type Queue struct {
 	taskTimeout   time.Duration
 	idleTimeout   time.Duration
 
-	mu        sync.Mutex
-	tasks     map[string]*Task      // taskID -> Task
-	chatQueues map[string]*chatQueue // chatKey -> chatQueue
-	sem       chan struct{}          // counting semaphore for global concurrency
-	handler   TaskHandler
-	seq       uint64 // task ID sequence
-	ctx       context.Context
-	cancel    context.CancelFunc
+	mu            sync.Mutex
+	tasks         map[string]*Task      // taskID -> Task
+	chatQueues    map[string]*chatQueue // chatKey -> chatQueue
+	sem           chan struct{}         // counting semaphore for root executions
+	internalSlots chan struct{}         // bounds queued/running internal tasks
+	handler       TaskHandler
+	seq           uint64 // task ID sequence
+	ctx           context.Context
+	cancel        context.CancelFunc
 }
 
 // NewQueue creates a new task queue.
@@ -79,6 +115,7 @@ func NewQueue(maxConcurrent int, taskTimeout time.Duration, handler TaskHandler)
 		tasks:         make(map[string]*Task),
 		chatQueues:    make(map[string]*chatQueue),
 		sem:           make(chan struct{}, maxConcurrent),
+		internalSlots: make(chan struct{}, 256),
 		handler:       handler,
 		ctx:           ctx,
 		cancel:        cancel,
@@ -90,53 +127,104 @@ func NewQueue(maxConcurrent int, taskTimeout time.Duration, handler TaskHandler)
 	return q
 }
 
-// Submit adds a task to the queue for processing.
+// Submit adds an external task to the queue for processing.
 func (q *Queue) Submit(agentID, chatKey string, msg bus.InboundMessage, accountID string) string {
+	task := &Task{
+		AgentID:      agentID,
+		OwnerUserID:  msg.OwnerUserID,
+		ChatKey:      chatKey,
+		Message:      msg,
+		AccountID:    accountID,
+		ResponseMode: ResponseExternal,
+	}
+	id, _ := q.submit(context.Background(), task)
+	return id
+}
+
+// SubmitInternal queues a trusted internal task and completes it exactly once.
+func (q *Queue) SubmitInternal(ctx context.Context, spec InternalTaskSpec, complete func(TaskResult)) (string, error) {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if q.handler == nil {
+		return "", fmt.Errorf("taskqueue: handler is required")
+	}
+	if spec.AgentID == "" || spec.OwnerUserID == "" || spec.SourceAgentID == "" || spec.CorrelationID == "" {
+		return "", fmt.Errorf("taskqueue: incomplete internal task spec")
+	}
+	if spec.ChatKey == "" || spec.ChatKey == spec.ParentChatKey {
+		return "", fmt.Errorf("taskqueue: invalid reentrant internal chat key")
+	}
+	select {
+	case q.internalSlots <- struct{}{}:
+	case <-ctx.Done():
+		return "", ctx.Err()
+	case <-q.ctx.Done():
+		return "", fmt.Errorf("taskqueue: stopped")
+	default:
+		return "", fmt.Errorf("taskqueue: internal capacity reached")
+	}
+	task := &Task{
+		AgentID:       spec.AgentID,
+		OwnerUserID:   spec.OwnerUserID,
+		ChatKey:       spec.ChatKey,
+		Message:       spec.Message,
+		ResponseMode:  ResponseInternal,
+		CorrelationID: spec.CorrelationID,
+		SourceAgentID: spec.SourceAgentID,
+		CallPath:      append([]string(nil), spec.CallPath...),
+		ParentChatKey: spec.ParentChatKey,
+		requestCtx:    ctx,
+		completion:    complete,
+		internalSlot:  true,
+	}
+	id, err := q.submit(ctx, task)
+	return id, err
+}
+
+func (q *Queue) submit(ctx context.Context, task *Task) (string, error) {
 	q.mu.Lock()
+	select {
+	case <-q.ctx.Done():
+		q.mu.Unlock()
+		err := fmt.Errorf("taskqueue: stopped")
+		q.finishTask(task, "", err)
+		return "", err
+	default:
+	}
 
 	q.seq++
 	taskID := fmt.Sprintf("task-%d-%d", time.Now().UnixMilli(), q.seq)
-
-	task := &Task{
-		ID:          taskID,
-		AgentID:     agentID,
-		OwnerUserID: msg.OwnerUserID,
-		ChatKey:     chatKey,
-		Message:     msg,
-		AccountID:   accountID,
-		Status:      TaskPending,
-		CreatedAt:   time.Now(),
-	}
+	task.ID = taskID
+	task.Status = TaskPending
+	task.CreatedAt = time.Now()
 	q.tasks[taskID] = task
 
-	cq, ok := q.chatQueues[chatKey]
+	cq, ok := q.chatQueues[task.ChatKey]
 	if !ok {
-		cq = &chatQueue{
-			ch:       make(chan *Task, 100),
-			lastUsed: time.Now(),
-		}
-		q.chatQueues[chatKey] = cq
-		// Start a processing goroutine for this chat
-		go q.processChatQueue(chatKey, cq)
+		cq = &chatQueue{ch: make(chan *Task, 100), lastUsed: time.Now()}
+		q.chatQueues[task.ChatKey] = cq
+		go q.processChatQueue(task.ChatKey, cq)
 	}
 	cq.lastUsed = time.Now()
-
 	pendingCount := len(cq.ch)
 	q.mu.Unlock()
 
-	slog.Info("task submitted",
-		"task_id", taskID,
-		"chat_key", chatKey,
-		"agent_id", agentID,
-		"queue_depth", pendingCount+1,
-	)
+	slog.Info("task submitted", "task_id", taskID, "chat_key", task.ChatKey,
+		"agent_id", task.AgentID, "queue_depth", pendingCount+1,
+		"internal", task.ResponseMode == ResponseInternal)
 
-	if pendingCount > 100 {
-		slog.Warn("queue depth high", "chat_key", chatKey, "depth", pendingCount+1)
+	select {
+	case cq.ch <- task:
+		return taskID, nil
+	case <-ctx.Done():
+		q.failBeforeRun(task, ctx.Err())
+		return "", ctx.Err()
+	case <-q.ctx.Done():
+		err := fmt.Errorf("taskqueue: stopped")
+		q.failBeforeRun(task, err)
+		return "", err
 	}
-
-	cq.ch <- task
-	return taskID
 }
 
 // processChatQueue drains tasks for a single chat, running them serially.
@@ -160,15 +248,29 @@ func (q *Queue) processChatQueue(chatKey string, cq *chatQueue) {
 
 // executeTask runs a single task with concurrency control and timeout.
 func (q *Queue) executeTask(task *Task) {
-	// Acquire global semaphore
-	select {
-	case q.sem <- struct{}{}:
-	case <-q.ctx.Done():
-		return
+	requestCtx := task.requestCtx
+	if requestCtx == nil {
+		requestCtx = q.ctx
 	}
-	defer func() { <-q.sem }()
+	inheritedExecution := bus.InternalExecutionIDFromContext(requestCtx)
+	acquired := false
+	if inheritedExecution == "" {
+		select {
+		case q.sem <- struct{}{}:
+			acquired = true
+		case <-requestCtx.Done():
+			q.finishTask(task, "", requestCtx.Err())
+			return
+		case <-q.ctx.Done():
+			q.finishTask(task, "", fmt.Errorf("taskqueue: stopped"))
+			return
+		}
+		inheritedExecution = task.ID
+	}
+	if acquired {
+		defer func() { <-q.sem }()
+	}
 
-	// Mark running
 	now := time.Now()
 	q.mu.Lock()
 	task.Status = TaskRunning
@@ -176,49 +278,88 @@ func (q *Queue) executeTask(task *Task) {
 	concurrent := len(q.sem)
 	q.mu.Unlock()
 
-	slog.Info("task started",
-		"task_id", task.ID,
-		"agent_id", task.AgentID,
-		"chat_key", task.ChatKey,
-		"concurrent_count", concurrent,
-	)
+	slog.Info("task started", "task_id", task.ID, "agent_id", task.AgentID,
+		"chat_key", task.ChatKey, "concurrent_count", concurrent,
+		"execution_id", inheritedExecution, "internal", task.ResponseMode == ResponseInternal)
 
-	// Create timeout context
-	ctx, cancel := context.WithTimeout(q.ctx, q.taskTimeout)
+	baseCtx, baseCancel := context.WithCancel(q.ctx)
+	stop := context.AfterFunc(requestCtx, baseCancel)
+	defer func() {
+		stop()
+		baseCancel()
+	}()
+	ctx, cancel := context.WithTimeout(baseCtx, q.taskTimeout)
 	defer cancel()
-
-	result, err := q.handler(ctx, task)
-
-	doneAt := time.Now()
-	duration := doneAt.Sub(*task.StartedAt)
-
-	q.mu.Lock()
-	task.DoneAt = &doneAt
-	task.Result = result
-	task.Error = err
-	if err != nil {
-		task.Status = TaskFailed
-	} else {
-		task.Status = TaskDone
+	ctx = bus.ContextWithInternalExecution(ctx, inheritedExecution)
+	if len(task.CallPath) > 0 {
+		ctx = bus.ContextWithInternalCallPath(ctx, task.CallPath)
 	}
-	q.mu.Unlock()
 
-	if err != nil {
-		slog.Error("task failed",
-			"task_id", task.ID,
-			"agent_id", task.AgentID,
-			"chat_key", task.ChatKey,
-			"duration_ms", duration.Milliseconds(),
-			"error", err,
-		)
-	} else {
-		slog.Info("task completed",
-			"task_id", task.ID,
-			"agent_id", task.AgentID,
-			"chat_key", task.ChatKey,
-			"duration_ms", duration.Milliseconds(),
-		)
+	var result string
+	var err error
+	func() {
+		defer func() {
+			if recovered := recover(); recovered != nil {
+				err = fmt.Errorf("task panic: %v", recovered)
+			}
+		}()
+		result, err = q.handler(ctx, task)
+	}()
+	if err == nil && ctx.Err() != nil {
+		err = ctx.Err()
 	}
+	q.finishTask(task, result, err)
+}
+
+func (q *Queue) finishTask(task *Task, result string, err error) {
+	task.completeOnce.Do(func() {
+		doneAt := time.Now()
+		q.mu.Lock()
+		task.DoneAt = &doneAt
+		task.Result = result
+		task.Error = err
+		if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+			task.Status = TaskCancelled
+		} else if err != nil {
+			task.Status = TaskFailed
+		} else {
+			task.Status = TaskDone
+		}
+		started := task.StartedAt
+		completion := task.completion
+		task.completion = nil
+		task.requestCtx = nil
+		q.mu.Unlock()
+
+		duration := time.Duration(0)
+		if started != nil {
+			duration = doneAt.Sub(*started)
+		}
+		if err != nil {
+			slog.Error("task failed", "task_id", task.ID, "agent_id", task.AgentID,
+				"chat_key", task.ChatKey, "duration_ms", duration.Milliseconds(), "error", err)
+		} else {
+			slog.Info("task completed", "task_id", task.ID, "agent_id", task.AgentID,
+				"chat_key", task.ChatKey, "duration_ms", duration.Milliseconds())
+		}
+		if completion != nil {
+			func() {
+				defer func() {
+					if recovered := recover(); recovered != nil {
+						slog.Error("task completion callback panicked", "task_id", task.ID, "panic", recovered)
+					}
+				}()
+				completion(TaskResult{TaskID: task.ID, Value: result, Err: err})
+			}()
+		}
+		if task.internalSlot {
+			<-q.internalSlots
+		}
+	})
+}
+
+func (q *Queue) failBeforeRun(task *Task, err error) {
+	q.finishTask(task, "", err)
 }
 
 // cleanupIdleQueues removes chat queues that have been idle too long.
@@ -292,7 +433,7 @@ func (q *Queue) pruneOldTasks() {
 	}
 	var completed []entry
 	for id, t := range q.tasks {
-		if t.Status == TaskDone || t.Status == TaskFailed {
+		if t.Status == TaskDone || t.Status == TaskFailed || t.Status == TaskCancelled {
 			completed = append(completed, entry{id, t.CreatedAt})
 		}
 	}
@@ -316,4 +457,15 @@ func (q *Queue) pruneOldTasks() {
 // Stop shuts down the queue.
 func (q *Queue) Stop() {
 	q.cancel()
+	q.mu.Lock()
+	var pending []*Task
+	for _, task := range q.tasks {
+		if task.Status == TaskPending {
+			pending = append(pending, task)
+		}
+	}
+	q.mu.Unlock()
+	for _, task := range pending {
+		q.finishTask(task, "", context.Canceled)
+	}
 }
