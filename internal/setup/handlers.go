@@ -680,7 +680,7 @@ func (r chatRequest) imageURLs() []string {
 }
 
 func webAgentContext(r *http.Request) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.WithoutCancel(r.Context()), 2*time.Hour)
+	return context.WithTimeout(r.Context(), 2*time.Hour)
 }
 
 func drainChatEvents(events <-chan agentChatEvent) {
@@ -740,6 +740,7 @@ func (s *Server) handleChatStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
 	flusher.Flush()
 
 	agentCtx, cancel := webAgentContext(r)
@@ -758,11 +759,13 @@ func (s *Server) handleChatStream(w http.ResponseWriter, r *http.Request) {
 			}
 			data, _ := json.Marshal(ev)
 			if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+				cancel()
 				go drainChatEvents(events)
 				return
 			}
 			flusher.Flush()
 		case <-r.Context().Done():
+			cancel()
 			go drainChatEvents(events)
 			return
 		}

@@ -509,14 +509,23 @@ func (a *Agent) releaseTurn() { <-a.turnGate }
 
 // HandleMessage processes an inbound message through the ReAct loop.
 func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) string {
+	return a.runTurn(ctx, msg)
+}
+
+// runTurn owns the complete lifetime of one agent turn. All synchronous
+// entrypoints delegate here so session, hook, tool, and cleanup semantics stay
+// identical while their output adapters remain independent.
+func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	if !a.acquireTurn(ctx) {
 		return "Request cancelled before the agent turn could start."
 	}
 	defer a.releaseTurn()
+	events := newTurnEventEmitter(ctx)
 	// Check for slash commands first
 	if result := a.handleSlashCommand(msg); result.handled {
-		emitEvent(ctx, ChatEvent{Type: "content", Data: map[string]any{"content": result.reply}})
-		emitEvent(ctx, ChatEvent{Type: "done"})
+		messageID := events.messageID()
+		events.contentSnapshot(result.reply, messageID, 1)
+		events.finish(messageID, 1)
 		return result.reply
 	}
 
@@ -601,12 +610,16 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 	var lastSig toolCallSig
 	consecutiveCount := 0
 	totalToolCalls := 0
+	lastRound := 0
 
 	// ReAct loop
 	for i := 0; i < a.maxToolIterations; i++ {
+		round := i + 1
+		lastRound = round
+		messageID := events.messageID()
 		slog.Info("agent loop iteration",
 			"agent", a.name,
-			"iteration", i+1,
+			"iteration", round,
 			"channel", msg.Channel,
 			"chat_id", msg.ChatID,
 		)
@@ -624,43 +637,68 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 		if a.provider == nil {
 			slog.Error("agent has no provider configured", "agent", a.name, "model", a.model)
 			noProviderMsg := "Agent is not configured with a usable LLM provider. Check that cfg.Providers contains the prefix referenced by model `" + a.model + "`."
-			emitEvent(ctx, ChatEvent{Type: "error", Data: map[string]any{"message": noProviderMsg}})
-			emitEvent(ctx, ChatEvent{Type: "done"})
+			noProviderErr := fmt.Errorf("%s", noProviderMsg)
+			hcAfter := &HookContext{AgentName: a.name, Point: AfterModelCall, Messages: messages, Error: noProviderErr, StartTime: hcBefore.StartTime, ChatID: msg.ChatID, UserID: a.ownerUserID}
+			a.hooks.Run(ctx, hcAfter)
+			events.fail(noProviderErr, messageID, round)
 			return noProviderMsg
 		}
-		resp, err := a.provider.Chat(ctx, llmMessages, toolDefs, a.model, a.maxTokens, a.temperature)
+
+		var resp *provider.Response
+		stream, err := a.provider.ChatStream(ctx, llmMessages, toolDefs, a.model, a.maxTokens, a.temperature)
+		if err == nil && stream == nil {
+			err = fmt.Errorf("LLM provider returned a nil stream")
+		}
+		if err == nil {
+			for {
+				chunk, ok := stream.Next()
+				if !ok {
+					break
+				}
+				if events.hasSink() {
+					events.contentDelta(chunk.Content, messageID, round)
+				}
+			}
+			var resultErr error
+			resp, resultErr = stream.Result()
+			if resultErr != nil {
+				err = resultErr
+			} else if resp == nil {
+				err = fmt.Errorf("LLM stream ended without a final response")
+			}
+		}
 
 		// Hook: AfterModelCall
 		hcAfter := &HookContext{AgentName: a.name, Point: AfterModelCall, Messages: messages, Response: resp, Error: err, StartTime: hcBefore.StartTime, ChatID: msg.ChatID, UserID: a.ownerUserID}
 		a.hooks.Run(ctx, hcAfter)
 
 		if err != nil {
-			slog.Error("LLM chat failed", "agent", a.name, "error", err)
-			emitEvent(ctx, ChatEvent{Type: "error", Data: map[string]any{"message": err.Error()}})
-			emitEvent(ctx, ChatEvent{Type: "done"})
+			slog.Error("LLM chat stream failed", "agent", a.name, "error", err)
+			events.fail(err, messageID, round)
 			return "Sorry, I encountered an error processing your request."
 		}
 
 		if !resp.HasToolCalls() {
-			sess.Append(provider.Message{Role: "assistant", Content: resp.Content, Thinking: resp.Thinking, Timestamp: time.Now().UnixMilli(), RawAssistant: resp.RawAssistant})
-			emitEvent(ctx, ChatEvent{Type: "content", Data: map[string]any{"content": resp.Content}})
-			emitEvent(ctx, ChatEvent{Type: "done"})
+			assistantMsg := provider.Message{Role: "assistant", Content: resp.Content, Thinking: resp.Thinking, Timestamp: time.Now().UnixMilli(), RawAssistant: resp.RawAssistant}
+			sess.Append(assistantMsg)
+			messages = append(messages, assistantMsg)
+			events.contentSnapshot(resp.Content, messageID, round)
 			a.runPostTurn(ctx, messages, totalToolCalls)
+			if err := flushTurnSession(ctx, sess); err != nil {
+				slog.Error("flush streamed session", "agent", a.name, "error", err)
+				events.fail(err, messageID, round)
+				return "Sorry, I couldn't persist the completed response."
+			}
+			events.finish(messageID, round)
 			return resp.Content
 		}
 
-		// Emit assistant content before tool calls if present
-		if resp.Content != "" {
-			emitEvent(ctx, ChatEvent{Type: "content", Data: map[string]any{"content": resp.Content}})
-		}
+		// End every model round with the legacy complete-content snapshot.
+		events.contentSnapshot(resp.Content, messageID, round)
 
 		// Emit tool_call events
 		for _, tc := range resp.ToolCalls {
-			emitEvent(ctx, ChatEvent{Type: "tool_call", Data: map[string]any{
-				"id":        tc.ID,
-				"name":      tc.Function.Name,
-				"arguments": tc.Function.Arguments,
-			}})
+			events.toolCall(tc.ID, tc.Function.Name, tc.Function.Arguments, messageID, round)
 		}
 
 		assistantMsg := provider.Message{
@@ -790,32 +828,52 @@ func (a *Agent) HandleMessage(ctx context.Context, msg bus.InboundMessage) strin
 			}
 			sess.Append(toolMsg)
 			messages = append(messages, toolMsg)
+			events.toolResult(tc.ID, r.toolName, resultContent, messageID, round, meta)
 
 			if shouldDirectReturnToolResult(r.toolName, tc.Function.Arguments) {
+				finalMessageID := events.messageID()
 				assistantMsg := provider.Message{Role: "assistant", Content: resultContent}
 				sess.Append(assistantMsg)
 				messages = append(messages, assistantMsg)
-				emitEvent(ctx, ChatEvent{Type: "content", Data: map[string]any{"content": resultContent}})
-				emitEvent(ctx, ChatEvent{Type: "done"})
+				events.contentSnapshot(resultContent, finalMessageID, round)
 				a.runPostTurn(ctx, messages, totalToolCalls)
+				if err := flushTurnSession(ctx, sess); err != nil {
+					slog.Error("flush direct-return session", "agent", a.name, "error", err)
+					events.fail(err, finalMessageID, round)
+					return "Sorry, I couldn't persist the completed response."
+				}
+				events.finish(finalMessageID, round)
 				return resultContent
 			}
-
-			evt := map[string]any{
-				"id":     tc.ID,
-				"name":   r.toolName,
-				"result": resultContent,
-			}
-			if meta != nil {
-				evt["metadata"] = meta
-			}
-			emitEvent(ctx, ChatEvent{Type: "tool_result", Data: evt})
 		}
 	}
 
+	final := "I've reached the maximum number of tool iterations. Here's what I have so far."
+	finalMessageID := events.messageID()
+	assistantMsg := provider.Message{Role: "assistant", Content: final, Timestamp: time.Now().UnixMilli()}
+	sess.Append(assistantMsg)
+	messages = append(messages, assistantMsg)
+	events.contentSnapshot(final, finalMessageID, lastRound)
 	a.runPostTurn(ctx, messages, totalToolCalls)
+	if err := flushTurnSession(ctx, sess); err != nil {
+		slog.Error("flush max-iteration session", "agent", a.name, "error", err)
+		events.fail(err, finalMessageID, lastRound)
+		return "Sorry, I couldn't persist the completed response."
+	}
+	events.finish(finalMessageID, lastRound)
 	slog.Warn("max tool iterations reached", "agent", a.name, "max", a.maxToolIterations)
-	return "I've reached the maximum number of tool iterations. Here's what I have so far."
+	return final
+}
+
+func flushTurnSession(ctx context.Context, sess *session.Session) error {
+	flushCtx := ctx
+	cancel := func() {}
+	if ctx == nil || ctx.Err() != nil {
+		flushCtx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	}
+	defer cancel()
+	sess.NormalizeToolResults()
+	return sess.Flush(flushCtx)
 }
 
 // applyContextIsolation returns a copy of msgs with each user-role message's
@@ -916,217 +974,99 @@ func (a *Agent) runPostTurn(ctx context.Context, messages []provider.Message, to
 	}
 }
 
-// HandleMessageStream processes a message through the ReAct loop and returns
-// a StreamReader for the final response. Tool call iterations use non-streaming Chat;
-// the final text response uses ChatStream for true SSE streaming.
+// HandleMessageStream adapts the shared runTurn event stream to the provider
+// StreamReader API. runTurn retains the turn gate until all model, tool,
+// persistence, hook, and cleanup work has completed.
 func (a *Agent) HandleMessageStream(ctx context.Context, msg bus.InboundMessage) *provider.StreamReader {
-	if !a.acquireTurn(ctx) {
-		return a.stringStream("Request cancelled before the agent turn could start.")
-	}
-	defer a.releaseTurn()
-	// Reuse setup logic from HandleMessage
-	if result := a.handleSlashCommand(msg); result.handled {
-		ch := make(chan provider.StreamChunk, 2)
+	outCh := make(chan provider.StreamChunk, 64)
+	reader := provider.NewStreamReader(outCh)
+	eventCh := make(chan ChatEvent, 64)
+
+	go func() {
+		defer close(outCh)
+		runCtx, cancel := context.WithCancel(ctx)
+		defer cancel()
+		runCtx = ContextWithChatEvents(runCtx, eventCh)
+		resultCh := make(chan string, 1)
 		go func() {
-			ch <- provider.StreamChunk{Content: result.reply, Done: true}
-			close(ch)
+			resultCh <- a.runTurn(runCtx, msg)
+			close(eventCh)
 		}()
-		return provider.NewStreamReader(ch)
-	}
 
-	a.refreshSkillsFromStore()
-	sess := a.sessions.Get(msg.Channel, msg.ChatID)
-	sess.NormalizeToolResults()
-	a.bindSession(ctx, msg.ChatID)
-	a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: BeforeSystemPrompt, UserID: a.ownerUserID})
-	systemPrompt := a.ctxBuilder.BuildSystemPrompt()
-	a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: AfterSystemPrompt, UserID: a.ownerUserID})
-
-	// Store raw user message — same multi-image flatten as HandleMessage.
-	userMsg := provider.Message{Role: "user", Content: msg.Text}
-	imageURLs := msg.PhotoURLs
-	if msg.PhotoURL != "" {
-		imageURLs = append([]string{msg.PhotoURL}, imageURLs...)
-	}
-	if len(imageURLs) > 0 {
-		userMsg.Content = ""
-		// Skip an empty leading text part — image-only sends used to
-		// produce `[{text: ""}, {image_url}, …]` which some upstreams
-		// reject as a content-less wire message.
-		var parts []provider.ContentPart
-		if msg.Text != "" {
-			parts = append(parts, provider.ContentPart{Type: "text", Text: msg.Text})
-		}
-		for _, u := range imageURLs {
-			parts = append(parts, provider.ContentPart{
-				Type: "image_url", ImageURL: &provider.ImageURL{URL: u, Detail: "auto"},
-			})
-		}
-		userMsg.ContentParts = parts
-	}
-	sess.Append(userMsg)
-
-	sessionMsgs := sess.GetMessages()
-	compactResult, err := CompactMessages(sessionMsgs, a.homePath, a.provider, a.model)
-	if err != nil {
-		slog.Warn("compaction error", "agent", a.name, "error", err)
-	}
-	if compactResult != nil && compactResult.Pruned {
-		sess.ReplaceMessages(compactResult.Messages)
-		sessionMsgs = compactResult.Messages
-	}
-
-	messages := make([]provider.Message, 0, len(sessionMsgs)+1)
-	messages = append(messages, provider.Message{Role: "system", Content: systemPrompt})
-	messages = append(messages, applyContextIsolation(sessionMsgs)...)
-
-	toolDefs := a.registry.Definitions()
-
-	type toolCallSig struct {
-		name string
-		hash [32]byte
-	}
-	var lastSig toolCallSig
-	consecutiveCount := 0
-
-	// ReAct loop - use Chat for tool iterations
-	for i := 0; i < a.maxToolIterations; i++ {
-		hcBefore := &HookContext{AgentName: a.name, Point: BeforeModelCall, Messages: messages, ChatID: msg.ChatID, UserID: a.ownerUserID}
-		a.hooks.Run(ctx, hcBefore)
-
-		resp, err := a.provider.Chat(ctx, messages, toolDefs, a.model, a.maxTokens, a.temperature)
-
-		hcAfter := &HookContext{AgentName: a.name, Point: AfterModelCall, Messages: messages, Response: resp, Error: err, StartTime: hcBefore.StartTime, ChatID: msg.ChatID, UserID: a.ownerUserID}
-		a.hooks.Run(ctx, hcAfter)
-
-		if err != nil {
-			slog.Error("LLM chat failed", "agent", a.name, "error", err)
-			return a.stringStream("Sorry, I encountered an error processing your request.")
-		}
-
-		if !resp.HasToolCalls() {
-			// Final response - use streaming
-			sr, err := a.provider.ChatStream(ctx, messages, toolDefs, a.model, a.maxTokens, a.temperature)
-			if err != nil {
-				slog.Error("LLM stream failed, falling back", "agent", a.name, "error", err)
-				sess.Append(provider.Message{Role: "assistant", Content: resp.Content})
-				return a.stringStream(resp.Content)
-			}
-
-			// Collect content in background for session storage
-			outCh := make(chan provider.StreamChunk, 64)
-			outReader := provider.NewStreamReader(outCh)
-			go func() {
-				defer close(outCh)
-				var full strings.Builder
-				var thinking, thinkingSig string
-				for {
-					chunk, ok := sr.Next()
-					if !ok {
-						break
-					}
-					if chunk.Content != "" {
-						full.WriteString(chunk.Content)
-					}
-					if chunk.Thinking != "" {
-						thinking = chunk.Thinking
-					}
-					if chunk.ThinkingSignature != "" {
-						thinkingSig = chunk.ThinkingSignature
-					}
-					select {
-					case outCh <- chunk:
-					case <-ctx.Done():
-						return
-					}
+		var buffered []provider.StreamChunk
+		var finalSnapshot string
+		var sawModelDelta bool
+		var emittedFinal bool
+		var toolRounds = make(map[int]bool)
+		for event := range eventCh {
+			round := chatEventRound(event)
+			switch event.Type {
+			case "content_delta":
+				sawModelDelta = true
+				content, _ := event.Data["content"].(string)
+				if content != "" {
+					buffered = append(buffered, provider.StreamChunk{Content: content})
 				}
-				msg := provider.Message{Role: "assistant", Content: full.String(), Thinking: thinking}
-				if thinking != "" {
-					// Pack {thinking, signature} into RawAssistant so the next
-					// turn can echo content[].thinking back to extended-
-					// thinking providers that require it.
-					if raw, err := json.Marshal(map[string]string{
-						"type":      "thinking",
-						"thinking":  thinking,
-						"signature": thinkingSig,
-					}); err == nil {
-						msg.RawAssistant = raw
+			case "content":
+				finalSnapshot, _ = event.Data["content"].(string)
+			case "tool_call":
+				toolRounds[round] = true
+				buffered = buffered[:0]
+			case "done":
+				if !toolRounds[round] {
+					for _, chunk := range buffered {
+						select {
+						case outCh <- chunk:
+						case <-ctx.Done():
+							reader.SetErr(ctx.Err())
+							return
+						}
 					}
+					emittedFinal = len(buffered) > 0
 				}
-				sess.Append(msg)
-			}()
-			return outReader
-		}
-
-		// Tool calls - process concurrently via SDK engine
-		assistantMsg := provider.Message{
-			Role:         "assistant",
-			Content:      resp.Content,
-			ToolCalls:    resp.ToolCalls,
-			Thinking:     resp.Thinking,
-			Timestamp:    time.Now().UnixMilli(),
-			RawAssistant: resp.RawAssistant,
-		}
-		sess.Append(assistantMsg)
-		messages = append(messages, assistantMsg)
-
-		// Loop detection
-		loopDetected := false
-		for _, tc := range resp.ToolCalls {
-			sig := toolCallSig{
-				name: tc.Function.Name,
-				hash: sha256.Sum256([]byte(tc.Function.Arguments)),
-			}
-			if sig.name == lastSig.name && sig.hash == lastSig.hash {
-				consecutiveCount++
-			} else {
-				consecutiveCount = 1
-				lastSig = sig
-			}
-			if consecutiveCount >= 3 {
-				slog.Warn("tool loop detected", "agent", a.name, "tool", tc.Function.Name)
-				warnMsg := provider.Message{
-					Role:    "system",
-					Content: "Loop detected: you called the same tool with the same arguments 3 times. Please try a different approach.",
-				}
-				sess.Append(warnMsg)
-				messages = append(messages, warnMsg)
-				loopDetected = true
-				break
+				buffered = buffered[:0]
+			case "error":
+				message, _ := event.Data["message"].(string)
+				reader.SetErr(fmt.Errorf("%s", message))
 			}
 		}
-		if loopDetected {
-			break
+
+		result := <-resultCh
+		if err := reader.Err(); err != nil {
+			return
 		}
-
-		// Fire BeforeToolCall hooks
-		for _, tc := range resp.ToolCalls {
-			a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: BeforeToolCall, ToolName: tc.Function.Name, ToolArgs: tc.Function.Arguments, UserID: a.ownerUserID})
+		if err := ctx.Err(); err != nil {
+			reader.SetErr(err)
+			return
 		}
-
-		// Execute tools concurrently via SDK engine
-		results := a.engine.executeToolsConcurrently(ctx, a.registry, resp.ToolCalls, a.workspacePath)
-
-		for idx, r := range results {
-			tc := resp.ToolCalls[idx]
-			resultContent, meta := extractToolMeta(r.result)
-			a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: AfterToolCall, ToolName: r.toolName, ToolResult: resultContent, Error: r.err, UserID: a.ownerUserID})
-
-			if r.err != nil {
-				slog.Warn("tool execution error", "agent", a.name, "name", r.toolName, "error", r.err)
+		if len(buffered) > 0 && !emittedFinal {
+			for _, chunk := range buffered {
+				outCh <- chunk
 			}
-
-			if mediaPaths := extractMediaPaths(resultContent); len(mediaPaths) > 0 {
-				a.sendMediaFiles(msg, mediaPaths)
-			}
-
-			toolMsg := provider.Message{Role: "tool", Content: resultContent, ToolCallID: tc.ID, Name: r.toolName, Metadata: meta}
-			sess.Append(toolMsg)
-			messages = append(messages, toolMsg)
+		} else if !emittedFinal && finalSnapshot != "" && result != "" && (len(toolRounds) > 0 || !sawModelDelta) {
+			// Direct-return and max-iteration responses have no model deltas.
+			outCh <- provider.StreamChunk{Content: finalSnapshot}
 		}
+		outCh <- provider.StreamChunk{Done: true}
+		reader.Complete(&provider.Response{Content: result}, nil)
+	}()
+	return reader
+}
+
+func chatEventRound(event ChatEvent) int {
+	if event.Data == nil {
+		return 0
 	}
-
-	return a.stringStream("I've reached the maximum number of tool iterations. Here's what I have so far.")
+	switch value := event.Data["round"].(type) {
+	case int:
+		return value
+	case int64:
+		return int(value)
+	case float64:
+		return int(value)
+	default:
+		return 0
+	}
 }
 
 // extractToolMeta strips a FC_META prefix (if present) from a tool result and

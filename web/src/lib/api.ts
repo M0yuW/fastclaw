@@ -600,15 +600,21 @@ export interface ToolResultMetadata {
 }
 
 export interface ChatStreamEvent {
-  type: "content" | "tool_call" | "tool_result" | "error" | "done";
+  version?: number;
+  type: "content_delta" | "content" | "tool_call" | "tool_result" | "error" | "done";
   data?: {
     content?: string;
+    delta?: string;
     id?: string;
     name?: string;
     arguments?: string;
     result?: string;
     message?: string;
     metadata?: ToolResultMetadata;
+    turnId?: string;
+    messageId?: string;
+    round?: number;
+    seq?: number;
   };
 }
 
@@ -639,32 +645,64 @@ export async function sendChatStream(
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
-
-  // Reader loop exits on either an explicit {type:"done"} event from the
-  // server or a clean stream end (done flag from getReader). We tear down
-  // early on "done" so any trailing bytes that may have been queued behind
-  // the final flush don't get re-parsed and surfaced as spurious errors.
   let finished = false;
-  while (!finished) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buffer += decoder.decode(value, { stream: true });
+  let sawDone = false;
 
-    const lines = buffer.split("\n");
-    buffer = lines.pop() || "";
-
-    for (const line of lines) {
-      if (!line.startsWith("data: ")) continue;
-      try {
-        const evt = JSON.parse(line.slice(6)) as ChatStreamEvent;
-        onEvent(evt);
-        if (evt.type === "done") {
-          finished = true;
-        }
-      } catch { /* skip malformed frames */ }
+  const processFrame = (frame: string): boolean => {
+    const dataLines: string[] = [];
+    for (const line of frame.split(/\r?\n/)) {
+      if (line.startsWith(":")) continue;
+      const colon = line.indexOf(":");
+      const field = colon < 0 ? line : line.slice(0, colon);
+      if (field !== "data") continue;
+      let value = colon < 0 ? "" : line.slice(colon + 1);
+      if (value.startsWith(" ")) value = value.slice(1);
+      dataLines.push(value);
     }
+    if (dataLines.length === 0) return false;
+    try {
+      const evt = JSON.parse(dataLines.join("\n")) as ChatStreamEvent;
+      onEvent(evt);
+      if (evt.type === "done") sawDone = true;
+      return evt.type === "done";
+    } catch {
+      return false;
+    }
+  };
+
+  const processFrames = (atEnd = false): boolean => {
+    let match: RegExpExecArray | null;
+    const separator = /\r?\n\r?\n/g;
+    while ((match = separator.exec(buffer)) !== null) {
+      const frame = buffer.slice(0, match.index);
+      buffer = buffer.slice(match.index + match[0].length);
+      separator.lastIndex = 0;
+      if (processFrame(frame)) return true;
+    }
+    if (atEnd && buffer.trim() && processFrame(buffer)) return true;
+    if (atEnd) buffer = "";
+    return false;
+  };
+
+  try {
+    while (!finished) {
+      const { done, value } = await reader.read();
+      if (done) {
+        buffer += decoder.decode();
+        finished = processFrames(true);
+        break;
+      }
+      buffer += decoder.decode(value, { stream: true });
+      finished = processFrames();
+    }
+    if (finished) {
+      decoder.decode();
+      try { await reader.cancel(); } catch { /* stream already ended */ }
+    }
+    if (!sawDone) throw new Error("stream ended before done");
+  } finally {
+    reader.releaseLock();
   }
-  try { await reader.cancel(); } catch { /* ignore */ }
 }
 
 export interface UploadedFile {
@@ -676,6 +714,7 @@ export async function uploadAgentFiles(
   agentId: string,
   sessionId: string,
   files: File[],
+  signal?: AbortSignal,
 ): Promise<UploadedFile[]> {
   const fd = new FormData();
   for (const f of files) fd.append("file", f, f.name);
@@ -683,6 +722,7 @@ export async function uploadAgentFiles(
   const res = await apiFetch(`/api/agents/${encodeURIComponent(agentId)}/files${qs}`, {
     method: "POST",
     body: fd,
+    signal,
   });
   if (!res.ok) throw new Error(`upload failed: ${res.status}`);
   const data = await res.json();

@@ -4,7 +4,8 @@ import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getAgent, getChatHistory, getChatSessions, listAgentFiles, renameChatSession, sendChatStream, uploadAgentFiles, getAuthToken, getSkills, type ChatHistoryMessage, type ChatStreamEvent, type SkillInfo, type ToolResultMetadata } from "@/lib/api";
+import { getAgent, getChatHistory, getChatSessions, listAgentFiles, renameChatSession, sendChatStream, uploadAgentFiles, getAuthToken, getSkills, type ChatHistoryMessage, type SkillInfo, type ToolResultMetadata } from "@/lib/api";
+import { createChatStreamBatcher, reduceChatStreamEvents, type StreamMessage } from "@/lib/chat-stream";
 import { Bot, Send, Copy, Check, Pencil, Wrench, ChevronDown, ChevronRight, Download, X, File, FileText, Image as ImageIcon, FileCode, Film, Music, Puzzle, SlidersHorizontal, ShieldCheck, Paperclip, Square } from "lucide-react";
 import Link from "next/link";
 import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
@@ -159,12 +160,7 @@ interface UserAttachment {
   previewUrl?: string;
 }
 
-interface ChatMessage {
-  id: string;
-  role: "user" | "agent" | "tool-group";
-  content: string;
-  timestamp: number;
-  toolCalls?: { id: string; name: string; arguments: string; result?: string; metadata?: ToolResultMetadata }[];
+interface ChatMessage extends StreamMessage<ToolResultMetadata> {
   files?: ProducedFile[];
   attachments?: UserAttachment[];
 }
@@ -319,9 +315,20 @@ export default function AgentChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // AbortController for the in-flight chat stream so the Stop button can
-  // cancel both the upload and the SSE connection. Reset on every new turn.
   const abortRef = useRef<AbortController | null>(null);
+  const streamGenerationRef = useRef(0);
+
+  const abortStream = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+  const invalidateStream = useCallback(() => {
+    streamGenerationRef.current++;
+    abortRef.current?.abort();
+    setSending(false);
+  }, []);
+
+  useEffect(() => invalidateStream, [invalidateStream]);
+  useEffect(() => invalidateStream, [selectedAgent, sessionId, invalidateStream]);
 
   // Slash-command menu state. The menu opens when the textarea holds a
   // token beginning with `/` at the caret; selecting a skill swaps that
@@ -497,8 +504,10 @@ export default function AgentChatPage() {
   // hanging it off the last agent message.
   useEffect(() => {
     if (!selectedAgent || !sessionId) return;
+    let active = true;
     getChatHistory(selectedAgent, sessionId)
       .then(async (history) => {
+        if (!active) return;
         if (!history || history.length === 0) {
           setMessages([]);
           return;
@@ -506,6 +515,7 @@ export default function AgentChatPage() {
         const built = buildChatMessages(history);
         try {
           const allFiles = await listAgentFiles(selectedAgent);
+          if (!active) return;
           const sessionPrefix = `sessions/${sessionId}/`;
           const sessionFiles: ProducedFile[] = allFiles
             .filter((f) => f.path.startsWith(sessionPrefix) && !isSystemFile(f.path))
@@ -519,9 +529,12 @@ export default function AgentChatPage() {
             }
           }
         } catch { /* listing failed — fall back to no panel */ }
-        setMessages(built);
+        if (active) setMessages(built);
       })
-      .catch(() => setMessages([]));
+      .catch(() => {
+        if (active) setMessages([]);
+      });
+    return () => { active = false; };
   }, [selectedAgent, sessionId]);
 
   useEffect(() => {
@@ -558,6 +571,10 @@ export default function AgentChatPage() {
     // models receive them as image_url content parts.
     const filesToUpload = attachments;
     setAttachments([]);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const generation = ++streamGenerationRef.current;
+    setSending(true);
 
     let userBubbleAttachments: UserAttachment[] = [];
     let imageDataUrls: string[] = [];
@@ -570,12 +587,15 @@ export default function AgentChatPage() {
       }));
 
       try {
-        await uploadAgentFiles(selectedAgent, sessionId, filesToUpload);
+        await uploadAgentFiles(selectedAgent, sessionId, filesToUpload, controller.signal);
       } catch (err) {
+        const isAbort = err instanceof DOMException && err.name === "AbortError";
         setMessages((prev) => [
           ...prev,
-          { id: `e-${Date.now()}`, role: "agent", content: `File upload failed: ${err instanceof Error ? err.message : "unknown error"}`, timestamp: Date.now() },
+          { id: `e-${Date.now()}`, role: "agent", content: isAbort ? "(Stopped)" : `File upload failed: ${err instanceof Error ? err.message : "unknown error"}`, timestamp: Date.now() },
         ]);
+        abortRef.current = null;
+        setSending(false);
         return;
       }
 
@@ -588,8 +608,19 @@ export default function AgentChatPage() {
             if (!f.type.startsWith("image/")) return null;
             return await new Promise<string | null>((resolve) => {
               const reader = new FileReader();
-              reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : null);
-              reader.onerror = () => resolve(null);
+              const abort = () => {
+                reader.abort();
+                resolve(null);
+              };
+              controller.signal.addEventListener("abort", abort, { once: true });
+              reader.onload = () => {
+                controller.signal.removeEventListener("abort", abort);
+                resolve(typeof reader.result === "string" ? reader.result : null);
+              };
+              reader.onerror = () => {
+                controller.signal.removeEventListener("abort", abort);
+                resolve(null);
+              };
               reader.readAsDataURL(f);
             });
           }),
@@ -621,8 +652,6 @@ export default function AgentChatPage() {
         attachments: userBubbleAttachments.length > 0 ? userBubbleAttachments : undefined,
       },
     ]);
-    setSending(true);
-    abortRef.current = new AbortController();
 
     // Snapshot the workspace before the turn so we can diff at `done` and
     // attach newly-created / modified files (PDFs, images, …) to the
@@ -636,127 +665,46 @@ export default function AgentChatPage() {
       })
       .catch(() => new Map<string, string>());
 
-    let curGroupId = "";
-    let curCalls: { id: string; name: string; arguments: string; result?: string; metadata?: ToolResultMetadata }[] = [];
-    let curContent = "";
     const turnFiles: ProducedFile[] = [];
     const seenPaths = new Set<string>();
-
-    const startNewGroup = () => {
-      curGroupId = `tg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      curCalls = [];
-      curContent = "";
-    };
-    startNewGroup();
+    const toolCalls = new Map<string, { name: string; arguments: string }>();
+    const batcher = createChatStreamBatcher((events) => {
+      if (streamGenerationRef.current !== generation) return;
+      setMessages((prev) => reduceChatStreamEvents(prev, events));
+    });
 
     try {
-      await sendChatStream(selectedAgent, sessionId, fullText, (evt: ChatStreamEvent) => {
-        switch (evt.type) {
-          case "content": {
-            const content = evt.data?.content || "";
-            if (content === "__NEW_SESSION__") {
-              handleNewChat();
-              loadSessions(selectedAgent);
-              return;
-            }
-            if (curCalls.length > 0) {
-              // Content after tool calls = new round. Finalize current group, start fresh.
-              startNewGroup();
-            }
-            // Store as thinking content (may become part of next tool-group, or stay as final answer)
-            curContent = content;
-            setMessages((prev) => [
-              ...prev,
-              { id: `a-${Date.now()}`, role: "agent", content, timestamp: Date.now() },
-            ]);
-            break;
-          }
-          case "tool_call": {
-            // New round starts if every tool in the current group has
-            // already resolved. Without this, two assistant turns that
-            // happen back-to-back with no intervening content event get
-            // merged into one visual group live — inconsistent with the
-            // refresh path (buildChatMessages) which correctly splits
-            // per assistant message.
-            if (curCalls.length > 0 && curCalls.every((c) => c.result !== undefined)) {
-              startNewGroup();
-            }
-            curCalls.push({
-              id: evt.data?.id || "",
-              name: evt.data?.name || "",
-              arguments: evt.data?.arguments || "{}",
-            });
-            const groupId = curGroupId;
-            const calls = [...curCalls];
-            const content = curContent;
-            setMessages((prev) => {
-              // If last message is the thinking content for this round, replace with tool-group
-              const last = prev[prev.length - 1];
-              if (content && last?.role === "agent" && last.content === content) {
-                return [
-                  ...prev.slice(0, -1),
-                  { id: groupId, role: "tool-group" as const, content, timestamp: Date.now(), toolCalls: calls },
-                ];
+      await sendChatStream(selectedAgent, sessionId, fullText, (evt) => {
+        if (streamGenerationRef.current !== generation) return;
+        if (evt.type === "content" && evt.data?.content === "__NEW_SESSION__") {
+          handleNewChat();
+          loadSessions(selectedAgent);
+          return;
+        }
+        if (evt.type === "tool_call" && evt.data?.id) {
+          toolCalls.set(evt.data.id, {
+            name: evt.data.name ?? "",
+            arguments: evt.data.arguments ?? "{}",
+          });
+        }
+        if (evt.type === "tool_result" && evt.data?.id) {
+          const call = toolCalls.get(evt.data.id);
+          const resultText = evt.data.result ?? "";
+          if (call?.name === "write_file" && /^Written \d+ bytes/.test(resultText)) {
+            try {
+              const args = JSON.parse(call.arguments);
+              const path: string = typeof args?.path === "string" ? args.path : "";
+              if (path && !path.startsWith("/") && !isSystemFile(path) && !seenPaths.has(path)) {
+                seenPaths.add(path);
+                turnFiles.push({ path, size: parseWrittenSize(resultText) });
               }
-              // Update existing tool-group for this round
-              const idx = prev.findIndex((m) => m.id === groupId);
-              if (idx >= 0) {
-                const updated = [...prev];
-                updated[idx] = { ...updated[idx], toolCalls: calls };
-                return updated;
-              }
-              // New tool-group
-              return [
-                ...prev,
-                { id: groupId, role: "tool-group" as const, content, timestamp: Date.now(), toolCalls: calls },
-              ];
-            });
-            break;
-          }
-          case "tool_result": {
-            const tc = curCalls.find((c) => c.id === (evt.data?.id || ""));
-            const resultText = evt.data?.result || "";
-            if (tc) {
-              tc.result = resultText;
-              if (evt.data?.metadata) tc.metadata = evt.data.metadata;
-            }
-            // Track successful write_file calls that landed in the workspace
-            // (i.e. a relative path that isn't a system identity file).
-            if (tc && tc.name === "write_file" && /^Written \d+ bytes/.test(resultText)) {
-              try {
-                const args = JSON.parse(tc.arguments);
-                const p: string = typeof args?.path === "string" ? args.path : "";
-                if (p && !p.startsWith("/") && !isSystemFile(p) && !seenPaths.has(p)) {
-                  seenPaths.add(p);
-                  turnFiles.push({ path: p, size: parseWrittenSize(resultText) });
-                }
-              } catch { /* ignore bad args */ }
-            }
-            const groupId = curGroupId;
-            const calls = [...curCalls];
-            setMessages((prev) => {
-              const idx = prev.findIndex((m) => m.id === groupId);
-              if (idx < 0) return prev;
-              const updated = [...prev];
-              updated[idx] = { ...updated[idx], toolCalls: calls };
-              return updated;
-            });
-            break;
-          }
-          case "error": {
-            // Surface backend errors as a chat bubble. Without this the
-            // turn just hangs — the model failed (provider 4xx/5xx,
-            // serialization mismatch, etc.) and the only signal was a
-            // gateway log line the user can't see.
-            const msg = evt.data?.message || "Unknown error";
-            setMessages((prev) => [
-              ...prev,
-              { id: `e-${Date.now()}`, role: "agent", content: `Error: ${msg}`, timestamp: Date.now() },
-            ]);
-            break;
+            } catch { /* ignore bad args */ }
           }
         }
-      }, abortRef.current.signal, imageDataUrls);
+        batcher.enqueue(evt);
+      }, controller.signal, imageDataUrls);
+      batcher.flush();
+      controller.signal.throwIfAborted();
       // Diff the workspace against the pre-turn snapshot so files
       // produced by *exec* (e.g. a Python script that saves PDFs) get
       // surfaced too — `turnFiles` only catches write_file tool calls
@@ -792,8 +740,11 @@ export default function AgentChatPage() {
         setMessages((prev) => {
           if (prev.length === 0) return prev;
           const updated = [...prev];
-          const last = updated[updated.length - 1];
-          updated[updated.length - 1] = { ...last, files: allFiles };
+          let target = updated.length - 1;
+          while (target >= 0 && updated[target].role !== "agent" && updated[target].role !== "tool-group") target--;
+          if (target < 0) return prev;
+          const last = updated[target];
+          updated[target] = { ...last, files: allFiles };
           if (typeof console !== "undefined") {
             console.log("[chat] attached files to last message", {
               lastId: last.id,
@@ -816,6 +767,8 @@ export default function AgentChatPage() {
         );
       }
     } catch (err) {
+      batcher.flush();
+      if (streamGenerationRef.current !== generation) return;
       // AbortError from the user clicking Stop is expected — surface a
       // brief "Stopped" line so they see the cancellation took effect,
       // not a generic failure message.
@@ -835,12 +788,8 @@ export default function AgentChatPage() {
       // turn — the user just got their answer; we shouldn't tack on
       // a confusing failure bubble.
       if (isAbort) {
-        // Resolve any in-flight tools in the current tool-group so they
-        // stop spinning. Server-side padOrphanToolResults will write a
-        // matching record on its end; this just keeps the UI consistent
-        // until the next history fetch overwrites it.
-        setMessages((prev) =>
-          prev.map((m) =>
+        setMessages((prev) => [
+          ...prev.map((m) =>
             m.role === "tool-group" && m.toolCalls
               ? {
                   ...m,
@@ -850,9 +799,6 @@ export default function AgentChatPage() {
                 }
               : m,
           ),
-        );
-        setMessages((prev) => [
-          ...prev,
           { id: `e-${Date.now()}`, role: "agent", content: "(Stopped)", timestamp: Date.now() },
         ]);
       } else {
@@ -879,15 +825,16 @@ export default function AgentChatPage() {
         });
       }
     } finally {
-      abortRef.current = null;
-      setSending(false);
-      textareaRef.current?.focus();
+      batcher.flush();
+      if (streamGenerationRef.current === generation) {
+        if (abortRef.current === controller) abortRef.current = null;
+        setSending(false);
+        textareaRef.current?.focus();
+      }
     }
   }, [input, attachments, selectedAgent, sessionId, sending, loadSessions]);
 
-  const handleStop = useCallback(() => {
-    abortRef.current?.abort();
-  }, []);
+  const handleStop = abortStream;
 
   const handleFilePick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files;

@@ -168,6 +168,30 @@ func (s *Session) Append(msg provider.Message) {
 	}
 }
 
+// Flush persists the current in-memory session and reports any storage error.
+// It is used as the terminal barrier before a streamed turn emits done.
+func (s *Session) Flush(ctx context.Context) error {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	s.mu.Lock()
+	messages := append([]provider.Message(nil), s.Messages...)
+	store := s.store
+	agentID := s.agentID
+	sessionKey := s.sessionKey
+	filePath := s.filePath
+	userID := s.userID
+	s.mu.Unlock()
+
+	if userID != "" {
+		ctx = config.WithUserID(ctx, userID)
+	}
+	if store != nil {
+		return store.SaveSession(ctx, agentID, sessionKey, messages)
+	}
+	return rewriteMessagesFile(filePath, messages)
+}
+
 // GetMessages returns a copy of all messages.
 func (s *Session) GetMessages() []provider.Message {
 	s.mu.Lock()
@@ -317,24 +341,36 @@ func (s *Session) load() {
 }
 
 func (s *Session) rewriteFile() {
-	dir := filepath.Dir(s.filePath)
-	os.MkdirAll(dir, 0o755)
-
-	f, err := os.Create(s.filePath)
-	if err != nil {
+	if err := rewriteMessagesFile(s.filePath, s.Messages); err != nil {
 		fmt.Fprintf(os.Stderr, "session rewrite error: %v\n", err)
-		return
+	}
+}
+
+func rewriteMessagesFile(filePath string, messages []provider.Message) error {
+	dir := filepath.Dir(filePath)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+
+	f, err := os.Create(filePath)
+	if err != nil {
+		return err
 	}
 	defer f.Close()
 
-	for _, msg := range s.Messages {
+	for _, msg := range messages {
 		data, err := json.Marshal(msg)
 		if err != nil {
-			continue
+			return err
 		}
-		f.Write(data)
-		f.Write([]byte("\n"))
+		if _, err := f.Write(data); err != nil {
+			return err
+		}
+		if _, err := f.Write([]byte("\n")); err != nil {
+			return err
+		}
 	}
+	return f.Sync()
 }
 
 func (s *Session) appendToFile(msg provider.Message) {
