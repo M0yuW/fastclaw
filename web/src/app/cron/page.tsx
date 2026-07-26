@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,23 +66,34 @@ export default function CronPage() {
   const [newAgentId, setNewAgentId] = useState("");
   const [newMessage, setNewMessage] = useState("");
 
-  const fetchData = () => {
-    setLoading(true);
-    Promise.all([getCronJobs(), getAgents()])
-      .then(([j, a]) => {
-        setJobs(j);
-        setAgents(a);
-      })
-      .catch(() => {
+  const requestGenerationRef = useRef(0);
+  const fetchData = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
+    try {
+      const [nextJobs, nextAgents] = await Promise.all([
+        getCronJobs(signal),
+        getAgents(signal),
+      ]);
+      if (signal?.aborted || requestGenerationRef.current !== generation) return;
+      setJobs(nextJobs);
+      setAgents(nextAgents);
+    } catch {
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
         setJobs([]);
         setAgents([]);
-      })
-      .finally(() => setLoading(false));
-  };
+      }
+    } finally {
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    const controller = new AbortController();
+    void fetchData(controller.signal);
+    return () => controller.abort();
+  }, [fetchData]);
 
   const handleCreate = async () => {
     if (!newName.trim() || !newSchedule.trim()) return;

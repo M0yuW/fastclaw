@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -55,33 +55,25 @@ export function ConfigureSkillDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [env, setEnv] = useState<Record<string, string>>({});
-  const [customRows, setCustomRows] = useState<{ name: string; value: string }[]>([]);
+  const declaredSpec: SkillEnvSpec[] = skill?.envSpec || [];
+  const declaredNames = new Set(declaredSpec.map((spec) => spec.name));
+  const [env, setEnv] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (const spec of declaredSpec) {
+      initial[spec.name] = existing?.env?.[spec.name] || "";
+    }
+    return initial;
+  });
+  const [customRows, setCustomRows] = useState<{ name: string; value: string }[]>(() => {
+    if (!existing?.env) return [];
+    return Object.entries(existing.env)
+      .filter(([name]) => !declaredNames.has(name))
+      .map(([name, value]) => ({ name, value }));
+  });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const agentName = useAgentName(agentId || "");
-
-  const declaredSpec: SkillEnvSpec[] = skill?.envSpec || [];
-  const declaredNames = new Set(declaredSpec.map((s) => s.name));
-
-  useEffect(() => {
-    if (!skill) return;
-    const initialEnv: Record<string, string> = {};
-    for (const spec of declaredSpec) {
-      initialEnv[spec.name] = existing?.env?.[spec.name] || "";
-    }
-    setEnv(initialEnv);
-    const customs: { name: string; value: string }[] = [];
-    if (existing?.env) {
-      for (const [k, v] of Object.entries(existing.env)) {
-        if (!declaredNames.has(k)) customs.push({ name: k, value: v });
-      }
-    }
-    setCustomRows(customs);
-    setError(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [skill]);
 
   if (!skill) return null;
 

@@ -96,29 +96,59 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   const [status, setStatus] = React.useState<StatusResponse | null>(null);
   const [me, setMe] = React.useState<MeResponse | null>(null);
   const [agents, setAgents] = React.useState<AgentSwitcherItem[]>([]);
-  const [sessions, setSessions] = React.useState<SessionItem[]>([]);
+  const [sessionState, setSessionState] = React.useState<{
+    agentId: string;
+    items: SessionItem[];
+  } | null>(null);
+  const sessions = sessionState?.agentId === activeAgentId ? sessionState.items : [];
 
   // Keep status polling so the online dot / admin flag stay fresh.
   React.useEffect(() => {
-    getStatus().then(setStatus).catch(() => {});
-    const iv = setInterval(() => {
-      getStatus().then(setStatus).catch(() => {});
-    }, 15000);
-    return () => clearInterval(iv);
+    let controller: AbortController | null = null;
+    const refresh = () => {
+      controller?.abort();
+      controller = new AbortController();
+      const request = controller;
+      getStatus(request.signal)
+        .then((nextStatus) => {
+          if (!request.signal.aborted) setStatus(nextStatus);
+        })
+        .catch(() => {});
+    };
+    refresh();
+    const interval = window.setInterval(refresh, 15000);
+    return () => {
+      controller?.abort();
+      window.clearInterval(interval);
+    };
   }, []);
 
   // Fetch current user once so the footer can show their name + role.
   React.useEffect(() => {
-    getMe().then(setMe).catch(() => {});
+    const controller = new AbortController();
+    getMe(controller.signal)
+      .then((user) => {
+        if (!controller.signal.aborted) setMe(user);
+      })
+      .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   // Agent list drives the switcher dropdown at the top of the sidebar.
   React.useEffect(() => {
-    getAgents()
-      .then((list) =>
-        setAgents(list.map((a) => ({ id: a.id, name: a.name, model: a.model }))),
-      )
+    const controller = new AbortController();
+    getAgents(controller.signal)
+      .then((list) => {
+        if (!controller.signal.aborted) {
+          setAgents(list.map((agent) => ({
+            id: agent.id,
+            name: agent.name,
+            model: agent.model,
+          })));
+        }
+      })
       .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   // When the active agent isn't in the caller's owned list — e.g. a
@@ -127,21 +157,19 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   // name instead of falling back to "FastClaw".
   React.useEffect(() => {
     if (!activeAgentId) return;
-    if (agents.some((a) => a.id === activeAgentId)) return;
-    let aborted = false;
-    getAgent(activeAgentId)
-      .then((a) => {
-        if (aborted || !a) return;
+    if (agents.some((agent) => agent.id === activeAgentId)) return;
+    const controller = new AbortController();
+    getAgent(activeAgentId, controller.signal)
+      .then((agent) => {
+        if (controller.signal.aborted || !agent) return;
         setAgents((prev) =>
-          prev.some((x) => x.id === a.id)
+          prev.some((item) => item.id === agent.id)
             ? prev
-            : [...prev, { id: a.id, name: a.name, model: a.model }],
+            : [...prev, { id: agent.id, name: agent.name, model: agent.model }],
         );
       })
       .catch(() => {});
-    return () => {
-      aborted = true;
-    };
+    return () => controller.abort();
   }, [activeAgentId, agents]);
 
   // Sessions only matter while a specific agent is selected. We re-run
@@ -149,32 +177,36 @@ export function AppSidebar(props: React.ComponentProps<typeof Sidebar>) {
   // `fastclaw:sessions-changed` event (e.g. after rename / new chat) so
   // the sidebar title list stays in sync without a page refresh.
   React.useEffect(() => {
-    if (!activeAgentId) {
-      setSessions([]);
-      return;
-    }
+    if (!activeAgentId) return;
+    let controller: AbortController | null = null;
     const refetch = () => {
-      getChatSessions(activeAgentId)
-        .then((list) =>
-          setSessions(
-            list.map((s) => ({
-              id: s.id,
-              title: s.title || s.preview || s.id,
-              thumbnailUrl: s.thumbnailUrl,
+      controller?.abort();
+      controller = new AbortController();
+      const request = controller;
+      getChatSessions(activeAgentId, request.signal)
+        .then((list) => {
+          if (request.signal.aborted) return;
+          setSessionState({
+            agentId: activeAgentId,
+            items: list.map((session) => ({
+              id: session.id,
+              title: session.title || session.preview || session.id,
+              thumbnailUrl: session.thumbnailUrl,
             })),
-          ),
-        )
+          });
+        })
         .catch(() => {});
     };
     refetch();
-    const onChange = (e: Event) => {
-      const detail = (e as CustomEvent<{ agentId?: string }>).detail;
+    const onChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ agentId?: string }>).detail;
       if (!detail || !detail.agentId || detail.agentId === activeAgentId) {
         refetch();
       }
     };
     window.addEventListener("fastclaw:sessions-changed", onChange);
     return () => {
+      controller?.abort();
       window.removeEventListener("fastclaw:sessions-changed", onChange);
     };
   }, [activeAgentId]);

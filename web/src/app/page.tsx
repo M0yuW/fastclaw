@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { getStatus, getMe, login as loginApi } from "@/lib/api";
 import { logout } from "@/lib/auth";
@@ -18,8 +19,10 @@ export default function RootPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getStatus()
+    const controller = new AbortController();
+    getStatus(controller.signal)
       .then(async (status) => {
+        if (controller.signal.aborted) return;
         // Never trust a stale localStorage token when the backend reports
         // the system is unconfigured — that token belongs to a previous
         // deployment and would otherwise short-circuit onboarding.
@@ -28,7 +31,8 @@ export default function RootPage() {
           router.replace("/onboard/");
           return;
         }
-        const me = await getMe().catch(() => null);
+        const me = await getMe(controller.signal).catch(() => null);
+        if (controller.signal.aborted) return;
         if (me?.ok && me.user) {
           router.replace("/overview/");
         } else {
@@ -37,8 +41,9 @@ export default function RootPage() {
         }
       })
       .catch(() => {
-        router.replace("/onboard/");
+        if (!controller.signal.aborted) router.replace("/onboard/");
       });
+    return () => controller.abort();
   }, [router]);
 
   const handleLogin = async (e?: React.FormEvent) => {
@@ -73,7 +78,7 @@ export default function RootPage() {
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="w-full max-w-sm space-y-6 p-6">
           <div className="flex flex-col items-center gap-3">
-            <img src="/logo.png" alt="FastClaw" className="h-12 w-12" />
+            <Image src="/logo.png" alt="FastClaw" width={48} height={48} priority />
             <h1 className="text-xl font-bold">FastClaw</h1>
             <p className="text-sm text-muted-foreground">Sign in to continue</p>
           </div>

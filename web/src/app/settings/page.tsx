@@ -15,10 +15,9 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Save, Check, Container } from "lucide-react";
-import { getConfig, updateConfig, type ConfigResponse } from "@/lib/api";
+import { getConfig, updateConfig } from "@/lib/api";
 
 export default function SettingsPage() {
-  const [config, setConfig] = useState<ConfigResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -30,10 +29,10 @@ export default function SettingsPage() {
   const [sandboxE2BKey, setSandboxE2BKey] = useState("");
 
   useEffect(() => {
-    setLoading(true);
-    getConfig()
+    const controller = new AbortController();
+    getConfig(controller.signal)
       .then((cfg) => {
-        setConfig(cfg);
+        if (controller.signal.aborted) return;
         setSandboxEnabled(cfg.sandbox?.enabled || false);
         const backend = cfg.sandbox?.backend || "docker";
         setSandboxBackend(backend);
@@ -54,7 +53,10 @@ export default function SettingsPage() {
         setSandboxE2BKey(cfg.sandbox?.e2bKey || "");
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
   }, []);
 
   const handleSave = async () => {

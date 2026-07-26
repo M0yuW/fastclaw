@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -30,14 +31,11 @@ function AgentAvatar({
   agentId?: string | null;
   size?: number;
 }) {
-  const [failed, setFailed] = React.useState(false);
-  React.useEffect(() => {
-    setFailed(false);
-  }, [agentId]);
+  const [failedAgentId, setFailedAgentId] = React.useState<string | null>(null);
 
   if (!agentId) {
     return (
-      <img
+      <Image
         src="/logo.png"
         alt="FastClaw"
         width={size}
@@ -47,7 +45,7 @@ function AgentAvatar({
       />
     );
   }
-  if (failed) {
+  if (failedAgentId === agentId) {
     return (
       <div
         className="flex shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600"
@@ -58,15 +56,15 @@ function AgentAvatar({
     );
   }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
+    <Image
       src={`/api/agents/${agentId}/files/avatar.png`}
       alt=""
       width={size}
       height={size}
+      unoptimized
       className="shrink-0 rounded-lg object-cover"
       style={{ width: size, height: size }}
-      onError={() => setFailed(true)}
+      onError={() => setFailedAgentId(agentId)}
     />
   );
 }

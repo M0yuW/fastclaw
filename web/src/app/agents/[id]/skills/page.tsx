@@ -59,13 +59,15 @@ export default function AgentSkillsPage() {
   // whichever entry point they're already on.
   const [skillEntries, setSkillEntries] = useState<Record<string, SkillEntryView>>({});
 
-  const fetchSkills = useCallback(() => {
-    setLoading(true);
+  const requestGenerationRef = useRef(0);
+  const fetchSkills = useCallback((signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
     Promise.all([
-      getAgentSkills(agentId).catch(() => [] as SkillInfo[]),
-      getConfig().catch(() => null),
+      getAgentSkills(agentId, signal).catch(() => [] as SkillInfo[]),
+      getConfig(signal).catch(() => null),
     ])
       .then(([list, cfg]) => {
+        if (signal?.aborted || requestGenerationRef.current !== generation) return;
         setSkills(list || []);
         // Per-agent override map first (this page edits there); merge
         // global defaults underneath so the "configured" badge still
@@ -84,11 +86,17 @@ export default function AgentSkillsPage() {
         }
         setSkillEntries(merged);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!signal?.aborted && requestGenerationRef.current === generation) {
+          setLoading(false);
+        }
+      });
   }, [agentId]);
 
   useEffect(() => {
-    fetchSkills();
+    const controller = new AbortController();
+    fetchSkills(controller.signal);
+    return () => controller.abort();
   }, [fetchSkills]);
 
   const handleDelete = async () => {
@@ -130,7 +138,7 @@ export default function AgentSkillsPage() {
               No agent-scoped skills yet
             </p>
             <p className="text-xs text-muted-foreground/60 mb-4 max-w-sm text-center">
-              Install a skill below — it lands in this agent's own skills
+              Install a skill below. It lands in the agent-specific skills
               directory and only this agent sees it.
             </p>
             <Button variant="outline" size="sm" onClick={() => setInstallOpen(true)}>
@@ -216,6 +224,7 @@ export default function AgentSkillsPage() {
       </AlertDialog>
 
       <InstallSkillDialog
+        key={installOpen ? "open" : "closed"}
         agentId={agentId}
         agentName={agentName}
         open={installOpen}
@@ -228,6 +237,7 @@ export default function AgentSkillsPage() {
       />
 
       <ConfigureSkillDialog
+        key={configureTarget?.name || "closed"}
         skill={configureTarget}
         agentId={agentId}
         existing={configureTarget ? skillEntries[configureTarget.name] : undefined}
@@ -262,34 +272,44 @@ function InstallSkillDialog({
   const [installingId, setInstallingId] = useState<string | null>(null);
   const [installError, setInstallError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setResults([]);
-      setInstallError(null);
-    }
-  }, [open]);
-
-  useEffect(() => {
+  const cancelSearch = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!open) return;
-    if (!query.trim()) {
+    searchAbortRef.current?.abort();
+    searchAbortRef.current = null;
+  };
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    cancelSearch();
+    if (!value.trim()) {
       setResults([]);
       setSearching(false);
       return;
     }
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
     setSearching(true);
     debounceRef.current = setTimeout(() => {
-      searchSkills(query)
-        .then((r) => setResults(r))
-        .catch(() => setResults([]))
-        .finally(() => setSearching(false));
+      searchSkills(value, controller.signal)
+        .then((nextResults) => {
+          if (!controller.signal.aborted) setResults(nextResults);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setResults([]);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setSearching(false);
+          if (searchAbortRef.current === controller) searchAbortRef.current = null;
+        });
     }, 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [query, open]);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) cancelSearch();
+    onOpenChange(nextOpen);
+  };
 
   const visible = useMemo(() => results.slice(0, 20), [results]);
 
@@ -316,7 +336,7 @@ function InstallSkillDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Install Skill for {agentName}</DialogTitle>
@@ -335,7 +355,7 @@ function InstallSkillDialog({
             autoFocus
             placeholder="pdf, translation, web scraping…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(event) => handleQueryChange(event.target.value)}
             className="pl-9"
           />
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,24 +46,31 @@ export default function SkillsPage() {
   // that's still masked on save).
   const [skillEntries, setSkillEntries] = useState<Record<string, SkillEntryView>>({});
 
-  const fetchSkills = () => {
-    setLoading(true);
-    Promise.all([
-      getSkills().catch(() => [] as SkillInfo[]),
-      getConfig().catch(() => null),
-    ])
-      .then(([list, cfg]) => {
-        setSkills(list);
-        const entries =
-          (cfg?.skills as { entries?: Record<string, SkillEntryView> } | undefined)?.entries || {};
-        setSkillEntries(entries);
-      })
-      .finally(() => setLoading(false));
-  };
+  const requestGenerationRef = useRef(0);
+  const fetchSkills = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
+    try {
+      const [list, config] = await Promise.all([
+        getSkills(signal).catch(() => [] as SkillInfo[]),
+        getConfig(signal).catch(() => null),
+      ]);
+      if (signal?.aborted || requestGenerationRef.current !== generation) return;
+      setSkills(list);
+      const entries =
+        (config?.skills as { entries?: Record<string, SkillEntryView> } | undefined)?.entries || {};
+      setSkillEntries(entries);
+    } finally {
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    fetchSkills();
-  }, []);
+    const controller = new AbortController();
+    void fetchSkills(controller.signal);
+    return () => controller.abort();
+  }, [fetchSkills]);
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
@@ -183,6 +190,7 @@ export default function SkillsPage() {
       </AlertDialog>
 
       <InstallSkillDialog
+        key={installOpen ? "open" : "closed"}
         open={installOpen}
         onOpenChange={setInstallOpen}
         onInstalled={() => {
@@ -193,6 +201,7 @@ export default function SkillsPage() {
       />
 
       <ConfigureSkillDialog
+        key={configureTarget?.name || "closed"}
         skill={configureTarget}
         existing={configureTarget ? skillEntries[configureTarget.name] : undefined}
         onClose={() => setConfigureTarget(null)}
@@ -223,34 +232,44 @@ function InstallSkillDialog({
   const [installingId, setInstallingId] = useState<string | null>(null);
   const [installError, setInstallError] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
 
-  useEffect(() => {
-    if (!open) {
-      setQuery("");
-      setResults([]);
-      setInstallError(null);
-    }
-  }, [open]);
-
-  useEffect(() => {
+  const cancelSearch = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (!open) return;
-    if (!query.trim()) {
+    searchAbortRef.current?.abort();
+    searchAbortRef.current = null;
+  };
+
+  const handleQueryChange = (value: string) => {
+    setQuery(value);
+    cancelSearch();
+    if (!value.trim()) {
       setResults([]);
       setSearching(false);
       return;
     }
+    const controller = new AbortController();
+    searchAbortRef.current = controller;
     setSearching(true);
     debounceRef.current = setTimeout(() => {
-      searchSkills(query)
-        .then((r) => setResults(r))
-        .catch(() => setResults([]))
-        .finally(() => setSearching(false));
+      searchSkills(value, controller.signal)
+        .then((nextResults) => {
+          if (!controller.signal.aborted) setResults(nextResults);
+        })
+        .catch(() => {
+          if (!controller.signal.aborted) setResults([]);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setSearching(false);
+          if (searchAbortRef.current === controller) searchAbortRef.current = null;
+        });
     }, 300);
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, [query, open]);
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen) cancelSearch();
+    onOpenChange(nextOpen);
+  };
 
   // Show at most 20 results; the API returns up to 100, most are low-signal.
   const visible = useMemo(() => results.slice(0, 20), [results]);
@@ -273,7 +292,7 @@ function InstallSkillDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Install Skill</DialogTitle>
@@ -290,7 +309,7 @@ function InstallSkillDialog({
             autoFocus
             placeholder="pdf, translation, web scraping…"
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(event) => handleQueryChange(event.target.value)}
             className="pl-9"
           />
         </div>

@@ -233,8 +233,8 @@ export async function logout(): Promise<void> {
   setAuthToken("");
 }
 
-export async function getMe(): Promise<MeResponse> {
-  const res = await apiFetch("/api/me");
+export async function getMe(signal?: AbortSignal): Promise<MeResponse> {
+  const res = await apiFetch("/api/me", { signal });
   return res.json();
 }
 
@@ -270,13 +270,13 @@ export async function onboard(req: OnboardRequest): Promise<{ ok: boolean; error
 
 // Admin
 
-export async function adminListUsers() {
-  const res = await apiFetch("/api/admin/users");
+export async function adminListUsers(signal?: AbortSignal) {
+  const res = await apiFetch("/api/admin/users", { signal });
   return res.json();
 }
 
-export async function adminListAgents() {
-  const res = await apiFetch("/api/admin/agents");
+export async function adminListAgents(signal?: AbortSignal) {
+  const res = await apiFetch("/api/admin/agents", { signal });
   return res.json();
 }
 
@@ -320,8 +320,8 @@ export async function adminResetPassword(id: string, password: string) {
 
 // Apikeys (per-user)
 
-export async function listApikeys() {
-  const res = await apiFetch("/api/apikeys");
+export async function listApikeys(signal?: AbortSignal) {
+  const res = await apiFetch("/api/apikeys", { signal });
   return res.json();
 }
 
@@ -382,13 +382,13 @@ export interface ChannelRow {
   updatedAt?: string;
 }
 
-export async function listProviders(scope?: ScopeName, scopeId?: string) {
+export async function listProviders(scope?: ScopeName, scopeId?: string, signal?: AbortSignal) {
   const params = new URLSearchParams();
   if (scope) params.set("scope", scope);
   if (scopeId) params.set("scopeId", scopeId);
   const qs = params.toString();
   const url = "/api/providers" + (qs ? `?${qs}` : "");
-  const res = await apiFetch(url);
+  const res = await apiFetch(url, { signal });
   return res.json();
 }
 
@@ -440,13 +440,13 @@ export async function testStoredProvider(
   return res.json();
 }
 
-export async function listScopedChannels(scope?: ScopeName, scopeId?: string) {
+export async function listScopedChannels(scope?: ScopeName, scopeId?: string, signal?: AbortSignal) {
   const params = new URLSearchParams();
   if (scope) params.set("scope", scope);
   if (scopeId) params.set("scopeId", scopeId);
   const qs = params.toString();
   const url = "/api/scoped-channels" + (qs ? `?${qs}` : "");
-  const res = await apiFetch(url);
+  const res = await apiFetch(url, { signal });
   return res.json();
 }
 
@@ -482,8 +482,8 @@ export async function deleteScopedChannel(id: string) {
 }
 
 // Status
-export async function getStatus(): Promise<StatusResponse> {
-  const res = await apiFetch("/api/status");
+export async function getStatus(signal?: AbortSignal): Promise<StatusResponse> {
+  const res = await apiFetch("/api/status", { signal });
   return res.json();
 }
 
@@ -507,8 +507,8 @@ export async function saveConfig(config: Record<string, unknown>) {
   return res.json();
 }
 
-export async function getConfig(): Promise<ConfigResponse> {
-  const res = await apiFetch("/api/config");
+export async function getConfig(signal?: AbortSignal): Promise<ConfigResponse> {
+  const res = await apiFetch("/api/config", { signal });
   return res.json();
 }
 
@@ -529,8 +529,8 @@ export interface WorkspaceFile {
   modTime: number;
 }
 
-export async function listAgentFiles(agentId: string): Promise<WorkspaceFile[]> {
-  const res = await apiFetch(`/api/agents/${encodeURIComponent(agentId)}/files`);
+export async function listAgentFiles(agentId: string, signal?: AbortSignal): Promise<WorkspaceFile[]> {
+  const res = await apiFetch(`/api/agents/${encodeURIComponent(agentId)}/files`, { signal });
   if (!res.ok) return [];
   const data = await res.json();
   return (data.files || []) as WorkspaceFile[];
@@ -550,8 +550,8 @@ export interface ChatHistoryMessage {
   imageUrls?: string[];
 }
 
-export async function getChatHistory(agentId: string, sessionId: string): Promise<ChatHistoryMessage[]> {
-  const res = await apiFetch(`/api/chat/history?agentId=${encodeURIComponent(agentId)}&sessionId=${encodeURIComponent(sessionId)}`);
+export async function getChatHistory(agentId: string, sessionId: string, signal?: AbortSignal): Promise<ChatHistoryMessage[]> {
+  const res = await apiFetch(`/api/chat/history?agentId=${encodeURIComponent(agentId)}&sessionId=${encodeURIComponent(sessionId)}`, { signal });
   if (!res.ok) return [];
   const data = await res.json();
   // Backend wraps in { history: [...] }; older shape was a raw array.
@@ -559,8 +559,8 @@ export async function getChatHistory(agentId: string, sessionId: string): Promis
   return Array.isArray(data) ? data : [];
 }
 
-export async function getChatSessions(agentId: string): Promise<{ id: string; title?: string; preview: string; thumbnailUrl?: string; createdAt?: number; updatedAt?: number }[]> {
-  const res = await apiFetch(`/api/chat/sessions?agentId=${encodeURIComponent(agentId)}`);
+export async function getChatSessions(agentId: string, signal?: AbortSignal): Promise<{ id: string; title?: string; preview: string; thumbnailUrl?: string; createdAt?: number; updatedAt?: number }[]> {
+  const res = await apiFetch(`/api/chat/sessions?agentId=${encodeURIComponent(agentId)}`, { signal });
   if (!res.ok) return [];
   const data = await res.json();
   // Backend wraps the list in { sessions: [...] }. Tolerate raw array
@@ -730,8 +730,8 @@ export async function uploadAgentFiles(
 }
 
 // Agents
-export async function getAgents(): Promise<AgentDetail[]> {
-  const res = await apiFetch("/api/agents");
+export async function getAgents(signal?: AbortSignal): Promise<AgentDetail[]> {
+  const res = await apiFetch("/api/agents", { signal });
   if (!res.ok) {
     // 401 etc. return a JSON error envelope — throw so callers fall back
     // to [] instead of crashing on .map of a non-array.
@@ -748,8 +748,8 @@ export async function getAgents(): Promise<AgentDetail[]> {
 // the rest of /api/agents/{id} — owner or super_admin can fetch. Used
 // by the chat header to resolve a name when the agent isn't in the
 // caller's own list (admin viewing another user's agent).
-export async function getAgent(id: string): Promise<AgentDetail | null> {
-  const res = await apiFetch(`/api/agents/${encodeURIComponent(id)}`);
+export async function getAgent(id: string, signal?: AbortSignal): Promise<AgentDetail | null> {
+  const res = await apiFetch(`/api/agents/${encodeURIComponent(id)}`, { signal });
   if (!res.ok) return null;
   const data = await res.json();
   return (data?.agent as AgentDetail) || null;
@@ -806,8 +806,8 @@ export interface AgentFileConfig {
 // Fetch the raw agent.json for one agent (per-agent overrides only — not
 // the merged/resolved config). Used by the per-agent Models and Skills
 // admin pages.
-export async function getAgentConfig(id: string): Promise<AgentFileConfig> {
-  const res = await apiFetch(`/api/agents/${id}/config`);
+export async function getAgentConfig(id: string, signal?: AbortSignal): Promise<AgentFileConfig> {
+  const res = await apiFetch(`/api/agents/${id}/config`, { signal });
   return res.json();
 }
 
@@ -819,8 +819,8 @@ export async function deleteAgent(id: string) {
 }
 
 // Skills
-export async function getSkills(): Promise<SkillInfo[]> {
-  const res = await apiFetch("/api/skills");
+export async function getSkills(signal?: AbortSignal): Promise<SkillInfo[]> {
+  const res = await apiFetch("/api/skills", { signal });
   return res.json();
 }
 
@@ -833,8 +833,8 @@ export async function deleteSkill(name: string) {
 
 // Per-agent skills: list what's installed in an agent's own home/skills dir.
 // Agent-scoped skills shadow global ones with the same name.
-export async function getAgentSkills(agentId: string): Promise<SkillInfo[]> {
-  const res = await apiFetch(`/api/agents/${encodeURIComponent(agentId)}/skills`);
+export async function getAgentSkills(agentId: string, signal?: AbortSignal): Promise<SkillInfo[]> {
+  const res = await apiFetch(`/api/agents/${encodeURIComponent(agentId)}/skills`, { signal });
   return res.json();
 }
 
@@ -857,9 +857,9 @@ export interface SkillSearchResult {
   installs: number;
 }
 
-export async function searchSkills(query: string): Promise<SkillSearchResult[]> {
+export async function searchSkills(query: string, signal?: AbortSignal): Promise<SkillSearchResult[]> {
   if (!query.trim()) return [];
-  const res = await apiFetch(`/api/skills/search?source=skillssh&q=${encodeURIComponent(query)}`);
+  const res = await apiFetch(`/api/skills/search?source=skillssh&q=${encodeURIComponent(query)}`, { signal });
   if (!res.ok) return [];
   const data = await res.json();
   return (data.results || []) as SkillSearchResult[];
@@ -943,8 +943,8 @@ export async function saveTools(payload: {
 }
 
 // Plugins
-export async function getPlugins(): Promise<PluginInfo[]> {
-  const res = await apiFetch("/api/plugins");
+export async function getPlugins(signal?: AbortSignal): Promise<PluginInfo[]> {
+  const res = await apiFetch("/api/plugins", { signal });
   return res.json();
 }
 
@@ -958,14 +958,14 @@ export async function updatePlugin(id: string, data: Partial<PluginInfo>) {
 }
 
 // Channels
-export async function getChannels(): Promise<ChannelInfo[]> {
-  const res = await apiFetch("/api/channels");
+export async function getChannels(signal?: AbortSignal): Promise<ChannelInfo[]> {
+  const res = await apiFetch("/api/channels", { signal });
   return res.json();
 }
 
 // Cron Jobs
-export async function getCronJobs(): Promise<CronJobInfo[]> {
-  const res = await apiFetch("/api/cron");
+export async function getCronJobs(signal?: AbortSignal): Promise<CronJobInfo[]> {
+  const res = await apiFetch("/api/cron", { signal });
   return res.json();
 }
 

@@ -10,13 +10,13 @@ export function ActAsBanner() {
   const [actAs, setActAs] = useState<string>("");
 
   useEffect(() => {
-    let aborted = false;
-    (async () => {
-      const me = await getMe();
-      if (aborted) return;
-      if (me.actAsUserId) setActAs(me.actAsUserId);
-    })();
-    return () => { aborted = true; };
+    const controller = new AbortController();
+    getMe(controller.signal)
+      .then((me) => {
+        if (!controller.signal.aborted && me.actAsUserId) setActAs(me.actAsUserId);
+      })
+      .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   if (!actAs) return null;

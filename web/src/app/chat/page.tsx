@@ -80,7 +80,9 @@ export default function ChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const historyAbortRef = useRef<AbortController | null>(null);
   const streamGenerationRef = useRef(0);
+  const sessionsGenerationRef = useRef(0);
 
   const abortStream = useCallback(() => {
     abortRef.current?.abort();
@@ -88,15 +90,14 @@ export default function ChatPage() {
   const invalidateStream = useCallback(() => {
     streamGenerationRef.current++;
     abortRef.current?.abort();
-    setSending(false);
   }, []);
 
-  useEffect(() => invalidateStream, [invalidateStream]);
   useEffect(() => invalidateStream, [selectedAgent, sessionId, invalidateStream]);
 
   // Load agents on mount
   useEffect(() => {
-    getStatus()
+    const controller = new AbortController();
+    getStatus(controller.signal)
       .then((status) => {
         if (status.agents?.length > 0) {
           setAgents(status.agents);
@@ -104,27 +105,40 @@ export default function ChatPage() {
         }
       })
       .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   // Load sessions when agent changes
-  const loadSessions = useCallback((agentId: string) => {
-    getChatSessions(agentId)
-      .then((list) => setSessions(list || []))
-      .catch(() => setSessions([]));
+  const loadSessions = useCallback(async (agentId: string, signal?: AbortSignal) => {
+    const generation = ++sessionsGenerationRef.current;
+    try {
+      const list = await getChatSessions(agentId, signal);
+      if (!signal?.aborted && sessionsGenerationRef.current === generation) {
+        setSessions(list || []);
+      }
+    } catch {
+      if (!signal?.aborted && sessionsGenerationRef.current === generation) {
+        setSessions([]);
+      }
+    }
   }, []);
 
   useEffect(() => {
     if (!selectedAgent) return;
-    loadSessions(selectedAgent);
+    const controller = new AbortController();
+    void loadSessions(selectedAgent, controller.signal);
+    return () => controller.abort();
   }, [selectedAgent, loadSessions]);
 
   // Load history when session changes
   useEffect(() => {
     if (!selectedAgent || !sessionId) return;
-    let active = true;
-    getChatHistory(selectedAgent, sessionId)
+    const controller = new AbortController();
+    historyAbortRef.current?.abort();
+    historyAbortRef.current = controller;
+    getChatHistory(selectedAgent, sessionId, controller.signal)
       .then((history) => {
-        if (!active) return;
+        if (controller.signal.aborted) return;
         if (!history || history.length === 0) {
           setMessages([]);
           return;
@@ -132,9 +146,12 @@ export default function ChatPage() {
         setMessages(buildChatMessages(history));
       })
       .catch(() => {
-        if (active) setMessages([]);
+        if (!controller.signal.aborted) setMessages([]);
       });
-    return () => { active = false; };
+    return () => {
+      if (historyAbortRef.current === controller) historyAbortRef.current = null;
+      controller.abort();
+    };
   }, [selectedAgent, sessionId]);
 
   useEffect(() => {
@@ -149,10 +166,16 @@ export default function ChatPage() {
     }
   }, [input]);
 
+  const handleNewChat = useCallback(() => {
+    setSessionId(generateSessionId());
+    setMessages([]);
+  }, []);
+
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || !selectedAgent || sending) return;
 
+    historyAbortRef.current?.abort();
     setInput("");
     setMessages((prev) => [
       ...prev,
@@ -198,13 +221,13 @@ export default function ChatPage() {
       });
     } finally {
       batcher.flush();
-      if (streamGenerationRef.current === generation) {
-        if (abortRef.current === controller) abortRef.current = null;
+      if (abortRef.current === controller) {
+        abortRef.current = null;
         setSending(false);
         textareaRef.current?.focus();
       }
     }
-  }, [input, selectedAgent, sessionId, sending, loadSessions]);
+  }, [input, selectedAgent, sessionId, sending, loadSessions, handleNewChat]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -217,11 +240,6 @@ export default function ChatPage() {
     navigator.clipboard.writeText(msg.content);
     setCopiedId(msg.id);
     setTimeout(() => setCopiedId(null), 1500);
-  };
-
-  const handleNewChat = () => {
-    setSessionId(generateSessionId());
-    setMessages([]);
   };
 
   const handleSelectSession = (sid: string) => {

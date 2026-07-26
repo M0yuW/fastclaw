@@ -32,28 +32,26 @@ export function ScopePicker({ scope, scopeId, onChange }: ScopePickerProps) {
   const [agents, setAgents] = useState<AgentRef[]>([]);
 
   useEffect(() => {
-    let aborted = false;
+    const controller = new AbortController();
     (async () => {
-      const me = await getMe();
-      if (aborted || !me.user) return;
+      const me = await getMe(controller.signal);
+      if (controller.signal.aborted || !me.user) return;
       setRole(me.user.role);
       setMeId(me.user.id);
 
       // Pull the agent list — every caller can see their own agents.
-      const ag = await apiFetch("/api/agents");
-      const aj = await ag.json();
-      if (!aborted && aj.agents) setAgents(aj.agents);
+      const agentsResponse = await apiFetch("/api/agents", { signal: controller.signal });
+      const agentsJson = await agentsResponse.json();
+      if (!controller.signal.aborted && agentsJson.agents) setAgents(agentsJson.agents);
 
       // Super_admin can also enumerate users (for picking a user scope).
       if (me.user.role === "super_admin") {
-        const u = await apiFetch("/api/admin/users");
-        const uj = await u.json();
-        if (!aborted && uj.users) setUsers(uj.users);
+        const usersResponse = await apiFetch("/api/admin/users", { signal: controller.signal });
+        const usersJson = await usersResponse.json();
+        if (!controller.signal.aborted && usersJson.users) setUsers(usersJson.users);
       }
-    })();
-    return () => {
-      aborted = true;
-    };
+    })().catch(() => {});
+    return () => controller.abort();
   }, []);
 
   const isAdmin = role === "super_admin";

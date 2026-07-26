@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   listProviders,
   createProvider,
@@ -24,16 +24,38 @@ export default function ProvidersPage() {
     authType: "bearer-token",
   });
 
-  const refresh = useCallback(async () => {
-    setError("");
-    const r = await listProviders(scope, scopeId);
-    if (r.providers) setRows(r.providers);
-    if (r.error) setError(r.error);
+  const requestGenerationRef = useRef(0);
+  const refresh = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
+    try {
+      const result = await listProviders(scope, scopeId, signal);
+      if (signal?.aborted || requestGenerationRef.current !== generation) return;
+      if (result.providers) setRows(result.providers);
+      setError(result.error || "");
+    } catch (error) {
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setError(error instanceof Error ? error.message : "Failed to load providers");
+      }
+    }
   }, [scope, scopeId]);
 
   useEffect(() => {
-    if (scope === "system" || scopeId) refresh();
-  }, [scope, scopeId, refresh]);
+    if (scope !== "system" && !scopeId) return;
+    const controller = new AbortController();
+    const generation = ++requestGenerationRef.current;
+    listProviders(scope, scopeId, controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted || requestGenerationRef.current !== generation) return;
+        if (result.providers) setRows(result.providers);
+        setError(result.error || "");
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted && requestGenerationRef.current === generation) {
+          setError(error instanceof Error ? error.message : "Failed to load providers");
+        }
+      });
+    return () => controller.abort();
+  }, [scope, scopeId]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();

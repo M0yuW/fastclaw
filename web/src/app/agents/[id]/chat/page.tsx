@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useRef, useCallback, useId, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { getAgent, getChatHistory, getChatSessions, listAgentFiles, renameChatSession, sendChatStream, uploadAgentFiles, getAuthToken, getSkills, type ChatHistoryMessage, type SkillInfo, type ToolResultMetadata } from "@/lib/api";
 import { createChatStreamBatcher, reduceChatStreamEvents, type StreamMessage } from "@/lib/chat-stream";
+import { useAgentIdFromURL } from "@/hooks/use-agent-id";
 import { Bot, Send, Copy, Check, Pencil, Wrench, ChevronDown, ChevronRight, Download, X, File, FileText, Image as ImageIcon, FileCode, Film, Music, Puzzle, SlidersHorizontal, ShieldCheck, Paperclip, Square } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -33,15 +34,6 @@ const chatMarkdownComponents: Components = {
     </pre>
   ),
 };
-
-// react-markdown's default urlTransform strips any protocol not in the
-// safe-list (http, https, mailto, ircs, xmpp) — including `data:`. We want
-// inline base64 images to render, so fall through to the default for
-// everything else.
-function urlTransform(url: string, key: string): string {
-  if (key === "src" && url.startsWith("data:image/")) return url;
-  return defaultUrlTransform(url);
-}
 
 // makeUrlTransform builds a urlTransform that also remaps sandbox
 // `/workspace/<name>` paths to the authenticated file API URL for the
@@ -275,24 +267,21 @@ function buildChatMessages(history: ChatHistoryMessage[]): ChatMessage[] {
   return msgs;
 }
 
-function getAgentIdFromURL(): string {
-  if (typeof window === "undefined") return "default";
-  const match = window.location.pathname.match(/\/agents\/([^/]+)\//);
-  return match ? match[1] : "default";
-}
-
 export default function AgentChatPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedAgent] = useState(() => getAgentIdFromURL());
+  const selectedAgent = useAgentIdFromURL();
   const [agentName, setAgentName] = useState<string>("");
+  const sessionSeed = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const [sessionSequence, setSessionSequence] = useState(0);
   const [sessionId, setSessionId] = useState<string>(() => searchParams.get("session") || generateSessionId());
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [sessionTitle, setSessionTitle] = useState<string>("");
+  const currentSession = sessions.find((session) => session.id === sessionId);
+  const sessionTitle = currentSession?.title || currentSession?.preview || "";
   const [attachments, setAttachments] = useState<File[]>([]);
   // Lightbox for clicking either an attachment thumbnail (compose box)
   // or an inline image in a sent message bubble. `null` = closed.
@@ -316,7 +305,9 @@ export default function AgentChatPage() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const historyAbortRef = useRef<AbortController | null>(null);
   const streamGenerationRef = useRef(0);
+  const sessionsGenerationRef = useRef(0);
 
   const abortStream = useCallback(() => {
     abortRef.current?.abort();
@@ -324,10 +315,8 @@ export default function AgentChatPage() {
   const invalidateStream = useCallback(() => {
     streamGenerationRef.current++;
     abortRef.current?.abort();
-    setSending(false);
   }, []);
 
-  useEffect(() => invalidateStream, [invalidateStream]);
   useEffect(() => invalidateStream, [selectedAgent, sessionId, invalidateStream]);
 
   // Slash-command menu state. The menu opens when the textarea holds a
@@ -340,7 +329,15 @@ export default function AgentChatPage() {
   const [slashIndex, setSlashIndex] = useState(0);
 
   useEffect(() => {
-    getSkills().then(setSkills).catch(() => setSkills([]));
+    const controller = new AbortController();
+    getSkills(controller.signal)
+      .then((items) => {
+        if (!controller.signal.aborted) setSkills(items);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSkills([]);
+      });
+    return () => controller.abort();
   }, []);
 
   // Resolve the agent's display name once. The chat title and any
@@ -350,18 +347,17 @@ export default function AgentChatPage() {
   // /api/agents (list) is owner-scoped and would miss it.
   useEffect(() => {
     if (!selectedAgent) return;
-    let aborted = false;
-    getAgent(selectedAgent)
-      .then((a) => {
-        if (aborted) return;
-        setAgentName(a?.name || a?.id || selectedAgent);
+    const controller = new AbortController();
+    getAgent(selectedAgent, controller.signal)
+      .then((agent) => {
+        if (!controller.signal.aborted) {
+          setAgentName(agent?.name || agent?.id || selectedAgent);
+        }
       })
       .catch(() => {
-        if (!aborted) setAgentName(selectedAgent);
+        if (!controller.signal.aborted) setAgentName(selectedAgent);
       });
-    return () => {
-      aborted = true;
-    };
+    return () => controller.abort();
   }, [selectedAgent]);
 
   // Detect whether the caret is inside a /token and, if so, what's been
@@ -410,58 +406,67 @@ export default function AgentChatPage() {
   );
 
   // Load sessions when agent changes
-  const loadSessions = useCallback((agentId: string) => {
-    getChatSessions(agentId)
-      .then((list) => setSessions(list || []))
-      .catch(() => setSessions([]));
+  const loadSessions = useCallback(async (agentId: string, signal?: AbortSignal) => {
+    const generation = ++sessionsGenerationRef.current;
+    try {
+      const list = await getChatSessions(agentId, signal);
+      if (!signal?.aborted && sessionsGenerationRef.current === generation) {
+        setSessions(list || []);
+      }
+    } catch {
+      if (!signal?.aborted && sessionsGenerationRef.current === generation) {
+        setSessions([]);
+      }
+    }
   }, []);
 
   useEffect(() => {
     if (!selectedAgent) return;
-    loadSessions(selectedAgent);
+    const controller = new AbortController();
+    void loadSessions(selectedAgent, controller.signal);
+    return () => controller.abort();
   }, [selectedAgent, loadSessions]);
 
-  // Sync URL's ?session= back into local state. Without this, navigating
-  // between sessions / to "New chat" from the sidebar (router.push of the
-  // same page with a different query string) changes the URL but doesn't
-  // remount the page — sessionId / messages would stay on the old value.
-  //
-  // Three transitions to handle:
-  //   - /chat/?session=A → /chat/?session=B  : swap sessionId, history effect reloads messages
-  //   - /chat/?session=A → /chat/           : brand-new session, clear messages pane
-  //   - /chat/           → /chat/?session=A : open the targeted session
-  // We track `prevHadSession` so the initial mount (useState already picked
-  // an id) doesn't trigger a redundant reset.
-  const prevHadSessionRef = useRef(false);
-  useEffect(() => {
-    const urlSession = searchParams.get("session");
-    if (urlSession) {
-      prevHadSessionRef.current = true;
-      if (urlSession !== sessionId) {
-        setSessionId(urlSession);
-      }
-      return;
+  // Keep local state aligned with sidebar URL and agent navigation. The
+  // guarded render-time reset follows React's "store previous props" pattern
+  // and avoids an effect cascade. When the first send writes the existing
+  // local session into the URL, the IDs already match, so the stream is kept.
+  const urlSession = searchParams.get("session");
+  const [previousAgent, setPreviousAgent] = useState(selectedAgent);
+  const [previousUrlSession, setPreviousUrlSession] = useState(urlSession);
+  if (selectedAgent !== previousAgent || urlSession !== previousUrlSession) {
+    const agentChanged = selectedAgent !== previousAgent;
+    setPreviousAgent(selectedAgent);
+    setPreviousUrlSession(urlSession);
+    if (agentChanged) {
+      setSessions([]);
+      setMessages([]);
+      setAttachments([]);
     }
-    if (prevHadSessionRef.current) {
-      prevHadSessionRef.current = false;
-      setSessionId(generateSessionId());
+    if (urlSession && urlSession !== sessionId) {
+      setSessionId(urlSession);
+      setMessages([]);
+    } else if (!urlSession && (agentChanged || previousUrlSession)) {
+      const nextSequence = sessionSequence + 1;
+      setSessionSequence(nextSequence);
+      setSessionId(`s-${sessionSeed}-${nextSequence}`);
       setMessages([]);
     }
-  }, [searchParams, sessionId]);
-
-  // Keep the local sessionTitle in sync with the session list. Unknown
-  // sessions (brand-new, not saved yet) fall back to empty so the header
-  // can render "New chat".
-  useEffect(() => {
-    const s = sessions.find((x) => x.id === sessionId);
-    setSessionTitle(s?.title || s?.preview || "");
-  }, [sessionId, sessions]);
+  }
 
   const handleRenameTitle = useCallback(
     async (next: string) => {
       const trimmed = next.trim();
       if (!trimmed || !selectedAgent || trimmed === sessionTitle) return;
-      setSessionTitle(trimmed);
+      setSessions((prev) => {
+        let found = false;
+        const next = prev.map((session) => {
+          if (session.id !== sessionId) return session;
+          found = true;
+          return { ...session, title: trimmed };
+        });
+        return found ? next : [...next, { id: sessionId, title: trimmed, preview: "" }];
+      });
       try {
         await renameChatSession(selectedAgent, sessionId, trimmed);
       } finally {
@@ -504,18 +509,20 @@ export default function AgentChatPage() {
   // hanging it off the last agent message.
   useEffect(() => {
     if (!selectedAgent || !sessionId) return;
-    let active = true;
-    getChatHistory(selectedAgent, sessionId)
+    const controller = new AbortController();
+    historyAbortRef.current?.abort();
+    historyAbortRef.current = controller;
+    getChatHistory(selectedAgent, sessionId, controller.signal)
       .then(async (history) => {
-        if (!active) return;
+        if (controller.signal.aborted) return;
         if (!history || history.length === 0) {
           setMessages([]);
           return;
         }
         const built = buildChatMessages(history);
         try {
-          const allFiles = await listAgentFiles(selectedAgent);
-          if (!active) return;
+          const allFiles = await listAgentFiles(selectedAgent, controller.signal);
+          if (controller.signal.aborted) return;
           const sessionPrefix = `sessions/${sessionId}/`;
           const sessionFiles: ProducedFile[] = allFiles
             .filter((f) => f.path.startsWith(sessionPrefix) && !isSystemFile(f.path))
@@ -529,12 +536,15 @@ export default function AgentChatPage() {
             }
           }
         } catch { /* listing failed — fall back to no panel */ }
-        if (active) setMessages(built);
+        if (!controller.signal.aborted) setMessages(built);
       })
       .catch(() => {
-        if (active) setMessages([]);
+        if (!controller.signal.aborted) setMessages([]);
       });
-    return () => { active = false; };
+    return () => {
+      if (historyAbortRef.current === controller) historyAbortRef.current = null;
+      controller.abort();
+    };
   }, [selectedAgent, sessionId]);
 
   useEffect(() => {
@@ -549,10 +559,19 @@ export default function AgentChatPage() {
     }
   }, [input]);
 
+  const handleNewChat = useCallback(() => {
+    const newId = generateSessionId();
+    setSessionId(newId);
+    setMessages([]);
+    router.replace(`/agents/${selectedAgent}/chat/`);
+  }, [router, selectedAgent]);
+
   const handleSend = useCallback(async () => {
     const text = input.trim();
     // Allow sending with attachments only (no text), but require at least one.
     if ((!text && attachments.length === 0) || !selectedAgent || sending) return;
+
+    historyAbortRef.current?.abort();
 
     // Pin the sessionId into the URL on the first send so a refresh keeps
     // the user in the same conversation. Use history.replaceState (not
@@ -575,6 +594,12 @@ export default function AgentChatPage() {
     abortRef.current = controller;
     const generation = ++streamGenerationRef.current;
     setSending(true);
+    const finishSending = () => {
+      if (abortRef.current !== controller) return;
+      abortRef.current = null;
+      setSending(false);
+      textareaRef.current?.focus();
+    };
 
     let userBubbleAttachments: UserAttachment[] = [];
     let imageDataUrls: string[] = [];
@@ -589,13 +614,18 @@ export default function AgentChatPage() {
       try {
         await uploadAgentFiles(selectedAgent, sessionId, filesToUpload, controller.signal);
       } catch (err) {
-        const isAbort = err instanceof DOMException && err.name === "AbortError";
-        setMessages((prev) => [
-          ...prev,
-          { id: `e-${Date.now()}`, role: "agent", content: isAbort ? "(Stopped)" : `File upload failed: ${err instanceof Error ? err.message : "unknown error"}`, timestamp: Date.now() },
-        ]);
-        abortRef.current = null;
-        setSending(false);
+        if (streamGenerationRef.current === generation) {
+          const isAbort = err instanceof DOMException && err.name === "AbortError";
+          setMessages((prev) => [
+            ...prev,
+            { id: `e-${Date.now()}`, role: "agent", content: isAbort ? "(Stopped)" : `File upload failed: ${err instanceof Error ? err.message : "unknown error"}`, timestamp: Date.now() },
+          ]);
+        }
+        finishSending();
+        return;
+      }
+      if (controller.signal.aborted || streamGenerationRef.current !== generation) {
+        finishSending();
         return;
       }
 
@@ -626,6 +656,10 @@ export default function AgentChatPage() {
           }),
         )
       ).filter((s): s is string => !!s);
+      if (controller.signal.aborted || streamGenerationRef.current !== generation) {
+        finishSending();
+        return;
+      }
     }
     // Build the prompt actually sent to the model. Images travel as
     // `imageUrls` for vision, but the model also needs the on-disk path
@@ -657,7 +691,7 @@ export default function AgentChatPage() {
     // attach newly-created / modified files (PDFs, images, …) to the
     // final reply. Fire-and-forget; if the snapshot fails we just won't
     // surface files this turn. `path → size|modTime` key.
-    const preTurnFilesPromise = listAgentFiles(selectedAgent)
+    const preTurnFilesPromise = listAgentFiles(selectedAgent, controller.signal)
       .then((items) => {
         const m = new Map<string, string>();
         for (const f of items) m.set(f.path, `${f.size}|${f.modTime}`);
@@ -710,8 +744,9 @@ export default function AgentChatPage() {
       // surfaced too — `turnFiles` only catches write_file tool calls
       // with relative, non-identity paths, which misses most real-
       // world flows. Union both sources by path.
-      const postTurnFiles = await listAgentFiles(selectedAgent).catch(() => []);
+      const postTurnFiles = await listAgentFiles(selectedAgent, controller.signal).catch(() => []);
       const preSnap = await preTurnFilesPromise;
+      controller.signal.throwIfAborted();
       const diffFiles: ProducedFile[] = [];
       for (const f of postTurnFiles) {
         if (isSystemFile(f.path)) continue;
@@ -826,13 +861,9 @@ export default function AgentChatPage() {
       }
     } finally {
       batcher.flush();
-      if (streamGenerationRef.current === generation) {
-        if (abortRef.current === controller) abortRef.current = null;
-        setSending(false);
-        textareaRef.current?.focus();
-      }
+      finishSending();
     }
-  }, [input, attachments, selectedAgent, sessionId, sending, loadSessions]);
+  }, [input, attachments, selectedAgent, sessionId, sending, loadSessions, handleNewChat]);
 
   const handleStop = abortStream;
 
@@ -911,18 +942,6 @@ export default function AgentChatPage() {
     navigator.clipboard.writeText(msg.content);
     setCopiedId(msg.id);
     setTimeout(() => setCopiedId(null), 1500);
-  };
-
-  const handleNewChat = () => {
-    const newId = generateSessionId();
-    setSessionId(newId);
-    setMessages([]);
-    router.replace(`/agents/${selectedAgent}/chat/`);
-  };
-
-  const handleSelectSession = (sid: string) => {
-    setSessionId(sid);
-    router.replace(`/agents/${selectedAgent}/chat/?session=${sid}`);
   };
 
   const formatTime = (ts: number) =>
@@ -1288,10 +1307,6 @@ function ChatHeaderTitle({ title, fallback, onSave }: ChatHeaderTitleProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!editing) setDraft(title);
-  }, [title, editing]);
-
-  useEffect(() => {
     if (editing) inputRef.current?.select();
   }, [editing]);
 
@@ -1569,17 +1584,33 @@ function FilePreview({ agentId, file, onClose }: { agentId: string; file: Produc
   const src = fileUrl(agentId, file.path, false);
   const downloadUrl = fileUrl(agentId, file.path, true);
   const basename = file.path.split("/").pop() || file.path;
-  const [text, setText] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loadedText, setLoadedText] = useState<{
+    src: string;
+    text: string | null;
+    error: string | null;
+  } | null>(null);
+  const text = loadedText?.src === src ? loadedText.text : null;
+  const error = loadedText?.src === src ? loadedText.error : null;
 
   useEffect(() => {
     if (preview !== "markdown" && preview !== "text") return;
-    let cancelled = false;
-    fetch(src)
-      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
-      .then((t) => { if (!cancelled) setText(t); })
-      .catch((e) => { if (!cancelled) setError(String(e)); });
-    return () => { cancelled = true; };
+    const controller = new AbortController();
+    fetch(src, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.text();
+      })
+      .then((content) => {
+        if (!controller.signal.aborted) {
+          setLoadedText({ src, text: content, error: null });
+        }
+      })
+      .catch((loadError) => {
+        if (!controller.signal.aborted) {
+          setLoadedText({ src, text: null, error: String(loadError) });
+        }
+      });
+    return () => controller.abort();
   }, [src, preview]);
 
   return (
@@ -1612,7 +1643,14 @@ function FilePreview({ agentId, file, onClose }: { agentId: string; file: Produc
         </div>
         <div className="flex-1 overflow-auto p-4 min-h-0">
           {preview === "image" && (
-            <img src={src} alt={basename} className="max-w-full max-h-full mx-auto object-contain" />
+            <Image
+              src={src}
+              alt={basename}
+              width={1600}
+              height={1200}
+              unoptimized
+              className="mx-auto h-auto max-h-full w-auto max-w-full object-contain"
+            />
           )}
           {preview === "pdf" && (
             <iframe src={src} className="h-full w-full border-0" title={basename} />

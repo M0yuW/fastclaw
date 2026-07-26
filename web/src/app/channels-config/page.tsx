@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import {
   listScopedChannels,
   createScopedChannel,
@@ -25,16 +25,38 @@ export default function ChannelsConfigPage() {
     appToken: "",
   });
 
-  const refresh = useCallback(async () => {
-    setError("");
-    const r = await listScopedChannels(scope, scopeId);
-    if (r.channels) setRows(r.channels);
-    if (r.error) setError(r.error);
+  const requestGenerationRef = useRef(0);
+  const refresh = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
+    try {
+      const result = await listScopedChannels(scope, scopeId, signal);
+      if (signal?.aborted || requestGenerationRef.current !== generation) return;
+      if (result.channels) setRows(result.channels);
+      setError(result.error || "");
+    } catch (error) {
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setError(error instanceof Error ? error.message : "Failed to load channels");
+      }
+    }
   }, [scope, scopeId]);
 
   useEffect(() => {
-    if (scope === "system" || scopeId) refresh();
-  }, [scope, scopeId, refresh]);
+    if (scope !== "system" && !scopeId) return;
+    const controller = new AbortController();
+    const generation = ++requestGenerationRef.current;
+    listScopedChannels(scope, scopeId, controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted || requestGenerationRef.current !== generation) return;
+        if (result.channels) setRows(result.channels);
+        setError(result.error || "");
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted && requestGenerationRef.current === generation) {
+          setError(error instanceof Error ? error.message : "Failed to load channels");
+        }
+      });
+    return () => controller.abort();
+  }, [scope, scopeId]);
 
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();

@@ -146,12 +146,15 @@ export function NavSessions({
         </SidebarMenu>
       </SidebarGroup>
 
-      <EditTitleDialog
-        target={editTarget}
-        agentId={agentId}
-        onClose={() => setEditTarget(null)}
-        onSaved={broadcastChange}
-      />
+      {editTarget && (
+        <EditTitleDialog
+          key={editTarget.id}
+          target={editTarget}
+          agentId={agentId}
+          onClose={() => setEditTarget(null)}
+          onSaved={broadcastChange}
+        />
+      )}
 
       <AlertDialog
         open={!!deleteTarget}
@@ -250,19 +253,13 @@ function EditTitleDialog({
   onClose,
   onSaved,
 }: {
-  target: SessionItem | null;
+  target: SessionItem;
   agentId: string;
   onClose: () => void;
   onSaved: () => void;
 }) {
-  const [draft, setDraft] = React.useState("");
+  const [draft, setDraft] = React.useState(target.title ?? "");
   const [saving, setSaving] = React.useState(false);
-
-  React.useEffect(() => {
-    setDraft(target?.title ?? "");
-  }, [target]);
-
-  if (!target) return null;
 
   const save = async () => {
     const next = draft.trim();
@@ -286,7 +283,7 @@ function EditTitleDialog({
         <DialogHeader>
           <DialogTitle>Edit chat title</DialogTitle>
           <DialogDescription>
-            Rename this chat so it's easier to find in the sidebar.
+            Rename this chat so it is easier to find in the sidebar.
           </DialogDescription>
         </DialogHeader>
         <Input
