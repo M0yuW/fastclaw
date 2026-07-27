@@ -3,17 +3,14 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getStatus, getChatHistory, getChatSessions, sendChatStream, type AgentInfo, type ChatHistoryMessage, type ChatStreamEvent } from "@/lib/api";
+import { getStatus, getChatHistory, getChatSessions, sendChatStream, type AgentInfo, type ChatHistoryMessage } from "@/lib/api";
+import { createChatStreamBatcher, reduceChatStreamEvents, type StreamMessage } from "@/lib/chat-stream";
 import { useAgentName } from "@/hooks/use-agent-name";
-import { Bot, Send, Copy, Check, SquarePen, MessageSquare, Wrench, ChevronDown, ChevronRight } from "lucide-react";
+import { Bot, Send, Copy, Check, SquarePen, MessageSquare, Wrench, ChevronDown, ChevronRight, Square } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
-interface ChatMessage {
-  id: string;
-  role: "user" | "agent" | "tool-group";
-  content: string;
-  timestamp: number;
+interface ChatMessage extends StreamMessage {
   toolCalls?: { id: string; name: string; arguments: string; result?: string }[];
 }
 
@@ -54,9 +51,11 @@ function buildChatMessages(history: ChatHistoryMessage[]): ChatMessage[] {
         timestamp: 0,
         toolCalls: calls,
       });
-      // If next is assistant with content (final answer), add it
-      if (i < history.length && history[i].role === "assistant" && history[i].content) {
-        msgs.push({ id: `h-${i}`, role: "agent", content: history[i].content || "", timestamp: 0 });
+      // A following assistant is final text only when it does not start the
+      // next tool round. Leave tool-calling assistants for the outer loop.
+      const nextMessage = history[i];
+      if (nextMessage?.role === "assistant" && nextMessage.content && (!nextMessage.toolCalls || nextMessage.toolCalls.length === 0)) {
+        msgs.push({ id: `h-${i}`, role: "agent", content: nextMessage.content, timestamp: 0 });
         i++;
       }
     } else if (h.role === "assistant") {
@@ -80,10 +79,25 @@ export default function ChatPage() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const historyAbortRef = useRef<AbortController | null>(null);
+  const streamGenerationRef = useRef(0);
+  const sessionsGenerationRef = useRef(0);
+
+  const abortStream = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+  const invalidateStream = useCallback(() => {
+    streamGenerationRef.current++;
+    abortRef.current?.abort();
+  }, []);
+
+  useEffect(() => invalidateStream, [selectedAgent, sessionId, invalidateStream]);
 
   // Load agents on mount
   useEffect(() => {
-    getStatus()
+    const controller = new AbortController();
+    getStatus(controller.signal)
       .then((status) => {
         if (status.agents?.length > 0) {
           setAgents(status.agents);
@@ -91,32 +105,53 @@ export default function ChatPage() {
         }
       })
       .catch(() => {});
+    return () => controller.abort();
   }, []);
 
   // Load sessions when agent changes
-  const loadSessions = useCallback((agentId: string) => {
-    getChatSessions(agentId)
-      .then((list) => setSessions(list || []))
-      .catch(() => setSessions([]));
+  const loadSessions = useCallback(async (agentId: string, signal?: AbortSignal) => {
+    const generation = ++sessionsGenerationRef.current;
+    try {
+      const list = await getChatSessions(agentId, signal);
+      if (!signal?.aborted && sessionsGenerationRef.current === generation) {
+        setSessions(list || []);
+      }
+    } catch {
+      if (!signal?.aborted && sessionsGenerationRef.current === generation) {
+        setSessions([]);
+      }
+    }
   }, []);
 
   useEffect(() => {
     if (!selectedAgent) return;
-    loadSessions(selectedAgent);
+    const controller = new AbortController();
+    void loadSessions(selectedAgent, controller.signal);
+    return () => controller.abort();
   }, [selectedAgent, loadSessions]);
 
   // Load history when session changes
   useEffect(() => {
     if (!selectedAgent || !sessionId) return;
-    getChatHistory(selectedAgent, sessionId)
+    const controller = new AbortController();
+    historyAbortRef.current?.abort();
+    historyAbortRef.current = controller;
+    getChatHistory(selectedAgent, sessionId, controller.signal)
       .then((history) => {
+        if (controller.signal.aborted) return;
         if (!history || history.length === 0) {
           setMessages([]);
           return;
         }
         setMessages(buildChatMessages(history));
       })
-      .catch(() => setMessages([]));
+      .catch(() => {
+        if (!controller.signal.aborted) setMessages([]);
+      });
+    return () => {
+      if (historyAbortRef.current === controller) historyAbortRef.current = null;
+      controller.abort();
+    };
   }, [selectedAgent, sessionId]);
 
   useEffect(() => {
@@ -131,121 +166,68 @@ export default function ChatPage() {
     }
   }, [input]);
 
+  const handleNewChat = useCallback(() => {
+    setSessionId(generateSessionId());
+    setMessages([]);
+  }, []);
+
   const handleSend = useCallback(async () => {
     const text = input.trim();
     if (!text || !selectedAgent || sending) return;
 
+    historyAbortRef.current?.abort();
     setInput("");
     setMessages((prev) => [
       ...prev,
       { id: `u-${Date.now()}`, role: "user", content: text, timestamp: Date.now() },
     ]);
     setSending(true);
-
-    let curGroupId = "";
-    let curCalls: { id: string; name: string; arguments: string; result?: string }[] = [];
-    let curContent = "";
-
-    const startNewGroup = () => {
-      curGroupId = `tg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      curCalls = [];
-      curContent = "";
-    };
-    startNewGroup();
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const generation = ++streamGenerationRef.current;
+    const batcher = createChatStreamBatcher((events) => {
+      if (streamGenerationRef.current !== generation) return;
+      setMessages((prev) => reduceChatStreamEvents(prev, events));
+    });
 
     try {
-      await sendChatStream(selectedAgent, sessionId, text, (evt: ChatStreamEvent) => {
-        switch (evt.type) {
-          case "content": {
-            const content = evt.data?.content || "";
-            if (content === "__NEW_SESSION__") {
-              handleNewChat();
-              loadSessions(selectedAgent);
-              return;
-            }
-            if (curCalls.length > 0) {
-              // Content after tool calls = new round. Finalize current group, start fresh.
-              startNewGroup();
-            }
-            // Store as thinking content (may become part of next tool-group, or stay as final answer)
-            curContent = content;
-            setMessages((prev) => [
-              ...prev,
-              { id: `a-${Date.now()}`, role: "agent", content, timestamp: Date.now() },
-            ]);
-            break;
-          }
-          case "tool_call": {
-            curCalls.push({
-              id: evt.data?.id || "",
-              name: evt.data?.name || "",
-              arguments: evt.data?.arguments || "{}",
-            });
-            const groupId = curGroupId;
-            const calls = [...curCalls];
-            const content = curContent;
-            setMessages((prev) => {
-              // If last message is the thinking content for this round, replace with tool-group
-              const last = prev[prev.length - 1];
-              if (content && last?.role === "agent" && last.content === content) {
-                return [
-                  ...prev.slice(0, -1),
-                  { id: groupId, role: "tool-group" as const, content, timestamp: Date.now(), toolCalls: calls },
-                ];
-              }
-              // Update existing tool-group for this round
-              const idx = prev.findIndex((m) => m.id === groupId);
-              if (idx >= 0) {
-                const updated = [...prev];
-                updated[idx] = { ...updated[idx], toolCalls: calls };
-                return updated;
-              }
-              // New tool-group
-              return [
-                ...prev,
-                { id: groupId, role: "tool-group" as const, content, timestamp: Date.now(), toolCalls: calls },
-              ];
-            });
-            break;
-          }
-          case "tool_result": {
-            const tc = curCalls.find((c) => c.id === (evt.data?.id || ""));
-            if (tc) tc.result = evt.data?.result || "";
-            const groupId = curGroupId;
-            const calls = [...curCalls];
-            setMessages((prev) => {
-              const idx = prev.findIndex((m) => m.id === groupId);
-              if (idx < 0) return prev;
-              const updated = [...prev];
-              updated[idx] = { ...updated[idx], toolCalls: calls };
-              return updated;
-            });
-            break;
-          }
-          case "error": {
-            const message = evt.data?.message || "Unknown error";
-            setMessages((prev) => [
-              ...prev,
-              { id: `e-${Date.now()}`, role: "agent", content: `⚠️ ${message}`, timestamp: Date.now() },
-            ]);
-            break;
-          }
+      await sendChatStream(selectedAgent, sessionId, text, (event) => {
+        if (streamGenerationRef.current !== generation) return;
+        if (event.type === "content" && event.data?.content === "__NEW_SESSION__") {
+          handleNewChat();
+          loadSessions(selectedAgent);
+          return;
         }
-      });
+        batcher.enqueue(event);
+      }, controller.signal);
+      batcher.flush();
       loadSessions(selectedAgent);
     } catch (err) {
-      const errMsg = err instanceof Error && err.message
-        ? err.message
-        : "Failed to get a response. Is the gateway running?";
-      setMessages((prev) => [
-        ...prev,
-        { id: `e-${Date.now()}`, role: "agent", content: errMsg, timestamp: Date.now() },
-      ]);
+      batcher.flush();
+      if (streamGenerationRef.current !== generation) return;
+      const isAbort = err instanceof DOMException && err.name === "AbortError";
+      setMessages((prev) => {
+        const stopped = isAbort
+          ? prev.map((message) => message.role === "tool-group"
+              ? { ...message, toolCalls: message.toolCalls?.map((tool) => tool.result === undefined ? { ...tool, result: "(stopped)" } : tool) }
+              : message)
+          : prev;
+        return [...stopped, {
+          id: `e-${Date.now()}`,
+          role: "agent",
+          content: isAbort ? "(Stopped)" : err instanceof Error && err.message ? err.message : "Failed to get a response. Is the gateway running?",
+          timestamp: Date.now(),
+        }];
+      });
     } finally {
-      setSending(false);
-      textareaRef.current?.focus();
+      batcher.flush();
+      if (abortRef.current === controller) {
+        abortRef.current = null;
+        setSending(false);
+        textareaRef.current?.focus();
+      }
     }
-  }, [input, selectedAgent, sessionId, sending, loadSessions]);
+  }, [input, selectedAgent, sessionId, sending, loadSessions, handleNewChat]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -258,11 +240,6 @@ export default function ChatPage() {
     navigator.clipboard.writeText(msg.content);
     setCopiedId(msg.id);
     setTimeout(() => setCopiedId(null), 1500);
-  };
-
-  const handleNewChat = () => {
-    setSessionId(generateSessionId());
-    setMessages([]);
   };
 
   const handleSelectSession = (sid: string) => {
@@ -509,14 +486,26 @@ export default function ChatPage() {
                 className="flex-1 resize-none bg-transparent text-[15px] placeholder:text-muted-foreground/50 outline-none disabled:opacity-50"
                 style={{ maxHeight: 200, minHeight: 24 }}
               />
-              <Button
-                onClick={handleSend}
-                disabled={!input.trim() || !selectedAgent || sending}
-                size="icon"
-                className="h-8 w-8 shrink-0 rounded-lg"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+              {sending ? (
+                <Button
+                  onClick={abortStream}
+                  size="icon"
+                  className="h-8 w-8 shrink-0 rounded-lg"
+                  aria-label="Stop generating"
+                >
+                  <Square className="h-3.5 w-3.5 fill-current" />
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleSend}
+                  disabled={!input.trim() || !selectedAgent}
+                  size="icon"
+                  className="h-8 w-8 shrink-0 rounded-lg"
+                  aria-label="Send message"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             <p className="text-center text-[11px] text-muted-foreground/50 mt-2">
               Enter to send, Shift+Enter for new line

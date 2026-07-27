@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -152,13 +152,15 @@ export default function ModelsPage() {
   // written back through the same endpoint. Keep the two writes split so
   // an empty default-model field doesn't blow away provider rows, and a
   // provider mutation doesn't accidentally clear the default model.
-  const fetchConfig = async () => {
-    setLoading(true);
+  const requestGenerationRef = useRef(0);
+  const fetchConfig = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
     try {
       const [cfg, prov] = await Promise.all([
-        getConfig().catch(() => null),
-        listProviders("system", "").catch(() => null),
+        getConfig(signal).catch(() => null),
+        listProviders("system", "", signal).catch(() => null),
       ]);
+      if (signal?.aborted || requestGenerationRef.current !== generation) return;
       const rows: ProviderRow[] = (prov && Array.isArray(prov.providers))
         ? (prov.providers as ProviderRow[])
         : [];
@@ -175,13 +177,17 @@ export default function ModelsPage() {
       setProviders(entries);
       setModel(cfg?.agents?.defaults?.model || "");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
   useEffect(() => {
-    fetchConfig();
-  }, []);
+    const controller = new AbortController();
+    void fetchConfig(controller.signal);
+    return () => controller.abort();
+  }, [fetchConfig]);
 
   const openAddDialog = () => {
     setEditingName(null);

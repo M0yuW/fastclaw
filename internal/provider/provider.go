@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"strings"
+	"sync"
 )
 
 // Message represents a chat message.
@@ -77,7 +78,7 @@ func StripAttachedPrefix(s string) string {
 
 // ContentPart represents a part of multimodal content.
 type ContentPart struct {
-	Type     string    `json:"type"`                // "text" or "image_url"
+	Type     string    `json:"type"` // "text" or "image_url"
 	Text     string    `json:"text,omitempty"`
 	ImageURL *ImageURL `json:"image_url,omitempty"`
 }
@@ -142,8 +143,11 @@ type StreamChunk struct {
 
 // StreamReader reads streaming chunks from an LLM response.
 type StreamReader struct {
-	ch  chan StreamChunk
-	err error
+	ch chan StreamChunk
+
+	mu     sync.RWMutex
+	result *Response
+	err    error
 }
 
 // NewStreamReader creates a new StreamReader with the given channel.
@@ -159,12 +163,38 @@ func (r *StreamReader) Next() (StreamChunk, bool) {
 
 // Err returns any error that occurred during streaming.
 func (r *StreamReader) Err() error {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
 	return r.err
+}
+
+// Result returns the final accumulated response and stream error. Providers set
+// the terminal state before closing the chunk channel, so Result is ready when
+// Next reports that the stream has ended. Before terminal state is set it
+// returns (nil, nil).
+func (r *StreamReader) Result() (*Response, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	return r.result, r.err
+}
+
+// Complete publishes the stream's terminal response and error. Callers that
+// adapt another stream should invoke it before closing the chunk channel.
+func (r *StreamReader) Complete(result *Response, err error) {
+	r.setResult(result, err)
 }
 
 // SetErr sets the error on the stream reader.
 func (r *StreamReader) SetErr(err error) {
+	r.setResult(nil, err)
+}
+
+// setResult atomically publishes the stream's terminal state.
+func (r *StreamReader) setResult(result *Response, err error) {
+	r.mu.Lock()
+	r.result = result
 	r.err = err
+	r.mu.Unlock()
 }
 
 // Provider is the LLM provider interface.

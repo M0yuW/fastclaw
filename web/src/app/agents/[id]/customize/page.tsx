@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Save, Check, Loader2, RotateCcw } from "lucide-react";
@@ -31,19 +31,20 @@ export default function AgentCustomizePage() {
   const agentName = useAgentName(agentId);
   const [activeTab, setActiveTab] = useState("SOUL.md");
   const [files, setFiles] = useState<Record<string, FileState>>({});
-  const [loading, setLoading] = useState(true);
+  const [loadedAgentId, setLoadedAgentId] = useState<string | null>(null);
+  const loading = loadedAgentId !== agentId;
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const loadAll = async () => {
+  const loadAll = useCallback(async (signal?: AbortSignal) => {
     const entries = await Promise.all(
-      CUSTOMIZE_FILES.map(async (f) => {
+      CUSTOMIZE_FILES.map(async (file) => {
         try {
-          const res = await apiFetch(`/api/agents/${agentId}/system-files/${f.name}`);
+          const res = await apiFetch(`/api/agents/${agentId}/system-files/${file.name}`, { signal });
           if (res.ok) {
             const data = await res.json();
             return [
-              f.name,
+              file.name,
               {
                 content: data.content || "",
                 source: (data.source || "default") as FileSource,
@@ -52,16 +53,23 @@ export default function AgentCustomizePage() {
             ] as [string, FileState];
           }
         } catch {}
-        return [f.name, { content: "", source: "default" as FileSource }] as [string, FileState];
-      })
+        return [file.name, { content: "", source: "default" as FileSource }] as [string, FileState];
+      }),
     );
-    setFiles(Object.fromEntries(entries));
-  };
+    return Object.fromEntries(entries);
+  }, [agentId]);
 
   useEffect(() => {
-    setLoading(true);
-    loadAll().then(() => setLoading(false));
-  }, [agentId]);
+    const controller = new AbortController();
+    loadAll(controller.signal)
+      .then((nextFiles) => {
+        if (controller.signal.aborted) return;
+        setFiles(nextFiles);
+        setLoadedAgentId(agentId);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [agentId, loadAll]);
 
   const active = files[activeTab];
 
@@ -76,7 +84,7 @@ export default function AgentCustomizePage() {
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       // Reload so source/baseContent stay accurate after save.
-      loadAll();
+      void loadAll().then(setFiles);
     } catch {}
     setSaving(false);
   };
@@ -92,7 +100,7 @@ export default function AgentCustomizePage() {
       await apiFetch(`/api/agents/${agentId}/system-files/${activeTab}`, {
         method: "DELETE",
       });
-      await loadAll();
+      setFiles(await loadAll());
     } catch {}
     setSaving(false);
   };

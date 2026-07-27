@@ -246,6 +246,9 @@ func New(env *config.EnvConfig) (*Gateway, error) {
 		if ag == nil {
 			return "", fmt.Errorf("agent %q not found", task.AgentID)
 		}
+		if task.ResponseMode == taskqueue.ResponseInternal {
+			return ag.HandleMessage(ctx, task.Message), nil
+		}
 		chanMgr.SendTyping(task.Message.Channel, task.AccountID, task.Message.ChatID)
 		typingDone := make(chan struct{})
 		go func() {
@@ -264,12 +267,16 @@ func New(env *config.EnvConfig) (*Gateway, error) {
 		}()
 		reply := ag.HandleMessage(ctx, task.Message)
 		close(typingDone)
-		mb.Outbound <- bus.OutboundMessage{
+		select {
+		case mb.Outbound <- bus.OutboundMessage{
 			Channel:      task.Message.Channel,
 			AccountID:    task.AccountID,
 			ChatID:       task.Message.ChatID,
 			Text:         reply,
 			ReplyToMsgID: task.Message.MessageID,
+		}:
+		case <-ctx.Done():
+			return "", ctx.Err()
 		}
 		return reply, nil
 	})
@@ -372,6 +379,7 @@ func (g *Gateway) Run() error {
 	}
 	slog.Info("gateway started")
 	wg.Wait()
+	g.bus.StopInternal(fmt.Errorf("gateway stopped"))
 	if g.taskQueue != nil {
 		g.taskQueue.Stop()
 	}
@@ -463,22 +471,22 @@ func readSystemTaskQueue(st store.Store) config.TaskQueueCfg {
 // with kind="setting". Adding a new namespace is a one-line append; the
 // scope.Setting / SettingInto helpers handle merging across scopes.
 const (
-	NSAgentDefaults = "agents.defaults"
-	NSSandbox       = "sandbox"
-	NSObjectStore   = "objectstore"
-	NSHooks         = "hooks"
-	NSPlugins       = "plugins"
-	NSTaskQueue     = "taskqueue"
-	NSToolProviders = "tools.providers"
+	NSAgentDefaults  = "agents.defaults"
+	NSSandbox        = "sandbox"
+	NSObjectStore    = "objectstore"
+	NSHooks          = "hooks"
+	NSPlugins        = "plugins"
+	NSTaskQueue      = "taskqueue"
+	NSToolProviders  = "tools.providers"
 	NSToolCategories = "tools.categories"
-	NSSkillsInstall = "skills.install"
-	NSSkillsEntries = "skills.entries"
-	NSMemory        = "memory"
-	NSPrivacy       = "privacy"
-	NSSkillsLearner = "skillsLearner"
-	NSHeartbeat     = "heartbeat"
-	NSTeams         = "teams"
-	NSBindings      = "bindings"
+	NSSkillsInstall  = "skills.install"
+	NSSkillsEntries  = "skills.entries"
+	NSMemory         = "memory"
+	NSPrivacy        = "privacy"
+	NSSkillsLearner  = "skillsLearner"
+	NSHeartbeat      = "heartbeat"
+	NSTeams          = "teams"
+	NSBindings       = "bindings"
 )
 
 // registerChannelsFromStore loads every enabled kind="channel" row from

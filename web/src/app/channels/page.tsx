@@ -34,16 +34,19 @@ export default function ChannelsPage() {
   const [loading, setLoading] = useState(true);
   const [editChannel, setEditChannel] = useState<ChannelInfo | null>(null);
 
-  const fetchChannels = () => {
-    setLoading(true);
-    getChannels()
-      .then(setChannels)
-      .catch(() => setChannels([]))
-      .finally(() => setLoading(false));
-  };
-
   useEffect(() => {
-    fetchChannels();
+    const controller = new AbortController();
+    getChannels(controller.signal)
+      .then((items) => {
+        if (!controller.signal.aborted) setChannels(items);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setChannels([]);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
   }, []);
 
   return (

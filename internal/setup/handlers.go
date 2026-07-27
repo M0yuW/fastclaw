@@ -20,6 +20,7 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/scope"
 	"github.com/fastclaw-ai/fastclaw/internal/session"
 	"github.com/fastclaw-ai/fastclaw/internal/store"
+	"github.com/fastclaw-ai/fastclaw/internal/taskqueue"
 	"github.com/fastclaw-ai/fastclaw/internal/users"
 
 	"github.com/fastclaw-ai/fastclaw/internal/privacy"
@@ -640,6 +641,15 @@ func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 			"chatKey":   t.ChatKey,
 			"status":    string(t.Status),
 			"createdAt": t.CreatedAt.Format(time.RFC3339),
+			"internal":  t.ResponseMode == taskqueue.ResponseInternal,
+		}
+		if t.ResponseMode == taskqueue.ResponseInternal {
+			entry["sourceAgentId"] = t.SourceAgentID
+			entry["correlationId"] = t.CorrelationID
+			entry["callPath"] = append([]string(nil), t.CallPath...)
+			if t.ParentChatKey != "" {
+				entry["parentChatKey"] = t.ParentChatKey
+			}
 		}
 		if t.StartedAt != nil && t.DoneAt != nil {
 			entry["duration"] = t.DoneAt.Sub(*t.StartedAt).Milliseconds()
@@ -670,7 +680,7 @@ func (r chatRequest) imageURLs() []string {
 }
 
 func webAgentContext(r *http.Request) (context.Context, context.CancelFunc) {
-	return context.WithTimeout(context.WithoutCancel(r.Context()), 2*time.Hour)
+	return context.WithTimeout(r.Context(), 2*time.Hour)
 }
 
 func drainChatEvents(events <-chan agentChatEvent) {
@@ -730,6 +740,7 @@ func (s *Server) handleChatStream(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
 	flusher.Flush()
 
 	agentCtx, cancel := webAgentContext(r)
@@ -748,11 +759,13 @@ func (s *Server) handleChatStream(w http.ResponseWriter, r *http.Request) {
 			}
 			data, _ := json.Marshal(ev)
 			if _, err := fmt.Fprintf(w, "data: %s\n\n", data); err != nil {
+				cancel()
 				go drainChatEvents(events)
 				return
 			}
 			flusher.Flush()
 		case <-r.Context().Done():
+			cancel()
 			go drainChatEvents(events)
 			return
 		}

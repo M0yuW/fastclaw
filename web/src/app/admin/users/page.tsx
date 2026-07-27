@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   adminListUsers,
   adminCreateUser,
@@ -72,14 +72,35 @@ export default function AdminUsersPage() {
   const [resetTarget, setResetTarget] = useState<UserRow | null>(null);
   const [resetPwd, setResetPwd] = useState("");
 
-  async function refresh() {
-    setError("");
-    const res = await adminListUsers();
-    if (res.users) setUsers(res.users);
-    if (res.error) setError(res.error);
-  }
+  const requestGenerationRef = useRef(0);
+  const refresh = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
+    try {
+      const result = await adminListUsers(signal);
+      if (signal?.aborted || requestGenerationRef.current !== generation) return;
+      if (result.users) setUsers(result.users);
+      setError(result.error || "");
+    } catch (error) {
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setError(error instanceof Error ? error.message : "Failed to load users");
+      }
+    }
+  }, []);
   useEffect(() => {
-    refresh();
+    const controller = new AbortController();
+    const generation = ++requestGenerationRef.current;
+    adminListUsers(controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted || requestGenerationRef.current !== generation) return;
+        if (result.users) setUsers(result.users);
+        setError(result.error || "");
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted && requestGenerationRef.current === generation) {
+          setError(error instanceof Error ? error.message : "Failed to load users");
+        }
+      });
+    return () => controller.abort();
   }, []);
 
   async function handleCreate(e: React.FormEvent) {

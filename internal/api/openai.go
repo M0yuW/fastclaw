@@ -198,6 +198,14 @@ func (s *Server) streamResponseFromAgent(w http.ResponseWriter, r *http.Request,
 		}
 	}
 
+	// Do not report a successful OpenAI terminal chunk for a cancelled or
+	// failed agent stream. The connection closes and clients treat it as
+	// truncated instead of accepting a partial answer as complete.
+	if err := sr.Err(); err != nil {
+		slog.Warn("agent stream failed", "chat_id", chatID, "error", err)
+		return
+	}
+
 	// Send finish chunk
 	done := "stop"
 	s.writeSSEChunk(w, chatID, model, created, "", "", &done)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -124,23 +124,31 @@ export default function AgentModelsPage() {
   const [testStatus, setTestStatus] = useState<"idle" | "testing" | "success" | "error">("idle");
   const [testError, setTestError] = useState("");
 
-  const fetchConfig = useCallback(() => {
-    setLoading(true);
-    getAgentConfig(agentId)
-      .then((cfg) => {
+  const requestGenerationRef = useRef(0);
+  const fetchConfig = useCallback((signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
+    return getAgentConfig(agentId, signal)
+      .then((config) => {
+        if (signal?.aborted || requestGenerationRef.current !== generation) return;
         const list: ProviderEntry[] = [];
-        for (const [name, p] of Object.entries(cfg.providers || {})) {
-          list.push(toProviderEntry(name, p));
+        for (const [name, provider] of Object.entries(config.providers || {})) {
+          list.push(toProviderEntry(name, provider));
         }
         setProviders(list);
-        setSelectedModel(cfg.model || "");
+        setSelectedModel(config.model || "");
       })
       .catch(() => {})
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!signal?.aborted && requestGenerationRef.current === generation) {
+          setLoading(false);
+        }
+      });
   }, [agentId]);
 
   useEffect(() => {
-    fetchConfig();
+    const controller = new AbortController();
+    void fetchConfig(controller.signal);
+    return () => controller.abort();
   }, [fetchConfig]);
 
   const allModelOptions: { value: string; label: string }[] = useMemo(() => {

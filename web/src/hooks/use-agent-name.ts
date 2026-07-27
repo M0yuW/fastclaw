@@ -8,26 +8,22 @@ import { getAgents } from "@/lib/api";
 // page chrome doesn't flicker between empty and resolved states. Pass an
 // empty string to skip the fetch entirely.
 export function useAgentName(agentId: string): string {
-  const [name, setName] = useState<string>(agentId);
+  const [resolved, setResolved] = useState<{ agentId: string; name: string } | null>(null);
+
   useEffect(() => {
-    if (!agentId) {
-      setName("");
-      return;
-    }
-    let aborted = false;
-    setName(agentId);
-    getAgents()
+    if (!agentId) return;
+    const controller = new AbortController();
+    getAgents(controller.signal)
       .then((list) => {
-        if (aborted) return;
-        const me = list.find((a) => a.id === agentId);
-        if (me?.name) setName(me.name);
+        const me = list.find((agent) => agent.id === agentId);
+        setResolved({ agentId, name: me?.name || agentId });
       })
       .catch(() => {
-        // leave name as the id fallback
+        // Keep rendering the id fallback when the request fails or is aborted.
       });
-    return () => {
-      aborted = true;
-    };
+    return () => controller.abort();
   }, [agentId]);
-  return name;
+
+  if (!agentId) return "";
+  return resolved?.agentId === agentId ? resolved.name : agentId;
 }

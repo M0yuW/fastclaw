@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { useEffect, useState, useRef, useCallback, useId, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { getAgent, getChatHistory, getChatSessions, listAgentFiles, renameChatSession, sendChatStream, uploadAgentFiles, getAuthToken, getSkills, type ChatHistoryMessage, type ChatStreamEvent, type SkillInfo, type ToolResultMetadata } from "@/lib/api";
+import { getAgent, getChatHistory, getChatSessions, listAgentFiles, renameChatSession, sendChatStream, uploadAgentFiles, getAuthToken, getSkills, type ChatHistoryMessage, type SkillInfo, type ToolResultMetadata } from "@/lib/api";
+import { createChatStreamBatcher, reduceChatStreamEvents, type StreamMessage } from "@/lib/chat-stream";
+import { useAgentIdFromURL } from "@/hooks/use-agent-id";
 import { Bot, Send, Copy, Check, Pencil, Wrench, ChevronDown, ChevronRight, Download, X, File, FileText, Image as ImageIcon, FileCode, Film, Music, Puzzle, SlidersHorizontal, ShieldCheck, Paperclip, Square } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import ReactMarkdown, { defaultUrlTransform, type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -32,15 +34,6 @@ const chatMarkdownComponents: Components = {
     </pre>
   ),
 };
-
-// react-markdown's default urlTransform strips any protocol not in the
-// safe-list (http, https, mailto, ircs, xmpp) — including `data:`. We want
-// inline base64 images to render, so fall through to the default for
-// everything else.
-function urlTransform(url: string, key: string): string {
-  if (key === "src" && url.startsWith("data:image/")) return url;
-  return defaultUrlTransform(url);
-}
 
 // makeUrlTransform builds a urlTransform that also remaps sandbox
 // `/workspace/<name>` paths to the authenticated file API URL for the
@@ -159,12 +152,7 @@ interface UserAttachment {
   previewUrl?: string;
 }
 
-interface ChatMessage {
-  id: string;
-  role: "user" | "agent" | "tool-group";
-  content: string;
-  timestamp: number;
-  toolCalls?: { id: string; name: string; arguments: string; result?: string; metadata?: ToolResultMetadata }[];
+interface ChatMessage extends StreamMessage<ToolResultMetadata> {
   files?: ProducedFile[];
   attachments?: UserAttachment[];
 }
@@ -279,24 +267,21 @@ function buildChatMessages(history: ChatHistoryMessage[]): ChatMessage[] {
   return msgs;
 }
 
-function getAgentIdFromURL(): string {
-  if (typeof window === "undefined") return "default";
-  const match = window.location.pathname.match(/\/agents\/([^/]+)\//);
-  return match ? match[1] : "default";
-}
-
 export default function AgentChatPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedAgent] = useState(() => getAgentIdFromURL());
+  const selectedAgent = useAgentIdFromURL();
   const [agentName, setAgentName] = useState<string>("");
+  const sessionSeed = useId().replace(/[^a-zA-Z0-9_-]/g, "");
+  const [sessionSequence, setSessionSequence] = useState(0);
   const [sessionId, setSessionId] = useState<string>(() => searchParams.get("session") || generateSessionId());
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [sessionTitle, setSessionTitle] = useState<string>("");
+  const currentSession = sessions.find((session) => session.id === sessionId);
+  const sessionTitle = currentSession?.title || currentSession?.preview || "";
   const [attachments, setAttachments] = useState<File[]>([]);
   // Lightbox for clicking either an attachment thumbnail (compose box)
   // or an inline image in a sent message bubble. `null` = closed.
@@ -319,9 +304,20 @@ export default function AgentChatPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // AbortController for the in-flight chat stream so the Stop button can
-  // cancel both the upload and the SSE connection. Reset on every new turn.
   const abortRef = useRef<AbortController | null>(null);
+  const historyAbortRef = useRef<AbortController | null>(null);
+  const streamGenerationRef = useRef(0);
+  const sessionsGenerationRef = useRef(0);
+
+  const abortStream = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+  const invalidateStream = useCallback(() => {
+    streamGenerationRef.current++;
+    abortRef.current?.abort();
+  }, []);
+
+  useEffect(() => invalidateStream, [selectedAgent, sessionId, invalidateStream]);
 
   // Slash-command menu state. The menu opens when the textarea holds a
   // token beginning with `/` at the caret; selecting a skill swaps that
@@ -333,7 +329,15 @@ export default function AgentChatPage() {
   const [slashIndex, setSlashIndex] = useState(0);
 
   useEffect(() => {
-    getSkills().then(setSkills).catch(() => setSkills([]));
+    const controller = new AbortController();
+    getSkills(controller.signal)
+      .then((items) => {
+        if (!controller.signal.aborted) setSkills(items);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setSkills([]);
+      });
+    return () => controller.abort();
   }, []);
 
   // Resolve the agent's display name once. The chat title and any
@@ -343,18 +347,17 @@ export default function AgentChatPage() {
   // /api/agents (list) is owner-scoped and would miss it.
   useEffect(() => {
     if (!selectedAgent) return;
-    let aborted = false;
-    getAgent(selectedAgent)
-      .then((a) => {
-        if (aborted) return;
-        setAgentName(a?.name || a?.id || selectedAgent);
+    const controller = new AbortController();
+    getAgent(selectedAgent, controller.signal)
+      .then((agent) => {
+        if (!controller.signal.aborted) {
+          setAgentName(agent?.name || agent?.id || selectedAgent);
+        }
       })
       .catch(() => {
-        if (!aborted) setAgentName(selectedAgent);
+        if (!controller.signal.aborted) setAgentName(selectedAgent);
       });
-    return () => {
-      aborted = true;
-    };
+    return () => controller.abort();
   }, [selectedAgent]);
 
   // Detect whether the caret is inside a /token and, if so, what's been
@@ -403,58 +406,67 @@ export default function AgentChatPage() {
   );
 
   // Load sessions when agent changes
-  const loadSessions = useCallback((agentId: string) => {
-    getChatSessions(agentId)
-      .then((list) => setSessions(list || []))
-      .catch(() => setSessions([]));
+  const loadSessions = useCallback(async (agentId: string, signal?: AbortSignal) => {
+    const generation = ++sessionsGenerationRef.current;
+    try {
+      const list = await getChatSessions(agentId, signal);
+      if (!signal?.aborted && sessionsGenerationRef.current === generation) {
+        setSessions(list || []);
+      }
+    } catch {
+      if (!signal?.aborted && sessionsGenerationRef.current === generation) {
+        setSessions([]);
+      }
+    }
   }, []);
 
   useEffect(() => {
     if (!selectedAgent) return;
-    loadSessions(selectedAgent);
+    const controller = new AbortController();
+    void loadSessions(selectedAgent, controller.signal);
+    return () => controller.abort();
   }, [selectedAgent, loadSessions]);
 
-  // Sync URL's ?session= back into local state. Without this, navigating
-  // between sessions / to "New chat" from the sidebar (router.push of the
-  // same page with a different query string) changes the URL but doesn't
-  // remount the page — sessionId / messages would stay on the old value.
-  //
-  // Three transitions to handle:
-  //   - /chat/?session=A → /chat/?session=B  : swap sessionId, history effect reloads messages
-  //   - /chat/?session=A → /chat/           : brand-new session, clear messages pane
-  //   - /chat/           → /chat/?session=A : open the targeted session
-  // We track `prevHadSession` so the initial mount (useState already picked
-  // an id) doesn't trigger a redundant reset.
-  const prevHadSessionRef = useRef(false);
-  useEffect(() => {
-    const urlSession = searchParams.get("session");
-    if (urlSession) {
-      prevHadSessionRef.current = true;
-      if (urlSession !== sessionId) {
-        setSessionId(urlSession);
-      }
-      return;
+  // Keep local state aligned with sidebar URL and agent navigation. The
+  // guarded render-time reset follows React's "store previous props" pattern
+  // and avoids an effect cascade. When the first send writes the existing
+  // local session into the URL, the IDs already match, so the stream is kept.
+  const urlSession = searchParams.get("session");
+  const [previousAgent, setPreviousAgent] = useState(selectedAgent);
+  const [previousUrlSession, setPreviousUrlSession] = useState(urlSession);
+  if (selectedAgent !== previousAgent || urlSession !== previousUrlSession) {
+    const agentChanged = selectedAgent !== previousAgent;
+    setPreviousAgent(selectedAgent);
+    setPreviousUrlSession(urlSession);
+    if (agentChanged) {
+      setSessions([]);
+      setMessages([]);
+      setAttachments([]);
     }
-    if (prevHadSessionRef.current) {
-      prevHadSessionRef.current = false;
-      setSessionId(generateSessionId());
+    if (urlSession && urlSession !== sessionId) {
+      setSessionId(urlSession);
+      setMessages([]);
+    } else if (!urlSession && (agentChanged || previousUrlSession)) {
+      const nextSequence = sessionSequence + 1;
+      setSessionSequence(nextSequence);
+      setSessionId(`s-${sessionSeed}-${nextSequence}`);
       setMessages([]);
     }
-  }, [searchParams, sessionId]);
-
-  // Keep the local sessionTitle in sync with the session list. Unknown
-  // sessions (brand-new, not saved yet) fall back to empty so the header
-  // can render "New chat".
-  useEffect(() => {
-    const s = sessions.find((x) => x.id === sessionId);
-    setSessionTitle(s?.title || s?.preview || "");
-  }, [sessionId, sessions]);
+  }
 
   const handleRenameTitle = useCallback(
     async (next: string) => {
       const trimmed = next.trim();
       if (!trimmed || !selectedAgent || trimmed === sessionTitle) return;
-      setSessionTitle(trimmed);
+      setSessions((prev) => {
+        let found = false;
+        const next = prev.map((session) => {
+          if (session.id !== sessionId) return session;
+          found = true;
+          return { ...session, title: trimmed };
+        });
+        return found ? next : [...next, { id: sessionId, title: trimmed, preview: "" }];
+      });
       try {
         await renameChatSession(selectedAgent, sessionId, trimmed);
       } finally {
@@ -497,15 +509,20 @@ export default function AgentChatPage() {
   // hanging it off the last agent message.
   useEffect(() => {
     if (!selectedAgent || !sessionId) return;
-    getChatHistory(selectedAgent, sessionId)
+    const controller = new AbortController();
+    historyAbortRef.current?.abort();
+    historyAbortRef.current = controller;
+    getChatHistory(selectedAgent, sessionId, controller.signal)
       .then(async (history) => {
+        if (controller.signal.aborted) return;
         if (!history || history.length === 0) {
           setMessages([]);
           return;
         }
         const built = buildChatMessages(history);
         try {
-          const allFiles = await listAgentFiles(selectedAgent);
+          const allFiles = await listAgentFiles(selectedAgent, controller.signal);
+          if (controller.signal.aborted) return;
           const sessionPrefix = `sessions/${sessionId}/`;
           const sessionFiles: ProducedFile[] = allFiles
             .filter((f) => f.path.startsWith(sessionPrefix) && !isSystemFile(f.path))
@@ -519,9 +536,15 @@ export default function AgentChatPage() {
             }
           }
         } catch { /* listing failed — fall back to no panel */ }
-        setMessages(built);
+        if (!controller.signal.aborted) setMessages(built);
       })
-      .catch(() => setMessages([]));
+      .catch(() => {
+        if (!controller.signal.aborted) setMessages([]);
+      });
+    return () => {
+      if (historyAbortRef.current === controller) historyAbortRef.current = null;
+      controller.abort();
+    };
   }, [selectedAgent, sessionId]);
 
   useEffect(() => {
@@ -536,10 +559,19 @@ export default function AgentChatPage() {
     }
   }, [input]);
 
+  const handleNewChat = useCallback(() => {
+    const newId = generateSessionId();
+    setSessionId(newId);
+    setMessages([]);
+    router.replace(`/agents/${selectedAgent}/chat/`);
+  }, [router, selectedAgent]);
+
   const handleSend = useCallback(async () => {
     const text = input.trim();
     // Allow sending with attachments only (no text), but require at least one.
     if ((!text && attachments.length === 0) || !selectedAgent || sending) return;
+
+    historyAbortRef.current?.abort();
 
     // Pin the sessionId into the URL on the first send so a refresh keeps
     // the user in the same conversation. Use history.replaceState (not
@@ -558,6 +590,16 @@ export default function AgentChatPage() {
     // models receive them as image_url content parts.
     const filesToUpload = attachments;
     setAttachments([]);
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const generation = ++streamGenerationRef.current;
+    setSending(true);
+    const finishSending = () => {
+      if (abortRef.current !== controller) return;
+      abortRef.current = null;
+      setSending(false);
+      textareaRef.current?.focus();
+    };
 
     let userBubbleAttachments: UserAttachment[] = [];
     let imageDataUrls: string[] = [];
@@ -570,12 +612,20 @@ export default function AgentChatPage() {
       }));
 
       try {
-        await uploadAgentFiles(selectedAgent, sessionId, filesToUpload);
+        await uploadAgentFiles(selectedAgent, sessionId, filesToUpload, controller.signal);
       } catch (err) {
-        setMessages((prev) => [
-          ...prev,
-          { id: `e-${Date.now()}`, role: "agent", content: `File upload failed: ${err instanceof Error ? err.message : "unknown error"}`, timestamp: Date.now() },
-        ]);
+        if (streamGenerationRef.current === generation) {
+          const isAbort = err instanceof DOMException && err.name === "AbortError";
+          setMessages((prev) => [
+            ...prev,
+            { id: `e-${Date.now()}`, role: "agent", content: isAbort ? "(Stopped)" : `File upload failed: ${err instanceof Error ? err.message : "unknown error"}`, timestamp: Date.now() },
+          ]);
+        }
+        finishSending();
+        return;
+      }
+      if (controller.signal.aborted || streamGenerationRef.current !== generation) {
+        finishSending();
         return;
       }
 
@@ -588,13 +638,28 @@ export default function AgentChatPage() {
             if (!f.type.startsWith("image/")) return null;
             return await new Promise<string | null>((resolve) => {
               const reader = new FileReader();
-              reader.onload = () => resolve(typeof reader.result === "string" ? reader.result : null);
-              reader.onerror = () => resolve(null);
+              const abort = () => {
+                reader.abort();
+                resolve(null);
+              };
+              controller.signal.addEventListener("abort", abort, { once: true });
+              reader.onload = () => {
+                controller.signal.removeEventListener("abort", abort);
+                resolve(typeof reader.result === "string" ? reader.result : null);
+              };
+              reader.onerror = () => {
+                controller.signal.removeEventListener("abort", abort);
+                resolve(null);
+              };
               reader.readAsDataURL(f);
             });
           }),
         )
       ).filter((s): s is string => !!s);
+      if (controller.signal.aborted || streamGenerationRef.current !== generation) {
+        finishSending();
+        return;
+      }
     }
     // Build the prompt actually sent to the model. Images travel as
     // `imageUrls` for vision, but the model also needs the on-disk path
@@ -621,14 +686,12 @@ export default function AgentChatPage() {
         attachments: userBubbleAttachments.length > 0 ? userBubbleAttachments : undefined,
       },
     ]);
-    setSending(true);
-    abortRef.current = new AbortController();
 
     // Snapshot the workspace before the turn so we can diff at `done` and
     // attach newly-created / modified files (PDFs, images, …) to the
     // final reply. Fire-and-forget; if the snapshot fails we just won't
     // surface files this turn. `path → size|modTime` key.
-    const preTurnFilesPromise = listAgentFiles(selectedAgent)
+    const preTurnFilesPromise = listAgentFiles(selectedAgent, controller.signal)
       .then((items) => {
         const m = new Map<string, string>();
         for (const f of items) m.set(f.path, `${f.size}|${f.modTime}`);
@@ -636,134 +699,54 @@ export default function AgentChatPage() {
       })
       .catch(() => new Map<string, string>());
 
-    let curGroupId = "";
-    let curCalls: { id: string; name: string; arguments: string; result?: string; metadata?: ToolResultMetadata }[] = [];
-    let curContent = "";
     const turnFiles: ProducedFile[] = [];
     const seenPaths = new Set<string>();
-
-    const startNewGroup = () => {
-      curGroupId = `tg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
-      curCalls = [];
-      curContent = "";
-    };
-    startNewGroup();
+    const toolCalls = new Map<string, { name: string; arguments: string }>();
+    const batcher = createChatStreamBatcher((events) => {
+      if (streamGenerationRef.current !== generation) return;
+      setMessages((prev) => reduceChatStreamEvents(prev, events));
+    });
 
     try {
-      await sendChatStream(selectedAgent, sessionId, fullText, (evt: ChatStreamEvent) => {
-        switch (evt.type) {
-          case "content": {
-            const content = evt.data?.content || "";
-            if (content === "__NEW_SESSION__") {
-              handleNewChat();
-              loadSessions(selectedAgent);
-              return;
-            }
-            if (curCalls.length > 0) {
-              // Content after tool calls = new round. Finalize current group, start fresh.
-              startNewGroup();
-            }
-            // Store as thinking content (may become part of next tool-group, or stay as final answer)
-            curContent = content;
-            setMessages((prev) => [
-              ...prev,
-              { id: `a-${Date.now()}`, role: "agent", content, timestamp: Date.now() },
-            ]);
-            break;
-          }
-          case "tool_call": {
-            // New round starts if every tool in the current group has
-            // already resolved. Without this, two assistant turns that
-            // happen back-to-back with no intervening content event get
-            // merged into one visual group live — inconsistent with the
-            // refresh path (buildChatMessages) which correctly splits
-            // per assistant message.
-            if (curCalls.length > 0 && curCalls.every((c) => c.result !== undefined)) {
-              startNewGroup();
-            }
-            curCalls.push({
-              id: evt.data?.id || "",
-              name: evt.data?.name || "",
-              arguments: evt.data?.arguments || "{}",
-            });
-            const groupId = curGroupId;
-            const calls = [...curCalls];
-            const content = curContent;
-            setMessages((prev) => {
-              // If last message is the thinking content for this round, replace with tool-group
-              const last = prev[prev.length - 1];
-              if (content && last?.role === "agent" && last.content === content) {
-                return [
-                  ...prev.slice(0, -1),
-                  { id: groupId, role: "tool-group" as const, content, timestamp: Date.now(), toolCalls: calls },
-                ];
+      await sendChatStream(selectedAgent, sessionId, fullText, (evt) => {
+        if (streamGenerationRef.current !== generation) return;
+        if (evt.type === "content" && evt.data?.content === "__NEW_SESSION__") {
+          handleNewChat();
+          loadSessions(selectedAgent);
+          return;
+        }
+        if (evt.type === "tool_call" && evt.data?.id) {
+          toolCalls.set(evt.data.id, {
+            name: evt.data.name ?? "",
+            arguments: evt.data.arguments ?? "{}",
+          });
+        }
+        if (evt.type === "tool_result" && evt.data?.id) {
+          const call = toolCalls.get(evt.data.id);
+          const resultText = evt.data.result ?? "";
+          if (call?.name === "write_file" && /^Written \d+ bytes/.test(resultText)) {
+            try {
+              const args = JSON.parse(call.arguments);
+              const path: string = typeof args?.path === "string" ? args.path : "";
+              if (path && !path.startsWith("/") && !isSystemFile(path) && !seenPaths.has(path)) {
+                seenPaths.add(path);
+                turnFiles.push({ path, size: parseWrittenSize(resultText) });
               }
-              // Update existing tool-group for this round
-              const idx = prev.findIndex((m) => m.id === groupId);
-              if (idx >= 0) {
-                const updated = [...prev];
-                updated[idx] = { ...updated[idx], toolCalls: calls };
-                return updated;
-              }
-              // New tool-group
-              return [
-                ...prev,
-                { id: groupId, role: "tool-group" as const, content, timestamp: Date.now(), toolCalls: calls },
-              ];
-            });
-            break;
-          }
-          case "tool_result": {
-            const tc = curCalls.find((c) => c.id === (evt.data?.id || ""));
-            const resultText = evt.data?.result || "";
-            if (tc) {
-              tc.result = resultText;
-              if (evt.data?.metadata) tc.metadata = evt.data.metadata;
-            }
-            // Track successful write_file calls that landed in the workspace
-            // (i.e. a relative path that isn't a system identity file).
-            if (tc && tc.name === "write_file" && /^Written \d+ bytes/.test(resultText)) {
-              try {
-                const args = JSON.parse(tc.arguments);
-                const p: string = typeof args?.path === "string" ? args.path : "";
-                if (p && !p.startsWith("/") && !isSystemFile(p) && !seenPaths.has(p)) {
-                  seenPaths.add(p);
-                  turnFiles.push({ path: p, size: parseWrittenSize(resultText) });
-                }
-              } catch { /* ignore bad args */ }
-            }
-            const groupId = curGroupId;
-            const calls = [...curCalls];
-            setMessages((prev) => {
-              const idx = prev.findIndex((m) => m.id === groupId);
-              if (idx < 0) return prev;
-              const updated = [...prev];
-              updated[idx] = { ...updated[idx], toolCalls: calls };
-              return updated;
-            });
-            break;
-          }
-          case "error": {
-            // Surface backend errors as a chat bubble. Without this the
-            // turn just hangs — the model failed (provider 4xx/5xx,
-            // serialization mismatch, etc.) and the only signal was a
-            // gateway log line the user can't see.
-            const msg = evt.data?.message || "Unknown error";
-            setMessages((prev) => [
-              ...prev,
-              { id: `e-${Date.now()}`, role: "agent", content: `Error: ${msg}`, timestamp: Date.now() },
-            ]);
-            break;
+            } catch { /* ignore bad args */ }
           }
         }
-      }, abortRef.current.signal, imageDataUrls);
+        batcher.enqueue(evt);
+      }, controller.signal, imageDataUrls);
+      batcher.flush();
+      controller.signal.throwIfAborted();
       // Diff the workspace against the pre-turn snapshot so files
       // produced by *exec* (e.g. a Python script that saves PDFs) get
       // surfaced too — `turnFiles` only catches write_file tool calls
       // with relative, non-identity paths, which misses most real-
       // world flows. Union both sources by path.
-      const postTurnFiles = await listAgentFiles(selectedAgent).catch(() => []);
+      const postTurnFiles = await listAgentFiles(selectedAgent, controller.signal).catch(() => []);
       const preSnap = await preTurnFilesPromise;
+      controller.signal.throwIfAborted();
       const diffFiles: ProducedFile[] = [];
       for (const f of postTurnFiles) {
         if (isSystemFile(f.path)) continue;
@@ -792,8 +775,11 @@ export default function AgentChatPage() {
         setMessages((prev) => {
           if (prev.length === 0) return prev;
           const updated = [...prev];
-          const last = updated[updated.length - 1];
-          updated[updated.length - 1] = { ...last, files: allFiles };
+          let target = updated.length - 1;
+          while (target >= 0 && updated[target].role !== "agent" && updated[target].role !== "tool-group") target--;
+          if (target < 0) return prev;
+          const last = updated[target];
+          updated[target] = { ...last, files: allFiles };
           if (typeof console !== "undefined") {
             console.log("[chat] attached files to last message", {
               lastId: last.id,
@@ -816,6 +802,8 @@ export default function AgentChatPage() {
         );
       }
     } catch (err) {
+      batcher.flush();
+      if (streamGenerationRef.current !== generation) return;
       // AbortError from the user clicking Stop is expected — surface a
       // brief "Stopped" line so they see the cancellation took effect,
       // not a generic failure message.
@@ -835,12 +823,8 @@ export default function AgentChatPage() {
       // turn — the user just got their answer; we shouldn't tack on
       // a confusing failure bubble.
       if (isAbort) {
-        // Resolve any in-flight tools in the current tool-group so they
-        // stop spinning. Server-side padOrphanToolResults will write a
-        // matching record on its end; this just keeps the UI consistent
-        // until the next history fetch overwrites it.
-        setMessages((prev) =>
-          prev.map((m) =>
+        setMessages((prev) => [
+          ...prev.map((m) =>
             m.role === "tool-group" && m.toolCalls
               ? {
                   ...m,
@@ -850,9 +834,6 @@ export default function AgentChatPage() {
                 }
               : m,
           ),
-        );
-        setMessages((prev) => [
-          ...prev,
           { id: `e-${Date.now()}`, role: "agent", content: "(Stopped)", timestamp: Date.now() },
         ]);
       } else {
@@ -879,15 +860,12 @@ export default function AgentChatPage() {
         });
       }
     } finally {
-      abortRef.current = null;
-      setSending(false);
-      textareaRef.current?.focus();
+      batcher.flush();
+      finishSending();
     }
-  }, [input, attachments, selectedAgent, sessionId, sending, loadSessions]);
+  }, [input, attachments, selectedAgent, sessionId, sending, loadSessions, handleNewChat]);
 
-  const handleStop = useCallback(() => {
-    abortRef.current?.abort();
-  }, []);
+  const handleStop = abortStream;
 
   const handleFilePick = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const picked = e.target.files;
@@ -964,18 +942,6 @@ export default function AgentChatPage() {
     navigator.clipboard.writeText(msg.content);
     setCopiedId(msg.id);
     setTimeout(() => setCopiedId(null), 1500);
-  };
-
-  const handleNewChat = () => {
-    const newId = generateSessionId();
-    setSessionId(newId);
-    setMessages([]);
-    router.replace(`/agents/${selectedAgent}/chat/`);
-  };
-
-  const handleSelectSession = (sid: string) => {
-    setSessionId(sid);
-    router.replace(`/agents/${selectedAgent}/chat/?session=${sid}`);
   };
 
   const formatTime = (ts: number) =>
@@ -1341,10 +1307,6 @@ function ChatHeaderTitle({ title, fallback, onSave }: ChatHeaderTitleProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (!editing) setDraft(title);
-  }, [title, editing]);
-
-  useEffect(() => {
     if (editing) inputRef.current?.select();
   }, [editing]);
 
@@ -1622,17 +1584,33 @@ function FilePreview({ agentId, file, onClose }: { agentId: string; file: Produc
   const src = fileUrl(agentId, file.path, false);
   const downloadUrl = fileUrl(agentId, file.path, true);
   const basename = file.path.split("/").pop() || file.path;
-  const [text, setText] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [loadedText, setLoadedText] = useState<{
+    src: string;
+    text: string | null;
+    error: string | null;
+  } | null>(null);
+  const text = loadedText?.src === src ? loadedText.text : null;
+  const error = loadedText?.src === src ? loadedText.error : null;
 
   useEffect(() => {
     if (preview !== "markdown" && preview !== "text") return;
-    let cancelled = false;
-    fetch(src)
-      .then((r) => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
-      .then((t) => { if (!cancelled) setText(t); })
-      .catch((e) => { if (!cancelled) setError(String(e)); });
-    return () => { cancelled = true; };
+    const controller = new AbortController();
+    fetch(src, { signal: controller.signal })
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        return response.text();
+      })
+      .then((content) => {
+        if (!controller.signal.aborted) {
+          setLoadedText({ src, text: content, error: null });
+        }
+      })
+      .catch((loadError) => {
+        if (!controller.signal.aborted) {
+          setLoadedText({ src, text: null, error: String(loadError) });
+        }
+      });
+    return () => controller.abort();
   }, [src, preview]);
 
   return (
@@ -1665,7 +1643,14 @@ function FilePreview({ agentId, file, onClose }: { agentId: string; file: Produc
         </div>
         <div className="flex-1 overflow-auto p-4 min-h-0">
           {preview === "image" && (
-            <img src={src} alt={basename} className="max-w-full max-h-full mx-auto object-contain" />
+            <Image
+              src={src}
+              alt={basename}
+              width={1600}
+              height={1200}
+              unoptimized
+              className="mx-auto h-auto max-h-full w-auto max-w-full object-contain"
+            />
           )}
           {preview === "pdf" && (
             <iframe src={src} className="h-full w-full border-0" title={basename} />

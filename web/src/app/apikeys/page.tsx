@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   listApikeys,
   createApikey,
@@ -68,17 +68,47 @@ export default function ApikeysPage() {
   const [rotateTarget, setRotateTarget] = useState<ApiKey | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
 
-  async function refresh() {
-    setError("");
-    const r = await listApikeys();
-    if (r.apikeys) setKeys(r.apikeys);
-    if (r.error) setError(r.error);
-    const a = await apiFetch("/api/agents");
-    const aj = await a.json();
-    if (aj.agents) setAgents(aj.agents);
-  }
+  const requestGenerationRef = useRef(0);
+  const refresh = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
+    try {
+      const result = await listApikeys(signal);
+      if (signal?.aborted || requestGenerationRef.current !== generation) return;
+      if (result.apikeys) setKeys(result.apikeys);
+      setError(result.error || "");
+
+      const response = await apiFetch("/api/agents", { signal });
+      const agentsResponse = await response.json();
+      if (signal?.aborted || requestGenerationRef.current !== generation) return;
+      if (agentsResponse.agents) setAgents(agentsResponse.agents);
+    } catch (error) {
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setError(error instanceof Error ? error.message : "Failed to load API keys");
+      }
+    }
+  }, []);
   useEffect(() => {
-    refresh();
+    const controller = new AbortController();
+    const generation = ++requestGenerationRef.current;
+    listApikeys(controller.signal)
+      .then(async (result) => {
+        if (controller.signal.aborted || requestGenerationRef.current !== generation) return null;
+        const response = await apiFetch("/api/agents", { signal: controller.signal });
+        const agentsResponse = await response.json();
+        return { result, agentsResponse };
+      })
+      .then((payload) => {
+        if (!payload || controller.signal.aborted || requestGenerationRef.current !== generation) return;
+        if (payload.result.apikeys) setKeys(payload.result.apikeys);
+        setError(payload.result.error || "");
+        if (payload.agentsResponse.agents) setAgents(payload.agentsResponse.agents);
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted && requestGenerationRef.current === generation) {
+          setError(error instanceof Error ? error.message : "Failed to load API keys");
+        }
+      });
+    return () => controller.abort();
   }, []);
 
   async function handleCreate(e: React.FormEvent) {

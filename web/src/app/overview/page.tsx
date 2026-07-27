@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -26,19 +26,30 @@ export default function OverviewPage() {
   const [status, setStatus] = useState<StatusResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchStatus = () => {
-    setLoading(true);
-    getStatus()
-      .then(setStatus)
-      .catch(() => setStatus(null))
-      .finally(() => setLoading(false));
-  };
+  const requestAbortRef = useRef<AbortController | null>(null);
+  const fetchStatus = useCallback(async () => {
+    requestAbortRef.current?.abort();
+    const controller = new AbortController();
+    requestAbortRef.current = controller;
+    try {
+      const nextStatus = await getStatus(controller.signal);
+      if (!controller.signal.aborted) setStatus(nextStatus);
+    } catch {
+      if (!controller.signal.aborted) setStatus(null);
+    } finally {
+      if (!controller.signal.aborted) setLoading(false);
+      if (requestAbortRef.current === controller) requestAbortRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 10000);
-    return () => clearInterval(interval);
-  }, []);
+    void fetchStatus();
+    const interval = window.setInterval(() => void fetchStatus(), 10000);
+    return () => {
+      window.clearInterval(interval);
+      requestAbortRef.current?.abort();
+    };
+  }, [fetchStatus]);
 
   if (loading && !status) {
     return (

@@ -150,7 +150,7 @@ func (p *OpenAIProvider) Chat(ctx context.Context, messages []Message, tools []T
 		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	return p.parseSSE(resp.Body)
+	return parseOpenAISSE(ctx, resp.Body, nil)
 }
 
 // ChatStream returns a StreamReader that yields chunks as they arrive from the LLM.
@@ -178,103 +178,40 @@ func (p *OpenAIProvider) ChatStream(ctx context.Context, messages []Message, too
 		defer resp.Body.Close()
 		defer close(ch)
 
-		scanner := bufio.NewScanner(resp.Body)
-		scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-
-		toolCalls := make(map[int]*ToolCall)
-
-		for scanner.Scan() {
-			line := scanner.Text()
-			if !strings.HasPrefix(line, "data: ") {
-				continue
+		result, parseErr := parseOpenAISSE(ctx, resp.Body, func(chunk StreamChunk) error {
+			select {
+			case ch <- chunk:
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
 			}
-			data := strings.TrimPrefix(line, "data: ")
-			if data == "[DONE]" {
-				// Send final chunk with accumulated tool calls
-				var tcs []ToolCall
-				for i := 0; i < len(toolCalls); i++ {
-					if tc, ok := toolCalls[i]; ok {
-						tcs = append(tcs, *tc)
-					}
-				}
-				select {
-				case ch <- StreamChunk{ToolCalls: tcs, Done: true}:
-				case <-ctx.Done():
-				}
-				return
-			}
-
-			var chunk sseResponse
-			if err := json.Unmarshal([]byte(data), &chunk); err != nil {
-				slog.Warn("parse SSE chunk", "error", err, "data", data)
-				continue
-			}
-
-			if len(chunk.Choices) == 0 {
-				continue
-			}
-
-			delta := chunk.Choices[0].Delta
-
-			// Accumulate tool calls
-			for _, tc := range delta.ToolCalls {
-				existing, ok := toolCalls[tc.Index]
-				if !ok {
-					toolCalls[tc.Index] = &ToolCall{
-						ID:   tc.ID,
-						Type: tc.Type,
-						Function: FunctionCall{
-							Name:      tc.Function.Name,
-							Arguments: tc.Function.Arguments,
-						},
-					}
-				} else {
-					if tc.ID != "" {
-						existing.ID = tc.ID
-					}
-					if tc.Type != "" {
-						existing.Type = tc.Type
-					}
-					if tc.Function.Name != "" {
-						existing.Function.Name += tc.Function.Name
-					}
-					existing.Function.Arguments += tc.Function.Arguments
-				}
-			}
-
-			// Yield content chunks
-			if delta.Content != "" {
-				select {
-				case ch <- StreamChunk{Content: delta.Content}:
-				case <-ctx.Done():
-					return
-				}
-			}
-		}
-
-		if err := scanner.Err(); err != nil {
-			reader.SetErr(fmt.Errorf("read stream: %w", err))
-		}
+		})
+		reader.setResult(result, parseErr)
 	}()
 
 	return reader, nil
 }
 
-func (p *OpenAIProvider) parseSSE(reader io.Reader) (*Response, error) {
-	scanner := bufio.NewScanner(reader)
-	// Increase buffer size for large SSE chunks
+func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk) error) (*Response, error) {
+	scanner := bufio.NewScanner(source)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
 	var contentBuilder strings.Builder
 	toolCalls := make(map[int]*ToolCall)
+	complete := false
 
 	for scanner.Scan() {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		line := scanner.Text()
-		if !strings.HasPrefix(line, "data: ") {
+		if !strings.HasPrefix(line, "data:") {
 			continue
 		}
-		data := strings.TrimPrefix(line, "data: ")
+		data := strings.TrimPrefix(line, "data:")
+		data = strings.TrimPrefix(data, " ")
 		if data == "[DONE]" {
+			complete = true
 			break
 		}
 
@@ -283,17 +220,19 @@ func (p *OpenAIProvider) parseSSE(reader io.Reader) (*Response, error) {
 			slog.Warn("parse SSE chunk", "error", err, "data", data)
 			continue
 		}
-
 		if len(chunk.Choices) == 0 {
 			continue
 		}
 
 		delta := chunk.Choices[0].Delta
-
 		if delta.Content != "" {
 			contentBuilder.WriteString(delta.Content)
+			if emit != nil {
+				if err := emit(StreamChunk{Content: delta.Content}); err != nil {
+					return nil, err
+				}
+			}
 		}
-
 		for _, tc := range delta.ToolCalls {
 			existing, ok := toolCalls[tc.Index]
 			if !ok {
@@ -305,42 +244,50 @@ func (p *OpenAIProvider) parseSSE(reader io.Reader) (*Response, error) {
 						Arguments: tc.Function.Arguments,
 					},
 				}
-			} else {
-				if tc.ID != "" {
-					existing.ID = tc.ID
-				}
-				if tc.Type != "" {
-					existing.Type = tc.Type
-				}
-				if tc.Function.Name != "" {
-					existing.Function.Name += tc.Function.Name
-				}
-				existing.Function.Arguments += tc.Function.Arguments
+				continue
 			}
+			if tc.ID != "" {
+				existing.ID = tc.ID
+			}
+			if tc.Type != "" {
+				existing.Type = tc.Type
+			}
+			if tc.Function.Name != "" {
+				existing.Function.Name += tc.Function.Name
+			}
+			existing.Function.Arguments += tc.Function.Arguments
 		}
 	}
 
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("read stream: %w", err)
 	}
-
-	result := &Response{
-		Content: contentBuilder.String(),
+	if !complete {
+		return nil, io.ErrUnexpectedEOF
 	}
+
+	result := &Response{Content: contentBuilder.String()}
 	for i := 0; i < len(toolCalls); i++ {
 		if tc, ok := toolCalls[i]; ok {
 			result.ToolCalls = append(result.ToolCalls, *tc)
 		}
 	}
 
-	// Capture raw assistant message for cache-safe replay.
-	// Reconstruct the exact message format the API would expect back.
-	rawMsg := apiMessage{
-		Role:      "assistant",
-		ToolCalls: result.ToolCalls,
-	}
+	rawMsg := apiMessage{Role: "assistant", ToolCalls: result.ToolCalls}
 	rawMsg.Content, _ = json.Marshal(result.Content)
 	result.RawAssistant, _ = json.Marshal(rawMsg)
 
+	if emit != nil {
+		if err := emit(StreamChunk{ToolCalls: result.ToolCalls, Done: true}); err != nil {
+			return nil, err
+		}
+	}
 	return result, nil
+}
+
+func (p *OpenAIProvider) parseSSE(reader io.Reader) (*Response, error) {
+	return parseOpenAISSE(context.Background(), reader, nil)
 }

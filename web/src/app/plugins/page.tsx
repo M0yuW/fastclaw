@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -33,17 +33,30 @@ export default function PluginsPage() {
   const [configJson, setConfigJson] = useState("");
   const [saving, setSaving] = useState(false);
 
-  const fetchPlugins = () => {
-    setLoading(true);
-    getPlugins()
-      .then(setPlugins)
-      .catch(() => setPlugins([]))
-      .finally(() => setLoading(false));
-  };
+  const requestGenerationRef = useRef(0);
+  const fetchPlugins = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
+    try {
+      const items = await getPlugins(signal);
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setPlugins(items);
+      }
+    } catch {
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setPlugins([]);
+      }
+    } finally {
+      if (!signal?.aborted && requestGenerationRef.current === generation) {
+        setLoading(false);
+      }
+    }
+  }, []);
 
   useEffect(() => {
-    fetchPlugins();
-  }, []);
+    const controller = new AbortController();
+    void fetchPlugins(controller.signal);
+    return () => controller.abort();
+  }, [fetchPlugins]);
 
   const handleToggle = async (plugin: PluginInfo) => {
     await updatePlugin(plugin.id, { enabled: !plugin.enabled });

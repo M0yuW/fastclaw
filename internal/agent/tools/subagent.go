@@ -13,7 +13,7 @@ import (
 // SubAgentSpawner is the interface for spawning sub-agents.
 type SubAgentSpawner interface {
 	// SpawnSubAgent sends a task to another agent and returns its response.
-	SpawnSubAgent(ctx context.Context, agentID string, msg bus.InboundMessage) string
+	SpawnSubAgent(ctx context.Context, agentID string, msg bus.InboundMessage) (string, error)
 }
 
 type spawnSubagentArgs struct {
@@ -66,9 +66,13 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 			Text:      args.Task,
 			MessageID: callID,
 			PeerKind:  "dm",
+			Source:    bus.SourceSubAgent,
 		}
 
-		result := spawner.SpawnSubAgent(ctx, args.AgentID, msg)
+		result, err := spawner.SpawnSubAgent(ctx, args.AgentID, msg)
+		if err != nil {
+			return "", fmt.Errorf("spawn sub-agent %q: %w", args.AgentID, err)
+		}
 		return result, nil
 	}
 }

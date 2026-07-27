@@ -149,8 +149,8 @@ func toAnthropicMessages(msgs []Message) (string, []anthropicMessage) {
 					blocks = append(blocks, map[string]interface{}{
 						"type": "image",
 						"source": map[string]string{
-							"type":       "url",
-							"url":        part.ImageURL.URL,
+							"type": "url",
+							"url":  part.ImageURL.URL,
 						},
 					})
 				}
@@ -273,10 +273,10 @@ type anthropicContentBlockStart struct {
 }
 
 type anthropicContentBlockEntry struct {
-	Type  string `json:"type"` // "text" or "tool_use"
-	ID    string `json:"id,omitempty"`
-	Name  string `json:"name,omitempty"`
-	Text  string `json:"text,omitempty"`
+	Type  string          `json:"type"` // "text" or "tool_use"
+	ID    string          `json:"id,omitempty"`
+	Name  string          `json:"name,omitempty"`
+	Text  string          `json:"text,omitempty"`
 	Input json.RawMessage `json:"input,omitempty"`
 }
 
@@ -311,7 +311,7 @@ func (p *AnthropicProvider) Chat(ctx context.Context, messages []Message, tools 
 		return nil, fmt.Errorf("API error %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	return p.parseSSE(resp.Body)
+	return parseAnthropicSSE(ctx, resp.Body, nil)
 }
 
 func (p *AnthropicProvider) ChatStream(ctx context.Context, messages []Message, tools []Tool, model string, maxTokens int, temperature float64) (*StreamReader, error) {
@@ -338,146 +338,47 @@ func (p *AnthropicProvider) ChatStream(ctx context.Context, messages []Message, 
 		defer resp.Body.Close()
 		defer close(ch)
 
-		scanner := bufio.NewScanner(resp.Body)
-		scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
-
-		type blockState struct {
-			blockType string // "text" | "tool_use" | "thinking"
-			id        string
-			name      string
-			argsJSON  strings.Builder
-			thinking  strings.Builder
-			signature string
-		}
-		blocks := make(map[int]*blockState)
-
-		for scanner.Scan() {
-			line := scanner.Text()
-			if !strings.HasPrefix(line, "data: ") {
-				continue
+		result, parseErr := parseAnthropicSSE(ctx, resp.Body, func(chunk StreamChunk) error {
+			select {
+			case ch <- chunk:
+				return nil
+			case <-ctx.Done():
+				return ctx.Err()
 			}
-			data := strings.TrimPrefix(line, "data: ")
-
-			var event anthropicSSEEvent
-			if err := json.Unmarshal([]byte(data), &event); err != nil {
-				continue
-			}
-
-			switch event.Type {
-			case "content_block_start":
-				var cbs anthropicContentBlockStart
-				if json.Unmarshal([]byte(data), &cbs) == nil {
-					blocks[cbs.Index] = &blockState{
-						blockType: cbs.ContentBlock.Type,
-						id:        cbs.ContentBlock.ID,
-						name:      cbs.ContentBlock.Name,
-					}
-					if cbs.ContentBlock.Text != "" {
-						select {
-						case ch <- StreamChunk{Content: cbs.ContentBlock.Text}:
-						case <-ctx.Done():
-							return
-						}
-					}
-				}
-
-			case "content_block_delta":
-				var cbd anthropicContentBlockDelta
-				if json.Unmarshal([]byte(data), &cbd) == nil {
-					switch cbd.Delta.Type {
-					case "text_delta":
-						if cbd.Delta.Text != "" {
-							select {
-							case ch <- StreamChunk{Content: cbd.Delta.Text}:
-							case <-ctx.Done():
-								return
-							}
-						}
-					case "input_json_delta":
-						if bs, ok := blocks[cbd.Index]; ok {
-							bs.argsJSON.WriteString(cbd.Delta.PartialJSON)
-						}
-					case "thinking_delta":
-						if bs, ok := blocks[cbd.Index]; ok {
-							bs.thinking.WriteString(cbd.Delta.Thinking)
-						}
-					case "signature_delta":
-						if bs, ok := blocks[cbd.Index]; ok {
-							bs.signature = cbd.Delta.Signature
-						}
-					}
-				}
-
-			case "message_stop":
-				var toolCalls []ToolCall
-				var thinkingText, thinkingSig string
-				for i := 0; i < len(blocks); i++ {
-					bs, ok := blocks[i]
-					if !ok {
-						continue
-					}
-					switch bs.blockType {
-					case "tool_use":
-						toolCalls = append(toolCalls, ToolCall{
-							ID:   bs.id,
-							Type: "function",
-							Function: FunctionCall{
-								Name:      bs.name,
-								Arguments: bs.argsJSON.String(),
-							},
-						})
-					case "thinking":
-						if t := bs.thinking.String(); t != "" {
-							thinkingText = t
-						}
-						if bs.signature != "" {
-							thinkingSig = bs.signature
-						}
-					}
-				}
-				select {
-				case ch <- StreamChunk{
-					ToolCalls:         toolCalls,
-					Thinking:          thinkingText,
-					ThinkingSignature: thinkingSig,
-					Done:              true,
-				}:
-				case <-ctx.Done():
-				}
-				return
-			}
-		}
-
-		if err := scanner.Err(); err != nil {
-			reader.SetErr(fmt.Errorf("read stream: %w", err))
-		}
+		})
+		reader.setResult(result, parseErr)
 	}()
 
 	return reader, nil
 }
 
-func (p *AnthropicProvider) parseSSE(body io.Reader) (*Response, error) {
-	scanner := bufio.NewScanner(body)
+type anthropicBlockState struct {
+	blockType string
+	id        string
+	name      string
+	argsJSON  strings.Builder
+	thinking  strings.Builder
+	signature string
+}
+
+func parseAnthropicSSE(ctx context.Context, source io.Reader, emit func(StreamChunk) error) (*Response, error) {
+	scanner := bufio.NewScanner(source)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
 	var contentBuilder strings.Builder
-
-	type blockState struct {
-		blockType string
-		id        string
-		name      string
-		argsJSON  strings.Builder
-		thinking  strings.Builder
-		signature string
-	}
-	blocks := make(map[int]*blockState)
+	blocks := make(map[int]*anthropicBlockState)
+	complete := false
 
 	for scanner.Scan() {
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 		line := scanner.Text()
-		if !strings.HasPrefix(line, "data: ") {
+		if !strings.HasPrefix(line, "data:") {
 			continue
 		}
-		data := strings.TrimPrefix(line, "data: ")
+		data := strings.TrimPrefix(line, "data:")
+		data = strings.TrimPrefix(data, " ")
 
 		var event anthropicSSEEvent
 		if err := json.Unmarshal([]byte(data), &event); err != nil {
@@ -488,50 +389,69 @@ func (p *AnthropicProvider) parseSSE(body io.Reader) (*Response, error) {
 		switch event.Type {
 		case "content_block_start":
 			var cbs anthropicContentBlockStart
-			if json.Unmarshal([]byte(data), &cbs) == nil {
-				blocks[cbs.Index] = &blockState{
-					blockType: cbs.ContentBlock.Type,
-					id:        cbs.ContentBlock.ID,
-					name:      cbs.ContentBlock.Name,
-				}
-				if cbs.ContentBlock.Text != "" {
-					contentBuilder.WriteString(cbs.ContentBlock.Text)
+			if err := json.Unmarshal([]byte(data), &cbs); err != nil {
+				continue
+			}
+			blocks[cbs.Index] = &anthropicBlockState{
+				blockType: cbs.ContentBlock.Type,
+				id:        cbs.ContentBlock.ID,
+				name:      cbs.ContentBlock.Name,
+			}
+			if cbs.ContentBlock.Text != "" {
+				contentBuilder.WriteString(cbs.ContentBlock.Text)
+				if emit != nil {
+					if err := emit(StreamChunk{Content: cbs.ContentBlock.Text}); err != nil {
+						return nil, err
+					}
 				}
 			}
 
 		case "content_block_delta":
 			var cbd anthropicContentBlockDelta
-			if json.Unmarshal([]byte(data), &cbd) == nil {
-				switch cbd.Delta.Type {
-				case "text_delta":
-					contentBuilder.WriteString(cbd.Delta.Text)
-				case "input_json_delta":
-					if bs, ok := blocks[cbd.Index]; ok {
-						bs.argsJSON.WriteString(cbd.Delta.PartialJSON)
+			if err := json.Unmarshal([]byte(data), &cbd); err != nil {
+				continue
+			}
+			switch cbd.Delta.Type {
+			case "text_delta":
+				contentBuilder.WriteString(cbd.Delta.Text)
+				if cbd.Delta.Text != "" && emit != nil {
+					if err := emit(StreamChunk{Content: cbd.Delta.Text}); err != nil {
+						return nil, err
 					}
-				case "thinking_delta":
-					if bs, ok := blocks[cbd.Index]; ok {
-						bs.thinking.WriteString(cbd.Delta.Thinking)
-					}
-				case "signature_delta":
-					if bs, ok := blocks[cbd.Index]; ok {
-						bs.signature = cbd.Delta.Signature
-					}
+				}
+			case "input_json_delta":
+				if bs, ok := blocks[cbd.Index]; ok {
+					bs.argsJSON.WriteString(cbd.Delta.PartialJSON)
+				}
+			case "thinking_delta":
+				if bs, ok := blocks[cbd.Index]; ok {
+					bs.thinking.WriteString(cbd.Delta.Thinking)
+				}
+			case "signature_delta":
+				if bs, ok := blocks[cbd.Index]; ok {
+					bs.signature = cbd.Delta.Signature
 				}
 			}
 
 		case "message_stop":
-			// Done
+			complete = true
+		}
+		if complete {
+			break
 		}
 	}
 
+	if err := ctx.Err(); err != nil {
+		return nil, err
+	}
 	if err := scanner.Err(); err != nil {
 		return nil, fmt.Errorf("read stream: %w", err)
 	}
-
-	result := &Response{
-		Content: contentBuilder.String(),
+	if !complete {
+		return nil, io.ErrUnexpectedEOF
 	}
+
+	result := &Response{Content: contentBuilder.String()}
 	var thinkingBuilder strings.Builder
 	var thinkingSig string
 	for i := 0; i < len(blocks); i++ {
@@ -550,33 +470,39 @@ func (p *AnthropicProvider) parseSSE(body io.Reader) (*Response, error) {
 				},
 			})
 		case "thinking":
-			if t := bs.thinking.String(); t != "" {
-				thinkingBuilder.WriteString(t)
-			}
+			thinkingBuilder.WriteString(bs.thinking.String())
 			if bs.signature != "" {
 				thinkingSig = bs.signature
 			}
 		}
 	}
-	if thinking := thinkingBuilder.String(); thinking != "" {
-		result.Thinking = thinking
-		// DeepSeek's Anthropic-compat endpoint (and real Anthropic extended
-		// thinking) requires the thinking block to be echoed verbatim on the
-		// next turn. Pack {thinking, signature} into RawAssistant so
-		// toAnthropicMessages can replay it as a content block.
+	result.Thinking = thinkingBuilder.String()
+	if result.Thinking != "" {
 		type thinkingBlock struct {
 			Type      string `json:"type"`
 			Thinking  string `json:"thinking"`
 			Signature string `json:"signature,omitempty"`
 		}
-		if raw, err := json.Marshal(thinkingBlock{
+		result.RawAssistant, _ = json.Marshal(thinkingBlock{
 			Type:      "thinking",
-			Thinking:  thinking,
+			Thinking:  result.Thinking,
 			Signature: thinkingSig,
-		}); err == nil {
-			result.RawAssistant = raw
-		}
+		})
 	}
 
+	if emit != nil {
+		if err := emit(StreamChunk{
+			ToolCalls:         result.ToolCalls,
+			Thinking:          result.Thinking,
+			ThinkingSignature: thinkingSig,
+			Done:              true,
+		}); err != nil {
+			return nil, err
+		}
+	}
 	return result, nil
+}
+
+func (p *AnthropicProvider) parseSSE(body io.Reader) (*Response, error) {
+	return parseAnthropicSSE(context.Background(), body, nil)
 }

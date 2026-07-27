@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -136,30 +136,52 @@ export default function AgentsPage() {
     setEditDescription(agent.description || "");
   };
 
-  const fetchAgents = async () => {
-    setLoading(true);
-    const own = await getAgents().catch(() => [] as AgentDetail[]);
-    setAgents(own);
+  const requestGenerationRef = useRef(0);
+  const loadAgents = useCallback(async (signal?: AbortSignal) => {
+    const own = await getAgents(signal).catch(() => [] as AgentDetail[]);
+    signal?.throwIfAborted();
+
     // Admins also see other users' agents (read-only) below their own.
     // We resolve isAdmin from /api/status and only call adminListAgents
     // when entitled — non-admins would 403 and the UI would flash an error.
-    const status = await getStatus().catch(() => null);
+    const status = await getStatus(signal).catch(() => null);
+    signal?.throwIfAborted();
     const admin = !!status?.isAdmin;
-    setIsAdmin(admin);
+    let others: OtherAgent[] = [];
     if (admin) {
-      const ownIds = new Set(own.map((a) => a.id));
-      const res = await adminListAgents().catch(() => null);
-      const all: OtherAgent[] = (res?.agents || []) as OtherAgent[];
-      setOtherAgents(all.filter((a) => !ownIds.has(a.id)));
-    } else {
-      setOtherAgents([]);
+      const ownIds = new Set(own.map((agent) => agent.id));
+      const response = await adminListAgents(signal).catch(() => null);
+      signal?.throwIfAborted();
+      const all = (response?.agents || []) as OtherAgent[];
+      others = all.filter((agent) => !ownIds.has(agent.id));
     }
+    return { own, admin, others };
+  }, []);
+
+  const fetchAgents = useCallback(async (signal?: AbortSignal) => {
+    const generation = ++requestGenerationRef.current;
+    const result = await loadAgents(signal);
+    if (signal?.aborted || requestGenerationRef.current !== generation) return;
+    setAgents(result.own);
+    setIsAdmin(result.admin);
+    setOtherAgents(result.others);
     setLoading(false);
-  };
+  }, [loadAgents]);
 
   useEffect(() => {
-    fetchAgents();
-  }, []);
+    const controller = new AbortController();
+    const generation = ++requestGenerationRef.current;
+    loadAgents(controller.signal)
+      .then((result) => {
+        if (controller.signal.aborted || requestGenerationRef.current !== generation) return;
+        setAgents(result.own);
+        setIsAdmin(result.admin);
+        setOtherAgents(result.others);
+        setLoading(false);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [loadAgents]);
 
   async function uploadAvatar(agentID: string, file: File) {
     const fd = new FormData();
