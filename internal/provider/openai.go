@@ -235,7 +235,7 @@ func (p *OpenAIProvider) doChatRequest(
 	if err != nil {
 		return nil, fmt.Errorf("send request: %w", err)
 	}
-	if response.StatusCode != http.StatusBadRequest {
+	if response.StatusCode < http.StatusBadRequest || response.StatusCode >= http.StatusInternalServerError {
 		return response, nil
 	}
 	responseBody, readErr := io.ReadAll(response.Body)

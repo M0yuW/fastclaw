@@ -10,6 +10,10 @@ import (
 func TestCompare(t *testing.T) {
 	baseline := Report{
 		Suite: "smoke",
+		Cases: []CaseResult{
+			{ID: "case-a", Attempts: []AttemptResult{{}, {}}},
+			{ID: "case-b", Attempts: []AttemptResult{{}}},
+		},
 		Metrics: Metrics{
 			RunPassRate:               0.6,
 			PassAt1:                   0.5,
@@ -26,6 +30,10 @@ func TestCompare(t *testing.T) {
 	}
 	candidate := Report{
 		Suite: "smoke",
+		Cases: []CaseResult{
+			{ID: "case-b", Attempts: []AttemptResult{{}}},
+			{ID: "case-a", Attempts: []AttemptResult{{}, {}}},
+		},
 		Metrics: Metrics{
 			RunPassRate:               0.8,
 			PassAt1:                   0.7,
@@ -67,5 +75,37 @@ func TestCompare(t *testing.T) {
 		!strings.Contains(output.String(), "+20.0pp") ||
 		!strings.Contains(output.String(), "MA cost/success") {
 		t.Fatalf("unexpected comparison output:\n%s", output.String())
+	}
+}
+
+func TestCompareRejectsDifferentCaseSets(t *testing.T) {
+	baseline := Report{
+		Suite: "smoke",
+		Cases: []CaseResult{{ID: "case-a", Attempts: []AttemptResult{{}}}},
+	}
+	candidate := Report{
+		Suite: "smoke",
+		Cases: []CaseResult{{ID: "case-b", Attempts: []AttemptResult{{}}}},
+	}
+
+	if _, err := Compare(baseline, candidate); err == nil ||
+		!strings.Contains(err.Error(), `candidate is missing case "case-a"`) {
+		t.Fatalf("Compare() error = %v", err)
+	}
+}
+
+func TestCompareRejectsDifferentAttemptCounts(t *testing.T) {
+	baseline := Report{
+		Suite: "smoke",
+		Cases: []CaseResult{{ID: "case-a", Attempts: []AttemptResult{{}, {}}}},
+	}
+	candidate := Report{
+		Suite: "smoke",
+		Cases: []CaseResult{{ID: "case-a", Attempts: []AttemptResult{{}}}},
+	}
+
+	if _, err := Compare(baseline, candidate); err == nil ||
+		!strings.Contains(err.Error(), `case "case-a" with different attempt counts`) {
+		t.Fatalf("Compare() error = %v", err)
 	}
 }

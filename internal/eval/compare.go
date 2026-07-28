@@ -70,6 +70,9 @@ func Compare(baseline, candidate Report) (Comparison, error) {
 			candidate.Suite,
 		)
 	}
+	if err := validateComparableCases(baseline.Cases, candidate.Cases); err != nil {
+		return Comparison{}, err
+	}
 	return Comparison{
 		Suite:     baseline.Suite,
 		Baseline:  baseline.Metrics,
@@ -102,6 +105,50 @@ func Compare(baseline, candidate Report) (Comparison, error) {
 			MASubAgentTokensPercent:    percentDelta(float64(baseline.Metrics.MASubAgentTokens), float64(candidate.Metrics.MASubAgentTokens)),
 		},
 	}, nil
+}
+
+func validateComparableCases(baseline, candidate []CaseResult) error {
+	baselineAttempts, err := caseAttemptCounts("baseline", baseline)
+	if err != nil {
+		return err
+	}
+	candidateAttempts, err := caseAttemptCounts("candidate", candidate)
+	if err != nil {
+		return err
+	}
+	if len(baselineAttempts) != len(candidateAttempts) {
+		return fmt.Errorf(
+			"cannot compare different case sets: baseline has %d cases, candidate has %d",
+			len(baselineAttempts),
+			len(candidateAttempts),
+		)
+	}
+	for caseID, attempts := range baselineAttempts {
+		candidateCount, ok := candidateAttempts[caseID]
+		if !ok {
+			return fmt.Errorf("cannot compare different case sets: candidate is missing case %q", caseID)
+		}
+		if attempts != candidateCount {
+			return fmt.Errorf(
+				"cannot compare case %q with different attempt counts: baseline has %d, candidate has %d",
+				caseID,
+				attempts,
+				candidateCount,
+			)
+		}
+	}
+	return nil
+}
+
+func caseAttemptCounts(label string, cases []CaseResult) (map[string]int, error) {
+	counts := make(map[string]int, len(cases))
+	for _, evalCase := range cases {
+		if _, exists := counts[evalCase.ID]; exists {
+			return nil, fmt.Errorf("%s report contains duplicate case %q", label, evalCase.ID)
+		}
+		counts[evalCase.ID] = len(evalCase.Attempts)
+	}
+	return counts, nil
 }
 
 func WriteComparisonJSON(writer io.Writer, comparison Comparison) error {

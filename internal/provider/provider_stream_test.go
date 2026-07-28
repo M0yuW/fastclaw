@@ -90,51 +90,55 @@ func TestOpenAISSEStreamingResultEqualsChatResult(t *testing.T) {
 }
 
 func TestOpenAIProviderFallsBackWhenStreamingUsageIsUnsupported(t *testing.T) {
-	var calls int
-	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		calls++
-		var body map[string]any
-		if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
-			t.Error(err)
-			http.Error(writer, err.Error(), http.StatusBadRequest)
-			return
-		}
-		if _, included := body["stream_options"]; included {
-			http.Error(writer, `unsupported field "stream_options"`, http.StatusBadRequest)
-			return
-		}
-		writer.Header().Set("Content-Type", "text/event-stream")
-		_, _ = writer.Write([]byte(strings.Join([]string{
-			`data: {"choices":[{"delta":{"content":"fallback"},"finish_reason":"stop"}]}`,
-			`data: [DONE]`,
-			"",
-		}, "\n")))
-	}))
-	defer server.Close()
+	for _, status := range []int{http.StatusBadRequest, http.StatusUnprocessableEntity} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			var calls int
+			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				calls++
+				var body map[string]any
+				if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+					t.Error(err)
+					http.Error(writer, err.Error(), http.StatusBadRequest)
+					return
+				}
+				if _, included := body["stream_options"]; included {
+					http.Error(writer, `unsupported field "stream_options"`, status)
+					return
+				}
+				writer.Header().Set("Content-Type", "text/event-stream")
+				_, _ = writer.Write([]byte(strings.Join([]string{
+					`data: {"choices":[{"delta":{"content":"fallback"},"finish_reason":"stop"}]}`,
+					`data: [DONE]`,
+					"",
+				}, "\n")))
+			}))
+			defer server.Close()
 
-	openAIProvider := NewOpenAI("test-key", server.URL)
-	stream, err := openAIProvider.ChatStream(
-		t.Context(),
-		[]Message{{Role: "user", Content: "hello"}},
-		nil,
-		"test-model",
-		100,
-		0,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for {
-		if _, ok := stream.Next(); !ok {
-			break
-		}
-	}
-	result, err := stream.Result()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if calls != 2 || result.Content != "fallback" || result.Usage.TotalTokens() != 0 {
-		t.Fatalf("calls=%d result=%+v", calls, result)
+			openAIProvider := NewOpenAI("test-key", server.URL)
+			stream, err := openAIProvider.ChatStream(
+				t.Context(),
+				[]Message{{Role: "user", Content: "hello"}},
+				nil,
+				"test-model",
+				100,
+				0,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for {
+				if _, ok := stream.Next(); !ok {
+					break
+				}
+			}
+			result, err := stream.Result()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if calls != 2 || result.Content != "fallback" || result.Usage.TotalTokens() != 0 {
+				t.Fatalf("calls=%d result=%+v", calls, result)
+			}
+		})
 	}
 }
 

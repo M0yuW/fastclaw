@@ -297,13 +297,31 @@ func TestAPIIntegrationTenantIsolationAndAPIKeyACL(t *testing.T) {
 		}
 		time.Sleep(time.Millisecond)
 	}
+	for range 50 {
+		queue.Submit(adminAgentID, "admin:newest", bus.InboundMessage{OwnerUserID: adminID}, "")
+	}
+	deadline = time.Now().Add(time.Second)
+	for {
+		tasks := queue.RecentTasks(0)
+		done := len(tasks) == 53
+		for _, task := range tasks {
+			done = done && task.Status == taskqueue.TaskDone
+		}
+		if done {
+			break
+		}
+		if time.Now().After(deadline) {
+			t.Fatalf("newer tenant tasks did not finish: count=%d", len(tasks))
+		}
+		time.Sleep(time.Millisecond)
+	}
 
 	developerTasks := requestJSONArray(t, developerClient, http.MethodGet, fixture.server.URL+"/api/tasks", "", http.StatusOK)
 	if len(developerTasks) != 2 {
 		t.Fatalf("developer task count = %d", len(developerTasks))
 	}
 	adminTasks := requestJSONArray(t, fixture.client, http.MethodGet, fixture.server.URL+"/api/tasks", "", http.StatusOK)
-	if len(adminTasks) != 3 {
+	if len(adminTasks) != 50 {
 		t.Fatalf("admin task count = %d", len(adminTasks))
 	}
 	actedTasks := requestJSONArray(t, fixture.client, http.MethodGet, fixture.server.URL+"/api/tasks?actAs="+developerID, "", http.StatusOK)
