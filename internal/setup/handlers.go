@@ -627,6 +627,8 @@ func runProviderTest(ctx context.Context, req testProviderRequest) map[string]an
 
 // --- /api/tasks ---
 
+const taskListLimit = 50
+
 func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 	if s.taskQueue == nil {
 		jsonResponse(w, http.StatusOK, []any{})
@@ -640,7 +642,7 @@ func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 	showAll := ident.Role == users.RoleSuperAdmin && !ident.IsActingAs()
 	effectiveUserID := ident.EffectiveUserID()
 	tasks := s.taskQueue.RecentTasks(0)
-	out := make([]map[string]any, 0, 50)
+	out := make([]map[string]any, 0, taskListLimit)
 	for _, t := range tasks {
 		if !showAll && t.OwnerUserID != effectiveUserID {
 			continue
@@ -671,7 +673,7 @@ func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 			entry["error"] = t.Error.Error()
 		}
 		out = append(out, entry)
-		if len(out) == 50 {
+		if len(out) == taskListLimit {
 			break
 		}
 	}
