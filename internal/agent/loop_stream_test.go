@@ -160,6 +160,60 @@ func TestRunTurnStreamsOnceAndPersistsCompleteAssistant(t *testing.T) {
 	}
 }
 
+func TestRunTurnEmitsMissingIdentityFailure(t *testing.T) {
+	fake := newFakeStreamingProvider()
+	defer fake.server.Close()
+	agent := newStreamingTestAgent(t, fake, 4)
+	agent.ctxBuilder.SetRequiredIdentityFiles([]string{"SOUL.md"})
+	eventCh := make(chan ChatEvent, 4)
+	ctx := ContextWithChatEvents(context.Background(), eventCh)
+	msg := bus.InboundMessage{Channel: "test", ChatID: "missing-identity", Text: "hi"}
+
+	reply := agent.HandleMessage(ctx, msg)
+	if !strings.Contains(reply, "required identity file SOUL.md is missing or empty") {
+		t.Fatalf("HandleMessage() = %q", reply)
+	}
+
+	events := collectChatEvents(eventCh)
+	if len(events) != 2 || events[0].Type != "error" || events[1].Type != "done" {
+		t.Fatalf("events = %+v, want error then done", events)
+	}
+	if message, _ := events[0].Data["message"].(string); message != reply {
+		t.Fatalf("error message = %q, want %q", message, reply)
+	}
+	if events[0].Data["messageId"] == "" ||
+		events[0].Data["messageId"] != events[1].Data["messageId"] ||
+		events[0].Data["round"] != 1 ||
+		events[1].Data["round"] != 1 {
+		t.Fatalf("missing failure correlation: %+v", events)
+	}
+	if fake.streamCalls != 0 || fake.chatCalls != 0 {
+		t.Fatalf("provider called for invalid identity: stream=%d chat=%d", fake.streamCalls, fake.chatCalls)
+	}
+}
+
+func TestHandleMessageStreamReportsMissingIdentityFailure(t *testing.T) {
+	fake := newFakeStreamingProvider()
+	defer fake.server.Close()
+	agent := newStreamingTestAgent(t, fake, 4)
+	agent.ctxBuilder.SetRequiredIdentityFiles([]string{"SOUL.md"})
+
+	reader := agent.HandleMessageStream(
+		context.Background(),
+		bus.InboundMessage{Channel: "test", ChatID: "missing-identity-stream", Text: "hi"},
+	)
+	if chunk, ok := reader.Next(); ok {
+		t.Fatalf("unexpected stream chunk: %+v", chunk)
+	}
+	if err := reader.Err(); err == nil ||
+		!strings.Contains(err.Error(), "required identity file SOUL.md is missing or empty") {
+		t.Fatalf("stream error = %v", err)
+	}
+	if fake.streamCalls != 0 || fake.chatCalls != 0 {
+		t.Fatalf("provider called for invalid identity: stream=%d chat=%d", fake.streamCalls, fake.chatCalls)
+	}
+}
+
 func TestRunTurnToolRoundsStreamOnceAndPairEvents(t *testing.T) {
 	fake := newFakeStreamingProvider(
 		openAIToolStream("call-1", "test_tool", `{}`, "checking"),

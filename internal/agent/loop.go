@@ -570,7 +570,9 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	identityRevision, err := a.ctxBuilder.ValidateRequiredIdentityFiles()
 	if err != nil {
 		slog.Error("agent identity contract failed", "agent", a.name, "error", err)
-		return "Agent identity configuration is incomplete: " + err.Error()
+		identityErr := fmt.Errorf("Agent identity configuration is incomplete: %w", err)
+		events.fail(identityErr, events.messageID(), 1)
+		return identityErr.Error()
 	}
 	if identityRevision != "" {
 		slog.Info("agent identity contract verified",
