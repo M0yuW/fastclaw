@@ -154,6 +154,17 @@ solo baseline `$0.005848`，每个成功 team case `$0.001719`。这些结果是
 项目固定 evidence suite 的 runtime harness 指标，不应表述为 DeepSeek
 官方 benchmark 分数。
 
+### CI 可复现性修复
+
+- **问题**：`internal/setup/embed.go` 使用 `//go:embed all:web`，但
+  `internal/setup/web/` 是被忽略的前端构建目录。开发机已有构建产物时测试
+  正常，全新 clone 或 GitHub Actions 执行 `go test ./...` 会因目录不存在而
+  在编译阶段失败。
+- **修复**：保留 `internal/setup/web/.gitkeep` 作为最小嵌入文件，并继续
+  忽略该目录下的真实前端构建产物。
+- **效果**：后端测试不再依赖开发机历史构建状态；正式构建仍由
+  `make build-web` 生成并复制完整静态资源。
+
 ## 5. 现在该怎么理解这份手册
 
 - 外部 `/Users/wangzheyu/PROJECT-HANDOFF.md` 是项目总览和运行手册。
