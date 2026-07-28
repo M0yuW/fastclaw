@@ -16,6 +16,7 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 	"github.com/fastclaw-ai/fastclaw/internal/config"
 	"github.com/fastclaw-ai/fastclaw/internal/mcp"
+	"github.com/fastclaw-ai/fastclaw/internal/policy"
 	"github.com/fastclaw-ai/fastclaw/internal/privacy"
 	"github.com/fastclaw-ai/fastclaw/internal/provider"
 	"github.com/fastclaw-ai/fastclaw/internal/sandbox"
@@ -50,6 +51,7 @@ type Agent struct {
 	subAgentSpawner   tools.SubAgentSpawner
 	ftsStore          *store.FTSStore
 	piiScrubEnabled   bool
+	policyEngine      *policy.Engine
 	memoryCfg         config.MemoryCfg
 	// memoryStore is the optional Store-backed source of identity files
 	// (SOUL.md, IDENTITY.md, ...). Kept on the Agent so ReloadWorkspaceFiles
@@ -230,6 +232,18 @@ func NewAgentWithSkillsCfg(rc config.ResolvedAgent, prov provider.Provider, mb *
 	hooks.Register(AfterToolCall, LoggingHook())
 
 	eng := newSDKEngine(rc.ID)
+	policyEngine := policy.NewEngine(policy.LoadPreset(rc.PolicyPreset))
+	contextBuilder := newContextBuilderWithSandbox(
+		rc.Home,
+		workspace,
+		memory,
+		skillsSummary,
+		rc.Thinking,
+		rc.Sandbox.Enabled,
+		rc.Sandbox.Backend,
+	)
+	contextBuilder.SetRequiredIdentityFiles(rc.RequiredIdentity)
+	contextBuilder.SetToolGuidance(policyEngine.CheckTool("read_file") == nil)
 
 	ag := &Agent{
 		name:              rc.ID,
@@ -237,7 +251,7 @@ func NewAgentWithSkillsCfg(rc config.ResolvedAgent, prov provider.Provider, mb *
 		registry:          registry,
 		sessions:          session.NewManager(rc.Home + "/sessions"),
 		memory:            memory,
-		ctxBuilder:        newContextBuilderWithSandbox(rc.Home, workspace, memory, skillsSummary, rc.Thinking, rc.Sandbox.Enabled, rc.Sandbox.Backend),
+		ctxBuilder:        contextBuilder,
 		hooks:             hooks,
 		model:             rc.Model,
 		maxTokens:         rc.MaxTokens,
@@ -250,6 +264,7 @@ func NewAgentWithSkillsCfg(rc config.ResolvedAgent, prov provider.Provider, mb *
 		skillsCfg:         rc.Skills,
 		globalSkillsCfg:   globalSkillsCfg,
 		messageBus:        mb,
+		policyEngine:      policyEngine,
 		engine:            eng,
 		costTracker:       eng.costTracker,
 		turnGate:          make(chan struct{}, 1),
@@ -520,6 +535,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		return "Request cancelled before the agent turn could start."
 	}
 	defer a.releaseTurn()
+	ctx = tools.ContextWithSubAgentDedup(ctx)
 	events := newTurnEventEmitter(ctx)
 	// Check for slash commands first
 	if result := a.handleSlashCommand(msg); result.handled {
@@ -551,6 +567,17 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	// Hook: BeforeSystemPrompt
 	a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: BeforeSystemPrompt, UserID: a.ownerUserID})
 
+	identityRevision, err := a.ctxBuilder.ValidateRequiredIdentityFiles()
+	if err != nil {
+		slog.Error("agent identity contract failed", "agent", a.name, "error", err)
+		return "Agent identity configuration is incomplete: " + err.Error()
+	}
+	if identityRevision != "" {
+		slog.Info("agent identity contract verified",
+			"agent", a.name,
+			"revision", identityRevision,
+		)
+	}
 	systemPrompt := a.ctxBuilder.BuildSystemPrompt()
 
 	// Hook: AfterSystemPrompt
@@ -600,7 +627,13 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	messages = append(messages, provider.Message{Role: "system", Content: systemPrompt})
 	messages = append(messages, applyContextIsolation(sessionMsgs)...)
 
-	toolDefs := a.registry.Definitions()
+	turnRegistry := toolRegistryFromContext(ctx, a.registry)
+	if a.policyEngine != nil {
+		turnRegistry = turnRegistry.Filter(func(name string) bool {
+			return a.policyEngine.CheckTool(name) == nil
+		})
+	}
+	toolDefs := turnRegistry.Definitions()
 
 	// Loop detection: track consecutive identical tool calls
 	type toolCallSig struct {
@@ -645,6 +678,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		}
 
 		var resp *provider.Response
+		modelCallStarted := time.Now()
 		stream, err := a.provider.ChatStream(ctx, llmMessages, toolDefs, a.model, a.maxTokens, a.temperature)
 		if err == nil && stream == nil {
 			err = fmt.Errorf("LLM provider returned a nil stream")
@@ -666,6 +700,15 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			} else if resp == nil {
 				err = fmt.Errorf("LLM stream ended without a final response")
 			}
+		}
+		modelCallLatency := time.Since(modelCallStarted)
+		var modelUsage provider.Usage
+		if resp != nil {
+			modelUsage = resp.Usage
+		}
+		RecordModelCall(ctx, a.name, a.model, modelUsage, modelCallLatency, err)
+		if a.costTracker != nil {
+			a.costTracker.AddAPIDuration(modelCallLatency)
 		}
 
 		// Hook: AfterModelCall
@@ -757,7 +800,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			"agent", a.name,
 			"count", len(resp.ToolCalls),
 		)
-		results := a.engine.executeToolsConcurrently(ctx, a.registry, resp.ToolCalls, a.workspacePath)
+		results := a.engine.executeToolsConcurrently(ctx, turnRegistry, resp.ToolCalls, a.workspacePath)
 
 		// Defensive backstop: if the SDK returned fewer results than tool
 		// calls (and the bridge somehow didn't already pad — belt and
@@ -1106,6 +1149,9 @@ func (a *Agent) UpdateConfig(rc config.ResolvedAgent) {
 	a.maxTokens = rc.MaxTokens
 	a.temperature = rc.Temperature
 	a.maxToolIterations = rc.MaxToolIterations
+	a.policyEngine = policy.NewEngine(policy.LoadPreset(rc.PolicyPreset))
+	a.ctxBuilder.SetRequiredIdentityFiles(rc.RequiredIdentity)
+	a.ctxBuilder.SetToolGuidance(a.policyEngine.CheckTool("read_file") == nil)
 	// Sandbox flags drive the system prompt's "Working Directory" / "home
 	// dir" description and the sandbox-capabilities block. Without this
 	// propagation an agent that existed before sandbox was enabled keeps
@@ -1151,13 +1197,24 @@ func (a *Agent) ReloadWorkspaceFiles() {
 	}
 	skills := loader.LoadSkills()
 	skillsSummary := loader.BuildSkillsSummary(skills)
-	a.ctxBuilder = NewContextBuilder(a.homePath, a.memory, skillsSummary)
-	a.ctxBuilder.SetWorkspace(a.workspacePath)
+	previous := a.ctxBuilder
+	a.ctxBuilder = newContextBuilderWithSandbox(
+		a.homePath,
+		a.workspacePath,
+		a.memory,
+		skillsSummary,
+		a.thinking,
+		previous.sandboxEnabled,
+		previous.sandboxBackend,
+	)
+	a.ctxBuilder.SetRequiredIdentityFiles(previous.requiredIdentity)
+	a.ctxBuilder.SetToolGuidance(previous.toolGuidance)
 	// Preserve Store-backed identity reads across reload; without this,
 	// Postgres-mode pods silently fall back to pod-local filesystem.
 	if a.memoryStore != nil {
 		a.ctxBuilder.store = a.memoryStore
 		a.ctxBuilder.agentID = a.name
+		a.ctxBuilder.userID = a.ownerUserID
 	}
 }
 

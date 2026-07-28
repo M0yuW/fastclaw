@@ -1,0 +1,108 @@
+version: 1
+name: multiagentbench-style-collaboration-subset
+description: Deterministic shared-goal tasks with simulated specialist reports and solo/team comparison.
+defaults:
+  repetitions: 3
+  timeout: 2m
+cases:
+  - id: incident-root-cause
+    description: Coordinate independent telemetry, log, and deployment evidence.
+    tags: [multiagent, incident, star]
+    max_delegations: 3
+    prompt: >-
+      Investigate the checkout incident. Produce a concise root cause,
+      supporting evidence, and immediate remediation. Do not guess missing
+      evidence.
+    agents:
+      - id: metrics-agent
+        role: Analyze service and database telemetry.
+        response: >-
+          Metrics report: checkout error rate rose immediately after build 842;
+          database latency remained normal.
+        contribution_values: [database latency remained normal]
+      - id: logs-agent
+        role: Analyze checkout application logs.
+        response: >-
+          Log report: checkout failures are nil pointer errors in coupon
+          validation.
+        contribution_values: [nil pointer, coupon validation]
+      - id: deploy-agent
+        role: Analyze recent releases and rollback options.
+        response: >-
+          Deployment report: build 842 changed coupon normalization; the
+          rollback target is build 841.
+        contribution_values: [build 841]
+    milestones:
+      - id: root-cause
+        values: [build 842, coupon validation]
+      - id: supporting-evidence
+        values: [database latency remained normal, nil pointer]
+      - id: remediation
+        values: [rollback, build 841]
+
+  - id: release-gate
+    description: Combine security, QA, and operations reports into a release decision.
+    tags: [multiagent, release, policy]
+    max_delegations: 3
+    prompt: >-
+      Decide whether release 7.4 may proceed. Policy requires blocking a release
+      when authorization tests fail. Report the evidence and a safe next step.
+    agents:
+      - id: security-agent
+        role: Review security-sensitive changes.
+        response: >-
+          Security report: /admin/export has an authorization regression that
+          permits viewer-role access. The release must be blocked.
+        contribution_values: [authorization regression, viewer-role access]
+      - id: qa-agent
+        role: Summarize test results and failure clustering.
+        response: >-
+          QA report: 37 of 40 tests pass; all three failures are admin export
+          role checks.
+        contribution_values: [37 of 40, three failures]
+      - id: operations-agent
+        role: Propose a safe deployment or rollback plan.
+        response: >-
+          Operations report: rollback takes four minutes and the next
+          maintenance window begins at 22:00 UTC.
+        contribution_values: [four minutes, "22:00 UTC"]
+    milestones:
+      - id: security-risk
+        values: [authorization regression, viewer-role access]
+      - id: release-decision
+        values: [block, release]
+      - id: recovery-plan
+        values: [four minutes, "22:00 UTC"]
+
+  - id: investment-committee
+    description: Synthesize fundamentals, valuation, and risk under a fixed policy.
+    tags: [multiagent, finance, decision]
+    max_delegations: 3
+    prompt: >-
+      Evaluate a proposed equity purchase. Policy says defer when forward P/E is
+      above 25x and gross margin is declining. Give a decision with evidence and
+      the main risk.
+    agents:
+      - id: fundamentals-agent
+        role: Analyze growth and operating quality.
+        response: >-
+          Fundamentals report: revenue growth is 18%, while gross margin
+          declined by 3.2 percentage points.
+        contribution_values: [revenue growth is 18%, 3.2 percentage points]
+      - id: valuation-agent
+        role: Compare valuation with peers.
+        response: >-
+          Valuation report: forward P/E is 31x versus a peer median of 22x.
+        contribution_values: [31x, 22x]
+      - id: risk-agent
+        role: Identify balance-sheet and market risks.
+        response: >-
+          Risk report: debt covenant headroom is 9% and FX sensitivity is high.
+        contribution_values: [debt covenant headroom is 9%, FX sensitivity]
+    milestones:
+      - id: operating-quality
+        values: [revenue growth is 18%, 3.2 percentage points]
+      - id: valuation
+        values: [31x, 22x]
+      - id: decision-and-risk
+        values: [defer, debt covenant headroom is 9%]

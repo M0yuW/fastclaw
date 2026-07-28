@@ -118,12 +118,26 @@ Click an agent to enter its management panel:
 
 ### API
 - OpenAI-compatible `/v1/chat/completions` (streaming)
+- Eval-only stateful request tools and structured trace/state responses
 - Web chat `/api/chat/stream` (SSE)
 - Session management `/api/chat/sessions`
 - Agent CRUD `/api/agents`
 - Provider management `/api/config`
 - Skill install `/api/skills/install` (ClawHub + GitHub)
 - API key management `/v1/admin/apikeys`
+
+### Agent Evaluation
+- YAML-defined deterministic evaluation suites
+- Isolated sessions and configurable repetitions per case
+- Exact, contains, forbidden-content, regex, and JSON graders
+- BFCL V4 single-turn JSONL importer and bundled function-calling subset
+- τ-bench-style multi-turn retail subset with deterministic state transitions
+- SWE-bench-style local repository subset with hidden test execution
+- MultiAgentBench-style collaboration subset with solo/team comparison
+- Coordinator/sub-agent token, estimated cost, latency, and call-path tracking
+- Output and tool-trace graders with invalid-tool-call measurement
+- State, communication, policy, `pass@k`, latency, and consistency metrics
+- Baseline/candidate comparison for quantifying prompt, model, and tool changes
 
 ## Configuration
 
@@ -198,6 +212,35 @@ cp -r out ../internal/setup/web
 # Build binary
 go build -o fastclaw ./cmd/fastclaw
 ```
+
+## Testing
+
+```bash
+make test              # full Go suite
+make test-integration  # API, Eval, Gateway, Auth, Setup, and Store boundaries
+make test-race         # concurrency-focused race detection
+make coverage          # statement coverage summary
+```
+
+See [TESTING.md](TESTING.md) for the test architecture, integration scenarios,
+CI quality gates, and measured coverage improvements.
+
+Run the built-in agent smoke evaluation and compare saved reports:
+
+```bash
+export FASTCLAW_API_KEY=your-api-key
+go run ./cmd/fastclaw eval run evals/smoke.yaml --format json -o baseline.json
+go run ./cmd/fastclaw eval run evals/bfcl-v4-simple-subset.yaml
+go run ./cmd/fastclaw eval tau run evals/tau-retail-subset.yaml
+go run ./cmd/fastclaw eval swe run evals/swebench-local-subset.yaml
+go run ./cmd/fastclaw eval multiagent run evals/multiagent-collaboration-subset.yaml
+go run ./cmd/fastclaw eval multiagent tenant provision --coordinator-model provider/model
+go run ./cmd/fastclaw eval multiagent run evals/multiagent-runtime-tenant.yaml
+go run ./cmd/fastclaw eval compare baseline.json candidate.json
+```
+
+See [EVALUATION.md](EVALUATION.md) for the suite schema, metrics, benchmark
+roadmap, and resume-ready measurement workflow.
 
 ## License
 

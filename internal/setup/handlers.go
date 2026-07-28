@@ -632,9 +632,22 @@ func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 		jsonResponse(w, http.StatusOK, []any{})
 		return
 	}
+	ident, ok := auth.FromContext(r.Context())
+	if !ok {
+		jsonResponse(w, http.StatusUnauthorized, map[string]any{"error": "unauthorized"})
+		return
+	}
+	showAll := ident.Role == users.RoleSuperAdmin && !ident.IsActingAs()
+	effectiveUserID := ident.EffectiveUserID()
 	tasks := s.taskQueue.RecentTasks(50)
 	out := make([]map[string]any, 0, len(tasks))
 	for _, t := range tasks {
+		if !showAll && t.OwnerUserID != effectiveUserID {
+			continue
+		}
+		if !ident.CanAccessAgent(t.AgentID) {
+			continue
+		}
 		entry := map[string]any{
 			"id":        t.ID,
 			"agentId":   t.AgentID,

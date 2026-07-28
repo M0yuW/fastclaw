@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log/slog"
@@ -10,13 +11,16 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 	"github.com/fastclaw-ai/fastclaw/internal/privacy"
+	"github.com/fastclaw-ai/fastclaw/internal/provider"
 )
 
 // chatCompletionRequest mirrors the OpenAI chat completion request.
 type chatCompletionRequest struct {
-	Model    string        `json:"model"`
-	Messages []chatMessage `json:"messages"`
-	Stream   *bool         `json:"stream,omitempty"`
+	Model    string                  `json:"model"`
+	Messages []chatMessage           `json:"messages"`
+	Stream   *bool                   `json:"stream,omitempty"`
+	Tools    []provider.Tool         `json:"tools,omitempty"`
+	FastClaw *fastClawRequestOptions `json:"fastclaw,omitempty"`
 }
 
 type chatMessage struct {
@@ -46,12 +50,13 @@ type chunkDelta struct {
 
 // chatCompletionResponse is the non-streaming response.
 type chatCompletionResponse struct {
-	ID      string             `json:"id"`
-	Object  string             `json:"object"`
-	Created int64              `json:"created"`
-	Model   string             `json:"model"`
-	Choices []completionChoice `json:"choices"`
-	Usage   completionUsage    `json:"usage"`
+	ID       string              `json:"id"`
+	Object   string              `json:"object"`
+	Created  int64               `json:"created"`
+	Model    string              `json:"model"`
+	Choices  []completionChoice  `json:"choices"`
+	Usage    completionUsage     `json:"usage"`
+	FastClaw *completionMetadata `json:"fastclaw,omitempty"`
 }
 
 type completionChoice struct {
@@ -158,16 +163,74 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 	now := time.Now().Unix()
 
 	isStream := req.Stream != nil && *req.Stream
+	if isStream && req.FastClaw != nil &&
+		(req.FastClaw.State != nil || len(req.FastClaw.ToolBehaviors) > 0) {
+		writeJSON(w, http.StatusBadRequest, map[string]any{
+			"error": map[string]string{"message": "stateful eval tools require stream=false", "type": "invalid_request_error"},
+		})
+		return
+	}
+	agentCtx := r.Context()
+	var snapshotState func() map[string]any
+	var usageCollector *agent.ModelUsageCollector
+	if !isStream && req.FastClaw != nil && req.FastClaw.IncludeUsageBreakdown {
+		if !req.FastClaw.Eval {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"error": map[string]string{"message": "usage breakdown requires fastclaw.eval=true", "type": "invalid_request_error"},
+			})
+			return
+		}
+		usageCollector = agent.NewModelUsageCollector(ag.Name(), req.FastClaw.Pricing)
+		agentCtx = agent.ContextWithModelUsageCollector(agentCtx, usageCollector)
+	}
+	useRequestTools := len(req.Tools) > 0 || (req.FastClaw != nil && req.FastClaw.IsolateTools)
+	if useRequestTools {
+		if req.FastClaw == nil || !req.FastClaw.Eval {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"error": map[string]string{"message": "isolated request tools require fastclaw.eval=true", "type": "invalid_request_error"},
+			})
+			return
+		}
+		registry, snapshot, registryErr := buildRequestToolEnvironment(
+			req.Tools,
+			req.FastClaw.ToolResults,
+			req.FastClaw.State,
+			req.FastClaw.ToolBehaviors,
+		)
+		if registryErr != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"error": map[string]string{"message": registryErr.Error(), "type": "invalid_request_error"},
+			})
+			return
+		}
+		agentCtx = agent.ContextWithToolRegistry(agentCtx, registry)
+		snapshotState = snapshot
+	}
 	if isStream {
-		s.streamResponseFromAgent(w, r, ag, msg, chatID, model, now)
+		s.streamResponseFromAgent(w, r, agentCtx, ag, msg, chatID, model, now)
 	} else {
-		// Get reply from agent
-		reply := ag.HandleMessage(r.Context(), msg)
-		s.fullResponse(w, reply, chatID, model, now)
+		var finishTrace func() []completionTraceEvent
+		if req.FastClaw != nil && req.FastClaw.IncludeTrace {
+			agentCtx, finishTrace = startTraceCapture(agentCtx)
+		}
+		reply := ag.HandleMessage(agentCtx, msg)
+		var trace []completionTraceEvent
+		if finishTrace != nil {
+			trace = finishTrace()
+		}
+		var state map[string]any
+		if snapshotState != nil {
+			state = snapshotState()
+		}
+		var modelCalls []agent.ModelCallUsage
+		if usageCollector != nil {
+			modelCalls = usageCollector.Snapshot()
+		}
+		s.fullResponse(w, reply, chatID, model, now, trace, state, modelCalls)
 	}
 }
 
-func (s *Server) streamResponseFromAgent(w http.ResponseWriter, r *http.Request, ag *agent.Agent, msg bus.InboundMessage, chatID, model string, created int64) {
+func (s *Server) streamResponseFromAgent(w http.ResponseWriter, r *http.Request, ctx context.Context, ag *agent.Agent, msg bus.InboundMessage, chatID, model string, created int64) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
@@ -176,7 +239,7 @@ func (s *Server) streamResponseFromAgent(w http.ResponseWriter, r *http.Request,
 
 	flusher, ok := w.(http.Flusher)
 
-	sr := ag.HandleMessageStream(r.Context(), msg)
+	sr := ag.HandleMessageStream(ctx, msg)
 
 	// Send role chunk
 	s.writeSSEChunk(w, chatID, model, created, "assistant", "", nil)
@@ -236,7 +299,15 @@ func (s *Server) writeSSEChunk(w http.ResponseWriter, id, model string, created 
 	fmt.Fprintf(w, "data: %s\n\n", data)
 }
 
-func (s *Server) fullResponse(w http.ResponseWriter, reply, chatID, model string, created int64) {
+func (s *Server) fullResponse(
+	w http.ResponseWriter,
+	reply, chatID, model string,
+	created int64,
+	trace []completionTraceEvent,
+	state map[string]any,
+	modelCalls []agent.ModelCallUsage,
+) {
+	usage := completionUsageFromModelCalls(modelCalls)
 	resp := chatCompletionResponse{
 		ID:      chatID,
 		Object:  "chat.completion",
@@ -249,13 +320,22 @@ func (s *Server) fullResponse(w http.ResponseWriter, reply, chatID, model string
 				FinishReason: "stop",
 			},
 		},
-		Usage: completionUsage{
-			PromptTokens:     0,
-			CompletionTokens: 0,
-			TotalTokens:      0,
-		},
+		Usage: usage,
+	}
+	if len(trace) > 0 || state != nil || len(modelCalls) > 0 {
+		resp.FastClaw = &completionMetadata{Trace: trace, State: state, ModelCalls: modelCalls}
 	}
 	writeJSON(w, http.StatusOK, resp)
+}
+
+func completionUsageFromModelCalls(calls []agent.ModelCallUsage) completionUsage {
+	var usage completionUsage
+	for _, call := range calls {
+		usage.PromptTokens += call.PromptTokens
+		usage.CompletionTokens += call.CompletionTokens
+		usage.TotalTokens += call.TotalTokens
+	}
+	return usage
 }
 
 // resolveAgent picks an agent out of the caller's user space, preferring an
@@ -277,4 +357,3 @@ func resolveAgent(space *UserSpaceView, agentID string) *agent.Agent {
 	}
 	return nil
 }
-

@@ -1,0 +1,285 @@
+version: 1
+name: fastclaw-fixed-runtime-tenant
+description: Eight fixed-evidence tasks executed through real coordinator and sub-agent Gateway routing.
+defaults:
+  agent_id: bench-coordinator
+  repetitions: 3
+  timeout: 10m
+pricing:
+  deepseek/deepseek-v4-flash:
+    input_per_million: 0.14
+    output_per_million: 0.28
+    cache_read_per_million: 0.0028
+  deepseek/deepseek-v4-pro:
+    input_per_million: 0.435
+    output_per_million: 0.87
+    cache_read_per_million: 0.003625
+cases:
+  - id: checkout-incident
+    description: Diagnose a release-induced checkout failure.
+    execution_mode: runtime
+    tags: [runtime, incident, root-cause]
+    max_delegations: 3
+    prompt: >-
+      [BENCH-01] Investigate the checkout incident. Identify the root cause,
+      rule out an unrelated database issue, and provide a rollback action with
+      expected recovery time. Cite every evidence ID.
+    agents:
+      - id: bench-observer
+        role: Inspect checkout telemetry and database behavior.
+        task_values: [BENCH-01]
+        contribution_values:
+          - OBS-101
+          - "database latency stayed normal || database latency remained normal"
+      - id: bench-investigator
+        role: Inspect application logs and the responsible code change.
+        task_values: [BENCH-01]
+        contribution_values: [INV-111, coupon validation, N-42]
+      - id: bench-operator
+        role: Provide the safe rollback and recovery estimate.
+        task_values: [BENCH-01]
+        contribution_values: [OPS-121, build 841, four minutes]
+    milestones:
+      - id: root-cause
+        values: [build 842, coupon validation, N-42]
+      - id: ruled-out-cause
+        values:
+          - "database latency stayed normal || database latency remained normal"
+      - id: remediation
+        values: [rollback, build 841, four minutes, OBS-101, INV-111, OPS-121]
+
+  - id: authorization-release-gate
+    description: Apply a fixed release policy to an authorization regression.
+    execution_mode: runtime
+    tags: [runtime, release, security]
+    max_delegations: 4
+    prompt: >-
+      [BENCH-02] Decide whether the release may proceed. Report test evidence,
+      the authorization defect, the controlling policy, and the safe recovery
+      action. Cite every evidence ID.
+    agents:
+      - id: bench-observer
+        role: Summarize the release test results.
+        task_values: [BENCH-02]
+        contribution_values: [OBS-202, 37 of 40, three failures]
+      - id: bench-investigator
+        role: Identify the authorization regression.
+        task_values: [BENCH-02]
+        contribution_values: [INV-212, viewer-role access, A-7]
+      - id: bench-policy
+        role: Apply the release policy.
+        task_values: [BENCH-02]
+        contribution_values: [POL-222, RP-4, blocking]
+      - id: bench-operator
+        role: Define rollback and verification steps.
+        task_values: [BENCH-02]
+        contribution_values: [OPS-232, rerun, role checks]
+    milestones:
+      - id: decision
+        values: [block, release, RP-4]
+      - id: defect
+        values: [viewer-role access, authorization, A-7]
+      - id: recovery
+        values: [rollback, rerun, OBS-202, INV-212, POL-222, OPS-232]
+
+  - id: service-account-access-review
+    description: Investigate an unauthorized raw-data export.
+    execution_mode: runtime
+    tags: [runtime, access, audit]
+    max_delegations: 4
+    prompt: >-
+      [BENCH-03] Review the service-account export. Determine whether it was
+      authorized, quantify the affected rows, and give immediate containment
+      steps. Cite every evidence ID.
+    agents:
+      - id: bench-observer
+        role: Inspect the audit event and export volume.
+        task_values: [BENCH-03]
+        contribution_values: [OBS-303, AUD-77, "12,400"]
+      - id: bench-investigator
+        role: Compare the export with the approved ticket.
+        task_values: [BENCH-03]
+        contribution_values: [INV-313, T-88, aggregate reports only]
+      - id: bench-policy
+        role: Apply least-privilege policy.
+        task_values: [BENCH-03]
+        contribution_values: [POL-323, LP-2, forbids]
+      - id: bench-operator
+        role: Contain access and preserve evidence.
+        task_values: [BENCH-03]
+        contribution_values: [OPS-333, disable svc-report, revoke]
+    milestones:
+      - id: authorization
+        values: [unauthorized, raw customer, T-88, LP-2]
+      - id: impact
+        values: ["12,400", AUD-77, "02:14 UTC"]
+      - id: containment
+        values: [disable svc-report, revoke, preserve, OBS-303, INV-313, POL-323, OPS-333]
+
+  - id: pipeline-schema-regression
+    description: Diagnose and repair a fixed data-pipeline schema regression.
+    execution_mode: runtime
+    tags: [runtime, data, operations]
+    max_delegations: 3
+    prompt: >-
+      [BENCH-04] Diagnose the pipeline freshness regression. Identify the
+      incompatible field change and give an exact repair and replay plan.
+      Cite every evidence ID.
+    agents:
+      - id: bench-observer
+        role: Quantify the freshness regression and timing.
+        task_values: [BENCH-04]
+        contribution_values: [OBS-404, 8 minutes, 94 minutes, S-19]
+      - id: bench-investigator
+        role: Find the parser and schema mismatch.
+        task_values: [BENCH-04]
+        contribution_values: [INV-414, customer_tier, T-31]
+      - id: bench-operator
+        role: Define the transform fix and replay plan.
+        task_values: [BENCH-04]
+        contribution_values: [OPS-434, T-32, "06:00 UTC"]
+    milestones:
+      - id: diagnosis
+        values: [customer_tier, T-31, S-19]
+      - id: impact
+        values: [8 minutes, 94 minutes]
+      - id: repair
+        values: [T-32, replay, "06:00 UTC", OBS-404, INV-414, OPS-434]
+
+  - id: duplicate-payment-refund
+    description: Resolve a verified duplicate payment under fixed policy.
+    execution_mode: runtime
+    tags: [runtime, support, payment]
+    max_delegations: 4
+    prompt: >-
+      [BENCH-05] Resolve the customer's duplicate charge. Verify eligibility,
+      apply refund policy, and state the exact operational action. Cite every
+      evidence ID.
+    agents:
+      - id: bench-observer
+        role: Verify account, order, and refund history.
+        task_values: [BENCH-05]
+        contribution_values: [OBS-505, AC-55, O-900]
+      - id: bench-investigator
+        role: Verify the duplicate payment trace.
+        task_values: [BENCH-05]
+        contribution_values: [INV-515, P-52, same idempotency key]
+      - id: bench-policy
+        role: Apply refund eligibility policy.
+        task_values: [BENCH-05]
+        contribution_values: [POL-525, RF-9, immediate refund]
+      - id: bench-operator
+        role: Define the refund and recordkeeping action.
+        task_values: [BENCH-05]
+        contribution_values: [OPS-535, second capture, customer record]
+    milestones:
+      - id: eligibility
+        values: [verified duplicate, RF-9, eligible]
+      - id: evidence
+        values: [P-52, same idempotency key, no prior refunds]
+      - id: action
+        values: [refund, second capture, customer record, OBS-505, INV-515, POL-525, OPS-535]
+
+  - id: public-export-privacy-incident
+    description: Classify and contain a public customer-export exposure.
+    execution_mode: runtime
+    tags: [runtime, privacy, severity-one]
+    max_delegations: 4
+    prompt: >-
+      [BENCH-06] Classify the customer-export exposure, identify the
+      configuration cause, establish the exposure window, and provide complete
+      containment actions. Cite every evidence ID.
+    agents:
+      - id: bench-observer
+        role: Establish the public access window.
+        task_values: [BENCH-06]
+        contribution_values: [OBS-606, "09:10", "09:42"]
+      - id: bench-investigator
+        role: Identify the infrastructure change.
+        task_values: [BENCH-06]
+        contribution_values: [INV-616, I-63, private ACL]
+      - id: bench-policy
+        role: Classify severity and required response.
+        task_values: [BENCH-06]
+        contribution_values: [POL-626, PI-6, severity one]
+      - id: bench-operator
+        role: Define containment and evidence preservation.
+        task_values: [BENCH-06]
+        contribution_values: [OPS-636, restore private ACL, rotate]
+    milestones:
+      - id: classification
+        values: [severity one, PI-6]
+      - id: cause-window
+        values: [I-63, private ACL, "09:10", "09:42"]
+      - id: containment
+        values: [restore private ACL, disable website, rotate, preserve, OBS-606, INV-616, POL-626, OPS-636]
+
+  - id: recommendation-capacity-plan
+    description: Resolve a fixed API latency bottleneck and capacity target.
+    execution_mode: runtime
+    tags: [runtime, performance, capacity]
+    max_delegations: 3
+    prompt: >-
+      [BENCH-07] Explain the API latency bottleneck and propose a capacity plan
+      that supports the stated target load and latency. Cite every evidence ID.
+    agents:
+      - id: bench-observer
+        role: Quantify current load and latency.
+        task_values: [BENCH-07]
+        contribution_values: [OBS-707, 820 requests per second, 1.8 seconds]
+      - id: bench-investigator
+        role: Identify the dominant request-time component.
+        task_values: [BENCH-07]
+        contribution_values: [INV-717, 68 percent, synchronous recommendation]
+      - id: bench-operator
+        role: Propose the architecture change and projected capacity.
+        task_values: [BENCH-07]
+        contribution_values: [OPS-737, asynchronous worker, 620 milliseconds, "1,000"]
+    milestones:
+      - id: bottleneck
+        values: [synchronous recommendation, 68 percent]
+      - id: baseline
+        values: [820 requests per second, 1.8 seconds]
+      - id: plan
+        values: [asynchronous worker, 620 milliseconds, "1,000", OBS-707, INV-717, OPS-737]
+
+  - id: critical-dependency-upgrade
+    description: Plan a critical dependency upgrade with a controlled canary.
+    execution_mode: runtime
+    tags: [runtime, dependency, security]
+    max_delegations: 4
+    prompt: >-
+      [BENCH-08] Decide whether to upgrade the dependency, explain the test
+      failures, apply the security deadline, and give a safe rollout plan.
+      Cite every evidence ID.
+    agents:
+      - id: bench-observer
+        role: Report compatibility test results.
+        task_values: [BENCH-08]
+        contribution_values: [OBS-808, 118 of 120, TLS 1.0]
+      - id: bench-investigator
+        role: Explain the dependency security and compatibility change.
+        task_values: [BENCH-08]
+        contribution_values: [INV-818, D-81, CVE-2099-117]
+      - id: bench-policy
+        role: Apply the critical vulnerability policy.
+        task_values: [BENCH-08]
+        contribution_values: [POL-828, SP-8, seven days]
+      - id: bench-operator
+        role: Define the canary and monitoring plan.
+        task_values: [BENCH-08]
+        contribution_values: [OPS-838, 10 percent canary, handshake failures]
+    milestones:
+      - id: decision
+        values: [upgrade, D-81, CVE-2099-117]
+      - id: policy
+        values: [SP-8, "seven days || 7 days || 7 calendar days", TLS 1.0]
+      - id: rollout
+        values:
+          - "10 percent canary || 10% canary"
+          - "handshake failures || handshake failure rate"
+          - "100 percent || 100%"
+          - OBS-808
+          - INV-818
+          - POL-828
+          - OPS-838
