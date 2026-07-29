@@ -106,6 +106,11 @@ func (cb *ContextBuilder) ValidateRequiredIdentityFiles() (string, error) {
 
 // BuildSystemPrompt assembles the system prompt from identity, bootstrap files, memory, and skills.
 func (cb *ContextBuilder) BuildSystemPrompt() string {
+	identityRevision, _ := cb.ValidateRequiredIdentityFiles()
+	return cb.buildSystemPrompt(identityRevision)
+}
+
+func (cb *ContextBuilder) buildSystemPrompt(identityRevision string) string {
 	var parts []string
 
 	// 1. Runtime environment info. Deliberately NOT an identity claim —
@@ -244,11 +249,10 @@ with open('/tmp/output.png', 'rb') as f:
 		}
 	}
 	if len(cb.requiredIdentity) > 0 {
-		revision, _ := cb.ValidateRequiredIdentityFiles()
 		parts = append(parts, fmt.Sprintf(
 			"# Runtime Identity Contract\nRequired identity files loaded: %s\nIdentity revision: %s",
 			strings.Join(cb.requiredIdentity, ", "),
-			revision,
+			identityRevision,
 		))
 	}
 

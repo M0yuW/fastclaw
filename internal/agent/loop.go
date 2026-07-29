@@ -535,7 +535,6 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		return "Request cancelled before the agent turn could start."
 	}
 	defer a.releaseTurn()
-	ctx = tools.ContextWithSubAgentDedup(ctx)
 	events := newTurnEventEmitter(ctx)
 	// Check for slash commands first
 	if result := a.handleSlashCommand(msg); result.handled {
@@ -580,7 +579,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			"revision", identityRevision,
 		)
 	}
-	systemPrompt := a.ctxBuilder.BuildSystemPrompt()
+	systemPrompt := a.ctxBuilder.buildSystemPrompt(identityRevision)
 
 	// Hook: AfterSystemPrompt
 	a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: AfterSystemPrompt, UserID: a.ownerUserID})

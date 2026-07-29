@@ -641,6 +641,8 @@ func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 	}
 	showAll := ident.Role == users.RoleSuperAdmin && !ident.IsActingAs()
 	effectiveUserID := ident.EffectiveUserID()
+	// Authorization must precede the response limit so newer tasks owned by
+	// other tenants cannot hide this caller's retained tasks.
 	tasks := s.taskQueue.RecentTasks(0)
 	out := make([]map[string]any, 0, taskListLimit)
 	for _, t := range tasks {

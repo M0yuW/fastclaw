@@ -142,6 +142,35 @@ func TestOpenAIProviderFallsBackWhenStreamingUsageIsUnsupported(t *testing.T) {
 	}
 }
 
+func TestOpenAIProviderDoesNotRetryAmbiguousStreamingUsageError(t *testing.T) {
+	var calls int
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		calls++
+		http.Error(
+			writer,
+			"stream_options requires a provider-specific account setting",
+			http.StatusBadRequest,
+		)
+	}))
+	defer server.Close()
+
+	openAIProvider := NewOpenAI("test-key", server.URL)
+	_, err := openAIProvider.ChatStream(
+		t.Context(),
+		[]Message{{Role: "user", Content: "hello"}},
+		nil,
+		"test-model",
+		100,
+		0,
+	)
+	if err == nil || !strings.Contains(err.Error(), "stream_options requires") {
+		t.Fatalf("ChatStream() error = %v", err)
+	}
+	if calls != 1 {
+		t.Fatalf("calls = %d, want 1", calls)
+	}
+}
+
 func TestAnthropicSSEStreamingResultEqualsChatResult(t *testing.T) {
 	fixture := anthropicFixture()
 	chat, err := parseAnthropicSSE(context.Background(), strings.NewReader(fixture), nil)

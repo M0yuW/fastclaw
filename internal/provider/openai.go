@@ -117,10 +117,6 @@ type sseResponse struct {
 	} `json:"usage,omitempty"`
 }
 
-func (p *OpenAIProvider) buildRequest(ctx context.Context, messages []Message, tools []Tool, model string, maxTokens int, temperature float64, stream bool) (*http.Request, error) {
-	return p.buildRequestWithUsage(ctx, messages, tools, model, maxTokens, temperature, stream, true)
-}
-
 func (p *OpenAIProvider) buildRequestWithUsage(
 	ctx context.Context,
 	messages []Message,
@@ -243,9 +239,7 @@ func (p *OpenAIProvider) doChatRequest(
 	if readErr != nil {
 		return nil, fmt.Errorf("read API error: %w", readErr)
 	}
-	lowerBody := strings.ToLower(string(responseBody))
-	if !strings.Contains(lowerBody, "stream_options") &&
-		!strings.Contains(lowerBody, "include_usage") {
+	if !isUnsupportedStreamingUsageError(response.StatusCode, responseBody) {
 		response.Body = io.NopCloser(bytes.NewReader(responseBody))
 		return response, nil
 	}
@@ -267,6 +261,33 @@ func (p *OpenAIProvider) doChatRequest(
 		return nil, fmt.Errorf("send request without streaming usage: %w", err)
 	}
 	return fallbackResponse, nil
+}
+
+func isUnsupportedStreamingUsageError(status int, responseBody []byte) bool {
+	if status != http.StatusBadRequest && status != http.StatusUnprocessableEntity {
+		return false
+	}
+	lowerBody := strings.ToLower(string(responseBody))
+	hasField := strings.Contains(lowerBody, "stream_options") ||
+		strings.Contains(lowerBody, "include_usage")
+	if !hasField {
+		return false
+	}
+	for _, marker := range []string{
+		"unsupported",
+		"unknown field",
+		"unrecognized",
+		"not allowed",
+		"not permitted",
+		"extra field",
+		"extra_forbidden",
+		"additional properties",
+	} {
+		if strings.Contains(lowerBody, marker) {
+			return true
+		}
+	}
+	return false
 }
 
 func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk) error) (*Response, error) {

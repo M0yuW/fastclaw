@@ -24,6 +24,22 @@ type fakeStreamingProvider struct {
 	streamCalls int
 }
 
+type recordingSubAgentSpawner struct {
+	mu       sync.Mutex
+	messages []bus.InboundMessage
+}
+
+func (spawner *recordingSubAgentSpawner) SpawnSubAgent(
+	_ context.Context,
+	_ string,
+	message bus.InboundMessage,
+) (string, error) {
+	spawner.mu.Lock()
+	defer spawner.mu.Unlock()
+	spawner.messages = append(spawner.messages, message)
+	return "specialist result", nil
+}
+
 func newFakeStreamingProvider(responses ...string) *fakeStreamingProvider {
 	p := &fakeStreamingProvider{responses: responses}
 	p.server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
@@ -264,6 +280,34 @@ func TestRunTurnToolRoundsStreamOnceAndPairEvents(t *testing.T) {
 	messages := agent.Sessions().Get("test", "tool").GetMessages()
 	if len(messages) != 4 || messages[1].Role != "assistant" || len(messages[1].ToolCalls) != 1 || messages[2].Role != "tool" || messages[2].ToolCallID != "call-1" || messages[3].Role != "assistant" || messages[3].Content != "final answer" {
 		t.Fatalf("unexpected session: %+v", messages)
+	}
+}
+
+func TestRunTurnDoesNotDeduplicateProductionSubAgentCalls(t *testing.T) {
+	fake := newFakeStreamingProvider(
+		openAIToolStream("call-1", "spawn_subagent", `{"agentId":"child","task":"first task"}`, ""),
+		openAIToolStream("call-2", "spawn_subagent", `{"agentId":"child","task":"second task"}`, ""),
+		openAITextStream("final answer"),
+	)
+	defer fake.server.Close()
+	agent := newStreamingTestAgent(t, fake, 4)
+	spawner := &recordingSubAgentSpawner{}
+	agent.SetSubAgentSpawner(spawner)
+
+	reply := agent.HandleMessage(
+		context.Background(),
+		bus.InboundMessage{Channel: "test", ChatID: "production-subagents", Text: "delegate twice"},
+	)
+	if reply != "final answer" {
+		t.Fatalf("HandleMessage() = %q", reply)
+	}
+	spawner.mu.Lock()
+	defer spawner.mu.Unlock()
+	if len(spawner.messages) != 2 {
+		t.Fatalf("sub-agent calls = %d, want 2", len(spawner.messages))
+	}
+	if spawner.messages[0].Text != "first task" || spawner.messages[1].Text != "second task" {
+		t.Fatalf("sub-agent tasks = %+v", spawner.messages)
 	}
 }
 

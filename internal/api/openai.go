@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
+	"github.com/fastclaw-ai/fastclaw/internal/agent/tools"
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 	"github.com/fastclaw-ai/fastclaw/internal/privacy"
 	"github.com/fastclaw-ai/fastclaw/internal/provider"
@@ -171,6 +172,9 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	agentCtx := r.Context()
+	if req.FastClaw != nil && req.FastClaw.Eval {
+		agentCtx = tools.ContextWithSubAgentDedup(agentCtx)
+	}
 	var snapshotState func() map[string]any
 	var usageCollector *agent.ModelUsageCollector
 	if !isStream && req.FastClaw != nil && req.FastClaw.IncludeUsageBreakdown {
