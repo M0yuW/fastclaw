@@ -8,6 +8,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
 	agenttools "github.com/fastclaw-ai/fastclaw/internal/agent/tools"
@@ -37,11 +38,20 @@ type completionMetadata struct {
 type evalToolBehavior struct {
 	Conditions           []evalStateCondition `json:"conditions,omitempty"`
 	Updates              []evalStateUpdate    `json:"updates,omitempty"`
+	Faults               []evalToolFault      `json:"faults,omitempty"`
 	Result               any                  `json:"result,omitempty"`
 	ResultPath           string               `json:"result_path,omitempty"`
 	ResultKeysPath       string               `json:"result_keys_path,omitempty"`
 	ResultMapPath        string               `json:"result_map_path,omitempty"`
 	ResultMapKeyArgument string               `json:"result_map_key_argument,omitempty"`
+}
+
+type evalToolFault struct {
+	Argument string `json:"argument"`
+	Value    string `json:"value"`
+	DelayMS  int    `json:"delay_ms,omitempty"`
+	Error    string `json:"error,omitempty"`
+	Result   any    `json:"result,omitempty"`
 }
 
 type evalStateCondition struct {
@@ -112,8 +122,8 @@ func buildRequestToolEnvironment(
 			name,
 			definition.Function.Description,
 			normalizeToolSchema(definition.Function.Parameters),
-			func(_ context.Context, arguments json.RawMessage) (string, error) {
-				return environment.execute(name, arguments)
+			func(ctx context.Context, arguments json.RawMessage) (string, error) {
+				return environment.execute(ctx, name, arguments)
 			},
 		)
 	}
@@ -121,14 +131,23 @@ func buildRequestToolEnvironment(
 		if _, exists := seen[name]; !exists {
 			return nil, nil, fmt.Errorf("tool behavior %q has no matching request tool", name)
 		}
+		for index, fault := range behaviors[name].Faults {
+			if strings.TrimSpace(fault.Argument) == "" || strings.TrimSpace(fault.Value) == "" {
+				return nil, nil, fmt.Errorf("tool behavior %q fault %d requires argument and value", name, index+1)
+			}
+			if fault.DelayMS < 0 {
+				return nil, nil, fmt.Errorf("tool behavior %q fault %d delay cannot be negative", name, index+1)
+			}
+		}
 	}
 	return registry, environment.snapshot, nil
 }
 
-func (e *evalToolEnvironment) execute(name string, rawArguments json.RawMessage) (string, error) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-
+func (e *evalToolEnvironment) execute(
+	ctx context.Context,
+	name string,
+	rawArguments json.RawMessage,
+) (string, error) {
 	behavior, stateful := e.behaviors[name]
 	if !stateful {
 		result := e.results[name]
@@ -142,6 +161,24 @@ func (e *evalToolEnvironment) execute(name string, rawArguments json.RawMessage)
 	if err := json.Unmarshal(rawArguments, &arguments); err != nil {
 		return "", fmt.Errorf("decode %s arguments: %w", name, err)
 	}
+	if fault, ok := matchingEvalToolFault(behavior.Faults, arguments); ok {
+		if fault.DelayMS > 0 {
+			timer := time.NewTimer(time.Duration(fault.DelayMS) * time.Millisecond)
+			defer timer.Stop()
+			select {
+			case <-ctx.Done():
+				return "", ctx.Err()
+			case <-timer.C:
+			}
+		}
+		if fault.Error != "" {
+			return "", fmt.Errorf("%s", fault.Error)
+		}
+		return encodeEvalToolResult(name, fault.Result)
+	}
+
+	e.mu.Lock()
+	defer e.mu.Unlock()
 	for _, condition := range behavior.Conditions {
 		path, err := interpolateStatePath(condition.Path, arguments)
 		if err != nil {
@@ -246,6 +283,23 @@ func (e *evalToolEnvironment) execute(name string, rawArguments json.RawMessage)
 			return "", fmt.Errorf("state path %q not found", path)
 		}
 	}
+	return encodeEvalToolResult(name, result)
+}
+
+func matchingEvalToolFault(
+	faults []evalToolFault,
+	arguments map[string]any,
+) (evalToolFault, bool) {
+	for _, fault := range faults {
+		value, exists := arguments[fault.Argument]
+		if exists && fmt.Sprint(value) == fault.Value {
+			return fault, true
+		}
+	}
+	return evalToolFault{}, false
+}
+
+func encodeEvalToolResult(name string, result any) (string, error) {
 	if result == nil {
 		result = map[string]any{"ok": true}
 	}

@@ -177,8 +177,25 @@ go run ./cmd/fastclaw eval multiagent run \
 
 By default, specialists are deterministic simulated workers. This isolates the
 coordinator's planning, delegation, and synthesis behavior while keeping runs
-cheap and reproducible. Each attempt also runs a tool-isolated solo baseline,
-allowing the report to quantify collaboration gain.
+reproducible. The bundled suites declare four diagnostic modes:
+
+- `solo_closed_book`: task only, without specialist evidence
+- `solo_open_book`: the same evidence packet available to the team, anonymized
+  and flattened, without delegation tools
+- `team`: normal coordinator execution with simulated or real specialists
+- `oracle_team`: named specialist reports delivered directly, measuring the
+  synthesis ceiling when routing and delivery are perfect
+
+The fair collaboration gain compares the team's milestone-only outcome rate
+with `solo_open_book`, so both sides use the same evidence and output grader.
+The team's strict success rate additionally requires correct delegation,
+contribution use, and efficiency. The older
+`team - solo_closed_book` gain remains in reports as an optimistic diagnostic,
+but it must not be presented as proof that orchestration itself added value.
+Four-mode suites make three additional coordinator calls per attempt, so use a
+case filter and one repetition for low-cost pilots. Each mode receives an
+independent timeout and session key so a slow baseline cannot consume the
+team's execution budget or contaminate its conversation history.
 
 Set `execution_mode: runtime` to use the coordinator's real built-in
 `spawn_subagent` tool and FastClaw Gateway routing. Runtime mode measures real
@@ -214,7 +231,9 @@ The report includes:
 - **Contribution utilization:** delegated specialist evidence retained in the
   final synthesis
 - **Coordination score:** mean of delegation F1 and contribution utilization
-- **Team/solo success and collaboration gain**
+- **Four-mode baseline success:** closed-book solo, open-book solo, team, and
+  oracle-team
+- **Fair collaboration gain:** team success minus open-book solo success
 - **Average delegations and unexpected calls**
 - **Per-call usage tree:** phase, coordinator/sub-agent role, agent ID, model,
   call path, tokens, estimated USD cost, latency, and error
@@ -223,6 +242,48 @@ The report includes:
 - **Latency split:** average summed coordinator and sub-agent model-call
   latency per attempt; overall attempt latency remains the wall-clock metric
 - **Pricing coverage:** priced model calls divided by all captured model calls
+
+## Run fault-injection evaluation
+
+The bundled fault suite exercises specialist-local failures while preserving
+the same OpenAI-compatible Gateway and request-scoped tool path:
+
+```bash
+go run ./cmd/fastclaw eval multiagent run \
+  evals/multiagent-fault-injection.yaml \
+  --repetitions 1 \
+  --format json \
+  --output multiagent-faults.json
+```
+
+Faults are declared on a collaborator:
+
+```yaml
+fault:
+  type: timeout
+  delay: 50ms
+  message: logs specialist timed out
+  expected_output_values: [logs specialist, timed out, root cause unknown]
+  forbidden_output_values: [private-evidence-id, unsupported conclusion]
+```
+
+Supported types are `timeout`, `error`, `malformed`, and `contradictory`.
+Timeout and error faults return explicit tool failures; malformed and
+contradictory faults replace the specialist result. Fault injection is limited
+to `simulated` execution so production runtime agents cannot be altered by an
+evaluation request.
+
+Fault cases report:
+
+- **Fault injection rate:** configured faults observed in tool-result traces
+- **Fault attribution rate:** failures correctly disclosed in the final answer
+- **Graceful degradation rate:** required healthy milestones pass, injected
+  failures are observed and attributed, and no forbidden claims appear
+- **Unsupported claim rate:** forbidden claims divided by injected faults
+
+Faulty specialists still count toward delegation recall because the coordinator
+must attempt the call, but their nominal private evidence is excluded from
+contribution-utilization requirements.
 
 OpenAI-compatible providers are requested with streaming usage enabled, and
 Anthropic message-start/message-delta usage is parsed directly. Provider
@@ -324,9 +385,10 @@ The eight cases cover incident diagnosis, authorization release gating,
 service-account access review, pipeline regression, duplicate-payment support,
 privacy containment, capacity planning, and dependency rollout. Specialists
 receive case-specific evidence through their own identity files. The
-coordinator only sees the task and selected specialist IDs. Evidence IDs and
-milestone answers remain local grader inputs and are not included in the
-coordinator prompt.
+coordinator in `team` mode only sees the task and selected specialist IDs. The
+suite also stores nominal reports so the open-book and oracle baselines can
+receive equivalent evidence; those reports are not included in the normal team
+prompt. Evidence IDs and milestone answers remain local grader inputs.
 
 For reproducibility:
 
@@ -356,7 +418,10 @@ The comparison reports:
 - Tool-trace accuracy and invalid-tool-call-rate change
 - Stateful task, communication, and policy-compliance change
 - SWE patch-generation, test-execution, and resolution-rate change
-- Multi-agent team/solo success, milestone KPI, and coordination change
+- Multi-agent four-mode baseline success, closed/fair collaboration gain,
+  milestone KPI, and coordination change
+- Multi-agent fault injection, attribution, graceful degradation, and
+  unsupported-claim change
 - Multi-agent team cost, cost per success, and coordinator/sub-agent token
   changes
 

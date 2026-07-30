@@ -18,6 +18,7 @@ type MultiAgentSuite struct {
 	Name        string                  `json:"name" yaml:"name"`
 	Description string                  `json:"description,omitempty" yaml:"description,omitempty"`
 	Defaults    Defaults                `json:"defaults,omitempty" yaml:"defaults,omitempty"`
+	Baselines   []string                `json:"baselines,omitempty" yaml:"baselines,omitempty"`
 	Pricing     map[string]ModelPricing `json:"pricing,omitempty" yaml:"pricing,omitempty"`
 	Cases       []MultiAgentCase        `json:"cases" yaml:"cases"`
 	Source      string                  `json:"-" yaml:"-"`
@@ -34,17 +35,28 @@ type MultiAgentCase struct {
 	Timeout            Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty"`
 	Tags               []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
 	SkipSolo           bool                     `json:"skip_solo,omitempty" yaml:"skip_solo,omitempty"`
+	Baselines          []string                 `json:"baselines,omitempty" yaml:"baselines,omitempty"`
 	MaxDelegations     int                      `json:"max_delegations,omitempty" yaml:"max_delegations,omitempty"`
 	Agents             []MultiAgentCollaborator `json:"agents" yaml:"agents"`
 	Milestones         []MultiAgentMilestone    `json:"milestones" yaml:"milestones"`
 }
 
 type MultiAgentCollaborator struct {
-	ID                 string   `json:"id" yaml:"id"`
-	Role               string   `json:"role" yaml:"role"`
-	Response           string   `json:"response" yaml:"response"`
-	TaskValues         []string `json:"task_values,omitempty" yaml:"task_values,omitempty"`
-	ContributionValues []string `json:"contribution_values" yaml:"contribution_values"`
+	ID                 string           `json:"id" yaml:"id"`
+	Role               string           `json:"role" yaml:"role"`
+	Response           string           `json:"response" yaml:"response"`
+	TaskValues         []string         `json:"task_values,omitempty" yaml:"task_values,omitempty"`
+	ContributionValues []string         `json:"contribution_values" yaml:"contribution_values"`
+	Fault              *MultiAgentFault `json:"fault,omitempty" yaml:"fault,omitempty"`
+}
+
+type MultiAgentFault struct {
+	Type                  string   `json:"type" yaml:"type"`
+	Delay                 Duration `json:"delay,omitempty" yaml:"delay,omitempty"`
+	Message               string   `json:"message,omitempty" yaml:"message,omitempty"`
+	Response              string   `json:"response,omitempty" yaml:"response,omitempty"`
+	ExpectedOutputValues  []string `json:"expected_output_values,omitempty" yaml:"expected_output_values,omitempty"`
+	ForbiddenOutputValues []string `json:"forbidden_output_values,omitempty" yaml:"forbidden_output_values,omitempty"`
 }
 
 type MultiAgentMilestone struct {
@@ -73,7 +85,31 @@ type MultiAgentAttemptMetrics struct {
 	ContributionsUtilized   int     `json:"contributions_utilized"`
 	ContributionUtilization float64 `json:"contribution_utilization"`
 	CoordinationScore       float64 `json:"coordination_score"`
+	FaultsExpected          int     `json:"faults_expected"`
+	FaultsObserved          int     `json:"faults_observed"`
+	FaultsAttributed        int     `json:"faults_attributed"`
+	UnsupportedClaims       int     `json:"unsupported_claims"`
+	FaultInjectionRate      float64 `json:"fault_injection_rate"`
+	FaultAttributionRate    float64 `json:"fault_attribution_rate"`
+	GracefullyDegraded      bool    `json:"gracefully_degraded"`
 }
+
+type MultiAgentBaselineResult struct {
+	Mode       string           `json:"mode"`
+	Passed     bool             `json:"passed"`
+	Output     string           `json:"output,omitempty"`
+	Error      string           `json:"error,omitempty"`
+	LatencyMS  float64          `json:"latency_ms"`
+	Usage      Usage            `json:"usage"`
+	ModelCalls []ModelCallUsage `json:"model_calls,omitempty"`
+}
+
+const (
+	MultiAgentBaselineSoloClosedBook = "solo_closed_book"
+	MultiAgentBaselineSoloOpenBook   = "solo_open_book"
+	MultiAgentBaselineTeam           = "team"
+	MultiAgentBaselineOracleTeam     = "oracle_team"
+)
 
 type multiAgentDelegation struct {
 	AgentID string
@@ -123,6 +159,9 @@ func (s *MultiAgentSuite) Validate() error {
 	if s.Defaults.Timeout.Value() < 0 {
 		return errors.New("default timeout cannot be negative")
 	}
+	if err := validateMultiAgentBaselines("suite", s.Baselines); err != nil {
+		return err
+	}
 	for model, pricing := range s.Pricing {
 		if strings.TrimSpace(model) == "" {
 			return errors.New("pricing model name is required")
@@ -159,6 +198,12 @@ func (s *MultiAgentSuite) Validate() error {
 		if evalCase.Timeout.Value() < 0 {
 			return fmt.Errorf("case %q: timeout cannot be negative", evalCase.ID)
 		}
+		if err := validateMultiAgentBaselines(fmt.Sprintf("case %q", evalCase.ID), evalCase.Baselines); err != nil {
+			return err
+		}
+		if !containsBaseline(multiAgentBaselines(*s, *evalCase), MultiAgentBaselineTeam) {
+			return fmt.Errorf("case %q: baselines must include %q", evalCase.ID, MultiAgentBaselineTeam)
+		}
 		if len(evalCase.Agents) < 2 {
 			return fmt.Errorf("case %q: at least two collaborator agents are required", evalCase.ID)
 		}
@@ -186,6 +231,29 @@ func (s *MultiAgentSuite) Validate() error {
 			if len(collaborator.ContributionValues) == 0 {
 				return fmt.Errorf("case %q agent %q: contribution_values is required", evalCase.ID, collaborator.ID)
 			}
+			if collaborator.Fault != nil {
+				if evalCase.ExecutionMode == "runtime" {
+					return fmt.Errorf("case %q agent %q: fault injection requires simulated execution_mode", evalCase.ID, collaborator.ID)
+				}
+				if err := validateMultiAgentFault(evalCase.ID, collaborator); err != nil {
+					return err
+				}
+			}
+		}
+		for _, baseline := range multiAgentBaselines(*s, *evalCase) {
+			if baseline != MultiAgentBaselineSoloOpenBook && baseline != MultiAgentBaselineOracleTeam {
+				continue
+			}
+			for _, collaborator := range evalCase.Agents {
+				if strings.TrimSpace(collaborator.Response) == "" {
+					return fmt.Errorf(
+						"case %q agent %q: response is required for %s baseline",
+						evalCase.ID,
+						collaborator.ID,
+						baseline,
+					)
+				}
+			}
 		}
 		if len(evalCase.Milestones) == 0 {
 			return fmt.Errorf("case %q: milestones are required", evalCase.ID)
@@ -205,6 +273,86 @@ func (s *MultiAgentSuite) Validate() error {
 		}
 	}
 	return nil
+}
+
+func validateMultiAgentBaselines(scope string, baselines []string) error {
+	seen := make(map[string]struct{}, len(baselines))
+	for _, baseline := range baselines {
+		switch baseline {
+		case MultiAgentBaselineSoloClosedBook,
+			MultiAgentBaselineSoloOpenBook,
+			MultiAgentBaselineTeam,
+			MultiAgentBaselineOracleTeam:
+		default:
+			return fmt.Errorf("%s: unsupported multi-agent baseline %q", scope, baseline)
+		}
+		if _, exists := seen[baseline]; exists {
+			return fmt.Errorf("%s: duplicate multi-agent baseline %q", scope, baseline)
+		}
+		seen[baseline] = struct{}{}
+	}
+	return nil
+}
+
+func validateMultiAgentFault(caseID string, collaborator MultiAgentCollaborator) error {
+	fault := collaborator.Fault
+	switch fault.Type {
+	case "error", "timeout":
+		if strings.TrimSpace(fault.Message) == "" {
+			return fmt.Errorf("case %q agent %q: %s fault requires message", caseID, collaborator.ID, fault.Type)
+		}
+	case "malformed", "contradictory":
+		if strings.TrimSpace(fault.Response) == "" {
+			return fmt.Errorf("case %q agent %q: %s fault requires response", caseID, collaborator.ID, fault.Type)
+		}
+	default:
+		return fmt.Errorf("case %q agent %q: unsupported fault type %q", caseID, collaborator.ID, fault.Type)
+	}
+	if fault.Delay.Value() < 0 {
+		return fmt.Errorf("case %q agent %q: fault delay cannot be negative", caseID, collaborator.ID)
+	}
+	if fault.Type == "timeout" && fault.Delay.Value() <= 0 {
+		return fmt.Errorf("case %q agent %q: timeout fault requires a positive delay", caseID, collaborator.ID)
+	}
+	if len(fault.ExpectedOutputValues) == 0 {
+		return fmt.Errorf("case %q agent %q: fault expected_output_values is required", caseID, collaborator.ID)
+	}
+	return nil
+}
+
+func multiAgentBaselines(suite MultiAgentSuite, evalCase MultiAgentCase) []string {
+	baselines := evalCase.Baselines
+	if len(baselines) == 0 {
+		baselines = suite.Baselines
+	}
+	if len(baselines) == 0 {
+		baselines = []string{MultiAgentBaselineSoloClosedBook, MultiAgentBaselineTeam}
+	}
+	result := append([]string(nil), baselines...)
+	if evalCase.SkipSolo {
+		result = removeBaseline(result, MultiAgentBaselineSoloClosedBook)
+		result = removeBaseline(result, MultiAgentBaselineSoloOpenBook)
+	}
+	return result
+}
+
+func containsBaseline(baselines []string, target string) bool {
+	for _, baseline := range baselines {
+		if baseline == target {
+			return true
+		}
+	}
+	return false
+}
+
+func removeBaseline(baselines []string, target string) []string {
+	result := baselines[:0]
+	for _, baseline := range baselines {
+		if baseline != target {
+			result = append(result, baseline)
+		}
+	}
+	return result
 }
 
 func (r MultiAgentRunner) Run(ctx context.Context, suite MultiAgentSuite) (Report, error) {
@@ -301,9 +449,6 @@ func (r MultiAgentRunner) runAttempt(
 	attempt int,
 	runID string,
 ) AttemptResult {
-	timeout := multiAgentTimeout(suite, evalCase, r.Options.Timeout)
-	attemptContext, cancel := context.WithTimeout(ctx, timeout)
-	defer cancel()
 	startedAt := time.Now()
 	agentID := firstNonEmpty(r.Options.AgentID, evalCase.CoordinatorAgentID, suite.Defaults.AgentID)
 	model := firstNonEmpty(r.Options.Model, evalCase.Model, suite.Defaults.Model)
@@ -320,63 +465,107 @@ func (r MultiAgentRunner) runAttempt(
 		MultiAgent: &MultiAgentAttemptMetrics{
 			TotalMilestones:       len(evalCase.Milestones),
 			ExpectedDelegations:   len(evalCase.Agents),
-			ContributionsExpected: len(evalCase.Agents),
+			ContributionsExpected: healthyCollaboratorCount(evalCase),
+			FaultsExpected:        faultedCollaboratorCount(evalCase),
 		},
 	}
 
-	if !evalCase.SkipSolo {
-		soloResponse, err := r.Executor.Execute(attemptContext, ExecutionRequest{
-			Prompt:       multiAgentSoloPrompt(evalCase),
-			AgentID:      agentID,
-			Model:        model,
-			SessionKey:   sessionBase + "-solo",
-			IsolateTools: true,
-			Pricing:      suite.Pricing,
-		})
-		result.MultiAgent.SoloEvaluated = true
-		if err != nil {
-			result.Error = "solo baseline: " + err.Error()
-			result.LatencyMS = milliseconds(time.Since(startedAt))
-			return result
-		}
-		result.BaselineOutput = soloResponse.Output
-		result.MultiAgent.SoloPassed = allMultiAgentMilestonesPass(
-			soloResponse.Output,
-			evalCase.Milestones,
+	for _, baseline := range multiAgentBaselines(suite, evalCase) {
+		baselineResult, response := r.runBaseline(
+			ctx,
+			suite,
+			evalCase,
+			baseline,
+			agentID,
+			model,
+			sessionBase,
 		)
-		result.Usage = addUsage(result.Usage, soloResponse.Usage)
-		result.ModelCalls = appendModelCallPhase(result.ModelCalls, soloResponse.ModelCalls, "solo")
+		result.Baselines = append(result.Baselines, baselineResult)
+		result.Usage = addUsage(result.Usage, baselineResult.Usage)
+		result.ModelCalls = append(result.ModelCalls, baselineResult.ModelCalls...)
+
+		switch baseline {
+		case MultiAgentBaselineSoloClosedBook:
+			result.BaselineOutput = baselineResult.Output
+			result.MultiAgent.SoloEvaluated = true
+			result.MultiAgent.SoloPassed = baselineResult.Passed
+		case MultiAgentBaselineTeam:
+			if baselineResult.Error != "" {
+				result.Error = "team execution: " + baselineResult.Error
+				continue
+			}
+			result.Output = response.Output
+			result.Model = firstNonEmpty(response.Model, model)
+			result.Trace = response.Trace
+			result.Graders = gradeMultiAgentAttempt(
+				evalCase,
+				response.Output,
+				response.Trace,
+				result.MultiAgent,
+			)
+			result.Passed = true
+			for _, grader := range result.Graders {
+				result.Passed = result.Passed && grader.Passed
+			}
+		}
+	}
+	result.LatencyMS = milliseconds(time.Since(startedAt))
+	return result
+}
+
+func (r MultiAgentRunner) runBaseline(
+	ctx context.Context,
+	suite MultiAgentSuite,
+	evalCase MultiAgentCase,
+	mode string,
+	agentID string,
+	model string,
+	sessionBase string,
+) (MultiAgentBaselineResult, ExecutionResponse) {
+	baselineContext, cancel := context.WithTimeout(
+		ctx,
+		multiAgentTimeout(suite, evalCase, r.Options.Timeout),
+	)
+	defer cancel()
+	request := ExecutionRequest{
+		AgentID:      agentID,
+		Model:        model,
+		SessionKey:   sessionBase + "-" + mode,
+		IsolateTools: true,
+		Pricing:      suite.Pricing,
+	}
+	switch mode {
+	case MultiAgentBaselineSoloClosedBook:
+		request.Prompt = multiAgentSoloPrompt(evalCase)
+	case MultiAgentBaselineSoloOpenBook:
+		request.Prompt = multiAgentOpenBookPrompt(evalCase)
+	case MultiAgentBaselineOracleTeam:
+		request.Prompt = multiAgentOracleTeamPrompt(evalCase)
+	case MultiAgentBaselineTeam:
+		request.Prompt = multiAgentTeamPrompt(evalCase)
+		if evalCase.ExecutionMode == "runtime" {
+			request.IsolateTools = false
+		} else {
+			request.Tools = multiAgentTools(evalCase)
+			request.State = multiAgentState(evalCase)
+		}
 	}
 
-	teamRequest := ExecutionRequest{
-		Prompt:     multiAgentTeamPrompt(evalCase),
-		AgentID:    agentID,
-		Model:      model,
-		SessionKey: sessionBase + "-team",
-		Pricing:    suite.Pricing,
+	startedAt := time.Now()
+	response, err := r.Executor.Execute(baselineContext, request)
+	baselineResult := MultiAgentBaselineResult{
+		Mode:       mode,
+		Output:     response.Output,
+		LatencyMS:  milliseconds(time.Since(startedAt)),
+		Usage:      response.Usage,
+		ModelCalls: appendModelCallPhase(nil, response.ModelCalls, mode),
 	}
-	if evalCase.ExecutionMode != "runtime" {
-		teamRequest.Tools = multiAgentTools()
-		teamRequest.State = multiAgentState(evalCase)
-		teamRequest.IsolateTools = true
-	}
-	teamResponse, err := r.Executor.Execute(attemptContext, teamRequest)
-	result.LatencyMS = milliseconds(time.Since(startedAt))
 	if err != nil {
-		result.Error = "team execution: " + err.Error()
-		return result
+		baselineResult.Error = err.Error()
+		return baselineResult, response
 	}
-	result.Output = teamResponse.Output
-	result.Model = firstNonEmpty(teamResponse.Model, model)
-	result.Usage = addUsage(result.Usage, teamResponse.Usage)
-	result.ModelCalls = appendModelCallPhase(result.ModelCalls, teamResponse.ModelCalls, "team")
-	result.Trace = teamResponse.Trace
-	result.Graders = gradeMultiAgentAttempt(evalCase, teamResponse.Output, teamResponse.Trace, result.MultiAgent)
-	result.Passed = true
-	for _, grader := range result.Graders {
-		result.Passed = result.Passed && grader.Passed
-	}
-	return result
+	baselineResult.Passed = allMultiAgentMilestonesPass(response.Output, evalCase.Milestones)
+	return baselineResult, response
 }
 
 func appendModelCallPhase(target, calls []ModelCallUsage, phase string) []ModelCallUsage {
@@ -387,7 +576,7 @@ func appendModelCallPhase(target, calls []ModelCallUsage, phase string) []ModelC
 	return target
 }
 
-func multiAgentTools() []ToolDefinition {
+func multiAgentTools(evalCase MultiAgentCase) []ToolDefinition {
 	return []ToolDefinition{
 		{
 			Name:        "spawn_subagent",
@@ -403,6 +592,7 @@ func multiAgentTools() []ToolDefinition {
 			Behavior: &StateToolBehavior{
 				ResultMapPath:        "responses",
 				ResultMapKeyArgument: "agentId",
+				Faults:               multiAgentToolFaults(evalCase),
 			},
 		},
 	}
@@ -411,9 +601,38 @@ func multiAgentTools() []ToolDefinition {
 func multiAgentState(evalCase MultiAgentCase) map[string]any {
 	responses := make(map[string]any, len(evalCase.Agents))
 	for _, collaborator := range evalCase.Agents {
-		responses[collaborator.ID] = collaborator.Response
+		response := collaborator.Response
+		if collaborator.Fault != nil {
+			switch collaborator.Fault.Type {
+			case "malformed", "contradictory":
+				response = collaborator.Fault.Response
+			}
+		}
+		responses[collaborator.ID] = response
 	}
 	return map[string]any{"responses": responses}
+}
+
+func multiAgentToolFaults(evalCase MultiAgentCase) []StateToolFault {
+	var faults []StateToolFault
+	for _, collaborator := range evalCase.Agents {
+		if collaborator.Fault == nil {
+			continue
+		}
+		fault := StateToolFault{
+			Argument: "agentId",
+			Value:    collaborator.ID,
+			DelayMS:  int(collaborator.Fault.Delay.Value() / time.Millisecond),
+		}
+		switch collaborator.Fault.Type {
+		case "error", "timeout":
+			fault.Error = collaborator.Fault.Message
+		case "malformed", "contradictory":
+			fault.Result = collaborator.Fault.Response
+		}
+		faults = append(faults, fault)
+	}
+	return faults
 }
 
 func multiAgentSoloPrompt(evalCase MultiAgentCase) string {
@@ -424,6 +643,65 @@ Task:
 %s`,
 		evalCase.Prompt,
 	)
+}
+
+func multiAgentOpenBookPrompt(evalCase MultiAgentCase) string {
+	return fmt.Sprintf(
+		`Solve the following task independently. You have the same evidence
+available to the team, flattened into an anonymous evidence packet. Do not
+claim facts that are absent or marked unavailable.
+
+Task:
+%s
+
+Evidence packet:
+%s`,
+		evalCase.Prompt,
+		multiAgentEvidencePacket(evalCase, false),
+	)
+}
+
+func multiAgentOracleTeamPrompt(evalCase MultiAgentCase) string {
+	return fmt.Sprintf(
+		`You are an oracle coordinator. Routing is assumed perfect and every
+specialist report that could be obtained is provided below. Synthesize the
+reports into one final answer. Explicitly identify unavailable, malformed, or
+conflicting evidence and do not invent replacements.
+
+Task:
+%s
+
+Specialist reports:
+%s`,
+		evalCase.Prompt,
+		multiAgentEvidencePacket(evalCase, true),
+	)
+}
+
+func multiAgentEvidencePacket(evalCase MultiAgentCase, includeIdentity bool) string {
+	var packet strings.Builder
+	for index, collaborator := range evalCase.Agents {
+		label := fmt.Sprintf("evidence-%d", index+1)
+		if includeIdentity {
+			label = fmt.Sprintf("%s (%s)", collaborator.ID, collaborator.Role)
+		}
+		fmt.Fprintf(&packet, "- %s: %s\n", label, multiAgentObservedResponse(collaborator))
+	}
+	return packet.String()
+}
+
+func multiAgentObservedResponse(collaborator MultiAgentCollaborator) string {
+	if collaborator.Fault == nil {
+		return collaborator.Response
+	}
+	switch collaborator.Fault.Type {
+	case "error", "timeout":
+		return "[UNAVAILABLE: " + collaborator.Fault.Message + "]"
+	case "malformed", "contradictory":
+		return collaborator.Fault.Response
+	default:
+		return collaborator.Response
+	}
 }
 
 func multiAgentTeamPrompt(evalCase MultiAgentCase) string {
@@ -445,6 +723,20 @@ agents or call the same specialist twice.`,
 		evalCase.Prompt,
 		team.String(),
 	)
+}
+
+func healthyCollaboratorCount(evalCase MultiAgentCase) int {
+	return len(evalCase.Agents) - faultedCollaboratorCount(evalCase)
+}
+
+func faultedCollaboratorCount(evalCase MultiAgentCase) int {
+	count := 0
+	for _, collaborator := range evalCase.Agents {
+		if collaborator.Fault != nil {
+			count++
+		}
+	}
+	return count
 }
 
 func gradeMultiAgentAttempt(
@@ -482,11 +774,14 @@ func gradeMultiAgentAttempt(
 			(metrics.DelegationPrecision + metrics.DelegationRecall)
 	}
 
-	results := make([]GraderResult, 0, len(evalCase.Milestones)+3)
+	results := make([]GraderResult, 0, len(evalCase.Milestones)+7)
+	allMilestonesPassed := true
 	for _, milestone := range evalCase.Milestones {
 		passed := containsAllFold(output, milestone.Values)
 		if passed {
 			metrics.PassedMilestones++
+		} else {
+			allMilestonesPassed = false
 		}
 		result := GraderResult{Type: "ma_milestone", Passed: passed}
 		if !passed {
@@ -495,6 +790,9 @@ func gradeMultiAgentAttempt(
 		results = append(results, result)
 	}
 	for _, collaborator := range evalCase.Agents {
+		if collaborator.Fault != nil {
+			continue
+		}
 		if valid[collaborator.ID] && containsAllFold(output, collaborator.ContributionValues) {
 			metrics.ContributionsUtilized++
 		}
@@ -527,7 +825,105 @@ func gradeMultiAgentAttempt(
 		Passed:  efficiencyPassed,
 		Message: multiAgentEfficiencyMessage(metrics.TotalDelegations, maxDelegations),
 	})
+	if metrics.FaultsExpected > 0 {
+		gradeMultiAgentFaults(evalCase, output, trace, metrics)
+		faultsExercised := metrics.FaultsObserved == metrics.FaultsExpected
+		results = append(results, GraderResult{
+			Type:    "ma_fault_exercised",
+			Passed:  faultsExercised,
+			Message: multiAgentRatioMessage("observed injected faults", metrics.FaultsObserved, metrics.FaultsExpected),
+		})
+		faultsAttributed := metrics.FaultsAttributed == metrics.FaultsExpected
+		results = append(results, GraderResult{
+			Type:    "ma_fault_attribution",
+			Passed:  faultsAttributed,
+			Message: multiAgentRatioMessage("attributed faults", metrics.FaultsAttributed, metrics.FaultsExpected),
+		})
+		noUnsupportedClaims := metrics.UnsupportedClaims == 0
+		results = append(results, GraderResult{
+			Type:    "ma_unsupported_claim",
+			Passed:  noUnsupportedClaims,
+			Message: multiAgentUnsupportedClaimMessage(metrics.UnsupportedClaims),
+		})
+		metrics.GracefullyDegraded = allMilestonesPassed &&
+			faultsExercised &&
+			faultsAttributed &&
+			noUnsupportedClaims
+		results = append(results, GraderResult{
+			Type:    "ma_graceful_degradation",
+			Passed:  metrics.GracefullyDegraded,
+			Message: multiAgentGracefulDegradationMessage(metrics),
+		})
+	}
 	return results
+}
+
+func gradeMultiAgentFaults(
+	evalCase MultiAgentCase,
+	output string,
+	trace []TraceEvent,
+	metrics *MultiAgentAttemptMetrics,
+) {
+	observedResults := multiAgentDelegationResults(trace)
+	for _, collaborator := range evalCase.Agents {
+		if collaborator.Fault == nil {
+			continue
+		}
+		if faultObserved(collaborator, observedResults[collaborator.ID]) {
+			metrics.FaultsObserved++
+		}
+		if containsAllFold(output, collaborator.Fault.ExpectedOutputValues) {
+			metrics.FaultsAttributed++
+		}
+		for _, unsupported := range collaborator.Fault.ForbiddenOutputValues {
+			if containsAllFold(output, []string{unsupported}) {
+				metrics.UnsupportedClaims++
+			}
+		}
+	}
+	if metrics.FaultsExpected > 0 {
+		metrics.FaultInjectionRate = float64(metrics.FaultsObserved) / float64(metrics.FaultsExpected)
+		metrics.FaultAttributionRate = float64(metrics.FaultsAttributed) / float64(metrics.FaultsExpected)
+	}
+}
+
+func multiAgentDelegationResults(trace []TraceEvent) map[string][]string {
+	agentsByCallID := make(map[string]string)
+	results := make(map[string][]string)
+	for _, event := range trace {
+		if event.Type == "tool_call" && event.Name == "spawn_subagent" {
+			var arguments struct {
+				AgentID string `json:"agentId"`
+			}
+			if json.Unmarshal([]byte(event.Arguments), &arguments) == nil {
+				agentsByCallID[event.ID] = arguments.AgentID
+			}
+			continue
+		}
+		if event.Type != "tool_result" || event.Name != "spawn_subagent" {
+			continue
+		}
+		if agentID := agentsByCallID[event.ID]; agentID != "" {
+			results[agentID] = append(results[agentID], event.Result)
+		}
+	}
+	return results
+}
+
+func faultObserved(collaborator MultiAgentCollaborator, results []string) bool {
+	for _, result := range results {
+		switch collaborator.Fault.Type {
+		case "error", "timeout":
+			if containsAllFold(result, []string{collaborator.Fault.Message}) {
+				return true
+			}
+		case "malformed", "contradictory":
+			if strings.Contains(result, collaborator.Fault.Response) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func multiAgentDelegations(trace []TraceEvent) []multiAgentDelegation {
@@ -654,6 +1050,32 @@ func multiAgentEfficiencyMessage(total, maximum int) string {
 		return ""
 	}
 	return fmt.Sprintf("used %d delegations, maximum is %d", total, maximum)
+}
+
+func multiAgentRatioMessage(label string, actual, expected int) string {
+	if actual == expected {
+		return ""
+	}
+	return fmt.Sprintf("%s %d/%d", label, actual, expected)
+}
+
+func multiAgentUnsupportedClaimMessage(count int) string {
+	if count == 0 {
+		return ""
+	}
+	return fmt.Sprintf("output contained %d unsupported fault-related claims", count)
+}
+
+func multiAgentGracefulDegradationMessage(metrics *MultiAgentAttemptMetrics) string {
+	if metrics.GracefullyDegraded {
+		return ""
+	}
+	return fmt.Sprintf(
+		"fault injection %.3f, attribution %.3f, unsupported claims %d",
+		metrics.FaultInjectionRate,
+		metrics.FaultAttributionRate,
+		metrics.UnsupportedClaims,
+	)
 }
 
 func addUsage(left, right Usage) Usage {

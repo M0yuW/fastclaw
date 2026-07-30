@@ -13,6 +13,9 @@
 - `multiagent-runtime-tenant.yaml` contains eight fixed-evidence tasks for the
   provisioned five-agent benchmark tenant and uses the real Gateway
   `spawn_subagent` route.
+- `multiagent-fault-injection.yaml` contains six deterministic specialist-fault
+  cases covering timeout, explicit error, malformed output, contradictory
+  evidence, multiple partial failures, and noncritical dependency failure.
 
 The BFCL-derived prompts, schemas, and ground truths originate from the
 [UC Berkeley Gorilla repository](https://github.com/ShishirPatil/gorilla/tree/main/berkeley-function-call-leaderboard),
@@ -35,3 +38,9 @@ The collaboration file is inspired by
 [MultiAgentBench](https://aclanthology.org/2025.acl-long.421/) milestone and
 coordination evaluation. It uses deterministic simulated specialists by
 default and does not produce an official MultiAgentBench score.
+
+Multi-agent suites may declare `baselines` using `solo_closed_book`,
+`solo_open_book`, `team`, and `oracle_team`. Fair collaboration gain compares
+the milestone-only team outcome with `solo_open_book` because both modes receive
+the same evidence and output grader; the closed-book gain remains a useful but
+optimistic diagnostic.

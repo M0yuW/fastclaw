@@ -3,7 +3,9 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
+	"time"
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
 	"github.com/fastclaw-ai/fastclaw/internal/provider"
@@ -194,6 +196,88 @@ func TestRequestToolEnvironmentSupportsVirtualFileMaps(t *testing.T) {
 	state := snapshot()
 	if state["files"].(map[string]any)["main.go"] != updated {
 		t.Fatalf("unexpected state: %+v", state)
+	}
+}
+
+func TestRequestToolEnvironmentInjectsArgumentScopedFaults(t *testing.T) {
+	registry, _, err := buildRequestToolEnvironment(
+		[]provider.Tool{{
+			Type: "function",
+			Function: provider.ToolFunction{
+				Name:       "spawn_subagent",
+				Parameters: map[string]any{"type": "object"},
+			},
+		}},
+		nil,
+		map[string]any{
+			"responses": map[string]any{
+				"healthy": "healthy report",
+				"broken":  "nominal report",
+			},
+		},
+		map[string]evalToolBehavior{
+			"spawn_subagent": {
+				ResultMapPath:        "responses",
+				ResultMapKeyArgument: "agentId",
+				Faults: []evalToolFault{
+					{Argument: "agentId", Value: "broken", Error: "specialist unavailable"},
+					{Argument: "agentId", Value: "malformed", Result: "{not-json"},
+				},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	result, err := registry.Execute(t.Context(), "spawn_subagent", `{"agentId":"healthy"}`)
+	if err != nil || result != "healthy report" {
+		t.Fatalf("healthy result = %q, %v", result, err)
+	}
+	if _, err := registry.Execute(t.Context(), "spawn_subagent", `{"agentId":"broken"}`); err == nil ||
+		err.Error() != "specialist unavailable" {
+		t.Fatalf("fault error = %v", err)
+	}
+	result, err = registry.Execute(t.Context(), "spawn_subagent", `{"agentId":"malformed"}`)
+	if err != nil || result != "{not-json" {
+		t.Fatalf("malformed result = %q, %v", result, err)
+	}
+}
+
+func TestRequestToolEnvironmentFaultDelayHonorsCancellation(t *testing.T) {
+	registry, _, err := buildRequestToolEnvironment(
+		[]provider.Tool{{
+			Type: "function",
+			Function: provider.ToolFunction{
+				Name:       "slow_tool",
+				Parameters: map[string]any{"type": "object"},
+			},
+		}},
+		nil,
+		nil,
+		map[string]evalToolBehavior{
+			"slow_tool": {
+				Faults: []evalToolFault{{
+					Argument: "id",
+					Value:    "slow",
+					DelayMS:  500,
+					Error:    "timed out",
+				}},
+			},
+		},
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithTimeout(t.Context(), 10*time.Millisecond)
+	defer cancel()
+	startedAt := time.Now()
+	_, err = registry.Execute(ctx, "slow_tool", `{"id":"slow"}`)
+	if !errors.Is(err, context.DeadlineExceeded) {
+		t.Fatalf("fault delay error = %v", err)
+	}
+	if time.Since(startedAt) > 250*time.Millisecond {
+		t.Fatalf("fault did not stop promptly: %s", time.Since(startedAt))
 	}
 }
 

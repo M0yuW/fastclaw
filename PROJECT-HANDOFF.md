@@ -84,6 +84,10 @@
 - TaskQueue 现在会在保持独立取消传播的同时继承请求 context values，使 telemetry collector 可跨 MessageBus/TaskQueue 跟随真实子任务。
 - 新增可重复 provision 的独立 runtime benchmark tenant：1 个 coordinator、4 个 specialist、8 个固定证据任务和专属 Agent ACL API key。
 - 固定 runtime suite 位于 `evals/multiagent-runtime-tenant.yaml`，覆盖 incident、release、access、pipeline、support、privacy、capacity 和 dependency 场景。
+- Multi-Agent suite 现支持 `solo_closed_book`、`solo_open_book`、`team`、`oracle_team` 四档基线；公平协作增益使用 `team - solo_open_book`，避免把证据访问差异误算成编排收益。
+- 新增 `evals/multiagent-fault-injection.yaml` 六个固定故障案例，覆盖 timeout、显式错误、畸形响应、矛盾证据、多点部分失败和非关键依赖失败。
+- 请求级 Eval 工具支持按参数匹配的 delay/error/result 故障，延迟等待遵守 context cancellation，且仅允许 simulated suite 声明故障。
+- 新指标包括 fault injection rate、fault attribution rate、graceful degradation rate、unsupported claim rate，以及每档基线的成功率、token、费用和延迟。
 - 这些结果是项目自定义的确定性代理指标，不是官方 benchmark 分数；简历中应明确写成 “style subset”。
 
 当前量化结果：

@@ -50,7 +50,7 @@ func evalMultiAgentRunCmd() *cobra.Command {
 	)
 	command := &cobra.Command{
 		Use:   "run <suite.yaml>",
-		Short: "Compare isolated solo and simulated-specialist team execution",
+		Short: "Run fair-baseline and fault-aware multi-agent evaluation",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(command *cobra.Command, args []string) error {
 			if format != "text" && format != "json" {

@@ -78,7 +78,7 @@ func WriteText(writer io.Writer, report Report) error {
 	if metrics.MAAttempts > 0 {
 		if _, err := fmt.Fprintf(
 			writer,
-			"Multi-agent: team %.1f%% | solo %.1f%% | gain %+.1f pp | KPI %.1f%% | coordination %.1f%% | delegations %.1f\n",
+			"Multi-agent: team %.1f%% | solo closed %.1f%% | closed gain %+.1f pp | KPI %.1f%% | coordination %.1f%% | delegations %.1f\n",
 			metrics.MATeamSuccessRate*100,
 			metrics.MASoloSuccessRate*100,
 			metrics.MACollaborationGain*100,
@@ -87,6 +87,30 @@ func WriteText(writer io.Writer, report Report) error {
 			metrics.MAAverageDelegations,
 		); err != nil {
 			return err
+		}
+		if metrics.MASoloOpenBookEvaluated > 0 || metrics.MAOracleTeamEvaluated > 0 {
+			if _, err := fmt.Fprintf(
+				writer,
+				"MA fair baselines: team outcome %.1f%% | solo open %.1f%% | fair gain %+.1f pp | oracle team %.1f%%\n",
+				metrics.MATeamOutcomeSuccessRate*100,
+				metrics.MASoloOpenBookSuccessRate*100,
+				metrics.MAFairCollaborationGain*100,
+				metrics.MAOracleTeamSuccessRate*100,
+			); err != nil {
+				return err
+			}
+		}
+		if metrics.MAFaultInjectedAttempts > 0 {
+			if _, err := fmt.Fprintf(
+				writer,
+				"MA faults: injected %.1f%% | attribution %.1f%% | graceful degradation %.1f%% | unsupported claims %.1f%%\n",
+				metrics.MAFaultInjectionRate*100,
+				metrics.MAFaultAttributionRate*100,
+				metrics.MAGracefulDegradationRate*100,
+				metrics.MAUnsupportedClaimRate*100,
+			); err != nil {
+				return err
+			}
 		}
 		if _, err := fmt.Fprintf(
 			writer,

@@ -5,6 +5,7 @@ defaults:
   agent_id: bench-coordinator
   repetitions: 3
   timeout: 10m
+baselines: [solo_closed_book, solo_open_book, team, oracle_team]
 pricing:
   deepseek/deepseek-v4-flash:
     input_per_million: 0.14
@@ -27,16 +28,25 @@ cases:
     agents:
       - id: bench-observer
         role: Inspect checkout telemetry and database behavior.
+        response: >-
+          OBS-101: checkout errors rose immediately after build 842; database
+          latency stayed normal.
         task_values: [BENCH-01]
         contribution_values:
           - OBS-101
           - "database latency stayed normal || database latency remained normal"
       - id: bench-investigator
         role: Inspect application logs and the responsible code change.
+        response: >-
+          INV-111: checkout logs show a nil pointer in coupon validation
+          introduced by normalization change N-42.
         task_values: [BENCH-01]
         contribution_values: [INV-111, coupon validation, N-42]
       - id: bench-operator
         role: Provide the safe rollback and recovery estimate.
+        response: >-
+          OPS-121: rollback build 842 to build 841; expected recovery time is
+          four minutes.
         task_values: [BENCH-01]
         contribution_values: [OPS-121, build 841, four minutes]
     milestones:
@@ -60,18 +70,30 @@ cases:
     agents:
       - id: bench-observer
         role: Summarize the release test results.
+        response: >-
+          OBS-202: 37 of 40 release tests passed; all three failures were admin
+          export role checks.
         task_values: [BENCH-02]
         contribution_values: [OBS-202, 37 of 40, three failures]
       - id: bench-investigator
         role: Identify the authorization regression.
+        response: >-
+          INV-212: failed tests prove /admin/export permits viewer-role access
+          after authorization refactor A-7.
         task_values: [BENCH-02]
         contribution_values: [INV-212, viewer-role access, A-7]
       - id: bench-policy
         role: Apply the release policy.
+        response: >-
+          POL-222: release policy RP-4 requires blocking any release with a
+          failed authorization test.
         task_values: [BENCH-02]
         contribution_values: [POL-222, RP-4, blocking]
       - id: bench-operator
         role: Define rollback and verification steps.
+        response: >-
+          OPS-232: rollback authorization refactor A-7 and rerun the three admin
+          export role checks.
         task_values: [BENCH-02]
         contribution_values: [OPS-232, rerun, role checks]
     milestones:
@@ -94,18 +116,30 @@ cases:
     agents:
       - id: bench-observer
         role: Inspect the audit event and export volume.
+        response: >-
+          OBS-303: audit log AUD-77 shows service-account svc-report exported
+          12,400 customer rows at 02:14 UTC.
         task_values: [BENCH-03]
         contribution_values: [OBS-303, AUD-77, "12,400"]
       - id: bench-investigator
         role: Compare the export with the approved ticket.
+        response: >-
+          INV-313: ticket T-88 authorized svc-report for aggregate reports only,
+          not raw customer exports.
         task_values: [BENCH-03]
         contribution_values: [INV-313, T-88, aggregate reports only]
       - id: bench-policy
         role: Apply least-privilege policy.
+        response: >-
+          POL-323: least-privilege policy LP-2 forbids service accounts from
+          exporting raw customer rows.
         task_values: [BENCH-03]
         contribution_values: [POL-323, LP-2, forbids]
       - id: bench-operator
         role: Contain access and preserve evidence.
+        response: >-
+          OPS-333: disable svc-report, revoke its token, and preserve AUD-77 for
+          investigation.
         task_values: [BENCH-03]
         contribution_values: [OPS-333, disable svc-report, revoke]
     milestones:
@@ -128,14 +162,23 @@ cases:
     agents:
       - id: bench-observer
         role: Quantify the freshness regression and timing.
+        response: >-
+          OBS-404: pipeline freshness dropped from 8 minutes to 94 minutes after
+          schema release S-19.
         task_values: [BENCH-04]
         contribution_values: [OBS-404, 8 minutes, 94 minutes, S-19]
       - id: bench-investigator
         role: Find the parser and schema mismatch.
+        response: >-
+          INV-414: parser logs reject renamed field customer_tier because
+          transform T-31 still expects tier.
         task_values: [BENCH-04]
         contribution_values: [INV-414, customer_tier, T-31]
       - id: bench-operator
         role: Define the transform fix and replay plan.
+        response: >-
+          OPS-434: deploy transform T-32 with customer_tier mapping, then replay
+          partitions from 06:00 UTC.
         task_values: [BENCH-04]
         contribution_values: [OPS-434, T-32, "06:00 UTC"]
     milestones:
@@ -158,18 +201,30 @@ cases:
     agents:
       - id: bench-observer
         role: Verify account, order, and refund history.
+        response: >-
+          OBS-505: account AC-55 is active, has no prior refunds, and was
+          charged twice for order O-900.
         task_values: [BENCH-05]
         contribution_values: [OBS-505, AC-55, O-900]
       - id: bench-investigator
         role: Verify the duplicate payment trace.
+        response: >-
+          INV-515: payment trace P-52 contains two successful captures with the
+          same idempotency key.
         task_values: [BENCH-05]
         contribution_values: [INV-515, P-52, same idempotency key]
       - id: bench-policy
         role: Apply refund eligibility policy.
+        response: >-
+          POL-525: refund policy RF-9 permits immediate refund of a verified
+          duplicate capture below 500 dollars.
         task_values: [BENCH-05]
         contribution_values: [POL-525, RF-9, immediate refund]
       - id: bench-operator
         role: Define the refund and recordkeeping action.
+        response: >-
+          OPS-535: refund the second capture and attach payment trace P-52 to
+          the customer record.
         task_values: [BENCH-05]
         contribution_values: [OPS-535, second capture, customer record]
     milestones:
@@ -192,18 +247,30 @@ cases:
     agents:
       - id: bench-observer
         role: Establish the public access window.
+        response: >-
+          OBS-606: object-store logs show public reads of bucket customer-exports
+          from 09:10 to 09:42 UTC.
         task_values: [BENCH-06]
         contribution_values: [OBS-606, "09:10", "09:42"]
       - id: bench-investigator
         role: Identify the infrastructure change.
+        response: >-
+          INV-616: infrastructure diff I-63 removed the private ACL while
+          enabling static website hosting.
         task_values: [BENCH-06]
         contribution_values: [INV-616, I-63, private ACL]
       - id: bench-policy
         role: Classify severity and required response.
+        response: >-
+          POL-626: incident policy PI-6 classifies public customer exports as
+          severity one and requires credential rotation.
         task_values: [BENCH-06]
         contribution_values: [POL-626, PI-6, severity one]
       - id: bench-operator
         role: Define containment and evidence preservation.
+        response: >-
+          OPS-636: restore private ACL, disable website hosting, rotate
+          object-store credentials, and preserve access logs.
         task_values: [BENCH-06]
         contribution_values: [OPS-636, restore private ACL, rotate]
     milestones:
@@ -225,14 +292,23 @@ cases:
     agents:
       - id: bench-observer
         role: Quantify current load and latency.
+        response: >-
+          OBS-707: peak API load is 820 requests per second and p95 latency is
+          1.8 seconds.
         task_values: [BENCH-07]
         contribution_values: [OBS-707, 820 requests per second, 1.8 seconds]
       - id: bench-investigator
         role: Identify the dominant request-time component.
+        response: >-
+          INV-717: profile P-74 attributes 68 percent of request time to
+          synchronous recommendation scoring.
         task_values: [BENCH-07]
         contribution_values: [INV-717, 68 percent, synchronous recommendation]
       - id: bench-operator
         role: Propose the architecture change and projected capacity.
+        response: >-
+          OPS-737: move recommendation scoring to an asynchronous worker;
+          projected p95 is 620 milliseconds at 1,000 requests per second.
         task_values: [BENCH-07]
         contribution_values: [OPS-737, asynchronous worker, 620 milliseconds, "1,000"]
     milestones:
@@ -255,18 +331,30 @@ cases:
     agents:
       - id: bench-observer
         role: Report compatibility test results.
+        response: >-
+          OBS-808: compatibility suite passed 118 of 120 tests; both failures
+          exercise legacy TLS 1.0.
         task_values: [BENCH-08]
         contribution_values: [OBS-808, 118 of 120, TLS 1.0]
       - id: bench-investigator
         role: Explain the dependency security and compatibility change.
+        response: >-
+          INV-818: dependency D-81 fixes CVE-2099-117 but removes TLS 1.0
+          support.
         task_values: [BENCH-08]
         contribution_values: [INV-818, D-81, CVE-2099-117]
       - id: bench-policy
         role: Apply the critical vulnerability policy.
+        response: >-
+          POL-828: security policy SP-8 requires critical CVE remediation within
+          seven days; TLS 1.0 is unsupported.
         task_values: [BENCH-08]
         contribution_values: [POL-828, SP-8, seven days]
       - id: bench-operator
         role: Define the canary and monitoring plan.
+        response: >-
+          OPS-838: upgrade to D-81 using a 10 percent canary, monitor handshake
+          failures, then expand to 100 percent.
         task_values: [BENCH-08]
         contribution_values: [OPS-838, 10 percent canary, handshake failures]
     milestones:

@@ -4,7 +4,9 @@ import (
 	"context"
 	"math"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 )
 
 func TestContainsAllFoldNormalizesFormatsAndAlternatives(t *testing.T) {
@@ -36,14 +38,46 @@ func TestSelectMultiAgentCases(t *testing.T) {
 	}
 }
 
-func TestLoadBundledMultiAgentSuite(t *testing.T) {
-	path := filepath.Join("..", "..", "evals", "multiagent-collaboration-subset.yaml")
-	suite, err := LoadMultiAgentSuite(path)
-	if err != nil {
-		t.Fatal(err)
+func TestMultiAgentSuiteRejectsInvalidBaselineAndRuntimeFault(t *testing.T) {
+	suite := incidentMultiAgentSuite()
+	suite.Baselines = []string{"unknown"}
+	if err := suite.Validate(); err == nil || !strings.Contains(err.Error(), "unsupported multi-agent baseline") {
+		t.Fatalf("invalid baseline error = %v", err)
 	}
-	if suite.Name != "multiagentbench-style-collaboration-subset" || len(suite.Cases) != 3 {
-		t.Fatalf("unexpected suite: %s, cases = %d", suite.Name, len(suite.Cases))
+
+	suite = incidentMultiAgentSuite()
+	suite.Cases[0].ExecutionMode = "runtime"
+	suite.Cases[0].Agents[0].Fault = &MultiAgentFault{
+		Type:                 "error",
+		Message:              "unavailable",
+		ExpectedOutputValues: []string{"unavailable"},
+	}
+	if err := suite.Validate(); err == nil || !strings.Contains(err.Error(), "requires simulated") {
+		t.Fatalf("runtime fault error = %v", err)
+	}
+}
+
+func TestLoadBundledMultiAgentSuite(t *testing.T) {
+	tests := []struct {
+		file  string
+		name  string
+		cases int
+	}{
+		{"multiagent-collaboration-subset.yaml", "multiagentbench-style-collaboration-subset", 3},
+		{"multiagent-runtime-tenant.yaml", "fastclaw-fixed-runtime-tenant", 8},
+		{"multiagent-fault-injection.yaml", "multiagent-runtime-fault-injection", 6},
+	}
+	for _, test := range tests {
+		t.Run(test.file, func(t *testing.T) {
+			path := filepath.Join("..", "..", "evals", test.file)
+			suite, err := LoadMultiAgentSuite(path)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if suite.Name != test.name || len(suite.Cases) != test.cases {
+				t.Fatalf("unexpected suite: %s, cases = %d", suite.Name, len(suite.Cases))
+			}
+		})
 	}
 }
 
@@ -173,9 +207,163 @@ Database latency remained normal. Rollback to build 841 immediately.`,
 		t.Fatalf("unexpected usage metrics: %+v", metrics)
 	}
 	if len(attempt.ModelCalls) != 5 ||
-		attempt.ModelCalls[0].Phase != "solo" ||
+		attempt.ModelCalls[0].Phase != MultiAgentBaselineSoloClosedBook ||
 		attempt.ModelCalls[1].Phase != "team" {
 		t.Fatalf("unexpected model calls: %+v", attempt.ModelCalls)
+	}
+}
+
+func TestMultiAgentRunnerReportsFairBaselines(t *testing.T) {
+	runner := MultiAgentRunner{
+		Executor: executorFunc(func(_ context.Context, request ExecutionRequest) (ExecutionResponse, error) {
+			switch {
+			case strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineSoloClosedBook):
+				return ExecutionResponse{Output: "insufficient evidence"}, nil
+			case strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineSoloOpenBook):
+				if !strings.Contains(request.Prompt, "Database latency remained normal") ||
+					strings.Contains(request.Prompt, "metrics-agent") {
+					t.Fatalf("unexpected open-book prompt: %s", request.Prompt)
+				}
+			case strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineOracleTeam):
+				if !strings.Contains(request.Prompt, "metrics-agent (metrics)") {
+					t.Fatalf("unexpected oracle prompt: %s", request.Prompt)
+				}
+			case strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineTeam):
+				if len(request.Tools) != 1 {
+					t.Fatalf("team tools = %d", len(request.Tools))
+				}
+				return ExecutionResponse{
+					Output: successfulIncidentOutput(),
+					Trace: []TraceEvent{
+						delegationTrace("metrics-agent", "analyze metrics"),
+						delegationTrace("logs-agent", "analyze logs"),
+						delegationTrace("deploy-agent", "analyze deployment"),
+					},
+				}, nil
+			default:
+				t.Fatalf("unexpected baseline session %q", request.SessionKey)
+			}
+			return ExecutionResponse{Output: successfulIncidentOutput()}, nil
+		}),
+	}
+	suite := incidentMultiAgentSuite()
+	suite.Baselines = []string{
+		MultiAgentBaselineSoloClosedBook,
+		MultiAgentBaselineSoloOpenBook,
+		MultiAgentBaselineTeam,
+		MultiAgentBaselineOracleTeam,
+	}
+
+	report, err := runner.Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := report.Cases[0].Attempts[0]
+	if len(attempt.Baselines) != 4 {
+		t.Fatalf("baselines = %+v", attempt.Baselines)
+	}
+	metrics := report.Metrics
+	if metrics.MASoloSuccessRate != 0 ||
+		metrics.MASoloOpenBookSuccessRate != 1 ||
+		metrics.MATeamSuccessRate != 1 ||
+		metrics.MATeamOutcomeSuccessRate != 1 ||
+		metrics.MAOracleTeamSuccessRate != 1 ||
+		metrics.MACollaborationGain != 1 ||
+		metrics.MAFairCollaborationGain != 0 {
+		t.Fatalf("unexpected fair baseline metrics: %+v", metrics)
+	}
+}
+
+func TestMultiAgentRunnerIsolatesBaselineTimeouts(t *testing.T) {
+	runner := MultiAgentRunner{
+		Executor: executorFunc(func(ctx context.Context, request ExecutionRequest) (ExecutionResponse, error) {
+			if strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineSoloClosedBook) {
+				<-ctx.Done()
+				return ExecutionResponse{}, ctx.Err()
+			}
+			return ExecutionResponse{
+				Output: successfulIncidentOutput(),
+				Trace: []TraceEvent{
+					delegationTrace("metrics-agent", "analyze metrics"),
+					delegationTrace("logs-agent", "analyze logs"),
+					delegationTrace("deploy-agent", "analyze deployment"),
+				},
+			}, nil
+		}),
+		Options: RunOptions{Timeout: 10 * time.Millisecond},
+	}
+
+	report, err := runner.Run(t.Context(), incidentMultiAgentSuite())
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := report.Cases[0].Attempts[0]
+	if !attempt.Passed || len(attempt.Baselines) != 2 {
+		t.Fatalf("unexpected attempt after baseline timeout: %+v", attempt)
+	}
+	if !strings.Contains(attempt.Baselines[0].Error, context.DeadlineExceeded.Error()) ||
+		!attempt.Baselines[1].Passed {
+		t.Fatalf("unexpected baseline results: %+v", attempt.Baselines)
+	}
+}
+
+func TestMultiAgentRunnerGradesFaultInjectionAndGracefulDegradation(t *testing.T) {
+	runner := MultiAgentRunner{
+		Executor: executorFunc(func(_ context.Context, request ExecutionRequest) (ExecutionResponse, error) {
+			faults := request.Tools[0].Behavior.Faults
+			if len(faults) != 1 ||
+				faults[0].Value != "logs-agent" ||
+				faults[0].Error != "specialist timed out" {
+				t.Fatalf("unexpected tool faults: %+v", faults)
+			}
+			return ExecutionResponse{
+				Output: "Build 842 triggered the incident. Database latency remained normal. " +
+					"The logs specialist timed out, so the exact code defect is unknown. " +
+					"Rollback to build 841.",
+				Trace: []TraceEvent{
+					delegationTraceWithID("call-1", "metrics-agent", "analyze metrics"),
+					{Type: "tool_result", ID: "call-1", Name: "spawn_subagent", Result: "Database latency remained normal."},
+					delegationTraceWithID("call-2", "logs-agent", "analyze logs"),
+					{Type: "tool_result", ID: "call-2", Name: "spawn_subagent", Result: "specialist timed out"},
+					delegationTraceWithID("call-3", "deploy-agent", "analyze deployment"),
+					{Type: "tool_result", ID: "call-3", Name: "spawn_subagent", Result: "Rollback to build 841."},
+				},
+			}, nil
+		}),
+	}
+	suite := incidentMultiAgentSuite()
+	suite.Cases[0].SkipSolo = true
+	suite.Cases[0].Agents[1].Fault = &MultiAgentFault{
+		Type:                  "timeout",
+		Delay:                 Duration(10 * time.Millisecond),
+		Message:               "specialist timed out",
+		ExpectedOutputValues:  []string{"logs specialist", "timed out", "unknown"},
+		ForbiddenOutputValues: []string{"coupon validation", "nil pointer"},
+	}
+	suite.Cases[0].Milestones = []MultiAgentMilestone{
+		{ID: "known-impact", Values: []string{"build 842", "database latency remained normal"}},
+		{ID: "safe-action", Values: []string{"rollback", "build 841"}},
+	}
+
+	report, err := runner.Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := report.Cases[0].Attempts[0]
+	if !attempt.Passed || !attempt.MultiAgent.GracefullyDegraded {
+		t.Fatalf("unexpected fault attempt: %+v", attempt)
+	}
+	if attempt.MultiAgent.FaultsObserved != 1 ||
+		attempt.MultiAgent.FaultsAttributed != 1 ||
+		attempt.MultiAgent.UnsupportedClaims != 0 ||
+		attempt.MultiAgent.ContributionsExpected != 2 {
+		t.Fatalf("unexpected fault metrics: %+v", attempt.MultiAgent)
+	}
+	if report.Metrics.MAFaultInjectionRate != 1 ||
+		report.Metrics.MAFaultAttributionRate != 1 ||
+		report.Metrics.MAGracefulDegradationRate != 1 ||
+		report.Metrics.MAUnsupportedClaimRate != 0 {
+		t.Fatalf("unexpected aggregate fault metrics: %+v", report.Metrics)
 	}
 }
 
@@ -288,9 +476,19 @@ func incidentMultiAgentSuite() MultiAgentSuite {
 }
 
 func delegationTrace(agentID, task string) TraceEvent {
+	return delegationTraceWithID("", agentID, task)
+}
+
+func delegationTraceWithID(id, agentID, task string) TraceEvent {
 	return TraceEvent{
 		Type:      "tool_call",
+		ID:        id,
 		Name:      "spawn_subagent",
 		Arguments: `{"agentId":"` + agentID + `","task":"` + task + `"}`,
 	}
+}
+
+func successfulIncidentOutput() string {
+	return `Build 842 introduced the coupon validation nil pointer.
+Database latency remained normal. Rollback to build 841 immediately.`
 }

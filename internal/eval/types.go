@@ -85,11 +85,20 @@ type ToolDefinition struct {
 type StateToolBehavior struct {
 	Conditions           []StateCondition `json:"conditions,omitempty" yaml:"conditions,omitempty"`
 	Updates              []StateUpdate    `json:"updates,omitempty" yaml:"updates,omitempty"`
+	Faults               []StateToolFault `json:"faults,omitempty" yaml:"faults,omitempty"`
 	Result               any              `json:"result,omitempty" yaml:"result,omitempty"`
 	ResultPath           string           `json:"result_path,omitempty" yaml:"result_path,omitempty"`
 	ResultKeysPath       string           `json:"result_keys_path,omitempty" yaml:"result_keys_path,omitempty"`
 	ResultMapPath        string           `json:"result_map_path,omitempty" yaml:"result_map_path,omitempty"`
 	ResultMapKeyArgument string           `json:"result_map_key_argument,omitempty" yaml:"result_map_key_argument,omitempty"`
+}
+
+type StateToolFault struct {
+	Argument string `json:"argument" yaml:"argument"`
+	Value    string `json:"value" yaml:"value"`
+	DelayMS  int    `json:"delay_ms,omitempty" yaml:"delay_ms,omitempty"`
+	Error    string `json:"error,omitempty" yaml:"error,omitempty"`
+	Result   any    `json:"result,omitempty" yaml:"result,omitempty"`
 }
 
 type StateCondition struct {
@@ -184,25 +193,26 @@ type GraderResult struct {
 }
 
 type AttemptResult struct {
-	Attempt        int                       `json:"attempt"`
-	Passed         bool                      `json:"passed"`
-	Output         string                    `json:"output,omitempty"`
-	Error          string                    `json:"error,omitempty"`
-	LatencyMS      float64                   `json:"latency_ms"`
-	Model          string                    `json:"model,omitempty"`
-	Usage          Usage                     `json:"usage"`
-	Trace          []TraceEvent              `json:"trace,omitempty"`
-	Graders        []GraderResult            `json:"graders,omitempty"`
-	Turns          int                       `json:"turns,omitempty"`
-	State          map[string]any            `json:"state,omitempty"`
-	Kind           string                    `json:"kind,omitempty"`
-	Patch          string                    `json:"patch,omitempty"`
-	TestOutput     string                    `json:"test_output,omitempty"`
-	TestsPassed    bool                      `json:"tests_passed,omitempty"`
-	Completed      bool                      `json:"completed,omitempty"`
-	BaselineOutput string                    `json:"baseline_output,omitempty"`
-	ModelCalls     []ModelCallUsage          `json:"model_calls,omitempty"`
-	MultiAgent     *MultiAgentAttemptMetrics `json:"multi_agent,omitempty"`
+	Attempt        int                        `json:"attempt"`
+	Passed         bool                       `json:"passed"`
+	Output         string                     `json:"output,omitempty"`
+	Error          string                     `json:"error,omitempty"`
+	LatencyMS      float64                    `json:"latency_ms"`
+	Model          string                     `json:"model,omitempty"`
+	Usage          Usage                      `json:"usage"`
+	Trace          []TraceEvent               `json:"trace,omitempty"`
+	Graders        []GraderResult             `json:"graders,omitempty"`
+	Turns          int                        `json:"turns,omitempty"`
+	State          map[string]any             `json:"state,omitempty"`
+	Kind           string                     `json:"kind,omitempty"`
+	Patch          string                     `json:"patch,omitempty"`
+	TestOutput     string                     `json:"test_output,omitempty"`
+	TestsPassed    bool                       `json:"tests_passed,omitempty"`
+	Completed      bool                       `json:"completed,omitempty"`
+	BaselineOutput string                     `json:"baseline_output,omitempty"`
+	Baselines      []MultiAgentBaselineResult `json:"baselines,omitempty"`
+	ModelCalls     []ModelCallUsage           `json:"model_calls,omitempty"`
+	MultiAgent     *MultiAgentAttemptMetrics  `json:"multi_agent,omitempty"`
 }
 
 type CaseResult struct {
@@ -216,70 +226,94 @@ type CaseResult struct {
 }
 
 type Metrics struct {
-	TotalCases                int     `json:"total_cases"`
-	TotalRuns                 int     `json:"total_runs"`
-	PassedRuns                int     `json:"passed_runs"`
-	FailedRuns                int     `json:"failed_runs"`
-	RunPassRate               float64 `json:"run_pass_rate"`
-	PassAt1                   float64 `json:"pass_at_1"`
-	PassAtK                   float64 `json:"pass_at_k"`
-	ConsistencyRate           float64 `json:"consistency_rate"`
-	LatencyP50MS              float64 `json:"latency_p50_ms"`
-	LatencyP95MS              float64 `json:"latency_p95_ms"`
-	PromptTokens              int     `json:"prompt_tokens"`
-	CompletionTokens          int     `json:"completion_tokens"`
-	TotalTokens               int     `json:"total_tokens"`
-	TokensPerPassedRun        float64 `json:"tokens_per_passed_run"`
-	TotalToolCalls            int     `json:"total_tool_calls"`
-	InvalidToolCalls          int     `json:"invalid_tool_calls"`
-	InvalidToolCallRate       float64 `json:"invalid_tool_call_rate"`
-	ToolTraceGraders          int     `json:"tool_trace_graders"`
-	PassedToolTraceGraders    int     `json:"passed_tool_trace_graders"`
-	ToolTraceAccuracy         float64 `json:"tool_trace_accuracy"`
-	StateGraders              int     `json:"state_graders"`
-	PassedStateGraders        int     `json:"passed_state_graders"`
-	StateAccuracy             float64 `json:"state_accuracy"`
-	CommunicationGraders      int     `json:"communication_graders"`
-	PassedCommunication       int     `json:"passed_communication_graders"`
-	CommunicationAccuracy     float64 `json:"communication_accuracy"`
-	PolicyGraders             int     `json:"policy_graders"`
-	PassedPolicyGraders       int     `json:"passed_policy_graders"`
-	PolicyComplianceRate      float64 `json:"policy_compliance_rate"`
-	EndToEndTaskSuccess       float64 `json:"end_to_end_task_success"`
-	AverageTurns              float64 `json:"average_turns"`
-	SWESubmittedInstances     int     `json:"swe_submitted_instances"`
-	SWECompletedInstances     int     `json:"swe_completed_instances"`
-	SWEResolvedInstances      int     `json:"swe_resolved_instances"`
-	SWEResolutionRate         float64 `json:"swe_resolution_rate"`
-	SWEPatchesGenerated       int     `json:"swe_patches_generated"`
-	SWEPatchGenerationRate    float64 `json:"swe_patch_generation_rate"`
-	SWETestExecutionRate      float64 `json:"swe_test_execution_rate"`
-	MAAttempts                int     `json:"multi_agent_attempts"`
-	MATeamSuccessRate         float64 `json:"multi_agent_team_success_rate"`
-	MASoloEvaluated           int     `json:"multi_agent_solo_evaluated"`
-	MASoloSuccessRate         float64 `json:"multi_agent_solo_success_rate"`
-	MACollaborationGain       float64 `json:"multi_agent_collaboration_gain"`
-	MAMilestoneKPI            float64 `json:"multi_agent_milestone_kpi"`
-	MADelegationPrecision     float64 `json:"multi_agent_delegation_precision"`
-	MADelegationRecall        float64 `json:"multi_agent_delegation_recall"`
-	MADelegationF1            float64 `json:"multi_agent_delegation_f1"`
-	MAContributionUtilization float64 `json:"multi_agent_contribution_utilization"`
-	MACoordinationScore       float64 `json:"multi_agent_coordination_score"`
-	MAAverageDelegations      float64 `json:"multi_agent_average_delegations"`
-	MAUnexpectedDelegations   int     `json:"multi_agent_unexpected_delegations"`
-	MATotalEstimatedCostUSD   float64 `json:"multi_agent_total_estimated_cost_usd"`
-	MASoloEstimatedCostUSD    float64 `json:"multi_agent_solo_estimated_cost_usd"`
-	MATeamEstimatedCostUSD    float64 `json:"multi_agent_team_estimated_cost_usd"`
-	MACoordinatorTokens       int     `json:"multi_agent_coordinator_tokens"`
-	MASubAgentTokens          int     `json:"multi_agent_subagent_tokens"`
-	MACoordinatorCostUSD      float64 `json:"multi_agent_coordinator_estimated_cost_usd"`
-	MASubAgentCostUSD         float64 `json:"multi_agent_subagent_estimated_cost_usd"`
-	MACoordinatorLatencyMS    float64 `json:"multi_agent_coordinator_model_latency_ms"`
-	MASubAgentLatencyMS       float64 `json:"multi_agent_subagent_model_latency_ms"`
-	MACostPerSuccessfulRunUSD float64 `json:"multi_agent_cost_per_successful_run_usd"`
-	MAModelCalls              int     `json:"multi_agent_model_calls"`
-	MAPricedModelCalls        int     `json:"multi_agent_priced_model_calls"`
-	MAPricingCoverage         float64 `json:"multi_agent_pricing_coverage"`
+	TotalCases                int                                  `json:"total_cases"`
+	TotalRuns                 int                                  `json:"total_runs"`
+	PassedRuns                int                                  `json:"passed_runs"`
+	FailedRuns                int                                  `json:"failed_runs"`
+	RunPassRate               float64                              `json:"run_pass_rate"`
+	PassAt1                   float64                              `json:"pass_at_1"`
+	PassAtK                   float64                              `json:"pass_at_k"`
+	ConsistencyRate           float64                              `json:"consistency_rate"`
+	LatencyP50MS              float64                              `json:"latency_p50_ms"`
+	LatencyP95MS              float64                              `json:"latency_p95_ms"`
+	PromptTokens              int                                  `json:"prompt_tokens"`
+	CompletionTokens          int                                  `json:"completion_tokens"`
+	TotalTokens               int                                  `json:"total_tokens"`
+	TokensPerPassedRun        float64                              `json:"tokens_per_passed_run"`
+	TotalToolCalls            int                                  `json:"total_tool_calls"`
+	InvalidToolCalls          int                                  `json:"invalid_tool_calls"`
+	InvalidToolCallRate       float64                              `json:"invalid_tool_call_rate"`
+	ToolTraceGraders          int                                  `json:"tool_trace_graders"`
+	PassedToolTraceGraders    int                                  `json:"passed_tool_trace_graders"`
+	ToolTraceAccuracy         float64                              `json:"tool_trace_accuracy"`
+	StateGraders              int                                  `json:"state_graders"`
+	PassedStateGraders        int                                  `json:"passed_state_graders"`
+	StateAccuracy             float64                              `json:"state_accuracy"`
+	CommunicationGraders      int                                  `json:"communication_graders"`
+	PassedCommunication       int                                  `json:"passed_communication_graders"`
+	CommunicationAccuracy     float64                              `json:"communication_accuracy"`
+	PolicyGraders             int                                  `json:"policy_graders"`
+	PassedPolicyGraders       int                                  `json:"passed_policy_graders"`
+	PolicyComplianceRate      float64                              `json:"policy_compliance_rate"`
+	EndToEndTaskSuccess       float64                              `json:"end_to_end_task_success"`
+	AverageTurns              float64                              `json:"average_turns"`
+	SWESubmittedInstances     int                                  `json:"swe_submitted_instances"`
+	SWECompletedInstances     int                                  `json:"swe_completed_instances"`
+	SWEResolvedInstances      int                                  `json:"swe_resolved_instances"`
+	SWEResolutionRate         float64                              `json:"swe_resolution_rate"`
+	SWEPatchesGenerated       int                                  `json:"swe_patches_generated"`
+	SWEPatchGenerationRate    float64                              `json:"swe_patch_generation_rate"`
+	SWETestExecutionRate      float64                              `json:"swe_test_execution_rate"`
+	MAAttempts                int                                  `json:"multi_agent_attempts"`
+	MATeamSuccessRate         float64                              `json:"multi_agent_team_success_rate"`
+	MASoloEvaluated           int                                  `json:"multi_agent_solo_evaluated"`
+	MASoloSuccessRate         float64                              `json:"multi_agent_solo_success_rate"`
+	MACollaborationGain       float64                              `json:"multi_agent_collaboration_gain"`
+	MASoloOpenBookEvaluated   int                                  `json:"multi_agent_solo_open_book_evaluated"`
+	MASoloOpenBookSuccessRate float64                              `json:"multi_agent_solo_open_book_success_rate"`
+	MATeamOutcomeSuccessRate  float64                              `json:"multi_agent_team_outcome_success_rate"`
+	MAOracleTeamEvaluated     int                                  `json:"multi_agent_oracle_team_evaluated"`
+	MAOracleTeamSuccessRate   float64                              `json:"multi_agent_oracle_team_success_rate"`
+	MAFairCollaborationGain   float64                              `json:"multi_agent_fair_collaboration_gain"`
+	MAMilestoneKPI            float64                              `json:"multi_agent_milestone_kpi"`
+	MADelegationPrecision     float64                              `json:"multi_agent_delegation_precision"`
+	MADelegationRecall        float64                              `json:"multi_agent_delegation_recall"`
+	MADelegationF1            float64                              `json:"multi_agent_delegation_f1"`
+	MAContributionUtilization float64                              `json:"multi_agent_contribution_utilization"`
+	MACoordinationScore       float64                              `json:"multi_agent_coordination_score"`
+	MAAverageDelegations      float64                              `json:"multi_agent_average_delegations"`
+	MAUnexpectedDelegations   int                                  `json:"multi_agent_unexpected_delegations"`
+	MATotalEstimatedCostUSD   float64                              `json:"multi_agent_total_estimated_cost_usd"`
+	MASoloEstimatedCostUSD    float64                              `json:"multi_agent_solo_estimated_cost_usd"`
+	MATeamEstimatedCostUSD    float64                              `json:"multi_agent_team_estimated_cost_usd"`
+	MACoordinatorTokens       int                                  `json:"multi_agent_coordinator_tokens"`
+	MASubAgentTokens          int                                  `json:"multi_agent_subagent_tokens"`
+	MACoordinatorCostUSD      float64                              `json:"multi_agent_coordinator_estimated_cost_usd"`
+	MASubAgentCostUSD         float64                              `json:"multi_agent_subagent_estimated_cost_usd"`
+	MACoordinatorLatencyMS    float64                              `json:"multi_agent_coordinator_model_latency_ms"`
+	MASubAgentLatencyMS       float64                              `json:"multi_agent_subagent_model_latency_ms"`
+	MACostPerSuccessfulRunUSD float64                              `json:"multi_agent_cost_per_successful_run_usd"`
+	MAModelCalls              int                                  `json:"multi_agent_model_calls"`
+	MAPricedModelCalls        int                                  `json:"multi_agent_priced_model_calls"`
+	MAPricingCoverage         float64                              `json:"multi_agent_pricing_coverage"`
+	MAFaultInjectedAttempts   int                                  `json:"multi_agent_fault_injected_attempts"`
+	MAFaultsExpected          int                                  `json:"multi_agent_faults_expected"`
+	MAFaultsObserved          int                                  `json:"multi_agent_faults_observed"`
+	MAFaultInjectionRate      float64                              `json:"multi_agent_fault_injection_rate"`
+	MAFaultAttributionRate    float64                              `json:"multi_agent_fault_attribution_rate"`
+	MAGracefulDegradationRate float64                              `json:"multi_agent_graceful_degradation_rate"`
+	MAUnsupportedClaims       int                                  `json:"multi_agent_unsupported_claims"`
+	MAUnsupportedClaimRate    float64                              `json:"multi_agent_unsupported_claim_rate"`
+	MABaselines               map[string]MultiAgentBaselineMetrics `json:"multi_agent_baselines,omitempty"`
+}
+
+type MultiAgentBaselineMetrics struct {
+	Evaluated        int     `json:"evaluated"`
+	Passed           int     `json:"passed"`
+	SuccessRate      float64 `json:"success_rate"`
+	TotalTokens      int     `json:"total_tokens"`
+	EstimatedCostUSD float64 `json:"estimated_cost_usd"`
+	AverageLatencyMS float64 `json:"average_latency_ms"`
 }
 
 type Report struct {

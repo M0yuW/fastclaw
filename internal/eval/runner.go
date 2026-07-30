@@ -140,6 +140,8 @@ func calculateMetrics(results []CaseResult) Metrics {
 		maDelegations       int
 		maContributions     int
 		maUsedContributions int
+		maFaultAttributed   int
+		maGraceful          int
 	)
 	for _, result := range results {
 		if result.PassAt1 {
@@ -195,6 +197,32 @@ func calculateMetrics(results []CaseResult) Metrics {
 				metrics.MAUnexpectedDelegations += attempt.MultiAgent.UnexpectedDelegations
 				maContributions += attempt.MultiAgent.ContributionsExpected
 				maUsedContributions += attempt.MultiAgent.ContributionsUtilized
+				if attempt.MultiAgent.FaultsExpected > 0 {
+					metrics.MAFaultInjectedAttempts++
+					metrics.MAFaultsExpected += attempt.MultiAgent.FaultsExpected
+					metrics.MAFaultsObserved += attempt.MultiAgent.FaultsObserved
+					maFaultAttributed += attempt.MultiAgent.FaultsAttributed
+					metrics.MAUnsupportedClaims += attempt.MultiAgent.UnsupportedClaims
+					if attempt.MultiAgent.GracefullyDegraded {
+						maGraceful++
+					}
+				}
+				for _, baseline := range attempt.Baselines {
+					if metrics.MABaselines == nil {
+						metrics.MABaselines = make(map[string]MultiAgentBaselineMetrics)
+					}
+					baselineMetrics := metrics.MABaselines[baseline.Mode]
+					baselineMetrics.Evaluated++
+					if baseline.Passed {
+						baselineMetrics.Passed++
+					}
+					baselineMetrics.TotalTokens += baseline.Usage.TotalTokens
+					baselineMetrics.AverageLatencyMS += baseline.LatencyMS
+					for _, call := range baseline.ModelCalls {
+						baselineMetrics.EstimatedCostUSD += call.EstimatedCostUSD
+					}
+					metrics.MABaselines[baseline.Mode] = baselineMetrics
+				}
 				for _, call := range attempt.ModelCalls {
 					metrics.MAModelCalls++
 					metrics.MATotalEstimatedCostUSD += call.EstimatedCostUSD
@@ -202,9 +230,9 @@ func calculateMetrics(results []CaseResult) Metrics {
 						metrics.MAPricedModelCalls++
 					}
 					switch call.Phase {
-					case "solo":
+					case "solo", MultiAgentBaselineSoloClosedBook:
 						metrics.MASoloEstimatedCostUSD += call.EstimatedCostUSD
-					case "team":
+					case MultiAgentBaselineTeam:
 						metrics.MATeamEstimatedCostUSD += call.EstimatedCostUSD
 						switch call.Role {
 						case "coordinator":
@@ -306,6 +334,39 @@ func calculateMetrics(results []CaseResult) Metrics {
 	if metrics.MASoloEvaluated > 0 {
 		metrics.MASoloSuccessRate = float64(maSoloPassed) / float64(metrics.MASoloEvaluated)
 		metrics.MACollaborationGain = metrics.MATeamSuccessRate - metrics.MASoloSuccessRate
+	}
+	for mode, baseline := range metrics.MABaselines {
+		if baseline.Evaluated > 0 {
+			baseline.SuccessRate = float64(baseline.Passed) / float64(baseline.Evaluated)
+			baseline.AverageLatencyMS /= float64(baseline.Evaluated)
+		}
+		metrics.MABaselines[mode] = baseline
+	}
+	if baseline, ok := metrics.MABaselines[MultiAgentBaselineSoloOpenBook]; ok {
+		metrics.MASoloOpenBookEvaluated = baseline.Evaluated
+		metrics.MASoloOpenBookSuccessRate = baseline.SuccessRate
+		if team, exists := metrics.MABaselines[MultiAgentBaselineTeam]; exists {
+			metrics.MATeamOutcomeSuccessRate = team.SuccessRate
+			metrics.MAFairCollaborationGain = team.SuccessRate - baseline.SuccessRate
+		}
+	} else if team, ok := metrics.MABaselines[MultiAgentBaselineTeam]; ok {
+		metrics.MATeamOutcomeSuccessRate = team.SuccessRate
+	}
+	if baseline, ok := metrics.MABaselines[MultiAgentBaselineOracleTeam]; ok {
+		metrics.MAOracleTeamEvaluated = baseline.Evaluated
+		metrics.MAOracleTeamSuccessRate = baseline.SuccessRate
+	}
+	if metrics.MAFaultsExpected > 0 {
+		metrics.MAFaultInjectionRate = float64(metrics.MAFaultsObserved) /
+			float64(metrics.MAFaultsExpected)
+		metrics.MAFaultAttributionRate = float64(maFaultAttributed) /
+			float64(metrics.MAFaultsExpected)
+		metrics.MAUnsupportedClaimRate = float64(metrics.MAUnsupportedClaims) /
+			float64(metrics.MAFaultsExpected)
+	}
+	if metrics.MAFaultInjectedAttempts > 0 {
+		metrics.MAGracefulDegradationRate = float64(maGraceful) /
+			float64(metrics.MAFaultInjectedAttempts)
 	}
 	if maMilestones > 0 {
 		metrics.MAMilestoneKPI = float64(maPassedMilestones) / float64(maMilestones)
