@@ -243,6 +243,34 @@ The report includes:
   latency per attempt; overall attempt latency remains the wall-clock metric
 - **Pricing coverage:** priced model calls divided by all captured model calls
 
+## Run the finance workflow evaluation
+
+The finance suite uses six fixed evidence packets rather than future stock
+returns:
+
+```bash
+go run ./cmd/fastclaw eval multiagent run \
+  evals/multiagent-finance-workflow.yaml \
+  --repetitions 1 \
+  --format json \
+  --output finance-workflow.json
+```
+
+It measures whether the runtime helps the coordinator:
+
+- preserve dated primary-source facts;
+- apply explicit catalyst and invalidation conditions;
+- suppress duplicate alerts without losing occurrence counts;
+- reject incomplete screening records;
+- turn portfolio diagnostics into reversible controls;
+- retain uncertainty when primary evidence conflicts.
+
+Use `team - solo_open_book` as the fair collaboration gain. Both modes receive
+the same evidence, while only the team must route work through specialists.
+`team - solo_closed_book` also includes data-access advantage and is therefore
+only a diagnostic. The suite measures evidence handling and orchestration, not
+investment returns, alpha, or an official MultiAgentBench score.
+
 ## Run fault-injection evaluation
 
 The bundled fault suite exercises specialist-local failures while preserving

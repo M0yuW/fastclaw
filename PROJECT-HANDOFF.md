@@ -176,10 +176,19 @@ solo baseline `$0.005848`，每个成功 team case `$0.001719`。这些结果是
   模型参数不能伪造租户作用域。
 - `finance-tools` 新增用户级隔离的 SQLite Thesis Ledger，支持假设、催化剂、
   失效条件、证据、事件复核历史和 `expected_version` 并发保护。
+- Ledger schema 升级到 v2，新增用户级隔离的 watchlist 和 event alert：
+  watch 可关联同市场同标的 thesis，并配置事件类型、关键词阈值和去重窗口。
+- `event_alert_ingest` 使用稳定事件指纹；窗口内重复事件只更新
+  `duplicate_count`、最新证据和 `last_seen_at`，不会重复触发 Agent 复核。
+- Alert 支持 new、acknowledged、dismissed 状态和 `expected_version`，
+  观察列表支持 active、paused、archived 生命周期。
 - coordinator 与同用户 specialist 可共享研究状态，但所有查询都按可信
   `userId` 过滤，避免跨租户读取。
 - 事件流程采用“数据工具抓取 → 确定性匹配 → Agent 证据判断 → 版本化落库”，
   不把关键词匹配直接解释成利好、利空或交易信号。
+- 新增 `evals/multiagent-finance-workflow.yaml` 六案例固定证据评测，覆盖
+  催化剂确认、失效条件、重复告警、数据缺失、组合集中度和一手证据冲突。
+  公平提升只比较 team 与相同 evidence 的 solo_open_book，不使用未来收益。
 
 完整架构、工具契约、默认工作流和 Eval 方案见 `FINANCE-RUNTIME.md`。
 

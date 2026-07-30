@@ -23,6 +23,11 @@ checks.
 - `finance-tools.thesis_list`
 - `finance-tools.thesis_match_event`
 - `finance-tools.thesis_record_review`
+- `finance-tools.watchlist_save`
+- `finance-tools.watchlist_list`
+- `finance-tools.event_alert_ingest`
+- `finance-tools.alert_list`
+- `finance-tools.alert_update`
 
 All tools return `finance.tool.v1` JSON with source, freshness, completeness,
 structured errors, and cache metadata. Screening defaults to rejecting
@@ -33,6 +38,12 @@ by FastClaw at tool execution time. The model cannot supply or override this
 scope. Records are shared by agents owned by the same user, isolated from other
 users, and retain creating/reviewing agent and session identifiers for audit.
 Updates support `expected_version` to prevent silent lost writes.
+
+Watchlist items may link to an owned thesis with the same market and symbol.
+They define allowed event types, deterministic keywords, a minimum match score,
+and a deduplication window. Event alerts keep an occurrence count and
+`first_seen_at`/`last_seen_at` timestamps. Repeated events inside the window
+update the existing alert instead of creating another model-review task.
 
 ## Configuration
 
@@ -67,11 +78,14 @@ permissions.
 
 1. Save a thesis with assumptions, catalysts, invalidation conditions, and
    evidence.
-2. Fetch a symbol-tagged announcement or event.
-3. Call `thesis_match_event` for deterministic keyword and symbol matching.
-4. Let the research agent assess impact using source evidence.
-5. Call `thesis_record_review` with the previously read `expected_version`.
-6. Keep portfolio and trading actions outside the plugin.
+2. Save a watchlist item linked to that thesis.
+3. Fetch and normalize a symbol-tagged announcement or event.
+4. Call `event_alert_ingest`; duplicate events inside the configured window are
+   counted but do not create a second alert.
+5. Let the research agent assess each new alert using source evidence.
+6. Call `thesis_record_review` with the previously read `expected_version`.
+7. Acknowledge or dismiss the alert with `alert_update`.
+8. Keep portfolio and trading actions outside the plugin.
 
 ## Serenity Version
 

@@ -66,6 +66,7 @@ func TestLoadBundledMultiAgentSuite(t *testing.T) {
 		{"multiagent-collaboration-subset.yaml", "multiagentbench-style-collaboration-subset", 3},
 		{"multiagent-runtime-tenant.yaml", "fastclaw-fixed-runtime-tenant", 8},
 		{"multiagent-fault-injection.yaml", "multiagent-runtime-fault-injection", 6},
+		{"multiagent-finance-workflow.yaml", "finance-research-workflow", 6},
 	}
 	for _, test := range tests {
 		t.Run(test.file, func(t *testing.T) {

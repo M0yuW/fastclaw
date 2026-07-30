@@ -88,6 +88,11 @@ improve the final decision.
 - `finance-tools.thesis_list`
 - `finance-tools.thesis_match_event`
 - `finance-tools.thesis_record_review`
+- `finance-tools.watchlist_save`
+- `finance-tools.watchlist_list`
+- `finance-tools.event_alert_ingest`
+- `finance-tools.alert_list`
+- `finance-tools.alert_update`
 
 Every tool returns the `finance.tool.v1` envelope:
 
@@ -189,6 +194,29 @@ Event matching is deliberately not sentiment analysis. Invalidation phrases
 receive a larger deterministic match weight than catalysts and assumptions,
 but the final impact still requires evidence-backed model or human review.
 
+## Watchlist and Alert State
+
+Watchlist items are user-isolated records that define:
+
+- market and symbol;
+- an optional same-symbol owned thesis;
+- accepted event types;
+- deterministic keywords and a minimum match score;
+- a deduplication window;
+- active, paused, or archived delivery state.
+
+`event_alert_ingest` normalizes one event, computes a stable SHA-256 fingerprint,
+and evaluates only active watches for the same user, market, and symbol. When a
+linked thesis exists, its invalidations, catalysts, and assumptions contribute
+weighted terms. An event below the watch threshold is recorded only in the tool
+result as skipped and does not create an alert.
+
+An event with the same fingerprint inside the configured window updates the
+existing alert's `duplicate_count`, latest evidence, and `last_seen_at`. It does
+not create another model-review task. Alert acknowledgement and dismissal use
+optimistic version checks, while the original creating agent and session remain
+available for audit.
+
 ## Default Workflow
 
 ### Theme Scan
@@ -213,10 +241,12 @@ but the final impact still requires evidence-backed model or human review.
 ### Portfolio Monitoring
 
 1. Calculate concentration, correlation, risk, and stress metrics.
-2. Fetch new announcements and material events for holdings.
-3. Match events to stored thesis assumptions.
-4. Trigger model analysis only for meaningful changes.
-5. Require human approval for any portfolio action.
+2. Configure active watchlist items for holdings and research candidates.
+3. Fetch and normalize new announcements and material events.
+4. Suppress duplicate alerts and events below the deterministic threshold.
+5. Trigger model analysis only for newly created meaningful alerts.
+6. Persist thesis review and alert acknowledgement separately.
+7. Require human approval for any portfolio action.
 
 ## Evaluation Plan
 
@@ -242,6 +272,15 @@ Serenity-specific evaluation must compare:
 The candidate universe, source snapshots, model, prompt budget, and tool access
 must remain identical. This isolates methodology lift from data-access lift.
 
+The bundled `evals/multiagent-finance-workflow.yaml` suite contains six
+fixed-evidence tasks covering catalyst confirmation, thesis invalidation,
+duplicate alert suppression, incomplete screening data, portfolio
+concentration, and contradictory primary evidence. It runs
+`solo_closed_book`, `solo_open_book`, `team`, and `oracle_team`; only
+`team - solo_open_book` is the fair collaboration gain because both modes
+receive the same evidence packet. This is a runtime-harness regression suite,
+not a return benchmark or official MultiAgentBench score.
+
 ## Next Phases
 
 ### Phase 2: Persistent Research State
@@ -252,11 +291,16 @@ Completed:
 - evidence snapshots and immutable review history;
 - deterministic event-to-thesis matching;
 - optimistic version checks and agent/session audit fields.
+- tenant-isolated watchlist state with optional same-symbol thesis linkage;
+- event-type and keyword thresholds;
+- deterministic event fingerprints and time-window alert deduplication;
+- alert occurrence counts, acknowledgement state, and version protection;
+- six-case fair Team/Solo financial workflow evaluation.
 
 Remaining:
 
-- portfolio and watchlist records;
-- alert deduplication and delivery state;
+- persistent portfolio holdings and policy limits;
+- outbound alert delivery adapters and retry state;
 - exchange-calendar-aware scheduling.
 
 ### Phase 3: Progressive Skill Loading

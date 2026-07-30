@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import copy
+import hashlib
 import importlib.util
 import json
 import os
@@ -70,6 +71,8 @@ REVIEW_DECISIONS = {
     "invalidate",
     "needs_review",
 }
+WATCHLIST_STATUSES = {"active", "paused", "archived"}
+ALERT_STATUSES = {"new", "acknowledged", "dismissed"}
 
 
 class ToolInputError(ValueError):
@@ -396,6 +399,127 @@ def tool_definitions() -> list[dict[str, Any]]:
                 ],
             },
         },
+        {
+            "name": "watchlist_save",
+            "description": "Create or update a tenant-isolated symbol watch with optional thesis linkage, event filters, keyword thresholds, and optimistic version checks.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "watchlist_id": {"type": "string"},
+                    "expected_version": {"type": "integer", "minimum": 1},
+                    "market": market_property,
+                    "symbol": {"type": "string"},
+                    "thesis_id": {"type": "string"},
+                    "status": {
+                        "type": "string",
+                        "enum": sorted(WATCHLIST_STATUSES),
+                    },
+                    "event_types": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "keywords": {
+                        "type": "array",
+                        "items": {"type": "string"},
+                    },
+                    "min_match_score": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "maximum": 100,
+                    },
+                    "dedupe_window_seconds": {
+                        "type": "integer",
+                        "minimum": 60,
+                        "maximum": 604800,
+                    },
+                },
+            },
+        },
+        {
+            "name": "watchlist_list",
+            "description": "List the current user's watchlist items with optional status, market, and symbol filters.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": sorted(WATCHLIST_STATUSES),
+                    },
+                    "market": market_property,
+                    "symbol": {"type": "string"},
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 50,
+                    },
+                },
+            },
+        },
+        {
+            "name": "event_alert_ingest",
+            "description": "Match one normalized market event against active watches and persist or deduplicate tenant-isolated alerts.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "market": market_property,
+                    "symbol": {"type": "string"},
+                    "event": {
+                        "type": "object",
+                        "properties": {
+                            "external_id": {"type": "string"},
+                            "type": {"type": "string"},
+                            "summary": {"type": "string"},
+                            "as_of": {"type": "string"},
+                            "sources": {
+                                "type": "array",
+                                "items": {"type": "object"},
+                            },
+                        },
+                        "required": ["summary"],
+                    },
+                },
+                "required": ["market", "symbol", "event"],
+            },
+        },
+        {
+            "name": "alert_list",
+            "description": "List persisted event alerts for the current user, including duplicate counts and review state.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": sorted(ALERT_STATUSES),
+                    },
+                    "market": market_property,
+                    "symbol": {"type": "string"},
+                    "watchlist_id": {"type": "string"},
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 100,
+                        "default": 50,
+                    },
+                },
+            },
+        },
+        {
+            "name": "alert_update",
+            "description": "Acknowledge, dismiss, or reopen an owned event alert with optimistic version protection.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "alert_id": {"type": "string"},
+                    "status": {
+                        "type": "string",
+                        "enum": sorted(ALERT_STATUSES),
+                    },
+                    "expected_version": {"type": "integer", "minimum": 1},
+                },
+                "required": ["alert_id", "status"],
+            },
+        },
     ]
 
 
@@ -458,9 +582,64 @@ class FinanceStateStore:
                 );
                 CREATE INDEX IF NOT EXISTS idx_thesis_reviews_tenant_thesis
                     ON thesis_reviews(user_id, thesis_id, created_at);
+
+                CREATE TABLE IF NOT EXISTS watchlist_items (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    created_by_agent_id TEXT NOT NULL,
+                    created_in_session_id TEXT NOT NULL DEFAULT '',
+                    market TEXT NOT NULL,
+                    symbol TEXT NOT NULL,
+                    thesis_id TEXT,
+                    status TEXT NOT NULL,
+                    event_types_json TEXT NOT NULL,
+                    keywords_json TEXT NOT NULL,
+                    min_match_score INTEGER NOT NULL,
+                    dedupe_window_seconds INTEGER NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    version INTEGER NOT NULL,
+                    FOREIGN KEY(thesis_id) REFERENCES theses(id)
+                );
+                CREATE INDEX IF NOT EXISTS idx_watchlist_tenant_symbol
+                    ON watchlist_items(user_id, market, symbol, status);
+                CREATE INDEX IF NOT EXISTS idx_watchlist_tenant_updated
+                    ON watchlist_items(user_id, updated_at);
+
+                CREATE TABLE IF NOT EXISTS event_alerts (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    watchlist_id TEXT NOT NULL,
+                    thesis_id TEXT,
+                    created_by_agent_id TEXT NOT NULL,
+                    created_in_session_id TEXT NOT NULL DEFAULT '',
+                    market TEXT NOT NULL,
+                    symbol TEXT NOT NULL,
+                    event_fingerprint TEXT NOT NULL,
+                    event_external_id TEXT,
+                    event_type TEXT NOT NULL,
+                    event_summary TEXT NOT NULL,
+                    event_as_of TEXT,
+                    event_sources_json TEXT NOT NULL,
+                    matched_terms_json TEXT NOT NULL,
+                    match_score INTEGER NOT NULL,
+                    status TEXT NOT NULL,
+                    duplicate_count INTEGER NOT NULL,
+                    first_seen_at TEXT NOT NULL,
+                    last_seen_at TEXT NOT NULL,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL,
+                    version INTEGER NOT NULL,
+                    FOREIGN KEY(watchlist_id) REFERENCES watchlist_items(id),
+                    FOREIGN KEY(thesis_id) REFERENCES theses(id)
+                );
+                CREATE INDEX IF NOT EXISTS idx_event_alerts_tenant_status
+                    ON event_alerts(user_id, status, updated_at);
+                CREATE INDEX IF NOT EXISTS idx_event_alerts_dedupe
+                    ON event_alerts(user_id, watchlist_id, event_fingerprint, last_seen_at);
                 """
             )
-            database.execute("PRAGMA user_version = 1")
+            database.execute("PRAGMA user_version = 2")
         try:
             os.chmod(self.path, 0o600)
         except OSError:
@@ -757,6 +936,400 @@ class FinanceStateStore:
                 "review": self._review_from_row(review),
             }
 
+    def save_watchlist(
+        self,
+        tenant: dict[str, str],
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        now = isoformat(utc_now())
+        watchlist_id = payload.get("watchlist_id")
+        with self._connect() as database:
+            database.execute("BEGIN IMMEDIATE")
+            if watchlist_id:
+                existing = self._fetch_watchlist_owned(
+                    database, tenant["user_id"], watchlist_id
+                )
+                expected_version = payload.get("expected_version")
+                if (
+                    expected_version is not None
+                    and int(expected_version) != existing["version"]
+                ):
+                    raise ToolStateError(
+                        "version_conflict",
+                        "watchlist item changed since it was read",
+                        True,
+                        {
+                            "expected_version": int(expected_version),
+                            "actual_version": existing["version"],
+                        },
+                    )
+                merged = dict(existing)
+                for key in (
+                    "market",
+                    "symbol",
+                    "thesis_id",
+                    "status",
+                    "event_types",
+                    "keywords",
+                    "min_match_score",
+                    "dedupe_window_seconds",
+                ):
+                    if key in payload:
+                        merged[key] = payload[key]
+                self._validate_owned_thesis(
+                    database,
+                    tenant["user_id"],
+                    merged["thesis_id"],
+                    merged["market"],
+                    merged["symbol"],
+                )
+                duplicate = self._find_watchlist_duplicate(
+                    database,
+                    tenant["user_id"],
+                    merged["market"],
+                    merged["symbol"],
+                    merged["thesis_id"],
+                    watchlist_id,
+                )
+                if duplicate:
+                    raise ToolStateError(
+                        "watchlist_exists",
+                        "an equivalent watchlist item already exists",
+                        False,
+                        {"watchlist_id": duplicate},
+                    )
+                version = existing["version"] + 1
+                database.execute(
+                    """
+                    UPDATE watchlist_items
+                    SET market = ?, symbol = ?, thesis_id = ?, status = ?,
+                        event_types_json = ?, keywords_json = ?,
+                        min_match_score = ?, dedupe_window_seconds = ?,
+                        updated_at = ?, version = ?
+                    WHERE id = ? AND user_id = ?
+                    """,
+                    (
+                        merged["market"],
+                        merged["symbol"],
+                        merged["thesis_id"],
+                        merged["status"],
+                        self._json(merged["event_types"]),
+                        self._json(merged["keywords"]),
+                        merged["min_match_score"],
+                        merged["dedupe_window_seconds"],
+                        now,
+                        version,
+                        watchlist_id,
+                        tenant["user_id"],
+                    ),
+                )
+            else:
+                self._validate_owned_thesis(
+                    database,
+                    tenant["user_id"],
+                    payload["thesis_id"],
+                    payload["market"],
+                    payload["symbol"],
+                )
+                duplicate = self._find_watchlist_duplicate(
+                    database,
+                    tenant["user_id"],
+                    payload["market"],
+                    payload["symbol"],
+                    payload["thesis_id"],
+                    "",
+                )
+                if duplicate:
+                    raise ToolStateError(
+                        "watchlist_exists",
+                        "an equivalent watchlist item already exists",
+                        False,
+                        {"watchlist_id": duplicate},
+                    )
+                watchlist_id = "wl_" + uuid.uuid4().hex[:20]
+                version = 1
+                database.execute(
+                    """
+                    INSERT INTO watchlist_items (
+                        id, user_id, created_by_agent_id, created_in_session_id,
+                        market, symbol, thesis_id, status, event_types_json,
+                        keywords_json, min_match_score, dedupe_window_seconds,
+                        created_at, updated_at, version
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (
+                        watchlist_id,
+                        tenant["user_id"],
+                        tenant["agent_id"],
+                        tenant["session_id"],
+                        payload["market"],
+                        payload["symbol"],
+                        payload["thesis_id"],
+                        payload["status"],
+                        self._json(payload["event_types"]),
+                        self._json(payload["keywords"]),
+                        payload["min_match_score"],
+                        payload["dedupe_window_seconds"],
+                        now,
+                        now,
+                        version,
+                    ),
+                )
+            return self._fetch_watchlist_owned(
+                database, tenant["user_id"], watchlist_id
+            )
+
+    def list_watchlist(
+        self,
+        user_id: str,
+        filters: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        clauses = ["user_id = ?"]
+        values: list[Any] = [user_id]
+        for key in ("status", "market", "symbol"):
+            value = filters.get(key)
+            if value:
+                clauses.append(f"{key} = ?")
+                values.append(value)
+        values.append(filters["limit"])
+        with self._connect() as database:
+            rows = database.execute(
+                f"""
+                SELECT * FROM watchlist_items
+                WHERE {' AND '.join(clauses)}
+                ORDER BY updated_at DESC
+                LIMIT ?
+                """,
+                values,
+            ).fetchall()
+            return [self._watchlist_from_row(row) for row in rows]
+
+    def ingest_event(
+        self,
+        tenant: dict[str, str],
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        now_value = utc_now()
+        now = isoformat(now_value)
+        event = payload["event"]
+        fingerprint = self._event_fingerprint(
+            payload["market"], payload["symbol"], event
+        )
+        results = []
+        skipped = []
+        with self._connect() as database:
+            database.execute("BEGIN IMMEDIATE")
+            rows = database.execute(
+                """
+                SELECT * FROM watchlist_items
+                WHERE user_id = ? AND market = ? AND symbol = ?
+                  AND status = 'active'
+                ORDER BY updated_at DESC
+                """,
+                (tenant["user_id"], payload["market"], payload["symbol"]),
+            ).fetchall()
+            for row in rows:
+                watchlist = self._watchlist_from_row(row)
+                event_type = event["type"].casefold()
+                if (
+                    watchlist["event_types"]
+                    and event_type not in watchlist["event_types"]
+                ):
+                    skipped.append(
+                        {
+                            "watchlist_id": watchlist["id"],
+                            "reason": "event_type_filtered",
+                        }
+                    )
+                    continue
+                matched_terms, match_score = self._score_watchlist_event(
+                    database,
+                    tenant["user_id"],
+                    watchlist,
+                    event["summary"],
+                )
+                if match_score < watchlist["min_match_score"]:
+                    skipped.append(
+                        {
+                            "watchlist_id": watchlist["id"],
+                            "reason": "below_match_threshold",
+                            "match_score": match_score,
+                        }
+                    )
+                    continue
+                existing_row = database.execute(
+                    """
+                    SELECT * FROM event_alerts
+                    WHERE user_id = ? AND watchlist_id = ?
+                      AND event_fingerprint = ?
+                    ORDER BY last_seen_at DESC
+                    LIMIT 1
+                    """,
+                    (
+                        tenant["user_id"],
+                        watchlist["id"],
+                        fingerprint,
+                    ),
+                ).fetchone()
+                if existing_row is not None and self._within_dedupe_window(
+                    existing_row["last_seen_at"],
+                    now_value,
+                    watchlist["dedupe_window_seconds"],
+                ):
+                    database.execute(
+                        """
+                        UPDATE event_alerts
+                        SET duplicate_count = duplicate_count + 1,
+                            last_seen_at = ?, event_summary = ?,
+                            event_as_of = ?, event_sources_json = ?,
+                            matched_terms_json = ?, match_score = ?,
+                            updated_at = ?, version = version + 1
+                        WHERE id = ? AND user_id = ?
+                        """,
+                        (
+                            now,
+                            event["summary"],
+                            event["as_of"],
+                            self._json(event["sources"]),
+                            self._json(matched_terms),
+                            match_score,
+                            now,
+                            existing_row["id"],
+                            tenant["user_id"],
+                        ),
+                    )
+                    alert = self._fetch_alert_owned(
+                        database, tenant["user_id"], existing_row["id"]
+                    )
+                    action = "deduplicated"
+                else:
+                    alert_id = "fa_" + uuid.uuid4().hex[:20]
+                    database.execute(
+                        """
+                        INSERT INTO event_alerts (
+                            id, user_id, watchlist_id, thesis_id,
+                            created_by_agent_id, created_in_session_id,
+                            market, symbol, event_fingerprint, event_external_id,
+                            event_type, event_summary, event_as_of,
+                            event_sources_json, matched_terms_json, match_score,
+                            status, duplicate_count, first_seen_at, last_seen_at,
+                            created_at, updated_at, version
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 1)
+                        """,
+                        (
+                            alert_id,
+                            tenant["user_id"],
+                            watchlist["id"],
+                            watchlist["thesis_id"],
+                            tenant["agent_id"],
+                            tenant["session_id"],
+                            payload["market"],
+                            payload["symbol"],
+                            fingerprint,
+                            event["external_id"],
+                            event["type"],
+                            event["summary"],
+                            event["as_of"],
+                            self._json(event["sources"]),
+                            self._json(matched_terms),
+                            match_score,
+                            "new",
+                            now,
+                            now,
+                            now,
+                            now,
+                        ),
+                    )
+                    alert = self._fetch_alert_owned(
+                        database, tenant["user_id"], alert_id
+                    )
+                    action = "created"
+                results.append(
+                    {
+                        "action": action,
+                        "watchlist": watchlist,
+                        "alert": alert,
+                    }
+                )
+        return {
+            "market": payload["market"],
+            "symbol": payload["symbol"],
+            "event_fingerprint": fingerprint,
+            "results": results,
+            "created": sum(item["action"] == "created" for item in results),
+            "deduplicated": sum(
+                item["action"] == "deduplicated" for item in results
+            ),
+            "skipped": skipped,
+        }
+
+    def list_alerts(
+        self,
+        user_id: str,
+        filters: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        clauses = ["user_id = ?"]
+        values: list[Any] = [user_id]
+        for key in ("status", "market", "symbol", "watchlist_id"):
+            value = filters.get(key)
+            if value:
+                clauses.append(f"{key} = ?")
+                values.append(value)
+        values.append(filters["limit"])
+        with self._connect() as database:
+            rows = database.execute(
+                f"""
+                SELECT * FROM event_alerts
+                WHERE {' AND '.join(clauses)}
+                ORDER BY updated_at DESC
+                LIMIT ?
+                """,
+                values,
+            ).fetchall()
+            return [self._alert_from_row(row) for row in rows]
+
+    def update_alert(
+        self,
+        tenant: dict[str, str],
+        payload: dict[str, Any],
+    ) -> dict[str, Any]:
+        now = isoformat(utc_now())
+        with self._connect() as database:
+            database.execute("BEGIN IMMEDIATE")
+            existing = self._fetch_alert_owned(
+                database, tenant["user_id"], payload["alert_id"]
+            )
+            expected_version = payload.get("expected_version")
+            if (
+                expected_version is not None
+                and int(expected_version) != existing["version"]
+            ):
+                raise ToolStateError(
+                    "version_conflict",
+                    "alert changed since it was read",
+                    True,
+                    {
+                        "expected_version": int(expected_version),
+                        "actual_version": existing["version"],
+                    },
+                )
+            database.execute(
+                """
+                UPDATE event_alerts
+                SET status = ?, updated_at = ?, version = version + 1
+                WHERE id = ? AND user_id = ?
+                """,
+                (
+                    payload["status"],
+                    now,
+                    payload["alert_id"],
+                    tenant["user_id"],
+                ),
+            )
+            return self._fetch_alert_owned(
+                database, tenant["user_id"], payload["alert_id"]
+            )
+
     def _connect(self) -> sqlite3.Connection:
         database = sqlite3.connect(str(self.path), timeout=5)
         database.row_factory = sqlite3.Row
@@ -777,6 +1350,73 @@ class FinanceStateStore:
         if row is None:
             raise ToolStateError("thesis_not_found", "thesis not found")
         return self._thesis_from_row(row)
+
+    def _validate_owned_thesis(
+        self,
+        database: sqlite3.Connection,
+        user_id: str,
+        thesis_id: str | None,
+        market: str,
+        symbol: str,
+    ) -> None:
+        if thesis_id:
+            thesis = self._fetch_owned(database, user_id, thesis_id)
+            if thesis["market"] != market or thesis["symbol"] != symbol:
+                raise ToolStateError(
+                    "thesis_watch_mismatch",
+                    "linked thesis market and symbol must match the watchlist item",
+                )
+
+    def _find_watchlist_duplicate(
+        self,
+        database: sqlite3.Connection,
+        user_id: str,
+        market: str,
+        symbol: str,
+        thesis_id: str | None,
+        exclude_id: str,
+    ) -> str:
+        row = database.execute(
+            """
+            SELECT id FROM watchlist_items
+            WHERE user_id = ? AND market = ? AND symbol = ?
+              AND COALESCE(thesis_id, '') = COALESCE(?, '')
+              AND id != ?
+            LIMIT 1
+            """,
+            (user_id, market, symbol, thesis_id, exclude_id),
+        ).fetchone()
+        return str(row["id"]) if row is not None else ""
+
+    def _fetch_watchlist_owned(
+        self,
+        database: sqlite3.Connection,
+        user_id: str,
+        watchlist_id: str,
+    ) -> dict[str, Any]:
+        row = database.execute(
+            "SELECT * FROM watchlist_items WHERE id = ? AND user_id = ?",
+            (watchlist_id, user_id),
+        ).fetchone()
+        if row is None:
+            raise ToolStateError(
+                "watchlist_not_found", "watchlist item not found"
+            )
+        return self._watchlist_from_row(row)
+
+    def _fetch_alert_owned(
+        self,
+        database: sqlite3.Connection,
+        user_id: str,
+        alert_id: str,
+    ) -> dict[str, Any]:
+        row = database.execute(
+            "SELECT * FROM event_alerts WHERE id = ? AND user_id = ?",
+            (alert_id, user_id),
+        ).fetchone()
+        if row is None:
+            raise ToolStateError("alert_not_found", "event alert not found")
+        return self._alert_from_row(row)
 
     def _thesis_from_row(self, row: sqlite3.Row) -> dict[str, Any]:
         return {
@@ -819,6 +1459,131 @@ class FinanceStateStore:
             "evidence": json.loads(row["evidence_json"]),
             "created_at": row["created_at"],
         }
+
+    def _watchlist_from_row(self, row: sqlite3.Row) -> dict[str, Any]:
+        return {
+            "id": row["id"],
+            "market": row["market"],
+            "symbol": row["symbol"],
+            "thesis_id": row["thesis_id"],
+            "status": row["status"],
+            "event_types": json.loads(row["event_types_json"]),
+            "keywords": json.loads(row["keywords_json"]),
+            "min_match_score": row["min_match_score"],
+            "dedupe_window_seconds": row["dedupe_window_seconds"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "version": row["version"],
+            "created_by_agent_id": row["created_by_agent_id"],
+            "created_in_session_id": row["created_in_session_id"],
+        }
+
+    def _alert_from_row(self, row: sqlite3.Row) -> dict[str, Any]:
+        return {
+            "id": row["id"],
+            "watchlist_id": row["watchlist_id"],
+            "thesis_id": row["thesis_id"],
+            "market": row["market"],
+            "symbol": row["symbol"],
+            "event_fingerprint": row["event_fingerprint"],
+            "event": {
+                "external_id": row["event_external_id"],
+                "type": row["event_type"],
+                "summary": row["event_summary"],
+                "as_of": row["event_as_of"],
+                "sources": json.loads(row["event_sources_json"]),
+            },
+            "matched_terms": json.loads(row["matched_terms_json"]),
+            "match_score": row["match_score"],
+            "status": row["status"],
+            "duplicate_count": row["duplicate_count"],
+            "first_seen_at": row["first_seen_at"],
+            "last_seen_at": row["last_seen_at"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "version": row["version"],
+            "created_by_agent_id": row["created_by_agent_id"],
+            "created_in_session_id": row["created_in_session_id"],
+        }
+
+    def _score_watchlist_event(
+        self,
+        database: sqlite3.Connection,
+        user_id: str,
+        watchlist: dict[str, Any],
+        event_summary: str,
+    ) -> tuple[list[dict[str, Any]], int]:
+        event_text = event_summary.casefold()
+        weighted_terms = [
+            ("watchlist", term, 1) for term in self._keywords(watchlist["keywords"])
+        ]
+        if watchlist["thesis_id"]:
+            thesis = self._fetch_owned(
+                database, user_id, watchlist["thesis_id"]
+            )
+            for bucket, weight in (
+                ("invalidations", 3),
+                ("catalysts", 2),
+                ("assumptions", 1),
+            ):
+                weighted_terms.extend(
+                    (bucket, term, weight)
+                    for term in self._keywords(thesis[bucket])
+                )
+        matches = []
+        seen = set()
+        score = 0
+        for bucket, term, weight in weighted_terms:
+            key = (bucket, term)
+            if key in seen or term not in event_text:
+                continue
+            seen.add(key)
+            matches.append({"bucket": bucket, "term": term, "weight": weight})
+            score += weight
+        return matches, score
+
+    def _event_fingerprint(
+        self,
+        market: str,
+        symbol: str,
+        event: dict[str, Any],
+    ) -> str:
+        external_id = str(event.get("external_id") or "").strip().casefold()
+        if external_id:
+            identity = {
+                "market": market,
+                "symbol": symbol,
+                "type": event["type"].casefold(),
+                "external_id": external_id,
+            }
+        else:
+            normalized_summary = re.sub(
+                r"\s+", " ", event["summary"].casefold()
+            ).strip()
+            identity = {
+                "market": market,
+                "symbol": symbol,
+                "type": event["type"].casefold(),
+                "summary": normalized_summary,
+            }
+        encoded = json.dumps(
+            identity, ensure_ascii=False, separators=(",", ":"), sort_keys=True
+        ).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
+    def _within_dedupe_window(
+        self,
+        last_seen_at: str,
+        now: datetime,
+        dedupe_window_seconds: int,
+    ) -> bool:
+        try:
+            last_seen = datetime.fromisoformat(
+                last_seen_at.replace("Z", "+00:00")
+            )
+        except ValueError:
+            return False
+        return (now - last_seen).total_seconds() <= dedupe_window_seconds
 
     def _keywords(self, values: list[str]) -> set[str]:
         keywords = set()
@@ -908,6 +1673,11 @@ class FinanceToolsPlugin:
             "thesis_list": self.thesis_list,
             "thesis_match_event": self.thesis_match_event,
             "thesis_record_review": self.thesis_record_review,
+            "watchlist_save": self.watchlist_save,
+            "watchlist_list": self.watchlist_list,
+            "event_alert_ingest": self.event_alert_ingest,
+            "alert_list": self.alert_list,
+            "alert_update": self.alert_update,
         }
         try:
             if name in state_handlers:
@@ -1197,7 +1967,22 @@ class FinanceToolsPlugin:
             )
         elif not is_update:
             payload["next_review_at"] = None
-        if is_update and len(payload) <= 2:
+        if is_update and not any(
+            key in payload
+            for key in (
+                "market",
+                "symbol",
+                "title",
+                "thesis",
+                "status",
+                "conviction",
+                "assumptions",
+                "catalysts",
+                "invalidations",
+                "evidence",
+                "next_review_at",
+            )
+        ):
             raise ToolInputError("thesis update contains no mutable fields")
         thesis = self._state().save(tenant, payload)
         return self._state_envelope(
@@ -1318,6 +2103,202 @@ class FinanceToolsPlugin:
         return self._state_envelope(
             result,
             ["research_state_only", "human_trading_decision_required"],
+        )
+
+    def watchlist_save(
+        self,
+        args: dict[str, Any],
+        tenant: dict[str, str],
+    ) -> dict[str, Any]:
+        watchlist_id = str(args.get("watchlist_id") or "").strip()
+        is_update = bool(watchlist_id)
+        if is_update:
+            self._record_id(watchlist_id, "wl_")
+        payload: dict[str, Any] = {"watchlist_id": watchlist_id or None}
+        if "expected_version" in args:
+            payload["expected_version"] = self._bounded_int(
+                args.get("expected_version"), "expected_version", 1, 1_000_000
+            )
+        if "market" in args or not is_update:
+            payload["market"] = self._market(args)
+        if "symbol" in args or not is_update:
+            payload["symbol"] = self._symbol(args.get("symbol"))
+        if "thesis_id" in args:
+            thesis_id = self._optional_text(
+                args.get("thesis_id"), "thesis_id", 64
+            )
+            if thesis_id:
+                self._record_id(thesis_id, "th_")
+            payload["thesis_id"] = thesis_id
+        elif not is_update:
+            payload["thesis_id"] = None
+        if "status" in args:
+            payload["status"] = self._choice(
+                args.get("status"), "status", WATCHLIST_STATUSES
+            )
+        elif not is_update:
+            payload["status"] = "active"
+        if "event_types" in args:
+            event_types = self._string_list(
+                args.get("event_types"), "event_types", 50
+            )
+            payload["event_types"] = sorted(
+                {value.casefold() for value in event_types}
+            )
+        elif not is_update:
+            payload["event_types"] = []
+        if "keywords" in args:
+            payload["keywords"] = self._string_list(
+                args.get("keywords"), "keywords", 100
+            )
+        elif not is_update:
+            payload["keywords"] = []
+        if "min_match_score" in args:
+            payload["min_match_score"] = self._bounded_int(
+                args.get("min_match_score"), "min_match_score", 0, 100
+            )
+        elif not is_update:
+            payload["min_match_score"] = 0
+        if "dedupe_window_seconds" in args:
+            payload["dedupe_window_seconds"] = self._bounded_int(
+                args.get("dedupe_window_seconds"),
+                "dedupe_window_seconds",
+                60,
+                604_800,
+            )
+        elif not is_update:
+            payload["dedupe_window_seconds"] = 86_400
+        if is_update and not any(
+            key in payload
+            for key in (
+                "market",
+                "symbol",
+                "thesis_id",
+                "status",
+                "event_types",
+                "keywords",
+                "min_match_score",
+                "dedupe_window_seconds",
+            )
+        ):
+            raise ToolInputError("watchlist update contains no mutable fields")
+        watchlist = self._state().save_watchlist(tenant, payload)
+        return self._state_envelope(
+            {
+                "watchlist": watchlist,
+                "operation": "updated" if is_update else "created",
+            },
+            ["deterministic_alert_policy"],
+        )
+
+    def watchlist_list(
+        self,
+        args: dict[str, Any],
+        tenant: dict[str, str],
+    ) -> dict[str, Any]:
+        filters: dict[str, Any] = {
+            "limit": self._bounded_int(args.get("limit", 50), "limit", 1, 100)
+        }
+        if args.get("status"):
+            filters["status"] = self._choice(
+                args.get("status"), "status", WATCHLIST_STATUSES
+            )
+        if args.get("market"):
+            filters["market"] = self._market(args)
+        if args.get("symbol"):
+            filters["symbol"] = self._symbol(args.get("symbol"))
+        watchlist = self._state().list_watchlist(tenant["user_id"], filters)
+        return self._state_envelope(
+            {
+                "watchlist": watchlist,
+                "count": len(watchlist),
+                "filters": filters,
+            }
+        )
+
+    def event_alert_ingest(
+        self,
+        args: dict[str, Any],
+        tenant: dict[str, str],
+    ) -> dict[str, Any]:
+        event = args.get("event")
+        if not isinstance(event, dict):
+            raise ToolInputError("event must be an object")
+        normalized_event = {
+            "external_id": self._optional_text(
+                event.get("external_id"), "event.external_id", 300
+            ),
+            "type": (
+                self._optional_text(event.get("type"), "event.type", 100)
+                or "unspecified"
+            ).casefold(),
+            "summary": self._required_text(
+                event.get("summary"), "event.summary", 10_000
+            ),
+            "as_of": self._optional_text(event.get("as_of"), "event.as_of", 100),
+            "sources": self._evidence_list(event.get("sources", [])),
+        }
+        result = self._state().ingest_event(
+            tenant,
+            {
+                "market": self._market(args),
+                "symbol": self._symbol(args.get("symbol")),
+                "event": normalized_event,
+            },
+        )
+        return self._state_envelope(
+            result,
+            [
+                "deterministic_alert_match",
+                "duplicate_alerts_suppressed",
+                "model_review_required",
+            ],
+        )
+
+    def alert_list(
+        self,
+        args: dict[str, Any],
+        tenant: dict[str, str],
+    ) -> dict[str, Any]:
+        filters: dict[str, Any] = {
+            "limit": self._bounded_int(args.get("limit", 50), "limit", 1, 100)
+        }
+        if args.get("status"):
+            filters["status"] = self._choice(
+                args.get("status"), "status", ALERT_STATUSES
+            )
+        if args.get("market"):
+            filters["market"] = self._market(args)
+        if args.get("symbol"):
+            filters["symbol"] = self._symbol(args.get("symbol"))
+        if args.get("watchlist_id"):
+            filters["watchlist_id"] = self._record_id(
+                args.get("watchlist_id"), "wl_"
+            )
+        alerts = self._state().list_alerts(tenant["user_id"], filters)
+        return self._state_envelope(
+            {"alerts": alerts, "count": len(alerts), "filters": filters}
+        )
+
+    def alert_update(
+        self,
+        args: dict[str, Any],
+        tenant: dict[str, str],
+    ) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "alert_id": self._record_id(args.get("alert_id"), "fa_"),
+            "status": self._choice(
+                args.get("status"), "status", ALERT_STATUSES
+            ),
+        }
+        if "expected_version" in args:
+            payload["expected_version"] = self._bounded_int(
+                args.get("expected_version"), "expected_version", 1, 1_000_000
+            )
+        alert = self._state().update_alert(tenant, payload)
+        return self._state_envelope(
+            {"alert": alert, "operation": "updated"},
+            ["research_state_only"],
         )
 
     def _run_cached_script(

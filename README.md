@@ -144,6 +144,8 @@ Click an agent to enter its management panel:
 - Source, freshness, completeness, structured error, and cache metadata on every tool result
 - Pinned Serenity supply-chain research methodology with deterministic scoring kept separate from market-data retrieval
 - Tenant-isolated Thesis Ledger with event matching, review history, and optimistic version checks
+- Tenant-isolated watchlists with deterministic event matching, duplicate-alert suppression, and alert lifecycle state
+- Six-case fixed-evidence finance Team/Solo suite for fair orchestration measurement
 - Design, rollout, and evaluation contract in [FINANCE-RUNTIME.md](FINANCE-RUNTIME.md)
 
 ## Configuration
@@ -242,6 +244,7 @@ go run ./cmd/fastclaw eval tau run evals/tau-retail-subset.yaml
 go run ./cmd/fastclaw eval swe run evals/swebench-local-subset.yaml
 go run ./cmd/fastclaw eval multiagent run evals/multiagent-collaboration-subset.yaml
 go run ./cmd/fastclaw eval multiagent run evals/multiagent-fault-injection.yaml
+go run ./cmd/fastclaw eval multiagent run evals/multiagent-finance-workflow.yaml
 go run ./cmd/fastclaw eval multiagent tenant provision --coordinator-model provider/model
 go run ./cmd/fastclaw eval multiagent run evals/multiagent-runtime-tenant.yaml
 go run ./cmd/fastclaw eval compare baseline.json candidate.json

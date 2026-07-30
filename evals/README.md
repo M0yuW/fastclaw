@@ -16,6 +16,9 @@
 - `multiagent-fault-injection.yaml` contains six deterministic specialist-fault
   cases covering timeout, explicit error, malformed output, contradictory
   evidence, multiple partial failures, and noncritical dependency failure.
+- `multiagent-finance-workflow.yaml` contains six fixed-evidence financial
+  research tasks covering thesis review, alert deduplication, data-quality
+  rejection, portfolio risk, and contradictory primary sources.
 
 The BFCL-derived prompts, schemas, and ground truths originate from the
 [UC Berkeley Gorilla repository](https://github.com/ShishirPatil/gorilla/tree/main/berkeley-function-call-leaderboard),
@@ -38,6 +41,10 @@ The collaboration file is inspired by
 [MultiAgentBench](https://aclanthology.org/2025.acl-long.421/) milestone and
 coordination evaluation. It uses deterministic simulated specialists by
 default and does not produce an official MultiAgentBench score.
+
+The finance workflow file evaluates the Agent runtime's evidence routing,
+synthesis, restraint, and state-transition instructions. It does not use future
+returns as ground truth and must not be reported as investment performance.
 
 Multi-agent suites may declare `baselines` using `solo_closed_book`,
 `solo_open_book`, `team`, and `oracle_team`. Fair collaboration gain compares

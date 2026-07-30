@@ -74,6 +74,9 @@ class FinanceToolsPluginTest(unittest.TestCase):
         self.assertIn("stock_snapshot", names)
         self.assertIn("screen_stocks", names)
         self.assertIn("serenity_scorecard", names)
+        self.assertIn("watchlist_save", names)
+        self.assertIn("event_alert_ingest", names)
+        self.assertIn("alert_update", names)
 
     def test_stock_snapshot_uses_expected_script_arguments_and_cache(self):
         args = {"market": "CN", "symbols": ["600519"], "view": "metrics"}
@@ -246,6 +249,179 @@ class FinanceToolsPluginTest(unittest.TestCase):
         )
         self.assertEqual(1, len(fetched["data"]["reviews"]))
         self.assertEqual("coordinator", fetched["data"]["reviews"][0]["agent_id"])
+
+    def test_watchlist_alerts_are_deduplicated_and_user_isolated(self):
+        created = self.plugin.execute(
+            "thesis_save",
+            {
+                "market": "CN",
+                "symbol": "688981",
+                "thesis": "先进制程扩产依赖客户验证与设备交付。",
+                "status": "watch",
+                "conviction": 2,
+                "assumptions": ["设备交付按期"],
+                "catalysts": ["客户认证通过"],
+                "invalidations": ["扩产失败"],
+            },
+            self.user_context,
+        )
+        thesis = created["data"]["thesis"]
+        saved = self.plugin.execute(
+            "watchlist_save",
+            {
+                "market": "CN",
+                "symbol": "688981",
+                "thesis_id": thesis["id"],
+                "event_types": ["announcement"],
+                "keywords": ["客户认证"],
+                "min_match_score": 2,
+                "dedupe_window_seconds": 3600,
+            },
+            self.user_context,
+        )
+        self.assertTrue(saved["ok"])
+        watchlist = saved["data"]["watchlist"]
+
+        event_args = {
+            "market": "CN",
+            "symbol": "688981",
+            "event": {
+                "external_id": "SSE-688981-20260731-01",
+                "type": "announcement",
+                "summary": "公司公告关键客户认证通过，设备交付按期推进。",
+                "as_of": "2026-07-31T08:00:00Z",
+                "sources": [{"name": "exchange_announcement"}],
+            },
+        }
+        first = self.plugin.execute(
+            "event_alert_ingest", event_args, self.user_context
+        )
+        second = self.plugin.execute(
+            "event_alert_ingest", event_args, self.user_context
+        )
+        self.assertEqual(1, first["data"]["created"])
+        self.assertEqual(0, first["data"]["deduplicated"])
+        self.assertEqual(0, second["data"]["created"])
+        self.assertEqual(1, second["data"]["deduplicated"])
+        alert = second["data"]["results"][0]["alert"]
+        self.assertEqual(2, alert["duplicate_count"])
+        self.assertEqual(2, alert["version"])
+
+        conflict = self.plugin.execute(
+            "alert_update",
+            {
+                "alert_id": alert["id"],
+                "status": "acknowledged",
+                "expected_version": 1,
+            },
+            self.user_context,
+        )
+        self.assertFalse(conflict["ok"])
+        self.assertEqual("version_conflict", conflict["errors"][0]["code"])
+        acknowledged = self.plugin.execute(
+            "alert_update",
+            {
+                "alert_id": alert["id"],
+                "status": "acknowledged",
+                "expected_version": alert["version"],
+            },
+            self.user_context,
+        )
+        self.assertEqual(
+            "acknowledged", acknowledged["data"]["alert"]["status"]
+        )
+
+        owner_alerts = self.plugin.execute(
+            "alert_list", {"watchlist_id": watchlist["id"]}, self.user_context
+        )
+        other_alerts = self.plugin.execute(
+            "alert_list",
+            {},
+            {
+                "userId": "user-2",
+                "agentId": "coordinator",
+                "sessionId": "session-2",
+            },
+        )
+        self.assertEqual(1, owner_alerts["data"]["count"])
+        self.assertEqual(0, other_alerts["data"]["count"])
+
+        paused = self.plugin.execute(
+            "watchlist_save",
+            {"watchlist_id": watchlist["id"], "status": "paused"},
+            self.user_context,
+        )
+        self.assertTrue(paused["ok"])
+        self.assertEqual("paused", paused["data"]["watchlist"]["status"])
+
+    def test_watchlist_filters_events_and_rejects_mismatched_thesis(self):
+        thesis = self.plugin.execute(
+            "thesis_save",
+            {
+                "market": "CN",
+                "symbol": "600519",
+                "thesis": "渠道库存下降将改善经销商现金流和价格稳定性。",
+            },
+            self.user_context,
+        )["data"]["thesis"]
+        mismatch = self.plugin.execute(
+            "watchlist_save",
+            {
+                "market": "CN",
+                "symbol": "000858",
+                "thesis_id": thesis["id"],
+            },
+            self.user_context,
+        )
+        self.assertFalse(mismatch["ok"])
+        self.assertEqual(
+            "thesis_watch_mismatch", mismatch["errors"][0]["code"]
+        )
+
+        saved = self.plugin.execute(
+            "watchlist_save",
+            {
+                "market": "CN",
+                "symbol": "000858",
+                "event_types": ["earnings"],
+                "keywords": ["库存下降"],
+                "min_match_score": 2,
+            },
+            self.user_context,
+        )
+        self.assertTrue(saved["ok"])
+        filtered = self.plugin.execute(
+            "event_alert_ingest",
+            {
+                "market": "CN",
+                "symbol": "000858",
+                "event": {
+                    "type": "announcement",
+                    "summary": "公司公告渠道库存下降。",
+                },
+            },
+            self.user_context,
+        )
+        below_threshold = self.plugin.execute(
+            "event_alert_ingest",
+            {
+                "market": "CN",
+                "symbol": "000858",
+                "event": {
+                    "type": "earnings",
+                    "summary": "财报显示渠道库存下降。",
+                },
+            },
+            self.user_context,
+        )
+        self.assertEqual(
+            "event_type_filtered", filtered["data"]["skipped"][0]["reason"]
+        )
+        self.assertEqual(
+            "below_match_threshold",
+            below_threshold["data"]["skipped"][0]["reason"],
+        )
+        self.assertEqual(0, below_threshold["data"]["created"])
 
 
 if __name__ == "__main__":
