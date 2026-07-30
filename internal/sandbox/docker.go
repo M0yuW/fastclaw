@@ -56,7 +56,7 @@ func NewDockerSandbox(image, workspace string, policy *Policy) *DockerSandbox {
 
 // SetSkillDirs configures host paths whose contents (skill folders)
 // should be visible inside the sandbox at /skills/<skill-name>/. The
-// LLM is told to invoke skills via `python /skills/<name>/main.py`,
+// LLM is told to follow each mounted skill's documented entrypoints,
 // so without these mounts the script files don't exist in the
 // container. Passed paths are mounted read-only.
 func (s *DockerSandbox) SetSkillDirs(dirs []string) {
@@ -96,7 +96,7 @@ func (s *DockerSandbox) Create() error {
 	}
 
 	// Mount each skill dir read-only at /skills/<basename>/. The LLM
-	// is told to invoke skills via `python /skills/<name>/main.py`,
+	// is told to follow each mounted skill's documented entrypoints,
 	// so without these mounts the script files don't exist in the
 	// container. Auto-default to FASTCLAW_HOME/skills/ when no dirs
 	// are explicitly set, so a freshly-installed product agent works

@@ -139,6 +139,13 @@ Click an agent to enter its management panel:
 - State, communication, policy, `pass@k`, latency, and consistency metrics
 - Baseline/candidate comparison for quantifying prompt, model, and tool changes
 
+### Financial Research Runtime
+- Typed `finance-tools` plugin for stock, macro, event, screening, portfolio-risk, and Serenity scorecard workflows
+- Source, freshness, completeness, structured error, and cache metadata on every tool result
+- Pinned Serenity supply-chain research methodology with deterministic scoring kept separate from market-data retrieval
+- Tenant-isolated Thesis Ledger with event matching, review history, and optimistic version checks
+- Design, rollout, and evaluation contract in [FINANCE-RUNTIME.md](FINANCE-RUNTIME.md)
+
 ## Configuration
 
 ### fastclaw.json

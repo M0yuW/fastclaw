@@ -23,7 +23,7 @@ func NewPool() *SandboxPool {
 // Get returns (or lazily creates) a sandbox for the given agent.
 //
 // On creation we wire BOTH skill dirs into the sandbox so the LLM's
-// `python /skills/<name>/main.py` resolves whether the skill lives in
+// `/skills/<name>/...` resolves whether the skill lives in
 // the global $FASTCLAW_HOME/skills/ tree or this agent's private
 // $FASTCLAW_HOME/agents/<agentID>/agent/skills/. Without the per-agent
 // mount, skills the operator dropped into agents/<id>/agent/skills/

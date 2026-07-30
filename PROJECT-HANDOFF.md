@@ -158,6 +158,31 @@ solo baseline `$0.005848`，每个成功 team case `$0.001719`。这些结果是
 项目固定 evidence suite 的 runtime harness 指标，不应表述为 DeepSeek
 官方 benchmark 分数。
 
+### 金融研究 Runtime 第一阶段
+
+金融应用不再采用“coordinator 固定 spawn 选股专家和新闻专家”的方式。
+当前设计把确定性数据查询、研究方法和模型推理拆成独立层：
+
+- 新增 `plugins/finance-tools`，通过原生 JSON-RPC 插件包装 Finskills。
+- 工具结果统一使用 `finance.tool.v1`，包含来源、时间、完整度、结构化错误
+  和缓存信息。
+- 筛选结果默认执行完整性门禁，缺失筛选所需指标的股票不能作为通过项。
+- 修复原生 tool plugin 只启动但未注册到用户 Agent registry 的运行时缺口。
+- 安装固定提交
+  `muxuuu/serenity-skill@c2fe93deedfd0d1bd9fe7ef0601ea1b9c20ea24a`，
+  仅用于产业链卡点、证据等级、研究优先级和反证方法。
+- Serenity score 是主观输入上的可重复研究优先级，不是收益预测或评测真值。
+- 原生插件协议现在传递 runtime 注入的 `userId`、`agentId`、`sessionId`，
+  模型参数不能伪造租户作用域。
+- `finance-tools` 新增用户级隔离的 SQLite Thesis Ledger，支持假设、催化剂、
+  失效条件、证据、事件复核历史和 `expected_version` 并发保护。
+- coordinator 与同用户 specialist 可共享研究状态，但所有查询都按可信
+  `userId` 过滤，避免跨租户读取。
+- 事件流程采用“数据工具抓取 → 确定性匹配 → Agent 证据判断 → 版本化落库”，
+  不把关键词匹配直接解释成利好、利空或交易信号。
+
+完整架构、工具契约、默认工作流和 Eval 方案见 `FINANCE-RUNTIME.md`。
+
 ### CI 可复现性修复
 
 - **问题**：`internal/setup/embed.go` 使用 `//go:embed all:web`，但

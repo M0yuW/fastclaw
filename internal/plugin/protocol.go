@@ -37,11 +37,11 @@ func (e *RPCError) Error() string { return e.Message }
 
 // Standard JSON-RPC methods.
 const (
-	MethodInitialize     = "initialize"
-	MethodShutdown       = "shutdown"
-	MethodChannelSend    = "channel.send"
-	MethodToolList       = "tool.list"
-	MethodToolExecute    = "tool.execute"
+	MethodInitialize  = "initialize"
+	MethodShutdown    = "shutdown"
+	MethodChannelSend = "channel.send"
+	MethodToolList    = "tool.list"
+	MethodToolExecute = "tool.execute"
 	// MethodProviderList asks a plugin which tool-provider slots it fills
 	// (e.g. `{"category":"web_search","name":"kagi"}`). Plugins that don't
 	// implement it return an empty list or "method not found".
@@ -51,9 +51,9 @@ const (
 	// providers, so plugins compete with in-process providers on an equal
 	// footing (priority, fallback).
 	MethodProviderExecute = "provider.execute"
-	MethodHookRegister   = "hook.register"
-	MethodHookFire       = "hook.fire"
-	MethodMessageInbound = "message.inbound"
+	MethodHookRegister    = "hook.register"
+	MethodHookFire        = "hook.fire"
+	MethodMessageInbound  = "message.inbound"
 )
 
 // InitializeParams is sent with the initialize method.
@@ -81,8 +81,15 @@ type ToolDef struct {
 
 // ToolExecuteParams is sent with tool.execute.
 type ToolExecuteParams struct {
-	Name string                 `json:"name"`
-	Args map[string]interface{} `json:"args"`
+	Name    string                 `json:"name"`
+	Args    map[string]interface{} `json:"args"`
+	Context ToolCallContext        `json:"context,omitempty"`
+}
+
+type ToolCallContext struct {
+	UserID    string `json:"userId,omitempty"`
+	AgentID   string `json:"agentId,omitempty"`
+	SessionID string `json:"sessionId,omitempty"`
 }
 
 // ToolExecuteResult is returned from tool.execute.
@@ -150,15 +157,15 @@ type HookRegisterResult struct {
 
 // HookFireParams is sent with hook.fire.
 type HookFireParams struct {
-	Point      string             `json:"point"`
-	AgentName  string             `json:"agentName"`
-	ChatID     string             `json:"chatId"`
-	UserID     string             `json:"userId,omitempty"`
-	Messages   []HookMessage      `json:"messages,omitempty"`
-	Response   *HookResponseData  `json:"response,omitempty"`
-	ToolName   string             `json:"toolName,omitempty"`
-	ToolArgs   string             `json:"toolArgs,omitempty"`
-	ToolResult string             `json:"toolResult,omitempty"`
+	Point      string            `json:"point"`
+	AgentName  string            `json:"agentName"`
+	ChatID     string            `json:"chatId"`
+	UserID     string            `json:"userId,omitempty"`
+	Messages   []HookMessage     `json:"messages,omitempty"`
+	Response   *HookResponseData `json:"response,omitempty"`
+	ToolName   string            `json:"toolName,omitempty"`
+	ToolArgs   string            `json:"toolArgs,omitempty"`
+	ToolResult string            `json:"toolResult,omitempty"`
 }
 
 // HookMessage is a simplified message for hook communication.
@@ -172,8 +179,8 @@ type HookMessage struct {
 
 // HookResponseData is a simplified response for hook communication.
 type HookResponseData struct {
-	Content   string `json:"content"`
-	HasTools  bool   `json:"hasTools"`
+	Content  string `json:"content"`
+	HasTools bool   `json:"hasTools"`
 }
 
 // HookFireResult is returned from hook.fire (for synchronous hooks).

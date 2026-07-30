@@ -535,6 +535,11 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		return "Request cancelled before the agent turn could start."
 	}
 	defer a.releaseTurn()
+	ctx = tools.ContextWithExecutionScope(ctx, tools.ExecutionScope{
+		UserID:    a.ownerUserID,
+		AgentID:   a.name,
+		SessionID: msg.ChatID,
+	})
 	events := newTurnEventEmitter(ctx)
 	// Check for slash commands first
 	if result := a.handleSlashCommand(msg); result.handled {

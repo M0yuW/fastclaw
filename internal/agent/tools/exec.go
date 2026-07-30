@@ -77,7 +77,7 @@ func registerExecFull(r *Registry, sbCfg *SandboxConfig, envProvider SkillEnvPro
 			},
 			"stdin": map[string]interface{}{
 				"type":        "string",
-				"description": "Optional input piped to the command's stdin. Use this to feed JSON args to a skill script: command='python /skills/x/main.py', stdin='{\"prompt\":\"...\"}'.",
+				"description": "Optional input piped to the command's stdin. Use it only when the selected skill or command explicitly documents stdin input.",
 			},
 			"timeout": map[string]interface{}{
 				"type":        "integer",

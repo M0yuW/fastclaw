@@ -34,7 +34,12 @@ func RegisterPluginTools(ctx context.Context, mgr *Manager, pluginID string, reg
 			if argsMap == nil {
 				argsMap = make(map[string]interface{})
 			}
-			return mgr.ExecuteTool(ctx, pluginID, toolName, argsMap)
+			scope, _ := tools.ExecutionScopeFromContext(ctx)
+			return mgr.ExecuteToolWithContext(ctx, pluginID, toolName, argsMap, ToolCallContext{
+				UserID:    scope.UserID,
+				AgentID:   scope.AgentID,
+				SessionID: scope.SessionID,
+			})
 		}
 
 		// If the plugin provides a tool with the same name as a built-in,

@@ -225,7 +225,7 @@ func New(env *config.EnvConfig) (*Gateway, error) {
 		store:      st,
 		workspace:  ws,
 		usage:      meter,
-		users:      newUserSpaceRegistry(mb, st, ws),
+		users:      newUserSpaceRegistry(mb, st, ws, pluginMgr),
 		chanMgr:    chanMgr,
 		scheduler:  scheduler,
 		webhookSrv: webhookSrv,
@@ -376,6 +376,11 @@ func (g *Gateway) Run() error {
 			g.chanMgr.Register(adapter)
 		}
 		plugin.RegisterPluginProviders(ctx, g.pluginMgr, toolProviderRegistry)
+		for _, space := range g.users.all() {
+			if err := registerPluginTools(ctx, g.pluginMgr, space.Agents.All()); err != nil {
+				slog.Warn("plugin tool registration failed", "user", space.UserID, "error", err)
+			}
+		}
 	}
 	slog.Info("gateway started")
 	wg.Wait()

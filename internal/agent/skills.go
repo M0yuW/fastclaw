@@ -19,14 +19,14 @@ import (
 
 // Skill represents a discovered skill.
 type Skill struct {
-	Name        string            // directory name
-	Layer       string            // "agent", "user", "managed", "bundled", "extra"
-	Content     string            // contents of SKILL.md (with {baseDir} replaced)
-	BaseDir     string            // absolute path to the skill directory
-	Description string            // from frontmatter
-	Metadata    *SkillMetadata    // parsed OpenClaw metadata
-	Gated       bool              // true if gating requirements not met
-	GateReason  string            // reason gating failed
+	Name        string         // directory name
+	Layer       string         // "agent", "user", "managed", "bundled", "extra"
+	Content     string         // contents of SKILL.md (with {baseDir} replaced)
+	BaseDir     string         // absolute path to the skill directory
+	Description string         // from frontmatter
+	Metadata    *SkillMetadata // parsed OpenClaw metadata
+	Gated       bool           // true if gating requirements not met
+	GateReason  string         // reason gating failed
 }
 
 // SkillFrontmatter represents the YAML frontmatter of a SKILL.md file.
@@ -61,12 +61,12 @@ func (m *SkillMetadata) Meta() *OpenClawMeta {
 
 // OpenClawMeta holds OpenClaw-specific metadata.
 type OpenClawMeta struct {
-	Emoji      string           `json:"emoji"`
-	Homepage   string           `json:"homepage"`
-	Always     bool             `json:"always"`
-	OS         []string         `json:"os"`
-	Requires   *SkillRequires   `json:"requires"`
-	PrimaryEnv string           `json:"primaryEnv"`
+	Emoji      string         `json:"emoji"`
+	Homepage   string         `json:"homepage"`
+	Always     bool           `json:"always"`
+	OS         []string       `json:"os"`
+	Requires   *SkillRequires `json:"requires"`
+	PrimaryEnv string         `json:"primaryEnv"`
 	// Env declares configurable environment variables this skill reads.
 	// Surfaced to the admin UI so operators get labeled inputs (with
 	// help text + secret masking) instead of having to grep main.py for
@@ -255,11 +255,11 @@ func (sl *SkillsLoader) BuildSkillsSummary(skills []Skill) string {
 	return sb.String()
 }
 
-// skillsDirective tells the LLM how to invoke the pre-installed skills.
-// Short and assertive — no marketplace mentions, no "load_skill first"
-// dance, just "here are your skills, run the script via exec".
+// skillsDirective tells the LLM how to use the pre-installed skills.
+// Skills may be methodology-only or executable, and executable skills do not
+// share a universal entrypoint or argument transport.
 const skillsDirective = `<skill_usage_rules>
-The skills listed below are this agent's complete toolset. Each skill's full SKILL.md is included inline. To invoke a skill, run its main script via the exec tool and pass arguments on stdin as JSON; the SKILL.md describes args and return shape.
+The skills listed below are this agent's complete skill set. Each skill's full SKILL.md is included inline. Follow the selected SKILL.md exactly. Some skills are reasoning workflows with no executable entrypoint; others expose one or more scripts with their own documented CLI arguments or stdin format. Never assume a main.py entrypoint or JSON stdin unless that skill explicitly documents it.
 </skill_usage_rules>`
 
 // SkillEnvVars returns environment variables for a specific skill from global config.

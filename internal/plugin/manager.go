@@ -257,12 +257,22 @@ func (m *Manager) ListTools(ctx context.Context, pluginID string) ([]ToolDef, er
 
 // ExecuteTool calls a tool on a specific plugin.
 func (m *Manager) ExecuteTool(ctx context.Context, pluginID, toolName string, args map[string]interface{}) (string, error) {
+	return m.ExecuteToolWithContext(ctx, pluginID, toolName, args, ToolCallContext{})
+}
+
+func (m *Manager) ExecuteToolWithContext(
+	ctx context.Context,
+	pluginID string,
+	toolName string,
+	args map[string]interface{},
+	callContext ToolCallContext,
+) (string, error) {
 	inst := m.Plugin(pluginID)
 	if inst == nil || inst.Process == nil || !inst.Process.IsRunning() {
 		return "", fmt.Errorf("plugin %s not running", pluginID)
 	}
 
-	params := ToolExecuteParams{Name: toolName, Args: args}
+	params := ToolExecuteParams{Name: toolName, Args: args, Context: callContext}
 	result, err := inst.Process.Call(ctx, MethodToolExecute, params)
 	if err != nil {
 		return "", err

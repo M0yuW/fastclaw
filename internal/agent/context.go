@@ -184,13 +184,12 @@ You have access to a sandbox environment for executing code. Key rules:
 ## Filesystem layout INSIDE the sandbox
 - /workspace                      ← your working dir (cd here, save outputs here)
 - /skills/<skill-name>/           ← every skill listed below is mounted here read-only.
-                                    Invoke with: python /skills/<name>/main.py
+                                    Follow that skill's SKILL.md for scripts and arguments.
 - Host paths (anything starting with /Users/, /home/, /var/, etc.) DO NOT EXIST in the sandbox. Never reference them.
 
 ## Shell quirks
 The exec tool runs commands through /bin/sh, NOT bash. Specifically:
-- ` + "`" + `<<<` + "`" + ` (here-string) is NOT supported. Use a pipe instead:
-    echo '{"prompt":"..."}' | python /skills/generate-image/main.py
+- ` + "`" + `<<<` + "`" + ` (here-string) is NOT supported. Use a pipe when the selected command explicitly accepts stdin.
 - ` + "`" + `[[ ... ]]` + "`" + ` is NOT supported. Use ` + "`" + `[ ... ]` + "`" + ` (POSIX test).
 - Process substitution ` + "`" + `<(...)` + "`" + ` is NOT supported. Use a temp file.
 

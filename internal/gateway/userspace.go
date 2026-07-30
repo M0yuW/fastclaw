@@ -14,6 +14,7 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 	"github.com/fastclaw-ai/fastclaw/internal/config"
+	"github.com/fastclaw-ai/fastclaw/internal/plugin"
 	"github.com/fastclaw-ai/fastclaw/internal/provider"
 	"github.com/fastclaw-ai/fastclaw/internal/sandbox"
 	"github.com/fastclaw-ai/fastclaw/internal/scope"
@@ -256,6 +257,7 @@ type UserSpace struct {
 	Provider    provider.Provider
 	Agents      *agent.Manager
 	SandboxPool sandbox.ExecutorPool
+	pluginMgr   *plugin.Manager
 
 	mu sync.Mutex
 }
@@ -322,6 +324,12 @@ func (sp *UserSpace) EnsureAgent(ctx context.Context, st store.Store, mb *bus.Me
 	if err := sp.Agents.AddAgent(rc, sp.Provider, mb); err != nil {
 		return fmt.Errorf("EnsureAgent: add agent: %w", err)
 	}
+	if ag := sp.Agents.AgentByID(rc.ID); ag != nil {
+		if err := registerPluginTools(ctx, sp.pluginMgr, []*agent.Agent{ag}); err != nil {
+			slog.Warn("plugin tool registration failed",
+				"caller", sp.UserID, "agent", rc.ID, "error", err)
+		}
+	}
 	if sp.SandboxPool != nil {
 		if ag := sp.Agents.AgentByID(rc.ID); ag != nil {
 			ag.SetSandboxPool(sp.SandboxPool)
@@ -343,7 +351,14 @@ func (sp *UserSpace) EnsureAgent(ctx context.Context, st store.Store, mb *bus.Me
 //  2. layering the user's own providers + channels rows on top
 //  3. listing the user's agent rows from the DB
 //  4. building an agent.Manager that owns those agents
-func loadUserSpace(ctx context.Context, userID string, mb *bus.MessageBus, st store.Store, ws workspace.Store) (*UserSpace, error) {
+func loadUserSpace(
+	ctx context.Context,
+	userID string,
+	mb *bus.MessageBus,
+	st store.Store,
+	ws workspace.Store,
+	pluginMgr *plugin.Manager,
+) (*UserSpace, error) {
 	if userID == "" {
 		return nil, fmt.Errorf("loadUserSpace: userID required")
 	}
@@ -436,6 +451,9 @@ func loadUserSpace(ctx context.Context, userID string, mb *bus.MessageBus, st st
 	}
 
 	registerAgentToolChains(cfg, agentMgr.All())
+	if err := registerPluginTools(ctx, pluginMgr, agentMgr.All()); err != nil {
+		slog.Warn("plugin tool registration failed", "user", userID, "error", err)
+	}
 
 	// Wire spawn_subagent onto every owned agent. Each spawner records the
 	// source agent explicitly; the gateway later validates source and target
@@ -458,7 +476,26 @@ func loadUserSpace(ctx context.Context, userID string, mb *bus.MessageBus, st st
 		Provider:    prov,
 		Agents:      agentMgr,
 		SandboxPool: pool,
+		pluginMgr:   pluginMgr,
 	}, nil
+}
+
+func registerPluginTools(ctx context.Context, pluginMgr *plugin.Manager, agents []*agent.Agent) error {
+	if pluginMgr == nil || len(agents) == 0 {
+		return nil
+	}
+	var failures []string
+	for _, inst := range pluginMgr.ToolPlugins() {
+		for _, ag := range agents {
+			if err := plugin.RegisterPluginTools(ctx, pluginMgr, inst.Manifest.ID, ag.ToolRegistry()); err != nil {
+				failures = append(failures, fmt.Sprintf("%s/%s: %v", inst.Manifest.ID, ag.Name(), err))
+			}
+		}
+	}
+	if len(failures) > 0 {
+		return fmt.Errorf("%s", strings.Join(failures, "; "))
+	}
+	return nil
 }
 
 // newProviderFromConfig picks an LLM provider for the resolved default
@@ -510,6 +547,7 @@ type userSpaceRegistry struct {
 	bus       *bus.MessageBus
 	store     store.Store
 	workspace workspace.Store
+	pluginMgr *plugin.Manager
 	idleTTL   time.Duration
 }
 
@@ -518,12 +556,22 @@ type userSpaceEntry struct {
 	lastUsed time.Time
 }
 
-func newUserSpaceRegistry(mb *bus.MessageBus, st store.Store, ws workspace.Store) *userSpaceRegistry {
+func newUserSpaceRegistry(
+	mb *bus.MessageBus,
+	st store.Store,
+	ws workspace.Store,
+	pluginMgr ...*plugin.Manager,
+) *userSpaceRegistry {
+	var runtimePlugins *plugin.Manager
+	if len(pluginMgr) > 0 {
+		runtimePlugins = pluginMgr[0]
+	}
 	return &userSpaceRegistry{
 		spaces:    make(map[string]*userSpaceEntry),
 		bus:       mb,
 		store:     st,
 		workspace: ws,
+		pluginMgr: runtimePlugins,
 		idleTTL:   30 * time.Minute,
 	}
 }
@@ -551,7 +599,7 @@ func (r *userSpaceRegistry) getOrLoad(ctx context.Context, userID string) (*User
 		e.lastUsed = time.Now()
 		return e.space, nil
 	}
-	sp, err := loadUserSpace(ctx, userID, r.bus, r.store, r.workspace)
+	sp, err := loadUserSpace(ctx, userID, r.bus, r.store, r.workspace, r.pluginMgr)
 	if err != nil {
 		return nil, err
 	}
