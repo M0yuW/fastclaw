@@ -17,6 +17,7 @@ import (
 
 const maxRequestTools = 64
 const maxTraceFieldBytes = 16 << 10
+const maxEvalToolFaultDelayMS = int((5 * time.Minute) / time.Millisecond)
 
 type fastClawRequestOptions struct {
 	Eval                  bool                          `json:"eval,omitempty"`
@@ -131,12 +132,21 @@ func buildRequestToolEnvironment(
 		if _, exists := seen[name]; !exists {
 			return nil, nil, fmt.Errorf("tool behavior %q has no matching request tool", name)
 		}
-		for index, fault := range behaviors[name].Faults {
+		behavior := behaviors[name]
+		for index, fault := range behavior.Faults {
 			if strings.TrimSpace(fault.Argument) == "" || strings.TrimSpace(fault.Value) == "" {
 				return nil, nil, fmt.Errorf("tool behavior %q fault %d requires argument and value", name, index+1)
 			}
 			if fault.DelayMS < 0 {
 				return nil, nil, fmt.Errorf("tool behavior %q fault %d delay cannot be negative", name, index+1)
+			}
+			if fault.DelayMS > maxEvalToolFaultDelayMS {
+				return nil, nil, fmt.Errorf(
+					"tool behavior %q fault %d delay cannot exceed %dms",
+					name,
+					index+1,
+					maxEvalToolFaultDelayMS,
+				)
 			}
 		}
 	}
@@ -161,6 +171,8 @@ func (e *evalToolEnvironment) execute(
 	if err := json.Unmarshal(rawArguments, &arguments); err != nil {
 		return "", fmt.Errorf("decode %s arguments: %w", name, err)
 	}
+	// Fault injection models a tool-layer short circuit. Matching faults bypass
+	// normal state conditions and updates by design.
 	if fault, ok := matchingEvalToolFault(behavior.Faults, arguments); ok {
 		if fault.DelayMS > 0 {
 			timer := time.NewTimer(time.Duration(fault.DelayMS) * time.Millisecond)

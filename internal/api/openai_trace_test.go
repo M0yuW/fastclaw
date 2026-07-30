@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -278,6 +279,33 @@ func TestRequestToolEnvironmentFaultDelayHonorsCancellation(t *testing.T) {
 	}
 	if time.Since(startedAt) > 250*time.Millisecond {
 		t.Fatalf("fault did not stop promptly: %s", time.Since(startedAt))
+	}
+}
+
+func TestRequestToolEnvironmentRejectsExcessiveFaultDelay(t *testing.T) {
+	_, _, err := buildRequestToolEnvironment(
+		[]provider.Tool{{
+			Type: "function",
+			Function: provider.ToolFunction{
+				Name:       "slow_tool",
+				Parameters: map[string]any{"type": "object"},
+			},
+		}},
+		nil,
+		nil,
+		map[string]evalToolBehavior{
+			"slow_tool": {
+				Faults: []evalToolFault{{
+					Argument: "id",
+					Value:    "slow",
+					DelayMS:  maxEvalToolFaultDelayMS + 1,
+					Error:    "timed out",
+				}},
+			},
+		},
+	)
+	if err == nil || !strings.Contains(err.Error(), "delay cannot exceed") {
+		t.Fatalf("excessive fault delay error = %v", err)
 	}
 }
 

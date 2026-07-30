@@ -269,12 +269,15 @@ type Metrics struct {
 	MASoloEvaluated           int                                  `json:"multi_agent_solo_evaluated"`
 	MASoloSuccessRate         float64                              `json:"multi_agent_solo_success_rate"`
 	MACollaborationGain       float64                              `json:"multi_agent_collaboration_gain"`
+	MACollaborationGainValid  bool                                 `json:"multi_agent_collaboration_gain_valid"`
 	MASoloOpenBookEvaluated   int                                  `json:"multi_agent_solo_open_book_evaluated"`
 	MASoloOpenBookSuccessRate float64                              `json:"multi_agent_solo_open_book_success_rate"`
+	MATeamOutcomeEvaluated    int                                  `json:"multi_agent_team_outcome_evaluated"`
 	MATeamOutcomeSuccessRate  float64                              `json:"multi_agent_team_outcome_success_rate"`
 	MAOracleTeamEvaluated     int                                  `json:"multi_agent_oracle_team_evaluated"`
 	MAOracleTeamSuccessRate   float64                              `json:"multi_agent_oracle_team_success_rate"`
 	MAFairCollaborationGain   float64                              `json:"multi_agent_fair_collaboration_gain"`
+	MAFairCollaborationValid  bool                                 `json:"multi_agent_fair_collaboration_gain_valid"`
 	MAMilestoneKPI            float64                              `json:"multi_agent_milestone_kpi"`
 	MADelegationPrecision     float64                              `json:"multi_agent_delegation_precision"`
 	MADelegationRecall        float64                              `json:"multi_agent_delegation_recall"`
@@ -285,7 +288,13 @@ type Metrics struct {
 	MAUnexpectedDelegations   int                                  `json:"multi_agent_unexpected_delegations"`
 	MATotalEstimatedCostUSD   float64                              `json:"multi_agent_total_estimated_cost_usd"`
 	MASoloEstimatedCostUSD    float64                              `json:"multi_agent_solo_estimated_cost_usd"`
+	MASoloOpenBookCostUSD     float64                              `json:"multi_agent_solo_open_book_estimated_cost_usd"`
 	MATeamEstimatedCostUSD    float64                              `json:"multi_agent_team_estimated_cost_usd"`
+	MAOracleTeamCostUSD       float64                              `json:"multi_agent_oracle_team_estimated_cost_usd"`
+	MATeamTotalTokens         int                                  `json:"multi_agent_team_total_tokens"`
+	MATeamTokensPerSuccess    float64                              `json:"multi_agent_team_tokens_per_successful_run"`
+	MATeamLatencyP50MS        float64                              `json:"multi_agent_team_latency_p50_ms"`
+	MATeamLatencyP95MS        float64                              `json:"multi_agent_team_latency_p95_ms"`
 	MACoordinatorTokens       int                                  `json:"multi_agent_coordinator_tokens"`
 	MASubAgentTokens          int                                  `json:"multi_agent_subagent_tokens"`
 	MACoordinatorCostUSD      float64                              `json:"multi_agent_coordinator_estimated_cost_usd"`
@@ -300,15 +309,18 @@ type Metrics struct {
 	MAFaultsExpected          int                                  `json:"multi_agent_faults_expected"`
 	MAFaultsObserved          int                                  `json:"multi_agent_faults_observed"`
 	MAFaultInjectionRate      float64                              `json:"multi_agent_fault_injection_rate"`
+	MAFaultObservationRate    float64                              `json:"multi_agent_fault_observation_rate"`
 	MAFaultAttributionRate    float64                              `json:"multi_agent_fault_attribution_rate"`
 	MAGracefulDegradationRate float64                              `json:"multi_agent_graceful_degradation_rate"`
 	MAUnsupportedClaims       int                                  `json:"multi_agent_unsupported_claims"`
 	MAUnsupportedClaimRate    float64                              `json:"multi_agent_unsupported_claim_rate"`
+	MAUncorrelatedToolResults int                                  `json:"multi_agent_uncorrelated_tool_results"`
 	MABaselines               map[string]MultiAgentBaselineMetrics `json:"multi_agent_baselines,omitempty"`
 }
 
 type MultiAgentBaselineMetrics struct {
 	Evaluated        int     `json:"evaluated"`
+	Errored          int     `json:"errored"`
 	Passed           int     `json:"passed"`
 	SuccessRate      float64 `json:"success_rate"`
 	TotalTokens      int     `json:"total_tokens"`

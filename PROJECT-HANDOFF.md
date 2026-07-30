@@ -87,7 +87,10 @@
 - Multi-Agent suite 现支持 `solo_closed_book`、`solo_open_book`、`team`、`oracle_team` 四档基线；公平协作增益使用 `team - solo_open_book`，避免把证据访问差异误算成编排收益。
 - 新增 `evals/multiagent-fault-injection.yaml` 六个固定故障案例，覆盖 timeout、显式错误、畸形响应、矛盾证据、多点部分失败和非关键依赖失败。
 - 请求级 Eval 工具支持按参数匹配的 delay/error/result 故障，延迟等待遵守 context cancellation，且仅允许 simulated suite 声明故障。
-- 新指标包括 fault injection rate、fault attribution rate、graceful degradation rate、unsupported claim rate，以及每档基线的成功率、token、费用和延迟。
+- baseline 执行错误会单列为 `errored` 并移出成功率分母；任一必要基线没有有效输出时，closed/fair collaboration gain 显示为 `n/a`。
+- 新指标包括 fault observation rate、fault attribution rate、graceful degradation rate、unsupported claim rate，以及每档基线的成功率、错误数、token、费用和延迟。
+- unsupported claim 按“出现无依据断言的故障数 / 故障数”计数，否定或不确定语境不会误判，比例上限为 100%。
+- 报告新增 team-only P50/P95、总 token 和 token/success；四档 baseline 的成本分别入账，完整 harness 成本不再与 team 成本混用。
 - 这些结果是项目自定义的确定性代理指标，不是官方 benchmark 分数；简历中应明确写成 “style subset”。
 
 当前量化结果：
@@ -138,7 +141,9 @@ specialists: deepseek/deepseek-v4-flash
 7. runtime suite 增加 DeepSeek V4 Flash/Pro pricing。
 8. Eval CLI 增加 `--case`，支持先跑低成本 smoke。
 
-同模型、同 8 case、同 1 repetition 的结果：
+同模型、同 8 case、同 1 repetition 的历史结果（当时使用
+`solo_closed_book + team` 两档；下表延迟和总 token 是完整两档 harness
+口径，不可与当前四档完整 attempt 直接横比）：
 
 | 指标 | 优化前 | 优化后 |
 |---|---:|---:|
@@ -153,8 +158,8 @@ specialists: deepseek/deepseek-v4-flash
 | P95 延迟 | 201.6 秒 | 60.0 秒（-70.2%） |
 | Pricing coverage | 0% | 100% |
 
-优化后完整运行估算费用为 `$0.019599`；其中 team `$0.013751`、
-solo baseline `$0.005848`，每个成功 team case `$0.001719`。这些结果是
+优化后两档运行估算费用为 `$0.019599`；其中 team `$0.013751`、
+closed-book solo `$0.005848`，每个成功 team case `$0.001719`。这些结果是
 项目固定 evidence suite 的 runtime harness 指标，不应表述为 DeepSeek
 官方 benchmark 分数。
 

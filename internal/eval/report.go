@@ -76,26 +76,34 @@ func WriteText(writer io.Writer, report Report) error {
 		}
 	}
 	if metrics.MAAttempts > 0 {
+		closedGain := formatGain(metrics.MACollaborationGainValid, metrics.MACollaborationGain)
+		soloClosed := formatRate(metrics.MASoloEvaluated > 0, metrics.MASoloSuccessRate)
 		if _, err := fmt.Fprintf(
 			writer,
-			"Multi-agent: team %.1f%% | solo closed %.1f%% | closed gain %+.1f pp | KPI %.1f%% | coordination %.1f%% | delegations %.1f\n",
+			"Multi-agent: team %.1f%% | solo closed %s | closed gain %s | KPI %.1f%% | coordination %.1f%% | delegations %.1f\n",
 			metrics.MATeamSuccessRate*100,
-			metrics.MASoloSuccessRate*100,
-			metrics.MACollaborationGain*100,
+			soloClosed,
+			closedGain,
 			metrics.MAMilestoneKPI*100,
 			metrics.MACoordinationScore*100,
 			metrics.MAAverageDelegations,
 		); err != nil {
 			return err
 		}
-		if metrics.MASoloOpenBookEvaluated > 0 || metrics.MAOracleTeamEvaluated > 0 {
+		_, hasSoloOpenBook := metrics.MABaselines[MultiAgentBaselineSoloOpenBook]
+		_, hasOracleTeam := metrics.MABaselines[MultiAgentBaselineOracleTeam]
+		if hasSoloOpenBook || hasOracleTeam {
+			fairGain := formatGain(metrics.MAFairCollaborationValid, metrics.MAFairCollaborationGain)
+			teamOutcome := formatRate(metrics.MATeamOutcomeEvaluated > 0, metrics.MATeamOutcomeSuccessRate)
+			soloOpen := formatRate(metrics.MASoloOpenBookEvaluated > 0, metrics.MASoloOpenBookSuccessRate)
+			oracleTeam := formatRate(metrics.MAOracleTeamEvaluated > 0, metrics.MAOracleTeamSuccessRate)
 			if _, err := fmt.Fprintf(
 				writer,
-				"MA fair baselines: team outcome %.1f%% | solo open %.1f%% | fair gain %+.1f pp | oracle team %.1f%%\n",
-				metrics.MATeamOutcomeSuccessRate*100,
-				metrics.MASoloOpenBookSuccessRate*100,
-				metrics.MAFairCollaborationGain*100,
-				metrics.MAOracleTeamSuccessRate*100,
+				"MA fair baselines: team outcome %s | solo open %s | fair gain %s | oracle team %s\n",
+				teamOutcome,
+				soloOpen,
+				fairGain,
+				oracleTeam,
 			); err != nil {
 				return err
 			}
@@ -103,11 +111,12 @@ func WriteText(writer io.Writer, report Report) error {
 		if metrics.MAFaultInjectedAttempts > 0 {
 			if _, err := fmt.Fprintf(
 				writer,
-				"MA faults: injected %.1f%% | attribution %.1f%% | graceful degradation %.1f%% | unsupported claims %.1f%%\n",
-				metrics.MAFaultInjectionRate*100,
+				"MA faults: observed %.1f%% | attribution %.1f%% | graceful degradation %.1f%% | faults with unsupported claims %.1f%% | uncorrelated results %d\n",
+				metrics.MAFaultObservationRate*100,
 				metrics.MAFaultAttributionRate*100,
 				metrics.MAGracefulDegradationRate*100,
 				metrics.MAUnsupportedClaimRate*100,
+				metrics.MAUncorrelatedToolResults,
 			); err != nil {
 				return err
 			}
@@ -126,6 +135,41 @@ func WriteText(writer io.Writer, report Report) error {
 			metrics.MAPricingCoverage*100,
 		); err != nil {
 			return err
+		}
+		if _, err := fmt.Fprintf(
+			writer,
+			"MA team outcome usage: %d tokens | %.1f tokens/success | p50 %.1f ms | p95 %.1f ms | total eval cost $%.4f\n",
+			metrics.MATeamTotalTokens,
+			metrics.MATeamTokensPerSuccess,
+			metrics.MATeamLatencyP50MS,
+			metrics.MATeamLatencyP95MS,
+			metrics.MATotalEstimatedCostUSD,
+		); err != nil {
+			return err
+		}
+		for _, mode := range []string{
+			MultiAgentBaselineSoloClosedBook,
+			MultiAgentBaselineSoloOpenBook,
+			MultiAgentBaselineTeam,
+			MultiAgentBaselineOracleTeam,
+		} {
+			baseline, exists := metrics.MABaselines[mode]
+			if !exists {
+				continue
+			}
+			if _, err := fmt.Fprintf(
+				writer,
+				"MA baseline %-16s valid %d | errors %d | success %.1f%% | tokens %d | cost $%.4f | avg valid latency %.1f ms\n",
+				mode,
+				baseline.Evaluated,
+				baseline.Errored,
+				baseline.SuccessRate*100,
+				baseline.TotalTokens,
+				baseline.EstimatedCostUSD,
+				baseline.AverageLatencyMS,
+			); err != nil {
+				return err
+			}
 		}
 	}
 	for _, evalCase := range report.Cases {
@@ -148,6 +192,35 @@ func WriteText(writer io.Writer, report Report) error {
 		if _, err := fmt.Fprintln(writer); err != nil {
 			return err
 		}
+		for _, attempt := range evalCase.Attempts {
+			for _, baseline := range attempt.Baselines {
+				if baseline.Error == "" {
+					continue
+				}
+				if _, err := fmt.Fprintf(
+					writer,
+					"    baseline %s ERROR: %s\n",
+					baseline.Mode,
+					baseline.Error,
+				); err != nil {
+					return err
+				}
+			}
+		}
 	}
 	return nil
+}
+
+func formatGain(valid bool, value float64) string {
+	if !valid {
+		return "n/a"
+	}
+	return fmt.Sprintf("%+.1f pp", value*100)
+}
+
+func formatRate(valid bool, value float64) string {
+	if !valid {
+		return "n/a"
+	}
+	return fmt.Sprintf("%.1f%%", value*100)
 }

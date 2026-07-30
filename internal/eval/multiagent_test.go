@@ -1,6 +1,7 @@
 package eval
 
 import (
+	"bytes"
 	"context"
 	"math"
 	"path/filepath"
@@ -21,6 +22,63 @@ func TestContainsAllFoldNormalizesFormatsAndAlternatives(t *testing.T) {
 	}
 	if !containsAllFold(output, values) {
 		t.Fatal("expected normalized alternatives to match")
+	}
+}
+
+func TestContainsForbiddenAssertionIgnoresNegatedOrUncertainMentions(t *testing.T) {
+	for _, output := range []string{
+		"No refund is authorized until the duplicate-capture conflict is resolved.",
+		"This is not a verified duplicate; evidence conflicts.",
+		"We cannot confirm coupon validation as the cause.",
+		"Coupon validation remains unconfirmed.",
+	} {
+		if containsForbiddenAssertion(output, "refund is authorized") ||
+			containsForbiddenAssertion(output, "verified duplicate") ||
+			containsForbiddenAssertion(output, "coupon validation") {
+			t.Fatalf("negated output matched forbidden assertion: %q", output)
+		}
+	}
+	if !containsForbiddenAssertion(
+		"The evidence proves a verified duplicate and refund is authorized.",
+		"verified duplicate",
+	) {
+		t.Fatal("positive assertion did not match")
+	}
+	if !containsForbiddenAssertion(
+		"No conflict remains and refund is authorized.",
+		"refund is authorized",
+	) {
+		t.Fatal("unrelated negation suppressed positive assertion")
+	}
+}
+
+func TestBundledContradictoryFaultAcceptsCorrectNegation(t *testing.T) {
+	suite, err := LoadMultiAgentSuite(
+		filepath.Join("..", "..", "evals", "multiagent-fault-injection.yaml"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var evalCase MultiAgentCase
+	for _, candidate := range suite.Cases {
+		if candidate.ID == "contradictory-specialist-evidence" {
+			evalCase = candidate
+			break
+		}
+	}
+	metrics := &MultiAgentAttemptMetrics{
+		FaultsExpected: faultedCollaboratorCount(evalCase),
+	}
+	gradeMultiAgentFaults(
+		evalCase,
+		"There is a contradiction: two captures are reported by the account, "+
+			"but the processor reports one successful capture. This is not a "+
+			"verified duplicate, and no refund is authorized. Withhold refund.",
+		nil,
+		metrics,
+	)
+	if metrics.UnsupportedClaims != 0 {
+		t.Fatalf("correct negation was treated as unsupported: %+v", metrics)
 	}
 }
 
@@ -54,6 +112,17 @@ func TestMultiAgentSuiteRejectsInvalidBaselineAndRuntimeFault(t *testing.T) {
 	}
 	if err := suite.Validate(); err == nil || !strings.Contains(err.Error(), "requires simulated") {
 		t.Fatalf("runtime fault error = %v", err)
+	}
+
+	suite = incidentMultiAgentSuite()
+	suite.Cases[0].Agents[0].Fault = &MultiAgentFault{
+		Type:                 "timeout",
+		Delay:                Duration(maxMultiAgentFaultDelay + time.Millisecond),
+		Message:              "unavailable",
+		ExpectedOutputValues: []string{"unavailable"},
+	}
+	if err := suite.Validate(); err == nil || !strings.Contains(err.Error(), "cannot exceed") {
+		t.Fatalf("fault delay error = %v", err)
 	}
 }
 
@@ -189,7 +258,8 @@ Database latency remained normal. Rollback to build 841 immediately.`,
 	metrics := report.Metrics
 	if metrics.MATeamSuccessRate != 1 ||
 		metrics.MASoloSuccessRate != 0 ||
-		metrics.MACollaborationGain != 1 {
+		metrics.MACollaborationGain != 1 ||
+		!metrics.MACollaborationGainValid {
 		t.Fatalf("unexpected team/solo metrics: %+v", metrics)
 	}
 	if metrics.MAMilestoneKPI != 1 ||
@@ -202,6 +272,8 @@ Database latency remained normal. Rollback to build 841 immediately.`,
 		math.Abs(metrics.MATeamEstimatedCostUSD-0.0032) > 1e-12 ||
 		math.Abs(metrics.MASoloEstimatedCostUSD-0.001) > 1e-12 ||
 		math.Abs(metrics.MACostPerSuccessfulRunUSD-0.0032) > 1e-12 ||
+		metrics.MATeamTotalTokens != 200 ||
+		metrics.MATeamTokensPerSuccess != 200 ||
 		metrics.MACoordinatorLatencyMS != 200 ||
 		metrics.MASubAgentLatencyMS != 180 ||
 		metrics.MAPricingCoverage != 1 {
@@ -270,7 +342,9 @@ func TestMultiAgentRunnerReportsFairBaselines(t *testing.T) {
 		metrics.MATeamOutcomeSuccessRate != 1 ||
 		metrics.MAOracleTeamSuccessRate != 1 ||
 		metrics.MACollaborationGain != 1 ||
-		metrics.MAFairCollaborationGain != 0 {
+		metrics.MAFairCollaborationGain != 0 ||
+		!metrics.MACollaborationGainValid ||
+		!metrics.MAFairCollaborationValid {
 		t.Fatalf("unexpected fair baseline metrics: %+v", metrics)
 	}
 }
@@ -278,7 +352,8 @@ func TestMultiAgentRunnerReportsFairBaselines(t *testing.T) {
 func TestMultiAgentRunnerIsolatesBaselineTimeouts(t *testing.T) {
 	runner := MultiAgentRunner{
 		Executor: executorFunc(func(ctx context.Context, request ExecutionRequest) (ExecutionResponse, error) {
-			if strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineSoloClosedBook) {
+			if strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineSoloClosedBook) ||
+				strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineSoloOpenBook) {
 				<-ctx.Done()
 				return ExecutionResponse{}, ctx.Err()
 			}
@@ -294,17 +369,46 @@ func TestMultiAgentRunnerIsolatesBaselineTimeouts(t *testing.T) {
 		Options: RunOptions{Timeout: 10 * time.Millisecond},
 	}
 
-	report, err := runner.Run(t.Context(), incidentMultiAgentSuite())
+	suite := incidentMultiAgentSuite()
+	suite.Baselines = []string{
+		MultiAgentBaselineSoloClosedBook,
+		MultiAgentBaselineSoloOpenBook,
+		MultiAgentBaselineTeam,
+		MultiAgentBaselineOracleTeam,
+	}
+	report, err := runner.Run(t.Context(), suite)
 	if err != nil {
 		t.Fatal(err)
 	}
 	attempt := report.Cases[0].Attempts[0]
-	if !attempt.Passed || len(attempt.Baselines) != 2 {
+	if !attempt.Passed || len(attempt.Baselines) != 4 {
 		t.Fatalf("unexpected attempt after baseline timeout: %+v", attempt)
 	}
 	if !strings.Contains(attempt.Baselines[0].Error, context.DeadlineExceeded.Error()) ||
-		!attempt.Baselines[1].Passed {
+		!strings.Contains(attempt.Baselines[1].Error, context.DeadlineExceeded.Error()) ||
+		!attempt.Baselines[2].Passed ||
+		!attempt.Baselines[3].Passed {
 		t.Fatalf("unexpected baseline results: %+v", attempt.Baselines)
+	}
+	closed := report.Metrics.MABaselines[MultiAgentBaselineSoloClosedBook]
+	open := report.Metrics.MABaselines[MultiAgentBaselineSoloOpenBook]
+	if closed.Evaluated != 0 || closed.Errored != 1 ||
+		open.Evaluated != 0 || open.Errored != 1 ||
+		report.Metrics.MASoloEvaluated != 0 ||
+		report.Metrics.MASoloOpenBookEvaluated != 0 ||
+		report.Metrics.MACollaborationGainValid ||
+		report.Metrics.MAFairCollaborationValid {
+		t.Fatalf("baseline errors polluted gain metrics: %+v", report.Metrics)
+	}
+	var output bytes.Buffer
+	if err := WriteText(&output, report); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), "closed gain n/a") ||
+		!strings.Contains(output.String(), "fair gain n/a") ||
+		!strings.Contains(output.String(), "errors 1") ||
+		!strings.Contains(output.String(), "baseline solo_open_book ERROR") {
+		t.Fatalf("baseline errors missing from report:\n%s", output.String())
 	}
 }
 
@@ -317,9 +421,14 @@ func TestMultiAgentRunnerGradesFaultInjectionAndGracefulDegradation(t *testing.T
 				faults[0].Error != "specialist timed out" {
 				t.Fatalf("unexpected tool faults: %+v", faults)
 			}
+			responses := request.State["responses"].(map[string]any)
+			if responses["logs-agent"] != "Coupon validation nil pointer." {
+				t.Fatalf("fault polluted nominal state: %+v", responses)
+			}
 			return ExecutionResponse{
 				Output: "Build 842 triggered the incident. Database latency remained normal. " +
 					"The logs specialist timed out, so the exact code defect is unknown. " +
+					"We cannot confirm coupon validation or a nil pointer as the cause. " +
 					"Rollback to build 841.",
 				Trace: []TraceEvent{
 					delegationTraceWithID("call-1", "metrics-agent", "analyze metrics"),
@@ -360,11 +469,189 @@ func TestMultiAgentRunnerGradesFaultInjectionAndGracefulDegradation(t *testing.T
 		attempt.MultiAgent.ContributionsExpected != 2 {
 		t.Fatalf("unexpected fault metrics: %+v", attempt.MultiAgent)
 	}
-	if report.Metrics.MAFaultInjectionRate != 1 ||
+	if report.Metrics.MAFaultObservationRate != 1 ||
+		report.Metrics.MAFaultInjectionRate != 1 ||
 		report.Metrics.MAFaultAttributionRate != 1 ||
 		report.Metrics.MAGracefulDegradationRate != 1 ||
 		report.Metrics.MAUnsupportedClaimRate != 0 {
 		t.Fatalf("unexpected aggregate fault metrics: %+v", report.Metrics)
+	}
+}
+
+func TestMultiAgentRunnerAccountsEveryBaselineCostBucket(t *testing.T) {
+	costs := map[string]struct {
+		tokens int
+		cost   float64
+	}{
+		MultiAgentBaselineSoloClosedBook: {tokens: 10, cost: 0.1},
+		MultiAgentBaselineSoloOpenBook:   {tokens: 20, cost: 0.2},
+		MultiAgentBaselineTeam:           {tokens: 30, cost: 0.3},
+		MultiAgentBaselineOracleTeam:     {tokens: 40, cost: 0.4},
+	}
+	runner := MultiAgentRunner{
+		Executor: executorFunc(func(_ context.Context, request ExecutionRequest) (ExecutionResponse, error) {
+			mode := ""
+			for candidate := range costs {
+				if strings.HasSuffix(request.SessionKey, "-"+candidate) {
+					mode = candidate
+					break
+				}
+			}
+			entry, exists := costs[mode]
+			if !exists {
+				t.Fatalf("unexpected baseline session %q", request.SessionKey)
+			}
+			response := ExecutionResponse{
+				Output: successfulIncidentOutput(),
+				Usage:  Usage{TotalTokens: entry.tokens},
+				ModelCalls: []ModelCallUsage{{
+					AgentID:          "coordinator",
+					Role:             "coordinator",
+					TotalTokens:      entry.tokens,
+					EstimatedCostUSD: entry.cost,
+					Priced:           true,
+				}},
+			}
+			if mode == MultiAgentBaselineTeam {
+				response.Trace = []TraceEvent{
+					delegationTrace("metrics-agent", "analyze metrics"),
+					delegationTrace("logs-agent", "analyze logs"),
+					delegationTrace("deploy-agent", "analyze deployment"),
+				}
+			}
+			return response, nil
+		}),
+	}
+	suite := incidentMultiAgentSuite()
+	suite.Baselines = []string{
+		MultiAgentBaselineSoloClosedBook,
+		MultiAgentBaselineSoloOpenBook,
+		MultiAgentBaselineTeam,
+		MultiAgentBaselineOracleTeam,
+	}
+	report, err := runner.Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	metrics := report.Metrics
+	if math.Abs(metrics.MATotalEstimatedCostUSD-1.0) > 1e-12 ||
+		math.Abs(metrics.MASoloEstimatedCostUSD-0.1) > 1e-12 ||
+		math.Abs(metrics.MASoloOpenBookCostUSD-0.2) > 1e-12 ||
+		math.Abs(metrics.MATeamEstimatedCostUSD-0.3) > 1e-12 ||
+		math.Abs(metrics.MAOracleTeamCostUSD-0.4) > 1e-12 {
+		t.Fatalf("baseline cost buckets do not reconcile: %+v", metrics)
+	}
+	if metrics.MATeamTotalTokens != 30 ||
+		metrics.MATeamTokensPerSuccess != 30 {
+		t.Fatalf("unexpected team token metrics: %+v", metrics)
+	}
+}
+
+func TestMultiAgentUnsupportedClaimRateCountsFaultsNotPhrases(t *testing.T) {
+	evalCase := MultiAgentCase{
+		Agents: []MultiAgentCollaborator{
+			{
+				ID: "first",
+				Fault: &MultiAgentFault{
+					Type:                  "error",
+					Message:               "first unavailable",
+					ExpectedOutputValues:  []string{"first unavailable"},
+					ForbiddenOutputValues: []string{"fabricated one", "fabricated two"},
+				},
+			},
+			{
+				ID: "second",
+				Fault: &MultiAgentFault{
+					Type:                  "error",
+					Message:               "second unavailable",
+					ExpectedOutputValues:  []string{"second unavailable"},
+					ForbiddenOutputValues: []string{"fabricated three", "fabricated four", "fabricated five"},
+				},
+			},
+		},
+	}
+	attemptMetrics := &MultiAgentAttemptMetrics{FaultsExpected: 2}
+	gradeMultiAgentFaults(
+		evalCase,
+		"first unavailable; second unavailable. Fabricated one and fabricated two. "+
+			"Fabricated three, fabricated four, and fabricated five.",
+		nil,
+		attemptMetrics,
+	)
+	if attemptMetrics.UnsupportedClaims != 2 {
+		t.Fatalf("unsupported fault count = %d", attemptMetrics.UnsupportedClaims)
+	}
+	metrics := calculateMetrics([]CaseResult{{
+		Attempts: []AttemptResult{{
+			Kind:       "multiagent",
+			MultiAgent: attemptMetrics,
+		}},
+	}})
+	if metrics.MAUnsupportedClaimRate != 1 {
+		t.Fatalf("unsupported claim rate = %v", metrics.MAUnsupportedClaimRate)
+	}
+}
+
+func TestMultiAgentRunnerAllowsAllFaultGracefulDegradation(t *testing.T) {
+	runner := MultiAgentRunner{
+		Executor: executorFunc(func(_ context.Context, _ ExecutionRequest) (ExecutionResponse, error) {
+			return ExecutionResponse{
+				Output: "Metrics specialist unavailable. Logs specialist unavailable. " +
+					"Deploy specialist unavailable. Pause automated action and escalate safely.",
+				Trace: []TraceEvent{
+					delegationTraceWithID("call-1", "metrics-agent", "inspect metrics"),
+					{Type: "tool_result", ID: "call-1", Name: "spawn_subagent", Result: "metrics unavailable"},
+					delegationTraceWithID("call-2", "logs-agent", "inspect logs"),
+					{Type: "tool_result", ID: "call-2", Name: "spawn_subagent", Result: "logs unavailable"},
+					delegationTraceWithID("call-3", "deploy-agent", "inspect deploy"),
+					{Type: "tool_result", ID: "call-3", Name: "spawn_subagent", Result: "deploy unavailable"},
+				},
+			}, nil
+		}),
+	}
+	suite := incidentMultiAgentSuite()
+	suite.Cases[0].SkipSolo = true
+	for index, message := range []string{
+		"metrics unavailable",
+		"logs unavailable",
+		"deploy unavailable",
+	} {
+		suite.Cases[0].Agents[index].Fault = &MultiAgentFault{
+			Type:                 "error",
+			Message:              message,
+			ExpectedOutputValues: strings.Fields(message),
+		}
+	}
+	suite.Cases[0].Milestones = []MultiAgentMilestone{
+		{ID: "failures", Values: []string{"metrics specialist unavailable", "logs specialist unavailable", "deploy specialist unavailable"}},
+		{ID: "safe-action", Values: []string{"pause automated action", "escalate safely"}},
+	}
+	report, err := runner.Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := report.Cases[0].Attempts[0]
+	if !attempt.Passed ||
+		!attempt.MultiAgent.GracefullyDegraded ||
+		attempt.MultiAgent.ContributionsExpected != 0 ||
+		attempt.MultiAgent.CoordinationScore != 1 {
+		t.Fatalf("all-fault case did not degrade gracefully: %+v", attempt)
+	}
+	for _, grader := range attempt.Graders {
+		if grader.Type == "ma_contribution" {
+			t.Fatalf("zero-denominator contribution grader was not skipped: %+v", attempt.Graders)
+		}
+	}
+}
+
+func TestMultiAgentDelegationResultsSkipEmptyCallIDs(t *testing.T) {
+	results, uncorrelated := multiAgentDelegationResults([]TraceEvent{
+		delegationTrace("first", "inspect first"),
+		delegationTrace("second", "inspect second"),
+		{Type: "tool_result", Name: "spawn_subagent", Result: "ambiguous"},
+	})
+	if len(results) != 0 || uncorrelated != 1 {
+		t.Fatalf("unexpected empty-ID correlation: results=%v uncorrelated=%d", results, uncorrelated)
 	}
 }
 

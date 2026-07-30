@@ -51,3 +51,8 @@ Multi-agent suites may declare `baselines` using `solo_closed_book`,
 the milestone-only team outcome with `solo_open_book` because both modes receive
 the same evidence and output grader; the closed-book gain remains a useful but
 optimistic diagnostic.
+
+Baseline execution errors are counted separately from valid evaluated outputs,
+and gains are unavailable when either required mode has no valid result.
+Fault-suite forbidden values are assertion-sensitive, but unique fabricated
+evidence IDs remain preferable to broad phrases.

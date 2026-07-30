@@ -27,17 +27,23 @@ type MetricDelta struct {
 	MATeamSuccessPoints         float64 `json:"multi_agent_team_success_rate_points"`
 	MASoloSuccessPoints         float64 `json:"multi_agent_solo_success_rate_points"`
 	MACollaborationGainPoints   float64 `json:"multi_agent_collaboration_gain_points"`
+	MACollaborationGainValid    bool    `json:"multi_agent_collaboration_gain_valid"`
 	MASoloOpenBookPoints        float64 `json:"multi_agent_solo_open_book_success_rate_points"`
 	MATeamOutcomePoints         float64 `json:"multi_agent_team_outcome_success_rate_points"`
 	MAOracleTeamPoints          float64 `json:"multi_agent_oracle_team_success_rate_points"`
 	MAFairGainPoints            float64 `json:"multi_agent_fair_collaboration_gain_points"`
+	MAFairGainValid             bool    `json:"multi_agent_fair_collaboration_gain_valid"`
 	MAMilestoneKPIPoints        float64 `json:"multi_agent_milestone_kpi_points"`
 	MACoordinationPoints        float64 `json:"multi_agent_coordination_score_points"`
 	MAFaultInjectionPoints      float64 `json:"multi_agent_fault_injection_rate_points"`
+	MAFaultObservationPoints    float64 `json:"multi_agent_fault_observation_rate_points"`
 	MAFaultAttributionPoints    float64 `json:"multi_agent_fault_attribution_rate_points"`
 	MAGracefulDegradationPoints float64 `json:"multi_agent_graceful_degradation_rate_points"`
 	MAUnsupportedClaimPoints    float64 `json:"multi_agent_unsupported_claim_rate_points"`
 	MATeamCostPercent           float64 `json:"multi_agent_team_cost_percent"`
+	MATeamLatencyP50Percent     float64 `json:"multi_agent_team_latency_p50_percent"`
+	MATeamLatencyP95Percent     float64 `json:"multi_agent_team_latency_p95_percent"`
+	MATeamTokensPerSuccessPct   float64 `json:"multi_agent_team_tokens_per_success_percent"`
 	MACostPerSuccessPercent     float64 `json:"multi_agent_cost_per_success_percent"`
 	MACoordinatorTokensPercent  float64 `json:"multi_agent_coordinator_tokens_percent"`
 	MASubAgentTokensPercent     float64 `json:"multi_agent_subagent_tokens_percent"`
@@ -81,7 +87,7 @@ func Compare(baseline, candidate Report) (Comparison, error) {
 	if err := validateComparableCases(baseline.Cases, candidate.Cases); err != nil {
 		return Comparison{}, err
 	}
-	return Comparison{
+	comparison := Comparison{
 		Suite:     baseline.Suite,
 		Baseline:  baseline.Metrics,
 		Candidate: candidate.Metrics,
@@ -104,23 +110,40 @@ func Compare(baseline, candidate Report) (Comparison, error) {
 			SWETestExecutionPoints:      percentagePointDelta(baseline.Metrics.SWETestExecutionRate, candidate.Metrics.SWETestExecutionRate),
 			MATeamSuccessPoints:         percentagePointDelta(baseline.Metrics.MATeamSuccessRate, candidate.Metrics.MATeamSuccessRate),
 			MASoloSuccessPoints:         percentagePointDelta(baseline.Metrics.MASoloSuccessRate, candidate.Metrics.MASoloSuccessRate),
-			MACollaborationGainPoints:   percentagePointDelta(baseline.Metrics.MACollaborationGain, candidate.Metrics.MACollaborationGain),
 			MASoloOpenBookPoints:        percentagePointDelta(baseline.Metrics.MASoloOpenBookSuccessRate, candidate.Metrics.MASoloOpenBookSuccessRate),
 			MATeamOutcomePoints:         percentagePointDelta(baseline.Metrics.MATeamOutcomeSuccessRate, candidate.Metrics.MATeamOutcomeSuccessRate),
 			MAOracleTeamPoints:          percentagePointDelta(baseline.Metrics.MAOracleTeamSuccessRate, candidate.Metrics.MAOracleTeamSuccessRate),
-			MAFairGainPoints:            percentagePointDelta(baseline.Metrics.MAFairCollaborationGain, candidate.Metrics.MAFairCollaborationGain),
 			MAMilestoneKPIPoints:        percentagePointDelta(baseline.Metrics.MAMilestoneKPI, candidate.Metrics.MAMilestoneKPI),
 			MACoordinationPoints:        percentagePointDelta(baseline.Metrics.MACoordinationScore, candidate.Metrics.MACoordinationScore),
-			MAFaultInjectionPoints:      percentagePointDelta(baseline.Metrics.MAFaultInjectionRate, candidate.Metrics.MAFaultInjectionRate),
+			MAFaultInjectionPoints:      percentagePointDelta(faultObservationRate(baseline.Metrics), faultObservationRate(candidate.Metrics)),
+			MAFaultObservationPoints:    percentagePointDelta(faultObservationRate(baseline.Metrics), faultObservationRate(candidate.Metrics)),
 			MAFaultAttributionPoints:    percentagePointDelta(baseline.Metrics.MAFaultAttributionRate, candidate.Metrics.MAFaultAttributionRate),
 			MAGracefulDegradationPoints: percentagePointDelta(baseline.Metrics.MAGracefulDegradationRate, candidate.Metrics.MAGracefulDegradationRate),
 			MAUnsupportedClaimPoints:    percentagePointDelta(baseline.Metrics.MAUnsupportedClaimRate, candidate.Metrics.MAUnsupportedClaimRate),
 			MATeamCostPercent:           percentDelta(baseline.Metrics.MATeamEstimatedCostUSD, candidate.Metrics.MATeamEstimatedCostUSD),
+			MATeamLatencyP50Percent:     percentDelta(baseline.Metrics.MATeamLatencyP50MS, candidate.Metrics.MATeamLatencyP50MS),
+			MATeamLatencyP95Percent:     percentDelta(baseline.Metrics.MATeamLatencyP95MS, candidate.Metrics.MATeamLatencyP95MS),
+			MATeamTokensPerSuccessPct:   percentDelta(baseline.Metrics.MATeamTokensPerSuccess, candidate.Metrics.MATeamTokensPerSuccess),
 			MACostPerSuccessPercent:     percentDelta(baseline.Metrics.MACostPerSuccessfulRunUSD, candidate.Metrics.MACostPerSuccessfulRunUSD),
 			MACoordinatorTokensPercent:  percentDelta(float64(baseline.Metrics.MACoordinatorTokens), float64(candidate.Metrics.MACoordinatorTokens)),
 			MASubAgentTokensPercent:     percentDelta(float64(baseline.Metrics.MASubAgentTokens), float64(candidate.Metrics.MASubAgentTokens)),
 		},
-	}, nil
+	}
+	if collaborationGainAvailable(baseline.Metrics) && collaborationGainAvailable(candidate.Metrics) {
+		comparison.Delta.MACollaborationGainValid = true
+		comparison.Delta.MACollaborationGainPoints = percentagePointDelta(
+			baseline.Metrics.MACollaborationGain,
+			candidate.Metrics.MACollaborationGain,
+		)
+	}
+	if fairCollaborationGainAvailable(baseline.Metrics) && fairCollaborationGainAvailable(candidate.Metrics) {
+		comparison.Delta.MAFairGainValid = true
+		comparison.Delta.MAFairGainPoints = percentagePointDelta(
+			baseline.Metrics.MAFairCollaborationGain,
+			candidate.Metrics.MAFairCollaborationGain,
+		)
+	}
+	return comparison, nil
 }
 
 func validateComparableCases(baseline, candidate []CaseResult) error {
@@ -202,18 +225,19 @@ func WriteComparisonText(writer io.Writer, comparison Comparison) error {
 		{"SWE test exec", comparison.Baseline.SWETestExecutionRate * 100, comparison.Candidate.SWETestExecutionRate * 100, comparison.Delta.SWETestExecutionPoints, "pp"},
 		{"MA team success", comparison.Baseline.MATeamSuccessRate * 100, comparison.Candidate.MATeamSuccessRate * 100, comparison.Delta.MATeamSuccessPoints, "pp"},
 		{"MA solo success", comparison.Baseline.MASoloSuccessRate * 100, comparison.Candidate.MASoloSuccessRate * 100, comparison.Delta.MASoloSuccessPoints, "pp"},
-		{"MA collab gain", comparison.Baseline.MACollaborationGain * 100, comparison.Candidate.MACollaborationGain * 100, comparison.Delta.MACollaborationGainPoints, "pp"},
 		{"MA solo open", comparison.Baseline.MASoloOpenBookSuccessRate * 100, comparison.Candidate.MASoloOpenBookSuccessRate * 100, comparison.Delta.MASoloOpenBookPoints, "pp"},
 		{"MA team outcome", comparison.Baseline.MATeamOutcomeSuccessRate * 100, comparison.Candidate.MATeamOutcomeSuccessRate * 100, comparison.Delta.MATeamOutcomePoints, "pp"},
 		{"MA oracle team", comparison.Baseline.MAOracleTeamSuccessRate * 100, comparison.Candidate.MAOracleTeamSuccessRate * 100, comparison.Delta.MAOracleTeamPoints, "pp"},
-		{"MA fair gain", comparison.Baseline.MAFairCollaborationGain * 100, comparison.Candidate.MAFairCollaborationGain * 100, comparison.Delta.MAFairGainPoints, "pp"},
 		{"MA milestone KPI", comparison.Baseline.MAMilestoneKPI * 100, comparison.Candidate.MAMilestoneKPI * 100, comparison.Delta.MAMilestoneKPIPoints, "pp"},
 		{"MA coordination", comparison.Baseline.MACoordinationScore * 100, comparison.Candidate.MACoordinationScore * 100, comparison.Delta.MACoordinationPoints, "pp"},
-		{"MA fault injected", comparison.Baseline.MAFaultInjectionRate * 100, comparison.Candidate.MAFaultInjectionRate * 100, comparison.Delta.MAFaultInjectionPoints, "pp"},
+		{"MA fault observed", faultObservationRate(comparison.Baseline) * 100, faultObservationRate(comparison.Candidate) * 100, comparison.Delta.MAFaultObservationPoints, "pp"},
 		{"MA fault attrib", comparison.Baseline.MAFaultAttributionRate * 100, comparison.Candidate.MAFaultAttributionRate * 100, comparison.Delta.MAFaultAttributionPoints, "pp"},
 		{"MA graceful", comparison.Baseline.MAGracefulDegradationRate * 100, comparison.Candidate.MAGracefulDegradationRate * 100, comparison.Delta.MAGracefulDegradationPoints, "pp"},
 		{"MA unsupported", comparison.Baseline.MAUnsupportedClaimRate * 100, comparison.Candidate.MAUnsupportedClaimRate * 100, comparison.Delta.MAUnsupportedClaimPoints, "pp"},
 		{"MA team cost", comparison.Baseline.MATeamEstimatedCostUSD, comparison.Candidate.MATeamEstimatedCostUSD, comparison.Delta.MATeamCostPercent, "%"},
+		{"MA team p50", comparison.Baseline.MATeamLatencyP50MS, comparison.Candidate.MATeamLatencyP50MS, comparison.Delta.MATeamLatencyP50Percent, "%"},
+		{"MA team p95", comparison.Baseline.MATeamLatencyP95MS, comparison.Candidate.MATeamLatencyP95MS, comparison.Delta.MATeamLatencyP95Percent, "%"},
+		{"MA team tok/succ", comparison.Baseline.MATeamTokensPerSuccess, comparison.Candidate.MATeamTokensPerSuccess, comparison.Delta.MATeamTokensPerSuccessPct, "%"},
 		{"MA cost/success", comparison.Baseline.MACostPerSuccessfulRunUSD, comparison.Candidate.MACostPerSuccessfulRunUSD, comparison.Delta.MACostPerSuccessPercent, "%"},
 		{"MA coord tokens", float64(comparison.Baseline.MACoordinatorTokens), float64(comparison.Candidate.MACoordinatorTokens), comparison.Delta.MACoordinatorTokensPercent, "%"},
 		{"MA sub tokens", float64(comparison.Baseline.MASubAgentTokens), float64(comparison.Candidate.MASubAgentTokens), comparison.Delta.MASubAgentTokensPercent, "%"},
@@ -234,7 +258,72 @@ func WriteComparisonText(writer io.Writer, comparison Comparison) error {
 			return err
 		}
 	}
+	if err := writeOptionalComparisonRow(
+		writer,
+		"MA collab gain",
+		comparison.Baseline.MACollaborationGain*100,
+		comparison.Candidate.MACollaborationGain*100,
+		comparison.Delta.MACollaborationGainPoints,
+		comparison.Delta.MACollaborationGainValid,
+	); err != nil {
+		return err
+	}
+	if err := writeOptionalComparisonRow(
+		writer,
+		"MA fair gain",
+		comparison.Baseline.MAFairCollaborationGain*100,
+		comparison.Candidate.MAFairCollaborationGain*100,
+		comparison.Delta.MAFairGainPoints,
+		comparison.Delta.MAFairGainValid,
+	); err != nil {
+		return err
+	}
 	return nil
+}
+
+func writeOptionalComparisonRow(
+	writer io.Writer,
+	name string,
+	baseline float64,
+	candidate float64,
+	delta float64,
+	valid bool,
+) error {
+	if !valid {
+		_, err := fmt.Fprintf(writer, "%-16s %9s %11s %9s\n", name, "n/a", "n/a", "n/a")
+		return err
+	}
+	_, err := fmt.Fprintf(
+		writer,
+		"%-16s %9.1f %11.1f %+9.1fpp\n",
+		name,
+		baseline,
+		candidate,
+		delta,
+	)
+	return err
+}
+
+func collaborationGainAvailable(metrics Metrics) bool {
+	if metrics.MACollaborationGainValid {
+		return true
+	}
+	return metrics.MASoloEvaluated > 0 && metrics.MAAttempts > 0
+}
+
+func fairCollaborationGainAvailable(metrics Metrics) bool {
+	if metrics.MAFairCollaborationValid {
+		return true
+	}
+	team, hasTeam := metrics.MABaselines[MultiAgentBaselineTeam]
+	return metrics.MASoloOpenBookEvaluated > 0 && hasTeam && team.Evaluated > 0
+}
+
+func faultObservationRate(metrics Metrics) float64 {
+	if metrics.MAFaultObservationRate != 0 || metrics.MAFaultInjectionRate == 0 {
+		return metrics.MAFaultObservationRate
+	}
+	return metrics.MAFaultInjectionRate
 }
 
 func percentagePointDelta(baseline, candidate float64) float64 {

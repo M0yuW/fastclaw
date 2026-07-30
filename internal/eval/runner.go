@@ -128,6 +128,7 @@ func (r Runner) runAttempt(ctx context.Context, suite Suite, evalCase Case, atte
 func calculateMetrics(results []CaseResult) Metrics {
 	metrics := Metrics{TotalCases: len(results)}
 	latencies := make([]float64, 0)
+	maTeamLatencies := make([]float64, 0)
 	totalTurns := 0
 	turnRuns := 0
 	var (
@@ -203,6 +204,7 @@ func calculateMetrics(results []CaseResult) Metrics {
 					metrics.MAFaultsObserved += attempt.MultiAgent.FaultsObserved
 					maFaultAttributed += attempt.MultiAgent.FaultsAttributed
 					metrics.MAUnsupportedClaims += attempt.MultiAgent.UnsupportedClaims
+					metrics.MAUncorrelatedToolResults += attempt.MultiAgent.UncorrelatedToolResults
 					if attempt.MultiAgent.GracefullyDegraded {
 						maGraceful++
 					}
@@ -212,16 +214,26 @@ func calculateMetrics(results []CaseResult) Metrics {
 						metrics.MABaselines = make(map[string]MultiAgentBaselineMetrics)
 					}
 					baselineMetrics := metrics.MABaselines[baseline.Mode]
-					baselineMetrics.Evaluated++
-					if baseline.Passed {
-						baselineMetrics.Passed++
+					if baseline.Error != "" {
+						baselineMetrics.Errored++
+					} else {
+						baselineMetrics.Evaluated++
+						if baseline.Passed {
+							baselineMetrics.Passed++
+						}
+						baselineMetrics.AverageLatencyMS += baseline.LatencyMS
 					}
 					baselineMetrics.TotalTokens += baseline.Usage.TotalTokens
-					baselineMetrics.AverageLatencyMS += baseline.LatencyMS
 					for _, call := range baseline.ModelCalls {
 						baselineMetrics.EstimatedCostUSD += call.EstimatedCostUSD
 					}
 					metrics.MABaselines[baseline.Mode] = baselineMetrics
+					if baseline.Mode == MultiAgentBaselineTeam {
+						metrics.MATeamTotalTokens += baseline.Usage.TotalTokens
+						if baseline.Error == "" {
+							maTeamLatencies = append(maTeamLatencies, baseline.LatencyMS)
+						}
+					}
 				}
 				for _, call := range attempt.ModelCalls {
 					metrics.MAModelCalls++
@@ -232,6 +244,8 @@ func calculateMetrics(results []CaseResult) Metrics {
 					switch call.Phase {
 					case "solo", MultiAgentBaselineSoloClosedBook:
 						metrics.MASoloEstimatedCostUSD += call.EstimatedCostUSD
+					case MultiAgentBaselineSoloOpenBook:
+						metrics.MASoloOpenBookCostUSD += call.EstimatedCostUSD
 					case MultiAgentBaselineTeam:
 						metrics.MATeamEstimatedCostUSD += call.EstimatedCostUSD
 						switch call.Role {
@@ -244,6 +258,8 @@ func calculateMetrics(results []CaseResult) Metrics {
 							metrics.MASubAgentCostUSD += call.EstimatedCostUSD
 							metrics.MASubAgentLatencyMS += call.LatencyMS
 						}
+					case MultiAgentBaselineOracleTeam:
+						metrics.MAOracleTeamCostUSD += call.EstimatedCostUSD
 					}
 				}
 			}
@@ -327,13 +343,13 @@ func calculateMetrics(results []CaseResult) Metrics {
 	}
 	if maTeamPassed > 0 {
 		metrics.MACostPerSuccessfulRunUSD = metrics.MATeamEstimatedCostUSD / float64(maTeamPassed)
+		metrics.MATeamTokensPerSuccess = float64(metrics.MATeamTotalTokens) / float64(maTeamPassed)
 	}
 	if metrics.MAModelCalls > 0 {
 		metrics.MAPricingCoverage = float64(metrics.MAPricedModelCalls) / float64(metrics.MAModelCalls)
 	}
 	if metrics.MASoloEvaluated > 0 {
 		metrics.MASoloSuccessRate = float64(maSoloPassed) / float64(metrics.MASoloEvaluated)
-		metrics.MACollaborationGain = metrics.MATeamSuccessRate - metrics.MASoloSuccessRate
 	}
 	for mode, baseline := range metrics.MABaselines {
 		if baseline.Evaluated > 0 {
@@ -342,23 +358,31 @@ func calculateMetrics(results []CaseResult) Metrics {
 		}
 		metrics.MABaselines[mode] = baseline
 	}
+	teamBaseline, teamBaselineExists := metrics.MABaselines[MultiAgentBaselineTeam]
+	if teamBaselineExists {
+		metrics.MATeamOutcomeEvaluated = teamBaseline.Evaluated
+		metrics.MATeamOutcomeSuccessRate = teamBaseline.SuccessRate
+	}
+	if metrics.MASoloEvaluated > 0 && teamBaselineExists && teamBaseline.Evaluated > 0 {
+		metrics.MACollaborationGain = metrics.MATeamSuccessRate - metrics.MASoloSuccessRate
+		metrics.MACollaborationGainValid = true
+	}
 	if baseline, ok := metrics.MABaselines[MultiAgentBaselineSoloOpenBook]; ok {
 		metrics.MASoloOpenBookEvaluated = baseline.Evaluated
 		metrics.MASoloOpenBookSuccessRate = baseline.SuccessRate
-		if team, exists := metrics.MABaselines[MultiAgentBaselineTeam]; exists {
-			metrics.MATeamOutcomeSuccessRate = team.SuccessRate
-			metrics.MAFairCollaborationGain = team.SuccessRate - baseline.SuccessRate
+		if baseline.Evaluated > 0 && teamBaselineExists && teamBaseline.Evaluated > 0 {
+			metrics.MAFairCollaborationGain = teamBaseline.SuccessRate - baseline.SuccessRate
+			metrics.MAFairCollaborationValid = true
 		}
-	} else if team, ok := metrics.MABaselines[MultiAgentBaselineTeam]; ok {
-		metrics.MATeamOutcomeSuccessRate = team.SuccessRate
 	}
 	if baseline, ok := metrics.MABaselines[MultiAgentBaselineOracleTeam]; ok {
 		metrics.MAOracleTeamEvaluated = baseline.Evaluated
 		metrics.MAOracleTeamSuccessRate = baseline.SuccessRate
 	}
 	if metrics.MAFaultsExpected > 0 {
-		metrics.MAFaultInjectionRate = float64(metrics.MAFaultsObserved) /
+		metrics.MAFaultObservationRate = float64(metrics.MAFaultsObserved) /
 			float64(metrics.MAFaultsExpected)
+		metrics.MAFaultInjectionRate = metrics.MAFaultObservationRate
 		metrics.MAFaultAttributionRate = float64(maFaultAttributed) /
 			float64(metrics.MAFaultsExpected)
 		metrics.MAUnsupportedClaimRate = float64(metrics.MAUnsupportedClaims) /
@@ -385,9 +409,15 @@ func calculateMetrics(results []CaseResult) Metrics {
 		metrics.MAContributionUtilization = float64(maUsedContributions) / float64(maContributions)
 	}
 	metrics.MACoordinationScore = (metrics.MADelegationF1 + metrics.MAContributionUtilization) / 2
+	if maContributions == 0 {
+		metrics.MACoordinationScore = metrics.MADelegationF1
+	}
 	sort.Float64s(latencies)
 	metrics.LatencyP50MS = percentile(latencies, 0.50)
 	metrics.LatencyP95MS = percentile(latencies, 0.95)
+	sort.Float64s(maTeamLatencies)
+	metrics.MATeamLatencyP50MS = percentile(maTeamLatencies, 0.50)
+	metrics.MATeamLatencyP95MS = percentile(maTeamLatencies, 0.95)
 	return metrics
 }
 

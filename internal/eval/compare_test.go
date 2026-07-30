@@ -23,6 +23,9 @@ func TestCompare(t *testing.T) {
 			LatencyP95MS:              200,
 			TokensPerPassedRun:        50,
 			MATeamEstimatedCostUSD:    0.10,
+			MATeamLatencyP50MS:        50,
+			MATeamLatencyP95MS:        100,
+			MATeamTokensPerSuccess:    100,
 			MACostPerSuccessfulRunUSD: 0.05,
 			MACoordinatorTokens:       1000,
 			MASubAgentTokens:          2000,
@@ -43,6 +46,9 @@ func TestCompare(t *testing.T) {
 			LatencyP95MS:              240,
 			TokensPerPassedRun:        40,
 			MATeamEstimatedCostUSD:    0.08,
+			MATeamLatencyP50MS:        40,
+			MATeamLatencyP95MS:        120,
+			MATeamTokensPerSuccess:    80,
 			MACostPerSuccessfulRunUSD: 0.04,
 			MACoordinatorTokens:       900,
 			MASubAgentTokens:          1600,
@@ -62,6 +68,9 @@ func TestCompare(t *testing.T) {
 		t.Fatalf("p95 delta = %v", comparison.Delta.LatencyP95Percent)
 	}
 	if math.Abs(comparison.Delta.MATeamCostPercent+20) > 0.0001 ||
+		math.Abs(comparison.Delta.MATeamLatencyP50Percent+20) > 0.0001 ||
+		math.Abs(comparison.Delta.MATeamLatencyP95Percent-20) > 0.0001 ||
+		math.Abs(comparison.Delta.MATeamTokensPerSuccessPct+20) > 0.0001 ||
 		math.Abs(comparison.Delta.MACostPerSuccessPercent+20) > 0.0001 ||
 		math.Abs(comparison.Delta.MASubAgentTokensPercent+20) > 0.0001 {
 		t.Fatalf("multi-agent efficiency delta = %+v", comparison.Delta)
@@ -75,6 +84,39 @@ func TestCompare(t *testing.T) {
 		!strings.Contains(output.String(), "+20.0pp") ||
 		!strings.Contains(output.String(), "MA cost/success") {
 		t.Fatalf("unexpected comparison output:\n%s", output.String())
+	}
+}
+
+func TestComparisonMarksUnavailableCollaborationGains(t *testing.T) {
+	baseline := Report{
+		Suite: "multiagent",
+		Cases: []CaseResult{{
+			ID:       "case-a",
+			Attempts: []AttemptResult{{}},
+		}},
+	}
+	candidate := baseline
+	candidate.Metrics = Metrics{
+		MACollaborationGain:      1,
+		MACollaborationGainValid: true,
+		MAFairCollaborationGain:  1,
+		MAFairCollaborationValid: true,
+	}
+	comparison, err := Compare(baseline, candidate)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if comparison.Delta.MACollaborationGainValid ||
+		comparison.Delta.MAFairGainValid {
+		t.Fatalf("unavailable gains were marked comparable: %+v", comparison.Delta)
+	}
+	var output bytes.Buffer
+	if err := WriteComparisonText(&output, comparison); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(output.String(), "MA collab gain") ||
+		!strings.Contains(output.String(), "n/a") {
+		t.Fatalf("unavailable gains missing from output:\n%s", output.String())
 	}
 }
 

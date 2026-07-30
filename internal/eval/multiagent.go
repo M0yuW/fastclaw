@@ -89,7 +89,9 @@ type MultiAgentAttemptMetrics struct {
 	FaultsObserved          int     `json:"faults_observed"`
 	FaultsAttributed        int     `json:"faults_attributed"`
 	UnsupportedClaims       int     `json:"unsupported_claims"`
+	UncorrelatedToolResults int     `json:"uncorrelated_tool_results"`
 	FaultInjectionRate      float64 `json:"fault_injection_rate"`
+	FaultObservationRate    float64 `json:"fault_observation_rate"`
 	FaultAttributionRate    float64 `json:"fault_attribution_rate"`
 	GracefullyDegraded      bool    `json:"gracefully_degraded"`
 }
@@ -109,6 +111,7 @@ const (
 	MultiAgentBaselineSoloOpenBook   = "solo_open_book"
 	MultiAgentBaselineTeam           = "team"
 	MultiAgentBaselineOracleTeam     = "oracle_team"
+	maxMultiAgentFaultDelay          = 5 * time.Minute
 )
 
 type multiAgentDelegation struct {
@@ -311,6 +314,14 @@ func validateMultiAgentFault(caseID string, collaborator MultiAgentCollaborator)
 	if fault.Delay.Value() < 0 {
 		return fmt.Errorf("case %q agent %q: fault delay cannot be negative", caseID, collaborator.ID)
 	}
+	if fault.Delay.Value() > maxMultiAgentFaultDelay {
+		return fmt.Errorf(
+			"case %q agent %q: fault delay cannot exceed %s",
+			caseID,
+			collaborator.ID,
+			maxMultiAgentFaultDelay,
+		)
+	}
 	if fault.Type == "timeout" && fault.Delay.Value() <= 0 {
 		return fmt.Errorf("case %q agent %q: timeout fault requires a positive delay", caseID, collaborator.ID)
 	}
@@ -487,8 +498,10 @@ func (r MultiAgentRunner) runAttempt(
 		switch baseline {
 		case MultiAgentBaselineSoloClosedBook:
 			result.BaselineOutput = baselineResult.Output
-			result.MultiAgent.SoloEvaluated = true
-			result.MultiAgent.SoloPassed = baselineResult.Passed
+			if baselineResult.Error == "" {
+				result.MultiAgent.SoloEvaluated = true
+				result.MultiAgent.SoloPassed = baselineResult.Passed
+			}
 		case MultiAgentBaselineTeam:
 			if baselineResult.Error != "" {
 				result.Error = "team execution: " + baselineResult.Error
@@ -601,14 +614,7 @@ func multiAgentTools(evalCase MultiAgentCase) []ToolDefinition {
 func multiAgentState(evalCase MultiAgentCase) map[string]any {
 	responses := make(map[string]any, len(evalCase.Agents))
 	for _, collaborator := range evalCase.Agents {
-		response := collaborator.Response
-		if collaborator.Fault != nil {
-			switch collaborator.Fault.Type {
-			case "malformed", "contradictory":
-				response = collaborator.Fault.Response
-			}
-		}
-		responses[collaborator.ID] = response
+		responses[collaborator.ID] = collaborator.Response
 	}
 	return map[string]any{"responses": responses}
 }
@@ -801,7 +807,10 @@ func gradeMultiAgentAttempt(
 		metrics.ContributionUtilization = float64(metrics.ContributionsUtilized) /
 			float64(metrics.ContributionsExpected)
 	}
-	metrics.CoordinationScore = (metrics.DelegationF1 + metrics.ContributionUtilization) / 2
+	metrics.CoordinationScore = metrics.DelegationF1
+	if metrics.ContributionsExpected > 0 {
+		metrics.CoordinationScore = (metrics.DelegationF1 + metrics.ContributionUtilization) / 2
+	}
 
 	delegationPassed := metrics.DelegationPrecision == 1 && metrics.DelegationRecall == 1
 	results = append(results, GraderResult{
@@ -809,12 +818,14 @@ func gradeMultiAgentAttempt(
 		Passed:  delegationPassed,
 		Message: multiAgentDelegationMessage(metrics),
 	})
-	contributionPassed := metrics.ContributionUtilization == 1
-	results = append(results, GraderResult{
-		Type:    "ma_contribution",
-		Passed:  contributionPassed,
-		Message: multiAgentContributionMessage(metrics),
-	})
+	if metrics.ContributionsExpected > 0 {
+		contributionPassed := metrics.ContributionUtilization == 1
+		results = append(results, GraderResult{
+			Type:    "ma_contribution",
+			Passed:  contributionPassed,
+			Message: multiAgentContributionMessage(metrics),
+		})
+	}
 	maxDelegations := evalCase.MaxDelegations
 	if maxDelegations == 0 {
 		maxDelegations = len(evalCase.Agents)
@@ -864,7 +875,8 @@ func gradeMultiAgentFaults(
 	trace []TraceEvent,
 	metrics *MultiAgentAttemptMetrics,
 ) {
-	observedResults := multiAgentDelegationResults(trace)
+	observedResults, uncorrelated := multiAgentDelegationResults(trace)
+	metrics.UncorrelatedToolResults += uncorrelated
 	for _, collaborator := range evalCase.Agents {
 		if collaborator.Fault == nil {
 			continue
@@ -875,23 +887,33 @@ func gradeMultiAgentFaults(
 		if containsAllFold(output, collaborator.Fault.ExpectedOutputValues) {
 			metrics.FaultsAttributed++
 		}
+		unsupportedClaim := false
 		for _, unsupported := range collaborator.Fault.ForbiddenOutputValues {
-			if containsAllFold(output, []string{unsupported}) {
-				metrics.UnsupportedClaims++
+			if containsForbiddenAssertion(output, unsupported) {
+				unsupportedClaim = true
+				break
 			}
+		}
+		if unsupportedClaim {
+			metrics.UnsupportedClaims++
 		}
 	}
 	if metrics.FaultsExpected > 0 {
-		metrics.FaultInjectionRate = float64(metrics.FaultsObserved) / float64(metrics.FaultsExpected)
+		metrics.FaultObservationRate = float64(metrics.FaultsObserved) / float64(metrics.FaultsExpected)
+		metrics.FaultInjectionRate = metrics.FaultObservationRate
 		metrics.FaultAttributionRate = float64(metrics.FaultsAttributed) / float64(metrics.FaultsExpected)
 	}
 }
 
-func multiAgentDelegationResults(trace []TraceEvent) map[string][]string {
+func multiAgentDelegationResults(trace []TraceEvent) (map[string][]string, int) {
 	agentsByCallID := make(map[string]string)
 	results := make(map[string][]string)
+	uncorrelated := 0
 	for _, event := range trace {
 		if event.Type == "tool_call" && event.Name == "spawn_subagent" {
+			if event.ID == "" {
+				continue
+			}
 			var arguments struct {
 				AgentID string `json:"agentId"`
 			}
@@ -903,11 +925,17 @@ func multiAgentDelegationResults(trace []TraceEvent) map[string][]string {
 		if event.Type != "tool_result" || event.Name != "spawn_subagent" {
 			continue
 		}
+		if event.ID == "" {
+			uncorrelated++
+			continue
+		}
 		if agentID := agentsByCallID[event.ID]; agentID != "" {
 			results[agentID] = append(results[agentID], event.Result)
+		} else {
+			uncorrelated++
 		}
 	}
-	return results
+	return results, uncorrelated
 }
 
 func faultObserved(collaborator MultiAgentCollaborator, results []string) bool {
@@ -971,6 +999,93 @@ func containsAllFold(text string, values []string) bool {
 		}
 	}
 	return true
+}
+
+func containsForbiddenAssertion(text, value string) bool {
+	for _, alternative := range strings.Split(value, "||") {
+		expected := strings.Fields(normalizeMatchText(alternative))
+		if len(expected) == 0 {
+			continue
+		}
+		for _, clause := range forbiddenMatchClauses(text) {
+			actual := strings.Fields(normalizeMatchText(clause))
+			for start := 0; start+len(expected) <= len(actual); start++ {
+				if !equalWords(actual[start:start+len(expected)], expected) {
+					continue
+				}
+				if !hasNegationScope(actual, start, start+len(expected)) {
+					return true
+				}
+			}
+		}
+	}
+	return false
+}
+
+func forbiddenMatchClauses(text string) []string {
+	text = strings.ToLower(text)
+	text = strings.NewReplacer(
+		"\n", ".",
+		";", ".",
+		"。", ".",
+		"；", ".",
+		"!", ".",
+		"！", ".",
+		"?", ".",
+		"？", ".",
+		" but ", ".",
+		" and ", ".",
+		" however ", ".",
+		" yet ", ".",
+	).Replace(text)
+	return strings.Split(text, ".")
+}
+
+func equalWords(actual, expected []string) bool {
+	if len(actual) != len(expected) {
+		return false
+	}
+	for index := range expected {
+		if actual[index] != expected[index] {
+			return false
+		}
+	}
+	return true
+}
+
+func hasNegationScope(words []string, start, end int) bool {
+	windowStart := max(0, start-5)
+	windowEnd := min(len(words), end+5)
+	negations := map[string]struct{}{
+		"no":           {},
+		"not":          {},
+		"cannot":       {},
+		"can't":        {},
+		"without":      {},
+		"unknown":      {},
+		"unconfirmed":  {},
+		"unverified":   {},
+		"unavailable":  {},
+		"uncertain":    {},
+		"insufficient": {},
+		"absent":       {},
+		"lack":         {},
+		"lacks":        {},
+		"may":          {},
+		"might":        {},
+		"could":        {},
+		"possible":     {},
+		"possibly":     {},
+	}
+	for index := windowStart; index < windowEnd; index++ {
+		if words[index] == "not" && index+1 < len(words) && words[index+1] == "only" {
+			continue
+		}
+		if _, exists := negations[words[index]]; exists {
+			return true
+		}
+	}
+	return false
 }
 
 func normalizeMatchText(value string) string {
@@ -1063,7 +1178,7 @@ func multiAgentUnsupportedClaimMessage(count int) string {
 	if count == 0 {
 		return ""
 	}
-	return fmt.Sprintf("output contained %d unsupported fault-related claims", count)
+	return fmt.Sprintf("%d injected faults had unsupported claims", count)
 }
 
 func multiAgentGracefulDegradationMessage(metrics *MultiAgentAttemptMetrics) string {
@@ -1071,8 +1186,8 @@ func multiAgentGracefulDegradationMessage(metrics *MultiAgentAttemptMetrics) str
 		return ""
 	}
 	return fmt.Sprintf(
-		"fault injection %.3f, attribution %.3f, unsupported claims %d",
-		metrics.FaultInjectionRate,
+		"fault observation %.3f, attribution %.3f, faults with unsupported claims %d",
+		metrics.FaultObservationRate,
 		metrics.FaultAttributionRate,
 		metrics.UnsupportedClaims,
 	)

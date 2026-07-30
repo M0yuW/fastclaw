@@ -195,7 +195,11 @@ but it must not be presented as proof that orchestration itself added value.
 Four-mode suites make three additional coordinator calls per attempt, so use a
 case filter and one repetition for low-cost pilots. Each mode receives an
 independent timeout and session key so a slow baseline cannot consume the
-team's execution budget or contaminate its conversation history.
+team's execution budget or contaminate its conversation history. A baseline
+that times out or returns an execution error is reported as `errored` and is
+excluded from that mode's evaluated-success denominator. Collaboration gain is
+reported as `n/a` whenever either required mode has no valid evaluated output;
+an infrastructure failure is never converted into a model failure.
 
 Set `execution_mode: runtime` to use the coordinator's real built-in
 `spawn_subagent` tool and FastClaw Gateway routing. Runtime mode measures real
@@ -237,11 +241,21 @@ The report includes:
 - **Average delegations and unexpected calls**
 - **Per-call usage tree:** phase, coordinator/sub-agent role, agent ID, model,
   call path, tokens, estimated USD cost, latency, and error
-- **Cost split:** solo, team, coordinator, sub-agent, and cost per successful
-  team run
+- **Cost split:** closed-book solo, open-book solo, team, oracle team,
+  coordinator, sub-agent, total evaluation cost, and cost per successful team
+  run
 - **Latency split:** average summed coordinator and sub-agent model-call
-  latency per attempt; overall attempt latency remains the wall-clock metric
+  latency per attempt, plus team-outcome P50/P95 latency
+- **Token split:** team-only total and tokens per successful team run
 - **Pricing coverage:** priced model calls divided by all captured model calls
+
+The generic attempt latency and token fields include every configured baseline
+mode because they describe the cost of the complete evaluation attempt. Use
+`multi_agent_team_latency_p50_ms`,
+`multi_agent_team_latency_p95_ms`,
+`multi_agent_team_total_tokens`, and
+`multi_agent_team_tokens_per_successful_run` when describing production team
+execution rather than harness cost.
 
 ## Run the finance workflow evaluation
 
@@ -299,19 +313,31 @@ Supported types are `timeout`, `error`, `malformed`, and `contradictory`.
 Timeout and error faults return explicit tool failures; malformed and
 contradictory faults replace the specialist result. Fault injection is limited
 to `simulated` execution so production runtime agents cannot be altered by an
-evaluation request.
+evaluation request. Fault delays are capped at five minutes and still stop
+immediately when the request context is cancelled.
 
 Fault cases report:
 
-- **Fault injection rate:** configured faults observed in tool-result traces
+- **Fault observation rate:** configured faults observed in correlated
+  tool-result traces
 - **Fault attribution rate:** failures correctly disclosed in the final answer
 - **Graceful degradation rate:** required healthy milestones pass, injected
   failures are observed and attributed, and no forbidden claims appear
-- **Unsupported claim rate:** forbidden claims divided by injected faults
+- **Unsupported claim rate:** injected faults for which at least one forbidden
+  assertion appears, divided by injected faults; the rate cannot exceed 100%
 
 Faulty specialists still count toward delegation recall because the coordinator
 must attempt the call, but their nominal private evidence is excluded from
-contribution-utilization requirements.
+contribution-utilization requirements. If every specialist is faulted, the
+zero-denominator contribution grader is skipped and coordination is based on
+delegation. Tool results without a non-empty matching call ID are not attributed
+to an arbitrary specialist and appear in
+`multi_agent_uncorrelated_tool_results`.
+
+Forbidden values are assertion-sensitive. Negated or explicitly uncertain
+phrasing such as “not verified,” “cannot confirm,” or “unconfirmed” does not
+count as an unsupported assertion. Suites should still prefer unique fabricated
+evidence IDs over broad natural-language phrases whenever possible.
 
 OpenAI-compatible providers are requested with streaming usage enabled, and
 Anthropic message-start/message-delta usage is parsed directly. Provider
@@ -448,10 +474,10 @@ The comparison reports:
 - SWE patch-generation, test-execution, and resolution-rate change
 - Multi-agent four-mode baseline success, closed/fair collaboration gain,
   milestone KPI, and coordination change
-- Multi-agent fault injection, attribution, graceful degradation, and
+- Multi-agent fault observation, attribution, graceful degradation, and
   unsupported-claim change
-- Multi-agent team cost, cost per success, and coordinator/sub-agent token
-  changes
+- Multi-agent team P50/P95 latency, team tokens per success, team cost, cost per
+  success, and coordinator/sub-agent token changes
 
 This makes project claims reproducible. For example:
 
@@ -502,8 +528,11 @@ case is part of the requirement.
 - **pass@1:** cases whose first attempt passes.
 - **pass@k:** cases with at least one passing attempt.
 - **Consistency:** cases where every repetition has the same pass/fail result.
-- **P50/P95 latency:** end-to-end HTTP request latency.
-- **Tokens/success:** total reported tokens divided by successful attempts.
+- **P50/P95 latency:** end-to-end attempt latency. For a multi-agent suite this
+  includes every configured baseline mode; use the MA team latency fields for
+  team-only latency.
+- **Tokens/success:** total reported attempt tokens divided by successful
+  attempts. For multi-agent team-only cost, use the MA team token fields.
 - **Tool-trace accuracy:** passing `tool_trace` graders divided by all
   `tool_trace` graders.
 - **Invalid tool-call rate:** tool calls whose arguments are not a JSON object
