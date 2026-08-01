@@ -17,6 +17,11 @@ func WriteText(writer io.Writer, report Report) error {
 	if _, err := fmt.Fprintf(writer, "Eval suite: %s\n", report.Suite); err != nil {
 		return err
 	}
+	if report.SourceSHA256 != "" {
+		if _, err := fmt.Fprintf(writer, "Suite SHA-256: %s\n", report.SourceSHA256); err != nil {
+			return err
+		}
+	}
 	if _, err := fmt.Fprintf(
 		writer,
 		"Runs: %d/%d passed (%.1f%%) | pass@1 %.1f%% | pass@k %.1f%% | consistency %.1f%%\n",
@@ -80,7 +85,7 @@ func WriteText(writer io.Writer, report Report) error {
 		soloClosed := formatRate(metrics.MASoloEvaluated > 0, metrics.MASoloSuccessRate)
 		if _, err := fmt.Fprintf(
 			writer,
-			"Multi-agent: team %.1f%% | solo closed %s | closed gain %s | KPI %.1f%% | coordination %.1f%% | delegations %.1f\n",
+			"Multi-agent: strict team %.1f%% | solo closed %s | evidence-access delta %s | KPI %.1f%% | coordination %.1f%% | delegations %.1f\n",
 			metrics.MATeamSuccessRate*100,
 			soloClosed,
 			closedGain,
@@ -91,18 +96,23 @@ func WriteText(writer io.Writer, report Report) error {
 			return err
 		}
 		_, hasSoloOpenBook := metrics.MABaselines[MultiAgentBaselineSoloOpenBook]
+		_, hasSoloTwoPass := metrics.MABaselines[MultiAgentBaselineSoloTwoPass]
 		_, hasOracleTeam := metrics.MABaselines[MultiAgentBaselineOracleTeam]
-		if hasSoloOpenBook || hasOracleTeam {
+		if hasSoloOpenBook || hasSoloTwoPass || hasOracleTeam {
 			fairGain := formatGain(metrics.MAFairCollaborationValid, metrics.MAFairCollaborationGain)
+			computeGain := formatGain(metrics.MAComputeMatchedGainValid, metrics.MAComputeMatchedGain)
 			teamOutcome := formatRate(metrics.MATeamOutcomeEvaluated > 0, metrics.MATeamOutcomeSuccessRate)
 			soloOpen := formatRate(metrics.MASoloOpenBookEvaluated > 0, metrics.MASoloOpenBookSuccessRate)
+			soloTwoPass := formatRate(metrics.MASoloTwoPassEvaluated > 0, metrics.MASoloTwoPassSuccessRate)
 			oracleTeam := formatRate(metrics.MAOracleTeamEvaluated > 0, metrics.MAOracleTeamSuccessRate)
 			if _, err := fmt.Fprintf(
 				writer,
-				"MA fair baselines: team outcome %s | solo open %s | fair gain %s | oracle team %s\n",
+				"MA fair baselines: team outcome %s | solo open %s | fair gain %s | solo two-pass %s | compute gain %s | oracle team %s\n",
 				teamOutcome,
 				soloOpen,
 				fairGain,
+				soloTwoPass,
+				computeGain,
 				oracleTeam,
 			); err != nil {
 				return err
@@ -121,9 +131,20 @@ func WriteText(writer io.Writer, report Report) error {
 				return err
 			}
 		}
+		if metrics.MAGroundingAssertions > 0 {
+			if _, err := fmt.Fprintf(
+				writer,
+				"MA grounding (team only): accuracy %.1f%% | violations %d/%d\n",
+				metrics.MAGroundingAccuracy*100,
+				metrics.MAGroundingViolations,
+				metrics.MAGroundingAssertions,
+			); err != nil {
+				return err
+			}
+		}
 		if _, err := fmt.Fprintf(
 			writer,
-			"MA usage: coordinator %d tokens / $%.4f / %.1f ms | sub-agents %d tokens / $%.4f / %.1f ms | team $%.4f | cost/success $%.4f | pricing %.1f%%\n",
+			"MA usage: coordinator %d tokens / $%.4f / %.1f ms | sub-agents %d tokens / $%.4f / %.1f ms | team $%.4f | cost/outcome success $%.4f | pricing %.1f%%\n",
 			metrics.MACoordinatorTokens,
 			metrics.MACoordinatorCostUSD,
 			metrics.MACoordinatorLatencyMS,
@@ -150,6 +171,7 @@ func WriteText(writer io.Writer, report Report) error {
 		for _, mode := range []string{
 			MultiAgentBaselineSoloClosedBook,
 			MultiAgentBaselineSoloOpenBook,
+			MultiAgentBaselineSoloTwoPass,
 			MultiAgentBaselineTeam,
 			MultiAgentBaselineOracleTeam,
 		} {
@@ -159,12 +181,19 @@ func WriteText(writer io.Writer, report Report) error {
 			}
 			if _, err := fmt.Fprintf(
 				writer,
-				"MA baseline %-16s valid %d | errors %d | success %.1f%% | tokens %d | cost $%.4f | avg valid latency %.1f ms\n",
+				"MA baseline %-16s valid %d | errors %d | success %.1f%% | prompt(incl cache)/cache/uncached/output %d/%d/%d/%d | total %d | grounding %.1f%% (%d/%d violations) | cost $%.4f | avg valid latency %.1f ms\n",
 				mode,
 				baseline.Evaluated,
 				baseline.Errored,
 				baseline.SuccessRate*100,
+				baseline.PromptTokens,
+				baseline.CacheReadTokens,
+				baseline.UncachedPromptTokens,
+				baseline.CompletionTokens,
 				baseline.TotalTokens,
+				baseline.GroundingAccuracy*100,
+				baseline.GroundingViolations,
+				baseline.GroundingAssertions,
 				baseline.EstimatedCostUSD,
 				baseline.AverageLatencyMS,
 			); err != nil {

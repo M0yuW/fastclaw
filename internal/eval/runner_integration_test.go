@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -125,6 +126,39 @@ func TestIntegrationHTTPExecutorSurfacesAPIErrors(t *testing.T) {
 	_, err := executor.Execute(t.Context(), ExecutionRequest{Prompt: "hello"})
 	if err == nil {
 		t.Fatal("Execute() error = nil")
+	}
+}
+
+func TestIntegrationHTTPExecutorSurfacesAgentTurnErrors(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		writer.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(writer).Encode(map[string]any{
+			"model": "fake-model",
+			"choices": []map[string]any{
+				{"message": map[string]string{"role": "assistant", "content": "Sorry, I encountered an error processing your request."}},
+			},
+			"usage": map[string]int{"prompt_tokens": 4, "completion_tokens": 2, "total_tokens": 6},
+			"fastclaw": map[string]any{
+				"trace": []map[string]any{{"type": "error", "message": "provider read timed out"}},
+				"model_calls": []map[string]any{{
+					"sequence": 1, "agent_id": "eval-agent", "role": "coordinator",
+					"model": "fake-model", "prompt_tokens": 4, "completion_tokens": 2,
+					"total_tokens": 6, "error": "provider read timed out",
+				}},
+			},
+		}); err != nil {
+			t.Error(err)
+		}
+	}))
+	defer server.Close()
+
+	executor := HTTPExecutor{BaseURL: server.URL, Client: server.Client()}
+	response, err := executor.Execute(t.Context(), ExecutionRequest{Prompt: "hello"})
+	if err == nil || !strings.Contains(err.Error(), "provider read timed out") {
+		t.Fatalf("Execute() error = %v", err)
+	}
+	if response.Usage.TotalTokens != 6 || len(response.ModelCalls) != 1 {
+		t.Fatalf("failed turn telemetry was discarded: %+v", response)
 	}
 }
 

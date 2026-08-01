@@ -22,7 +22,7 @@ func New(cfg *StorageConfig, homeDir string) (Store, error) {
 			if err := os.MkdirAll(homeDir, 0o755); err != nil {
 				return nil, fmt.Errorf("create %s: %w", homeDir, err)
 			}
-			dsn = "file:" + filepath.Join(homeDir, "fastclaw.db") + "?_journal=WAL&_fk=1"
+			dsn = "file:" + filepath.Join(homeDir, "fastclaw.db")
 		}
 		slog.Info("using database storage", "dialect", cfg.Type, "dsn", maskDSN(dsn))
 		db, err := NewDBStore(string(cfg.Type), dsn)

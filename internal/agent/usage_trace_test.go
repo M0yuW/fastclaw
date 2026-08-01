@@ -52,3 +52,36 @@ func TestModelUsageCollectorMarksUnknownPricing(t *testing.T) {
 		t.Fatalf("call = %+v", call)
 	}
 }
+
+func TestModelUsageCollectorOrdersCallsByStartSequence(t *testing.T) {
+	collector := NewModelUsageCollector("coordinator", nil)
+	ctx := ContextWithModelUsageCollector(t.Context(), collector)
+	firstSequence := BeginModelCall(ctx)
+	secondSequence := BeginModelCall(ctx)
+
+	RecordModelCallWithSequence(
+		ctx,
+		secondSequence,
+		"worker-2",
+		"model",
+		provider.Usage{},
+		10*time.Millisecond,
+		nil,
+	)
+	RecordModelCallWithSequence(
+		ctx,
+		firstSequence,
+		"worker-1",
+		"model",
+		provider.Usage{},
+		20*time.Millisecond,
+		nil,
+	)
+
+	calls := collector.Snapshot()
+	if len(calls) != 2 ||
+		calls[0].Sequence != firstSequence || calls[0].AgentID != "worker-1" ||
+		calls[1].Sequence != secondSequence || calls[1].AgentID != "worker-2" {
+		t.Fatalf("calls = %+v", calls)
+	}
+}

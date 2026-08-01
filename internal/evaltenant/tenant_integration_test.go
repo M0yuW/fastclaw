@@ -21,7 +21,7 @@ func TestIntegrationProvisionFixedRuntimeBenchmarkTenant(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if first.APIKey == "" || len(first.AgentIDs) != 5 {
+	if first.APIKey == "" || len(first.AgentIDs) != len(evaltenant.AgentIDs) {
 		t.Fatalf("provision result = %+v", first)
 	}
 
@@ -47,7 +47,7 @@ func TestIntegrationProvisionFixedRuntimeBenchmarkTenant(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(agents) != 5 {
+	if len(agents) != len(evaltenant.AgentIDs) {
 		t.Fatalf("agents = %+v", agents)
 	}
 	for _, benchmarkAgent := range agents {
@@ -85,7 +85,7 @@ func TestIntegrationProvisionFixedRuntimeBenchmarkTenant(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(resolved.Agents) != 5 {
+	if len(resolved.Agents) != len(evaltenant.AgentIDs) {
 		t.Fatalf("API key agents = %+v", resolved.Agents)
 	}
 
@@ -119,6 +119,20 @@ func TestIntegrationProvisionFixedRuntimeBenchmarkTenant(t *testing.T) {
 		if evalCase.ExecutionMode != "runtime" ||
 			evalCase.CoordinatorAgentID != "" && evalCase.CoordinatorAgentID != evaltenant.CoordinatorID {
 			t.Fatalf("invalid runtime case: %+v", evalCase)
+		}
+	}
+	financeSuite, err := eval.LoadMultiAgentSuite(
+		filepath.Join("..", "..", "evals", "multiagent-finance-runtime.yaml"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(financeSuite.Cases) != 6 {
+		t.Fatalf("finance runtime suite cases = %d", len(financeSuite.Cases))
+	}
+	for _, evalCase := range financeSuite.Cases {
+		if evalCase.ExecutionMode != "runtime" {
+			t.Fatalf("invalid finance runtime case: %+v", evalCase)
 		}
 	}
 }

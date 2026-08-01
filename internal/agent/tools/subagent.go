@@ -33,24 +33,39 @@ type subAgentResult struct {
 }
 
 type subAgentDedup struct {
-	mu      sync.Mutex
-	results map[string]*subAgentResult
+	mu         sync.Mutex
+	targetOnly bool
+	results    map[string]*subAgentResult
 }
 
-// ContextWithSubAgentDedup scopes sub-agent calls so each target executes at
-// most once during a parent turn. Repeated calls reuse the first result.
+// ContextWithSubAgentDedup reuses an identical target/task delegation within
+// one parent turn while preserving distinct tasks for the same target.
 func ContextWithSubAgentDedup(ctx context.Context) context.Context {
+	return contextWithSubAgentDedup(ctx, false)
+}
+
+// ContextWithSubAgentTargetDedup is the stricter eval-only mode: each target
+// executes at most once during a parent turn, regardless of task wording.
+func ContextWithSubAgentTargetDedup(ctx context.Context) context.Context {
+	return contextWithSubAgentDedup(ctx, true)
+}
+
+func contextWithSubAgentDedup(ctx context.Context, targetOnly bool) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	if _, ok := ctx.Value(subAgentDedupKey{}).(*subAgentDedup); ok {
+		return ctx
+	}
 	return context.WithValue(ctx, subAgentDedupKey{}, &subAgentDedup{
-		results: make(map[string]*subAgentResult),
+		targetOnly: targetOnly,
+		results:    make(map[string]*subAgentResult),
 	})
 }
 
 // RegisterSubAgent registers the spawn_subagent tool.
 func RegisterSubAgent(r *Registry, spawner SubAgentSpawner, callerAgentID string) {
-	r.Register("spawn_subagent", "Delegate to a specialized agent and return its response. Call each target agent at most once per parent turn; repeated calls reuse the first result.", map[string]interface{}{
+	r.Register("spawn_subagent", "Delegate to a specialized agent and return its response. Identical repeated target/task calls within one parent turn reuse the first result.", map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
 			"agentId": map[string]interface{}{
@@ -83,7 +98,7 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 			return "", fmt.Errorf("cannot spawn yourself as a sub-agent")
 		}
 		if dedup, ok := ctx.Value(subAgentDedupKey{}).(*subAgentDedup); ok {
-			return dedup.call(ctx, args.AgentID, func() (string, error) {
+			return dedup.call(ctx, args.AgentID, args.Task, func() (string, error) {
 				return spawnSubAgent(ctx, spawner, callerAgentID, args)
 			})
 		}
@@ -94,10 +109,15 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 func (d *subAgentDedup) call(
 	ctx context.Context,
 	agentID string,
+	task string,
 	execute func() (string, error),
 ) (string, error) {
+	key := agentID + "\x00" + task
+	if d.targetOnly {
+		key = agentID
+	}
 	d.mu.Lock()
-	if existing := d.results[agentID]; existing != nil {
+	if existing := d.results[key]; existing != nil {
 		d.mu.Unlock()
 		select {
 		case <-existing.done:
@@ -107,7 +127,7 @@ func (d *subAgentDedup) call(
 		}
 	}
 	entry := &subAgentResult{done: make(chan struct{})}
-	d.results[agentID] = entry
+	d.results[key] = entry
 	d.mu.Unlock()
 
 	entry.result, entry.err = execute()

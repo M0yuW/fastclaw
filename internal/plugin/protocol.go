@@ -166,6 +166,7 @@ type HookFireParams struct {
 	ToolName   string            `json:"toolName,omitempty"`
 	ToolArgs   string            `json:"toolArgs,omitempty"`
 	ToolResult string            `json:"toolResult,omitempty"`
+	DurationMS float64           `json:"durationMs,omitempty"`
 }
 
 // HookMessage is a simplified message for hook communication.

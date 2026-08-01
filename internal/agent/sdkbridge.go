@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log/slog"
+	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/codeany-ai/open-agent-sdk-go/costtracker"
@@ -25,16 +28,47 @@ var readOnlyTools = map[string]bool{
 	"load_skill":    true,
 }
 
+const toolCallIDMetadataKey = "__fastclaw_tool_call_id"
+
+type toolTimingRecorder struct {
+	mu        sync.Mutex
+	durations map[string]time.Duration
+}
+
+func newToolTimingRecorder() *toolTimingRecorder {
+	return &toolTimingRecorder{durations: make(map[string]time.Duration)}
+}
+
+func (recorder *toolTimingRecorder) record(toolCallID string, duration time.Duration) {
+	if recorder == nil || toolCallID == "" {
+		return
+	}
+	recorder.mu.Lock()
+	recorder.durations[toolCallID] = duration
+	recorder.mu.Unlock()
+}
+
+func (recorder *toolTimingRecorder) duration(toolCallID string) time.Duration {
+	if recorder == nil || toolCallID == "" {
+		return 0
+	}
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	return recorder.durations[toolCallID]
+}
+
 // toolAdapter wraps a FastClaw tool as an SDK Tool interface.
 type toolAdapter struct {
-	name        string
-	description string
-	params      interface{}
-	fn          tools.ToolFunc
+	name                      string
+	description               string
+	params                    interface{}
+	fn                        tools.ToolFunc
+	concurrentSubAgentTargets map[string]bool
+	timings                   *toolTimingRecorder
 }
 
 func (t *toolAdapter) Name() string        { return t.name }
-func (t *toolAdapter) Description() string  { return t.description }
+func (t *toolAdapter) Description() string { return t.description }
 
 func (t *toolAdapter) InputSchema() sdktypes.ToolInputSchema {
 	// Convert FastClaw params (interface{}) to SDK ToolInputSchema
@@ -52,16 +86,50 @@ func (t *toolAdapter) InputSchema() sdktypes.ToolInputSchema {
 	return schema
 }
 
-func (t *toolAdapter) Call(ctx context.Context, input map[string]interface{}, tCtx *sdktypes.ToolUseContext) (*sdktypes.ToolResult, error) {
+func (t *toolAdapter) Call(
+	ctx context.Context,
+	input map[string]interface{},
+	tCtx *sdktypes.ToolUseContext,
+) (result *sdktypes.ToolResult, err error) {
+	startedAt := time.Now()
+	toolCallID, _ := input[toolCallIDMetadataKey].(string)
+	defer func() {
+		t.timings.record(toolCallID, time.Since(startedAt))
+		if recovered := recover(); recovered != nil {
+			slog.Error(
+				"tool panicked",
+				"tool", t.name,
+				"tool_call_id", toolCallID,
+				"panic", recovered,
+				"stack", string(debug.Stack()),
+			)
+			message := fmt.Sprintf("tool %s panicked: %v", t.name, recovered)
+			result = &sdktypes.ToolResult{
+				IsError: true,
+				Error:   message,
+				Content: []sdktypes.ContentBlock{{
+					Type: sdktypes.ContentBlockText,
+					Text: message,
+				}},
+			}
+			err = nil
+		}
+	}()
+	cleanInput := make(map[string]interface{}, len(input))
+	for key, value := range input {
+		if key != toolCallIDMetadataKey {
+			cleanInput[key] = value
+		}
+	}
 	// Convert input map to JSON for FastClaw's ToolFunc
-	argsJSON, err := json.Marshal(input)
+	argsJSON, err := json.Marshal(cleanInput)
 	if err != nil {
 		return &sdktypes.ToolResult{IsError: true, Error: err.Error()}, nil
 	}
 
-	result, err := t.fn(ctx, json.RawMessage(argsJSON))
+	toolOutput, err := t.fn(ctx, json.RawMessage(argsJSON))
 	if err != nil {
-		errText := result
+		errText := toolOutput
 		if errText != "" {
 			errText += "\n"
 		}
@@ -79,12 +147,19 @@ func (t *toolAdapter) Call(ctx context.Context, input map[string]interface{}, tC
 	return &sdktypes.ToolResult{
 		Content: []sdktypes.ContentBlock{{
 			Type: sdktypes.ContentBlockText,
-			Text: result,
+			Text: toolOutput,
 		}},
 	}, nil
 }
 
 func (t *toolAdapter) IsConcurrencySafe(input map[string]interface{}) bool {
+	if t.name == "spawn_subagent" {
+		agentID, ok := input["agentId"].(string)
+		if !ok || agentID == "" {
+			return false
+		}
+		return t.concurrentSubAgentTargets[agentID]
+	}
 	return readOnlyTools[t.name]
 }
 
@@ -105,7 +180,11 @@ func newSDKEngine(sessionID string) *sdkEngine {
 }
 
 // buildSDKRegistry converts FastClaw's tool registry into an SDK registry.
-func buildSDKRegistry(fcRegistry *tools.Registry) *sdktools.Registry {
+func buildSDKRegistry(
+	fcRegistry *tools.Registry,
+	concurrentSubAgentTargets map[string]bool,
+	timings *toolTimingRecorder,
+) *sdktools.Registry {
 	sdkReg := sdktools.NewRegistry()
 	for _, def := range fcRegistry.Definitions() {
 		fn := fcRegistry.GetFunc(def.Function.Name)
@@ -113,10 +192,12 @@ func buildSDKRegistry(fcRegistry *tools.Registry) *sdktools.Registry {
 			continue
 		}
 		sdkReg.Register(&toolAdapter{
-			name:        def.Function.Name,
-			description: def.Function.Description,
-			params:      def.Function.Parameters,
-			fn:          fn,
+			name:                      def.Function.Name,
+			description:               def.Function.Description,
+			params:                    def.Function.Parameters,
+			fn:                        fn,
+			concurrentSubAgentTargets: concurrentSubAgentTargets,
+			timings:                   timings,
 		})
 	}
 	return sdkReg
@@ -128,11 +209,13 @@ type toolCallResult struct {
 	toolName   string
 	result     string
 	err        error
+	duration   time.Duration
 }
 
 // executeToolsConcurrently runs tool calls using the SDK's concurrent executor.
 func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *tools.Registry, toolCalls []provider.ToolCall, workspace string) []toolCallResult {
-	sdkReg := buildSDKRegistry(fcRegistry)
+	timings := newToolTimingRecorder()
+	sdkReg := buildSDKRegistry(fcRegistry, uniqueSubAgentTargets(toolCalls), timings)
 	executor := sdktools.NewExecutor(sdkReg, nil, &sdktypes.ToolUseContext{
 		WorkingDir: workspace,
 		AbortCtx:   ctx,
@@ -145,6 +228,10 @@ func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *to
 		if err := json.Unmarshal([]byte(tc.Function.Arguments), &input); err != nil {
 			input = map[string]interface{}{"_raw": tc.Function.Arguments}
 		}
+		if input == nil {
+			input = make(map[string]interface{})
+		}
+		input[toolCallIDMetadataKey] = tc.ID
 		calls[i] = sdktools.ToolCallRequest{
 			ToolUseID: tc.ID,
 			ToolName:  tc.Function.Name,
@@ -166,20 +253,29 @@ func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *to
 	// tool_results so the conversation history stays well-formed.
 	byID := make(map[string]sdktools.ToolCallResponse, len(responses))
 	for _, resp := range responses {
+		if resp.ToolUseID == "" {
+			slog.Error("tool executor returned an empty tool_call ID")
+			continue
+		}
+		if _, exists := byID[resp.ToolUseID]; exists {
+			slog.Error("tool executor returned a duplicate tool_call ID", "tool_call_id", resp.ToolUseID)
+			continue
+		}
 		byID[resp.ToolUseID] = resp
 	}
 	results := make([]toolCallResult, len(toolCalls))
 	for i, tc := range toolCalls {
-		resp, ok := byID[tc.ID]
-		if !ok {
-			results[i] = toolCallResult{
-				toolCallID: tc.ID,
-				toolName:   tc.Function.Name,
-				result:     "tool execution did not return a result (sandbox or executor failure — check gateway logs)",
-				err:        fmt.Errorf("no response from executor for tool_use %s", tc.ID),
-			}
+		duration := timings.duration(tc.ID)
+		if tc.ID == "" {
+			results[i] = missingToolCallResult(tc, "tool_use ID is empty", duration)
 			continue
 		}
+		resp, ok := byID[tc.ID]
+		if !ok {
+			results[i] = missingToolCallResult(tc, "tool execution did not return a result", duration)
+			continue
+		}
+		delete(byID, tc.ID)
 		var resultText string
 		if resp.Result != nil {
 			if resp.Result.IsError {
@@ -192,6 +288,7 @@ func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *to
 					toolName:   toolCalls[i].Function.Name,
 					result:     resultText + "\n[Analyze the error above and try a different approach.]",
 					err:        fmt.Errorf("%s", resultText),
+					duration:   duration,
 				}
 				continue
 			}
@@ -210,14 +307,53 @@ func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *to
 				toolName:   toolCalls[i].Function.Name,
 				result:     resultText,
 				err:        resp.Error,
+				duration:   duration,
 			}
 		} else {
 			results[i] = toolCallResult{
 				toolCallID: resp.ToolUseID,
 				toolName:   toolCalls[i].Function.Name,
 				result:     resultText,
+				duration:   duration,
 			}
 		}
 	}
 	return results
+}
+
+func missingToolCallResult(
+	toolCall provider.ToolCall,
+	reason string,
+	duration time.Duration,
+) toolCallResult {
+	message := reason + " (sandbox, executor, or provider failure — check gateway logs)"
+	return toolCallResult{
+		toolCallID: toolCall.ID,
+		toolName:   toolCall.Function.Name,
+		result:     message,
+		err:        fmt.Errorf("%s for tool_use %q", reason, toolCall.ID),
+		duration:   duration,
+	}
+}
+
+func uniqueSubAgentTargets(toolCalls []provider.ToolCall) map[string]bool {
+	counts := make(map[string]int)
+	for _, toolCall := range toolCalls {
+		if toolCall.Function.Name != "spawn_subagent" {
+			continue
+		}
+		var arguments struct {
+			AgentID string `json:"agentId"`
+		}
+		if json.Unmarshal([]byte(toolCall.Function.Arguments), &arguments) != nil ||
+			arguments.AgentID == "" {
+			continue
+		}
+		counts[arguments.AgentID]++
+	}
+	unique := make(map[string]bool, len(counts))
+	for agentID, count := range counts {
+		unique[agentID] = count == 1
+	}
+	return unique
 }

@@ -272,12 +272,16 @@ type Metrics struct {
 	MACollaborationGainValid  bool                                 `json:"multi_agent_collaboration_gain_valid"`
 	MASoloOpenBookEvaluated   int                                  `json:"multi_agent_solo_open_book_evaluated"`
 	MASoloOpenBookSuccessRate float64                              `json:"multi_agent_solo_open_book_success_rate"`
+	MASoloTwoPassEvaluated    int                                  `json:"multi_agent_solo_two_pass_evaluated"`
+	MASoloTwoPassSuccessRate  float64                              `json:"multi_agent_solo_two_pass_success_rate"`
 	MATeamOutcomeEvaluated    int                                  `json:"multi_agent_team_outcome_evaluated"`
 	MATeamOutcomeSuccessRate  float64                              `json:"multi_agent_team_outcome_success_rate"`
 	MAOracleTeamEvaluated     int                                  `json:"multi_agent_oracle_team_evaluated"`
 	MAOracleTeamSuccessRate   float64                              `json:"multi_agent_oracle_team_success_rate"`
 	MAFairCollaborationGain   float64                              `json:"multi_agent_fair_collaboration_gain"`
 	MAFairCollaborationValid  bool                                 `json:"multi_agent_fair_collaboration_gain_valid"`
+	MAComputeMatchedGain      float64                              `json:"multi_agent_compute_matched_gain"`
+	MAComputeMatchedGainValid bool                                 `json:"multi_agent_compute_matched_gain_valid"`
 	MAMilestoneKPI            float64                              `json:"multi_agent_milestone_kpi"`
 	MADelegationPrecision     float64                              `json:"multi_agent_delegation_precision"`
 	MADelegationRecall        float64                              `json:"multi_agent_delegation_recall"`
@@ -289,6 +293,7 @@ type Metrics struct {
 	MATotalEstimatedCostUSD   float64                              `json:"multi_agent_total_estimated_cost_usd"`
 	MASoloEstimatedCostUSD    float64                              `json:"multi_agent_solo_estimated_cost_usd"`
 	MASoloOpenBookCostUSD     float64                              `json:"multi_agent_solo_open_book_estimated_cost_usd"`
+	MASoloTwoPassCostUSD      float64                              `json:"multi_agent_solo_two_pass_estimated_cost_usd"`
 	MATeamEstimatedCostUSD    float64                              `json:"multi_agent_team_estimated_cost_usd"`
 	MAOracleTeamCostUSD       float64                              `json:"multi_agent_oracle_team_estimated_cost_usd"`
 	MATeamTotalTokens         int                                  `json:"multi_agent_team_total_tokens"`
@@ -314,28 +319,40 @@ type Metrics struct {
 	MAGracefulDegradationRate float64                              `json:"multi_agent_graceful_degradation_rate"`
 	MAUnsupportedClaims       int                                  `json:"multi_agent_unsupported_claims"`
 	MAUnsupportedClaimRate    float64                              `json:"multi_agent_unsupported_claim_rate"`
+	MAGroundingAssertions     int                                  `json:"multi_agent_grounding_assertions"`
+	MAGroundingViolations     int                                  `json:"multi_agent_grounding_violations"`
+	MAGroundingAccuracy       float64                              `json:"multi_agent_grounding_accuracy"`
 	MAUncorrelatedToolResults int                                  `json:"multi_agent_uncorrelated_tool_results"`
 	MABaselines               map[string]MultiAgentBaselineMetrics `json:"multi_agent_baselines,omitempty"`
 }
 
 type MultiAgentBaselineMetrics struct {
-	Evaluated        int     `json:"evaluated"`
-	Errored          int     `json:"errored"`
-	Passed           int     `json:"passed"`
-	SuccessRate      float64 `json:"success_rate"`
-	TotalTokens      int     `json:"total_tokens"`
-	EstimatedCostUSD float64 `json:"estimated_cost_usd"`
-	AverageLatencyMS float64 `json:"average_latency_ms"`
+	Evaluated            int     `json:"evaluated"`
+	Errored              int     `json:"errored"`
+	Passed               int     `json:"passed"`
+	SuccessRate          float64 `json:"success_rate"`
+	PromptTokens         int     `json:"prompt_tokens"`
+	CompletionTokens     int     `json:"completion_tokens"`
+	TotalTokens          int     `json:"total_tokens"`
+	CacheReadTokens      int     `json:"cache_read_tokens"`
+	CacheCreationTokens  int     `json:"cache_creation_tokens"`
+	UncachedPromptTokens int     `json:"uncached_prompt_tokens"`
+	EstimatedCostUSD     float64 `json:"estimated_cost_usd"`
+	AverageLatencyMS     float64 `json:"average_latency_ms"`
+	GroundingAssertions  int     `json:"grounding_assertions"`
+	GroundingViolations  int     `json:"grounding_violations"`
+	GroundingAccuracy    float64 `json:"grounding_accuracy"`
 }
 
 type Report struct {
-	Version     int          `json:"version"`
-	Suite       string       `json:"suite"`
-	Description string       `json:"description,omitempty"`
-	Source      string       `json:"source,omitempty"`
-	StartedAt   time.Time    `json:"started_at"`
-	FinishedAt  time.Time    `json:"finished_at"`
-	DurationMS  float64      `json:"duration_ms"`
-	Metrics     Metrics      `json:"metrics"`
-	Cases       []CaseResult `json:"cases"`
+	Version      int          `json:"version"`
+	Suite        string       `json:"suite"`
+	Description  string       `json:"description,omitempty"`
+	Source       string       `json:"source,omitempty"`
+	SourceSHA256 string       `json:"source_sha256,omitempty"`
+	StartedAt    time.Time    `json:"started_at"`
+	FinishedAt   time.Time    `json:"finished_at"`
+	DurationMS   float64      `json:"duration_ms"`
+	Metrics      Metrics      `json:"metrics"`
+	Cases        []CaseResult `json:"cases"`
 }

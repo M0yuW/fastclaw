@@ -45,16 +45,48 @@ func TestMakeSubAgentToolCreatesUniqueInternalMessages(t *testing.T) {
 	}
 }
 
-func TestMakeSubAgentToolDeduplicatesTargetWithinTurn(t *testing.T) {
+func TestMakeSubAgentToolDeduplicatesIdenticalDelegationWithinTurn(t *testing.T) {
 	spawner := &fakeSubAgentSpawner{result: "fixed evidence"}
 	tool := makeSubAgentTool(spawner, "parent")
 	ctx := ContextWithSubAgentDedup(context.Background())
 
-	for _, task := range []string{"first request", "retry request"} {
+	for _, task := range []string{"same request", "same request"} {
 		args := json.RawMessage(`{"agentId":"child","task":` + strconv.Quote(task) + `}`)
 		result, err := tool(ctx, args)
 		if err != nil || result != "fixed evidence" {
 			t.Fatalf("task %q: result=%q err=%v", task, result, err)
+		}
+	}
+	if len(spawner.messages) != 1 {
+		t.Fatalf("spawner received %d messages, want 1", len(spawner.messages))
+	}
+}
+
+func TestMakeSubAgentToolPreservesDifferentTasksWithinTurn(t *testing.T) {
+	spawner := &fakeSubAgentSpawner{result: "fixed evidence"}
+	tool := makeSubAgentTool(spawner, "parent")
+	ctx := ContextWithSubAgentDedup(context.Background())
+
+	for _, task := range []string{"first request", "second request"} {
+		args := json.RawMessage(`{"agentId":"child","task":` + strconv.Quote(task) + `}`)
+		if _, err := tool(ctx, args); err != nil {
+			t.Fatalf("task %q: %v", task, err)
+		}
+	}
+	if len(spawner.messages) != 2 {
+		t.Fatalf("spawner received %d messages, want 2", len(spawner.messages))
+	}
+}
+
+func TestMakeSubAgentToolEvalDeduplicatesTargetWithinTurn(t *testing.T) {
+	spawner := &fakeSubAgentSpawner{result: "fixed evidence"}
+	tool := makeSubAgentTool(spawner, "parent")
+	ctx := ContextWithSubAgentTargetDedup(context.Background())
+
+	for _, task := range []string{"first request", "retry request"} {
+		args := json.RawMessage(`{"agentId":"child","task":` + strconv.Quote(task) + `}`)
+		if _, err := tool(ctx, args); err != nil {
+			t.Fatalf("task %q: %v", task, err)
 		}
 	}
 	if len(spawner.messages) != 1 {

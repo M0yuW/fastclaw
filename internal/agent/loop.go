@@ -540,6 +540,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		AgentID:   a.name,
 		SessionID: msg.ChatID,
 	})
+	ctx = tools.ContextWithSubAgentDedup(ctx)
 	events := newTurnEventEmitter(ctx)
 	// Check for slash commands first
 	if result := a.handleSlashCommand(msg); result.handled {
@@ -571,7 +572,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	// Hook: BeforeSystemPrompt
 	a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: BeforeSystemPrompt, UserID: a.ownerUserID})
 
-	identityRevision, err := a.ctxBuilder.ValidateRequiredIdentityFiles()
+	identityRevision, validatedIdentity, err := a.ctxBuilder.validateRequiredIdentityFiles()
 	if err != nil {
 		slog.Error("agent identity contract failed", "agent", a.name, "error", err)
 		identityErr := fmt.Errorf("Agent identity configuration is incomplete: %w", err)
@@ -584,7 +585,13 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			"revision", identityRevision,
 		)
 	}
-	systemPrompt := a.ctxBuilder.buildSystemPrompt(identityRevision)
+	systemPrompt, err := a.ctxBuilder.buildSystemPrompt(identityRevision, validatedIdentity)
+	if err != nil {
+		slog.Error("agent system prompt build failed", "agent", a.name, "error", err)
+		promptErr := fmt.Errorf("Agent identity configuration could not be loaded: %w", err)
+		events.fail(promptErr, events.messageID(), 1)
+		return promptErr.Error()
+	}
 
 	// Hook: AfterSystemPrompt
 	a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: AfterSystemPrompt, UserID: a.ownerUserID})
@@ -684,6 +691,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		}
 
 		var resp *provider.Response
+		modelCallSequence := BeginModelCall(ctx)
 		modelCallStarted := time.Now()
 		stream, err := a.provider.ChatStream(ctx, llmMessages, toolDefs, a.model, a.maxTokens, a.temperature)
 		if err == nil && stream == nil {
@@ -712,7 +720,15 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		if resp != nil {
 			modelUsage = resp.Usage
 		}
-		RecordModelCall(ctx, a.name, a.model, modelUsage, modelCallLatency, err)
+		RecordModelCallWithSequence(
+			ctx,
+			modelCallSequence,
+			a.name,
+			a.model,
+			modelUsage,
+			modelCallLatency,
+			err,
+		)
 		if a.costTracker != nil {
 			a.costTracker.AddAPIDuration(modelCallLatency)
 		}
@@ -791,14 +807,18 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		}
 
 		// Fire BeforeToolCall hooks
-		for _, tc := range resp.ToolCalls {
-			a.hooks.Run(ctx, &HookContext{
+		toolCallStarted := make([]time.Time, len(resp.ToolCalls))
+		for index, tc := range resp.ToolCalls {
+			hookContext := &HookContext{
 				AgentName: a.name,
 				Point:     BeforeToolCall,
 				ToolName:  tc.Function.Name,
 				ToolArgs:  tc.Function.Arguments,
+				StartTime: time.Now(),
 				UserID:    a.ownerUserID,
-			})
+			}
+			a.hooks.Run(ctx, hookContext)
+			toolCallStarted[index] = hookContext.StartTime
 		}
 
 		// Execute tools concurrently via SDK engine
@@ -807,6 +827,9 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			"count", len(resp.ToolCalls),
 		)
 		results := a.engine.executeToolsConcurrently(ctx, turnRegistry, resp.ToolCalls, a.workspacePath)
+		// The bridge guarantees one result per original tool call and restores
+		// provider order by tool-call ID even when the SDK reorders concurrent
+		// and sequential groups.
 
 		// Defensive backstop: if the SDK returned fewer results than tool
 		// calls (and the bridge somehow didn't already pad — belt and
@@ -847,6 +870,8 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 				ToolName:   r.toolName,
 				ToolResult: resultContent,
 				Error:      r.err,
+				StartTime:  toolCallStarted[idx],
+				Duration:   r.duration,
 				UserID:     a.ownerUserID,
 			})
 

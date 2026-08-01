@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/fastclaw-ai/fastclaw/internal/scope"
@@ -26,6 +27,9 @@ var AgentIDs = []string{
 	"bench-investigator",
 	"bench-policy",
 	"bench-operator",
+	"finance-source",
+	"finance-methodology",
+	"finance-governance",
 }
 
 type Options struct {
@@ -98,10 +102,12 @@ func Provision(ctx context.Context, dataStore store.Store, options Options) (Res
 
 	for _, spec := range benchmarkAgentSpecs() {
 		model := options.SpecialistModel
+		maxTokens := 2048
 		maxIterations := 2
 		policyPreset := "no-tools"
 		if spec.ID == CoordinatorID {
 			model = options.CoordinatorModel
+			maxTokens = 4096
 			maxIterations = 8
 			policyPreset = "delegate-only"
 		}
@@ -111,6 +117,7 @@ func Provision(ctx context.Context, dataStore store.Store, options Options) (Res
 			account.ID,
 			spec,
 			model,
+			maxTokens,
 			maxIterations,
 			policyPreset,
 		); err != nil {
@@ -180,6 +187,7 @@ func saveAgent(
 	userID string,
 	spec agentSpec,
 	model string,
+	maxTokens int,
 	maxIterations int,
 	policyPreset string,
 ) error {
@@ -197,7 +205,7 @@ func saveAgent(
 		Config: map[string]any{
 			"description":       spec.Description,
 			"model":             model,
-			"maxTokens":         2048,
+			"maxTokens":         maxTokens,
 			"temperature":       0.1,
 			"maxToolIterations": maxIterations,
 			"policy":            policyPreset,
@@ -261,7 +269,7 @@ You coordinate a controlled evaluation team. You do not possess private case
 evidence. For every task:
 
 1. Delegate exactly once to every specialist listed in the task prompt.
-2. Include the case marker such as BENCH-01 in every delegated task.
+2. Include the case marker such as BENCH-01 or FIN-01 in every delegated task.
 3. Never delegate to an agent that is not listed.
 4. Preserve every evidence ID and material fact exactly as returned.
 5. Base the final decision only on specialist evidence.
@@ -328,6 +336,45 @@ Do not use prior knowledge to invent missing evidence.`,
 				"BENCH-08": "OPS-838: upgrade to D-81 using a 10 percent canary, monitor handshake failures, then expand to 100 percent.",
 			}),
 		},
+		{
+			ID:          "finance-source",
+			Name:        "Finance Source Specialist",
+			Description: "Returns fixed point-in-time filing, event, screening, portfolio, and capex evidence.",
+			Soul: specialistSoul("finance-source", map[string]string{
+				"FIN-01": "FIL-101: the 2026-07-30 Q2 filing reports services revenue growth of 18 percent and gross-margin expansion of 220 basis points.",
+				"FIN-02": "FIL-201: the 2026-07-29 exchange filing states that customer C-17, representing 31 percent of revenue, will not renew its contract.",
+				"FIN-03": "EVT-301: the exchange feed and news wire both carry external event ID SSE-688981-77 with the same announcement, inside the 24-hour window.",
+				"FIN-04": "DAT-401: candidate X has PE 14 and ROE 16 percent, but free cash flow and debt-to-asset ratio are missing from the retrieved record.",
+				"FIN-05": "PTF-501: semiconductors are 62 percent of portfolio weight and the top three semiconductor holdings have average pairwise correlation 0.89.",
+				"FIN-06": "FIL-601: the 2026-07-28 exchange filing says full-year capex guidance was reduced from 8 billion to 5 billion yuan.",
+			}),
+		},
+		{
+			ID:          "finance-methodology",
+			Name:        "Finance Methodology Specialist",
+			Description: "Returns fixed thesis, state, screening, stress, and transcript evidence.",
+			Soul: specialistSoul("finance-methodology", map[string]string{
+				"FIN-01": "THS-111: thesis version 4 names services acceleration as a catalyst and services growth below hardware as an invalidation; the catalyst is confirmed and the invalidation is not observed.",
+				"FIN-02": "THS-211: thesis version 2 is invalidated if any customer above 25 percent of revenue is lost; FIL-201 crosses that threshold.",
+				"FIN-03": "STA-311: watch WL-7 already has alert FA-9 for that fingerprint with duplicate_count 1 and status new.",
+				"FIN-04": "MET-411: require_complete is true, so every metric used by the screen must be present and missing fields cannot be treated as passing.",
+				"FIN-05": "STR-511: the configured sector-shock scenario estimates a 17 percent portfolio drawdown, compared with the 10 percent risk limit.",
+				"FIN-06": "TRN-611: the 2026-07-29 official call transcript says the original 8-billion-yuan expansion plan remains unchanged.",
+			}),
+		},
+		{
+			ID:          "finance-governance",
+			Name:        "Finance Governance Specialist",
+			Description: "Returns fixed bounded decision, policy, and research-state controls.",
+			Soul: specialistSoul("finance-governance", map[string]string{
+				"FIN-01": "RSK-121: record a positive upgrade review, move conviction from 3 to 4, retain active status, and require expected_version 4; no trade is authorized.",
+				"FIN-02": "RSK-221: persist decision invalidate with expected_version 2, set status invalidated, and request a fresh evidence review without estimating a target price.",
+				"FIN-03": "POL-321: do not create a second alert; increment FA-9 duplicate_count to 2 and last_seen_at, then run thesis review only once.",
+				"FIN-04": "RSK-421: reject candidate X as insufficient_data, exclude it from the ranking, and request source refresh instead of estimating values.",
+				"FIN-05": "RSK-521: propose a staged rebalance that reduces semiconductor weight below 45 percent, then rerun concentration and stress checks before any execution; returns are not guaranteed.",
+				"FIN-06": "RSK-621: mark an explicit contradiction, choose needs_review, keep conviction unchanged, and request clarification before any upgrade or downgrade.",
+			}),
+		},
 	}
 }
 
@@ -336,17 +383,18 @@ func specialistSoul(role string, evidence map[string]string) string {
 	displayRole := strings.ToUpper(role[:1]) + role[1:]
 	fmt.Fprintf(&builder, "# Runtime Benchmark %s\n\n", displayRole)
 	builder.WriteString(`You are a controlled benchmark specialist. You have no tools. Do not use
-outside knowledge. Read the BENCH case marker in the delegated task and return
+outside knowledge. Read the case marker in the delegated task and return
 exactly one compact JSON object with fields case_id, role, and evidence. Copy
 the matching evidence line below verbatim into evidence. Do not reveal evidence
 for other cases. If the marker is absent or unknown, return
 {"case_id":"","role":"` + role + `","evidence":"NO_MATCHING_EVIDENCE"}.
 
 `)
-	caseIDs := []string{
-		"BENCH-01", "BENCH-02", "BENCH-03", "BENCH-04",
-		"BENCH-05", "BENCH-06", "BENCH-07", "BENCH-08",
+	caseIDs := make([]string, 0, len(evidence))
+	for caseID := range evidence {
+		caseIDs = append(caseIDs, caseID)
 	}
+	sort.Strings(caseIDs)
 	for _, caseID := range caseIDs {
 		if report := evidence[caseID]; report != "" {
 			fmt.Fprintf(

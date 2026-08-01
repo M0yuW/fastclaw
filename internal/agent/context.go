@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 	"time"
 
 	"github.com/fastclaw-ai/fastclaw/internal/config"
+	"github.com/fastclaw-ai/fastclaw/internal/store"
 )
 
 // bootstrapFiles are loaded in order to build the system prompt.
@@ -86,31 +88,47 @@ func (cb *ContextBuilder) SetRequiredIdentityFiles(names []string) {
 func (cb *ContextBuilder) SetToolGuidance(enabled bool) { cb.toolGuidance = enabled }
 
 func (cb *ContextBuilder) ValidateRequiredIdentityFiles() (string, error) {
+	revision, _, err := cb.validateRequiredIdentityFiles()
+	return revision, err
+}
+
+func (cb *ContextBuilder) validateRequiredIdentityFiles() (string, map[string]string, error) {
 	hasher := sha256.New()
+	validatedFiles := make(map[string]string, len(cb.requiredIdentity))
 	for _, name := range cb.requiredIdentity {
 		name = strings.TrimSpace(name)
 		if name == "" {
 			continue
 		}
-		content := cb.loadFile(name)
-		if content == "" {
-			return "", fmt.Errorf("required identity file %s is missing or empty", name)
+		content, err := cb.loadFileWithError(name)
+		if err != nil {
+			return "", nil, fmt.Errorf("load required identity file %s: %w", name, err)
 		}
+		if content == "" {
+			return "", nil, fmt.Errorf("required identity file %s is missing or empty", name)
+		}
+		validatedFiles[name] = content
 		_, _ = hasher.Write([]byte(name))
 		_, _ = hasher.Write([]byte{0})
 		_, _ = hasher.Write([]byte(content))
 		_, _ = hasher.Write([]byte{0})
 	}
-	return hex.EncodeToString(hasher.Sum(nil))[:16], nil
+	return hex.EncodeToString(hasher.Sum(nil))[:16], validatedFiles, nil
 }
 
 // BuildSystemPrompt assembles the system prompt from identity, bootstrap files, memory, and skills.
-func (cb *ContextBuilder) BuildSystemPrompt() string {
-	identityRevision, _ := cb.ValidateRequiredIdentityFiles()
-	return cb.buildSystemPrompt(identityRevision)
+func (cb *ContextBuilder) BuildSystemPrompt() (string, error) {
+	identityRevision, validatedFiles, err := cb.validateRequiredIdentityFiles()
+	if err != nil {
+		return "", err
+	}
+	return cb.buildSystemPrompt(identityRevision, validatedFiles)
 }
 
-func (cb *ContextBuilder) buildSystemPrompt(identityRevision string) string {
+func (cb *ContextBuilder) buildSystemPrompt(
+	identityRevision string,
+	validatedFiles map[string]string,
+) (string, error) {
 	var parts []string
 
 	// 1. Runtime environment info. Deliberately NOT an identity claim —
@@ -242,7 +260,14 @@ with open('/tmp/output.png', 'rb') as f:
 
 	// 4. Bootstrap files
 	for _, name := range bootstrapFiles {
-		content := cb.loadFile(name)
+		content, alreadyValidated := validatedFiles[name]
+		if !alreadyValidated {
+			var err error
+			content, err = cb.loadFileWithError(name)
+			if err != nil {
+				return "", fmt.Errorf("load bootstrap file %s: %w", name, err)
+			}
+		}
 		if content != "" {
 			parts = append(parts, fmt.Sprintf("# %s\n%s", name, content))
 		}
@@ -299,7 +324,7 @@ You have the ability to update workspace files to maintain knowledge over time:
 Use the write_file tool to update these files when appropriate. Keep entries concise and useful.`)
 	}
 
-	return strings.Join(parts, "\n\n---\n\n")
+	return strings.Join(parts, "\n\n---\n\n"), nil
 }
 
 // BuildRuntimeContext returns the runtime context to inject before the user message.
@@ -347,20 +372,32 @@ Structure your reasoning before acting. Think before you respond.`, depth)
 }
 
 func (cb *ContextBuilder) loadFile(name string) string {
+	content, _ := cb.loadFileWithError(name)
+	return content
+}
+
+func (cb *ContextBuilder) loadFileWithError(name string) (string, error) {
 	// Per-agent only — store row first, FS as legacy fallback for
 	// installs that predate the store-primary refactor.
 	if cb.store != nil {
 		data, err := cb.store.GetWorkspaceFile(cb.ctx(), cb.agentID, cb.userID, name)
-		if err == nil && len(data) > 0 {
-			return strings.TrimSpace(string(data))
+		if err == nil {
+			return strings.TrimSpace(string(data)), nil
+		}
+		if !errors.Is(err, store.ErrNotFound) {
+			return "", err
 		}
 	}
 	if cb.home != "" {
-		if data, err := os.ReadFile(filepath.Join(cb.home, name)); err == nil && len(data) > 0 {
-			return strings.TrimSpace(string(data))
+		data, err := os.ReadFile(filepath.Join(cb.home, name))
+		if err == nil {
+			return strings.TrimSpace(string(data)), nil
+		}
+		if !errors.Is(err, os.ErrNotExist) {
+			return "", err
 		}
 	}
-	return ""
+	return "", nil
 }
 
 // WrapUserInput wraps user-supplied text in <user_message> XML tags.

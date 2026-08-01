@@ -11,12 +11,17 @@ import (
 )
 
 func TestContainsAllFoldNormalizesFormatsAndAlternatives(t *testing.T) {
-	output := "Restore the private ACL, disable `svc-report`, wait 4 minutes, and use a 10% canary for seven-day monitoring of handshake-failure-rate."
+	output := "Restore the private ACL, disable `svc-report`, wait 4 minutes, use a 10% canary, record PE = 14, conviction 3 → 4, correlation of 0.89, and a loss > 25%, and retain the original ¥8-billion-yuan plan for seven-day monitoring of handshake-failure-rate."
 	values := []string{
 		"restore private ACL",
 		"disable svc-report",
 		"four minutes",
 		"10 percent canary || 10% canary",
+		"PE 14",
+		"conviction 3 to 4",
+		"correlation 0.89",
+		"above 25 percent",
+		"original 8 billion yuan",
 		"seven days || 7 calendar days",
 		"handshake failures || handshake failure rate",
 	}
@@ -25,12 +30,199 @@ func TestContainsAllFoldNormalizesFormatsAndAlternatives(t *testing.T) {
 	}
 }
 
+func TestContainsAllInOrderFoldAllowsBoundedParaphraseGaps(t *testing.T) {
+	output := "FIL-601 reports capex guidance was reduced from 8 billion yuan to 5 billion yuan and margins expanded by 220 basis points."
+	values := []string{
+		"FIL-601",
+		"reduced from 8 billion to 5 billion yuan",
+		"220 basis points",
+	}
+	if !containsAllInOrderFold(output, values) {
+		t.Fatal("expected ordered contribution facts to match across inserted units")
+	}
+	if containsAllInOrderFold("FIL-601 increased from 5 billion to 8 billion yuan.", values) {
+		t.Fatal("reversed facts must not match")
+	}
+	if !containsAllInOrderFold(
+		"EVT-301 confirms SSE-688981-77 inside the 24-hour concurrence window.",
+		[]string{"EVT-301", "SSE-688981-77", "24-hour window"},
+	) {
+		t.Fatal("expected inserted event-window qualifier to match")
+	}
+	if containsAllInOrderFold(
+		"staged plan was rejected one two three four five six seven eight nine rebalance nothing below 45 percent",
+		[]string{"staged rebalance below 45 percent"},
+	) {
+		t.Fatal("unbounded cross-claim token gaps must not match")
+	}
+}
+
+func TestEvidenceAwarePromptsRequireAuditableTerms(t *testing.T) {
+	evalCase := MultiAgentCase{
+		Prompt: "Review the evidence.",
+		Agents: []MultiAgentCollaborator{{
+			ID:       "filing-agent",
+			Role:     "extract filing facts",
+			Response: "FIL-101: revenue grew 18 percent.",
+		}},
+	}
+	for name, prompt := range map[string]string{
+		"solo_open_book": multiAgentOpenBookPrompt(evalCase),
+		"solo_two_pass":  multiAgentTwoPassAnalysisPrompt(evalCase),
+		"solo_synthesis": multiAgentTwoPassSynthesisPrompt(),
+		"team":           multiAgentTeamPrompt(evalCase),
+		"oracle_team":    multiAgentOracleTeamPrompt(evalCase),
+	} {
+		normalizedPrompt := strings.Join(strings.Fields(prompt), " ")
+		if !strings.Contains(normalizedPrompt, "Preserve every evidence ID") {
+			t.Fatalf("%s prompt does not require auditable evidence terms: %q", name, prompt)
+		}
+		if name == "solo_synthesis" && !strings.Contains(normalizedPrompt, "final answer must be self-contained") {
+			t.Fatalf("two-pass synthesis is not self-contained: %q", prompt)
+		}
+	}
+}
+
+func TestMultiAgentRunnerReportsComputeMatchedBaseline(t *testing.T) {
+	twoPassCalls := 0
+	runner := MultiAgentRunner{
+		Executor: executorFunc(func(_ context.Context, request ExecutionRequest) (ExecutionResponse, error) {
+			if strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineSoloTwoPass) {
+				twoPassCalls++
+				if twoPassCalls == 1 && !strings.Contains(request.Prompt, "first of two compute-matched passes") {
+					t.Fatalf("unexpected analysis prompt: %s", request.Prompt)
+				}
+				if twoPassCalls == 2 && !strings.Contains(request.Prompt, "previous pass") {
+					t.Fatalf("unexpected synthesis prompt: %s", request.Prompt)
+				}
+				output := "analysis only"
+				if twoPassCalls == 2 {
+					output = successfulIncidentOutput()
+				}
+				return ExecutionResponse{
+					Output: output,
+					Usage:  Usage{TotalTokens: 10},
+					ModelCalls: []ModelCallUsage{{
+						AgentID:          "coordinator",
+						Role:             "coordinator",
+						TotalTokens:      10,
+						EstimatedCostUSD: 0.1,
+						Priced:           true,
+					}},
+				}, nil
+			}
+			if strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineTeam) {
+				return ExecutionResponse{
+					Output: successfulIncidentOutput(),
+					Trace: []TraceEvent{
+						delegationTrace("metrics-agent", "analyze metrics"),
+						delegationTrace("logs-agent", "analyze logs"),
+						delegationTrace("deploy-agent", "analyze deployment"),
+					},
+				}, nil
+			}
+			t.Fatalf("unexpected baseline session %q", request.SessionKey)
+			return ExecutionResponse{}, nil
+		}),
+	}
+	suite := incidentMultiAgentSuite()
+	suite.Baselines = []string{
+		MultiAgentBaselineSoloTwoPass,
+		MultiAgentBaselineTeam,
+	}
+	report, err := runner.Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if twoPassCalls != 2 {
+		t.Fatalf("solo two-pass calls = %d", twoPassCalls)
+	}
+	attempt := report.Cases[0].Attempts[0]
+	twoPass := attempt.Baselines[0]
+	if !twoPass.Passed ||
+		twoPass.Usage.TotalTokens != 20 ||
+		len(twoPass.ModelCalls) != 2 ||
+		twoPass.ModelCalls[0].Phase != MultiAgentBaselineSoloTwoPass ||
+		twoPass.ModelCalls[1].Phase != MultiAgentBaselineSoloTwoPass {
+		t.Fatalf("unexpected solo two-pass result: %+v", twoPass)
+	}
+	metrics := report.Metrics
+	if metrics.MASoloTwoPassEvaluated != 1 ||
+		metrics.MASoloTwoPassSuccessRate != 1 ||
+		metrics.MAComputeMatchedGain != 0 ||
+		!metrics.MAComputeMatchedGainValid ||
+		math.Abs(metrics.MASoloTwoPassCostUSD-0.2) > 1e-12 {
+		t.Fatalf("unexpected compute-matched metrics: %+v", metrics)
+	}
+}
+
+func TestMultiAgentGroundingAppliesToTeamAndBaselines(t *testing.T) {
+	runner := MultiAgentRunner{
+		Executor: executorFunc(func(_ context.Context, request ExecutionRequest) (ExecutionResponse, error) {
+			response := ExecutionResponse{
+				Output: successfulIncidentOutput() + " The filing has higher evidentiary weight.",
+			}
+			if strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineTeam) {
+				response.Trace = []TraceEvent{
+					delegationTrace("metrics-agent", "analyze metrics"),
+					delegationTrace("logs-agent", "analyze logs"),
+					delegationTrace("deploy-agent", "analyze deployment"),
+				}
+			}
+			return response, nil
+		}),
+	}
+	suite := incidentMultiAgentSuite()
+	suite.Baselines = []string{
+		MultiAgentBaselineSoloOpenBook,
+		MultiAgentBaselineTeam,
+	}
+	suite.Cases[0].ForbiddenOutputValues = []string{"higher evidentiary weight"}
+	report, err := runner.Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := report.Cases[0].Attempts[0]
+	if attempt.Passed ||
+		attempt.Baselines[0].Passed ||
+		attempt.Baselines[1].Passed ||
+		attempt.MultiAgent.GroundingAssertions != 1 ||
+		attempt.MultiAgent.GroundingViolations != 1 {
+		t.Fatalf("grounding violation did not fail outcomes: %+v", attempt)
+	}
+	foundGroundingGrader := false
+	for _, grader := range attempt.Graders {
+		if grader.Type == "ma_grounding" {
+			foundGroundingGrader = true
+			if grader.Passed || grader.Message != "grounding violations 1/1" {
+				t.Fatalf("unexpected grounding grader: %+v", grader)
+			}
+		}
+	}
+	if !foundGroundingGrader ||
+		report.Metrics.MAGroundingAssertions != 1 ||
+		report.Metrics.MAGroundingViolations != 1 ||
+		report.Metrics.MAGroundingAccuracy != 0 {
+		t.Fatalf("unexpected grounding metrics: %+v", report.Metrics)
+	}
+	for _, mode := range []string{MultiAgentBaselineSoloOpenBook, MultiAgentBaselineTeam} {
+		baseline := report.Metrics.MABaselines[mode]
+		if baseline.GroundingAssertions != 1 ||
+			baseline.GroundingViolations != 1 ||
+			baseline.GroundingAccuracy != 0 {
+			t.Fatalf("%s grounding metrics = %+v", mode, baseline)
+		}
+	}
+}
+
 func TestContainsForbiddenAssertionIgnoresNegatedOrUncertainMentions(t *testing.T) {
 	for _, output := range []string{
 		"No refund is authorized until the duplicate-capture conflict is resolved.",
+		"The policy explicitly states “no refund is authorized”.",
 		"This is not a verified duplicate; evidence conflicts.",
 		"We cannot confirm coupon validation as the cause.",
 		"Coupon validation remains unconfirmed.",
+		"| refund authorized | — | none | explicitly excluded |",
 	} {
 		if containsForbiddenAssertion(output, "refund is authorized") ||
 			containsForbiddenAssertion(output, "verified duplicate") ||
@@ -49,6 +241,94 @@ func TestContainsForbiddenAssertionIgnoresNegatedOrUncertainMentions(t *testing.
 		"refund is authorized",
 	) {
 		t.Fatal("unrelated negation suppressed positive assertion")
+	}
+	if !containsForbiddenAssertion(
+		"The desk confirms: “refund is authorized”.",
+		"refund is authorized",
+	) {
+		t.Fatal("quoted positive assertion did not match")
+	}
+	if !containsForbiddenAssertion("Do not authorize a refund.", "do not authorize") {
+		t.Fatal("configured negative forbidden assertion did not match")
+	}
+	if containsForbiddenAssertion(
+		"If no clarification appears within five days, escalate the review.",
+		"no clarification",
+	) {
+		t.Fatal("conditional negative phrase was treated as a direct assertion")
+	}
+	if !containsForbiddenAssertion("No clarification is available.", "no clarification") {
+		t.Fatal("direct negative forbidden assertion did not match")
+	}
+}
+
+func TestMultiAgentOutcomeRejectsNegatedAndReversedDecisions(t *testing.T) {
+	tests := []struct {
+		name       string
+		output     string
+		milestones []MultiAgentMilestone
+		forbidden  []string
+	}{
+		{
+			name: "negated decision",
+			output: "FIL-101 reports 18 percent growth and 220 basis points. " +
+				"The catalyst is not confirmed. Do not move conviction from 3 to 4.",
+			milestones: []MultiAgentMilestone{{
+				ID:     "decision",
+				Values: []string{"FIL-101", "18 percent", "catalyst confirmed", "conviction from 3 to 4"},
+			}},
+		},
+		{
+			name:   "reversed numeric direction",
+			output: "FIL-601 says capex was raised from 5 billion to 8 billion yuan.",
+			milestones: []MultiAgentMilestone{{
+				ID:     "filing",
+				Values: []string{"FIL-601", "reduced from 8 billion to 5 billion yuan"},
+			}},
+		},
+		{
+			name:   "configured opposite assertion",
+			output: "FIL-201 covers C-17 at 31 percent, but the customer will renew its contract.",
+			milestones: []MultiAgentMilestone{{
+				ID:     "facts",
+				Values: []string{"FIL-201", "C-17", "31 percent"},
+			}},
+			forbidden: []string{"will renew its contract"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if multiAgentOutcomePass(test.output, MultiAgentCase{
+				Milestones:            test.milestones,
+				ForbiddenOutputValues: test.forbidden,
+			}) {
+				t.Fatalf("semantically reversed output passed: %q", test.output)
+			}
+		})
+	}
+}
+
+func TestRequiredAssertionIgnoresTrailingNegationForAnotherClaim(t *testing.T) {
+	output := "THS-111 says the catalyst is confirmed, while the invalidation is not observed."
+	if !containsAllAssertions(output, []string{"catalyst confirmed"}) {
+		t.Fatalf("trailing negation for another claim suppressed a positive assertion: %q", output)
+	}
+}
+
+func TestRequiredAssertionPreservesDecimalsAndEquivalentExclusionPhrases(t *testing.T) {
+	output := "PTF-501 reports average pairwise correlation of 0.89. " +
+		"Request a source refresh rather than estimating missing values."
+	if !containsAllAssertions(output, []string{
+		"correlation 0.89",
+		"instead of estimating",
+	}) {
+		t.Fatalf("decimal or exclusion phrase did not match: %q", output)
+	}
+	if containsAllAssertions("The model should estimate missing values.", []string{"instead of estimating"}) {
+		t.Fatal("positive estimation matched a negative exclusion requirement")
+	}
+	if containsAllAssertions("If no trade is authorized, document that constraint.", []string{"no trade"}) {
+		t.Fatal("conditional negative phrase satisfied a required direct assertion")
 	}
 }
 
@@ -136,6 +416,7 @@ func TestLoadBundledMultiAgentSuite(t *testing.T) {
 		{"multiagent-runtime-tenant.yaml", "fastclaw-fixed-runtime-tenant", 8},
 		{"multiagent-fault-injection.yaml", "multiagent-runtime-fault-injection", 6},
 		{"multiagent-finance-workflow.yaml", "finance-research-workflow", 6},
+		{"multiagent-finance-runtime.yaml", "finance-research-runtime", 6},
 	}
 	for _, test := range tests {
 		t.Run(test.file, func(t *testing.T) {
@@ -146,6 +427,9 @@ func TestLoadBundledMultiAgentSuite(t *testing.T) {
 			}
 			if suite.Name != test.name || len(suite.Cases) != test.cases {
 				t.Fatalf("unexpected suite: %s, cases = %d", suite.Name, len(suite.Cases))
+			}
+			if len(suite.SourceSHA256) != 64 {
+				t.Fatalf("suite source SHA-256 = %q", suite.SourceSHA256)
 			}
 		})
 	}
@@ -404,11 +688,48 @@ func TestMultiAgentRunnerIsolatesBaselineTimeouts(t *testing.T) {
 	if err := WriteText(&output, report); err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(output.String(), "closed gain n/a") ||
+	if !strings.Contains(output.String(), "evidence-access delta n/a") ||
 		!strings.Contains(output.String(), "fair gain n/a") ||
 		!strings.Contains(output.String(), "errors 1") ||
 		!strings.Contains(output.String(), "baseline solo_open_book ERROR") {
 		t.Fatalf("baseline errors missing from report:\n%s", output.String())
+	}
+}
+
+func TestMultiAgentRunnerTreatsEmptyBaselineOutputAsError(t *testing.T) {
+	runner := MultiAgentRunner{
+		Executor: executorFunc(func(_ context.Context, request ExecutionRequest) (ExecutionResponse, error) {
+			if strings.HasSuffix(request.SessionKey, "-"+MultiAgentBaselineSoloOpenBook) {
+				return ExecutionResponse{
+					Usage: Usage{CompletionTokens: 2048, TotalTokens: 2048},
+				}, nil
+			}
+			return ExecutionResponse{
+				Output: successfulIncidentOutput(),
+				Trace: []TraceEvent{
+					delegationTrace("metrics-agent", "analyze metrics"),
+					delegationTrace("logs-agent", "analyze logs"),
+					delegationTrace("deploy-agent", "analyze deployment"),
+				},
+			}, nil
+		}),
+	}
+	suite := incidentMultiAgentSuite()
+	suite.Baselines = []string{
+		MultiAgentBaselineSoloOpenBook,
+		MultiAgentBaselineTeam,
+	}
+	report, err := runner.Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempt := report.Cases[0].Attempts[0]
+	if !attempt.Passed ||
+		attempt.Baselines[0].Error != "model returned empty output" ||
+		report.Metrics.MABaselines[MultiAgentBaselineSoloOpenBook].Evaluated != 0 ||
+		report.Metrics.MABaselines[MultiAgentBaselineSoloOpenBook].Errored != 1 ||
+		report.Metrics.MAFairCollaborationValid {
+		t.Fatalf("empty baseline output polluted metrics: %+v", report)
 	}
 }
 
@@ -485,6 +806,7 @@ func TestMultiAgentRunnerAccountsEveryBaselineCostBucket(t *testing.T) {
 	}{
 		MultiAgentBaselineSoloClosedBook: {tokens: 10, cost: 0.1},
 		MultiAgentBaselineSoloOpenBook:   {tokens: 20, cost: 0.2},
+		MultiAgentBaselineSoloTwoPass:    {tokens: 25, cost: 0.25},
 		MultiAgentBaselineTeam:           {tokens: 30, cost: 0.3},
 		MultiAgentBaselineOracleTeam:     {tokens: 40, cost: 0.4},
 	}
@@ -503,11 +825,18 @@ func TestMultiAgentRunnerAccountsEveryBaselineCostBucket(t *testing.T) {
 			}
 			response := ExecutionResponse{
 				Output: successfulIncidentOutput(),
-				Usage:  Usage{TotalTokens: entry.tokens},
+				Usage: Usage{
+					PromptTokens:     entry.tokens - 2,
+					CompletionTokens: 2,
+					TotalTokens:      entry.tokens,
+				},
 				ModelCalls: []ModelCallUsage{{
 					AgentID:          "coordinator",
 					Role:             "coordinator",
+					PromptTokens:     entry.tokens - 2,
+					CompletionTokens: 2,
 					TotalTokens:      entry.tokens,
+					CacheReadTokens:  2,
 					EstimatedCostUSD: entry.cost,
 					Priced:           true,
 				}},
@@ -526,6 +855,7 @@ func TestMultiAgentRunnerAccountsEveryBaselineCostBucket(t *testing.T) {
 	suite.Baselines = []string{
 		MultiAgentBaselineSoloClosedBook,
 		MultiAgentBaselineSoloOpenBook,
+		MultiAgentBaselineSoloTwoPass,
 		MultiAgentBaselineTeam,
 		MultiAgentBaselineOracleTeam,
 	}
@@ -534,9 +864,10 @@ func TestMultiAgentRunnerAccountsEveryBaselineCostBucket(t *testing.T) {
 		t.Fatal(err)
 	}
 	metrics := report.Metrics
-	if math.Abs(metrics.MATotalEstimatedCostUSD-1.0) > 1e-12 ||
+	if math.Abs(metrics.MATotalEstimatedCostUSD-1.5) > 1e-12 ||
 		math.Abs(metrics.MASoloEstimatedCostUSD-0.1) > 1e-12 ||
 		math.Abs(metrics.MASoloOpenBookCostUSD-0.2) > 1e-12 ||
+		math.Abs(metrics.MASoloTwoPassCostUSD-0.5) > 1e-12 ||
 		math.Abs(metrics.MATeamEstimatedCostUSD-0.3) > 1e-12 ||
 		math.Abs(metrics.MAOracleTeamCostUSD-0.4) > 1e-12 {
 		t.Fatalf("baseline cost buckets do not reconcile: %+v", metrics)
@@ -544,6 +875,14 @@ func TestMultiAgentRunnerAccountsEveryBaselineCostBucket(t *testing.T) {
 	if metrics.MATeamTotalTokens != 30 ||
 		metrics.MATeamTokensPerSuccess != 30 {
 		t.Fatalf("unexpected team token metrics: %+v", metrics)
+	}
+	twoPass := metrics.MABaselines[MultiAgentBaselineSoloTwoPass]
+	if twoPass.TotalTokens != 50 ||
+		twoPass.PromptTokens != 46 ||
+		twoPass.CompletionTokens != 4 ||
+		twoPass.CacheReadTokens != 4 ||
+		twoPass.UncachedPromptTokens != 42 {
+		t.Fatalf("unexpected two-pass token accounting: %+v", twoPass)
 	}
 }
 
@@ -681,12 +1020,12 @@ Database latency remained normal. Rollback to build 841 immediately.`,
 	if attempt.Passed {
 		t.Fatalf("duplicate delegation unexpectedly passed: %+v", attempt)
 	}
-	if attempt.MultiAgent.DelegationPrecision != 0.75 ||
+	if attempt.MultiAgent.DelegationPrecision != 1 ||
 		attempt.MultiAgent.DelegationRecall != 1 {
 		t.Fatalf("unexpected delegation metrics: %+v", attempt.MultiAgent)
 	}
 	if report.Metrics.MATeamSuccessRate != 0 ||
-		report.Metrics.MADelegationPrecision != 0.75 {
+		report.Metrics.MADelegationPrecision != 1 {
 		t.Fatalf("unexpected report metrics: %+v", report.Metrics)
 	}
 }

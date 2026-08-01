@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
+	"github.com/fastclaw-ai/fastclaw/internal/auth"
 	"github.com/fastclaw-ai/fastclaw/internal/config"
 	"github.com/fastclaw-ai/fastclaw/internal/provider"
 )
@@ -76,6 +77,16 @@ type traceIntegrationResolver struct {
 	manager *agent.Manager
 }
 
+func withAPIIdentity(request *http.Request, userID string, agents ...string) *http.Request {
+	identity := auth.Identity{
+		UserID:       userID,
+		AuthMethod:   "apikey",
+		APIKeyID:     "test-key",
+		APIKeyAgents: append([]string(nil), agents...),
+	}
+	return request.WithContext(auth.WithIdentity(request.Context(), identity))
+}
+
 func (resolver *traceIntegrationResolver) UserSpaceFor(userID string) (*UserSpaceView, error) {
 	return &UserSpaceView{UserID: userID, Agents: resolver.manager}, nil
 }
@@ -134,7 +145,7 @@ func TestIntegrationChatCompletionsReturnsRequestToolTrace(t *testing.T) {
 		}
 	}`)
 	request := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
-	request = request.WithContext(config.WithUserID(request.Context(), "user-1"))
+	request = withAPIIdentity(request, "user-1", "eval-agent")
 	response := httptest.NewRecorder()
 
 	server.HandleChatCompletions(response, request)
@@ -273,7 +284,7 @@ func TestIntegrationChatCompletionsExecutesStatefulEvalTool(t *testing.T) {
 		}
 	}`)
 	request := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
-	request = request.WithContext(config.WithUserID(request.Context(), "user-1"))
+	request = withAPIIdentity(request, "user-1", "eval-agent")
 	response := httptest.NewRecorder()
 
 	server.HandleChatCompletions(response, request)
@@ -359,7 +370,7 @@ func TestIntegrationChatCompletionsCanIsolateAllAgentTools(t *testing.T) {
 		}
 	}`)
 	request := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
-	request = request.WithContext(config.WithUserID(request.Context(), "user-1"))
+	request = withAPIIdentity(request, "user-1", "eval-agent")
 	response := httptest.NewRecorder()
 
 	server.HandleChatCompletions(response, request)
@@ -368,5 +379,66 @@ func TestIntegrationChatCompletionsCanIsolateAllAgentTools(t *testing.T) {
 	}
 	if providerStub.toolCount != 0 {
 		t.Fatalf("isolated tool count = %d", providerStub.toolCount)
+	}
+}
+
+func TestIntegrationChatCompletionsEnforcesResolvedAgentACL(t *testing.T) {
+	providerStub := &isolatedToolsProvider{}
+	home := t.TempDir()
+	manager, err := agent.NewManager(
+		[]config.ResolvedAgent{
+			{
+				ID:                "default-agent",
+				Home:              home,
+				Workspace:         home,
+				Model:             "fake/model",
+				MaxTokens:         128,
+				MaxToolIterations: 4,
+			},
+			{
+				ID:                "allowed-agent",
+				Home:              home,
+				Workspace:         home,
+				Model:             "fake/model",
+				MaxTokens:         128,
+				MaxToolIterations: 4,
+			},
+		},
+		providerStub,
+		nil,
+		agent.WithUserID("user-1"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := NewServer(&traceIntegrationResolver{manager: manager}, nil, nil)
+	body := []byte(`{"messages":[{"role":"user","content":"Answer briefly."}],"stream":false}`)
+
+	tests := []struct {
+		name       string
+		agentID    string
+		agents     []string
+		wantStatus int
+	}{
+		{name: "omitted header cannot reach an inaccessible fallback", wantStatus: http.StatusForbidden},
+		{name: "explicit inaccessible agent is denied", agentID: "default-agent", agents: []string{"allowed-agent"}, wantStatus: http.StatusForbidden},
+		{name: "unknown explicit agent does not fall back", agentID: "missing-agent", agents: []string{"allowed-agent"}, wantStatus: http.StatusNotFound},
+		{name: "explicit authorized agent is allowed", agentID: "allowed-agent", agents: []string{"allowed-agent"}, wantStatus: http.StatusOK},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
+			request = withAPIIdentity(request, "user-1", test.agents...)
+			if test.agentID != "" {
+				request.Header.Set("x-fastclaw-agent-id", test.agentID)
+			}
+			response := httptest.NewRecorder()
+
+			server.HandleChatCompletions(response, request)
+			if response.Code != test.wantStatus {
+				t.Fatalf("status = %d, want %d, body = %s", response.Code, test.wantStatus, response.Body.String())
+			}
+		})
 	}
 }

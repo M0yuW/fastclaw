@@ -311,6 +311,31 @@ func TestRunTurnDoesNotDeduplicateProductionSubAgentCalls(t *testing.T) {
 	}
 }
 
+func TestRunTurnDeduplicatesIdenticalProductionSubAgentCalls(t *testing.T) {
+	fake := newFakeStreamingProvider(
+		openAIToolStream("call-1", "spawn_subagent", `{"agentId":"child","task":"same task"}`, ""),
+		openAIToolStream("call-2", "spawn_subagent", `{"agentId":"child","task":"same task"}`, ""),
+		openAITextStream("final answer"),
+	)
+	defer fake.server.Close()
+	agent := newStreamingTestAgent(t, fake, 4)
+	spawner := &recordingSubAgentSpawner{}
+	agent.SetSubAgentSpawner(spawner)
+
+	reply := agent.HandleMessage(
+		context.Background(),
+		bus.InboundMessage{Channel: "test", ChatID: "production-identical-subagents", Text: "delegate twice"},
+	)
+	if reply != "final answer" {
+		t.Fatalf("HandleMessage() = %q", reply)
+	}
+	spawner.mu.Lock()
+	defer spawner.mu.Unlock()
+	if len(spawner.messages) != 1 {
+		t.Fatalf("sub-agent calls = %d, want 1", len(spawner.messages))
+	}
+}
+
 func TestHandleMessageStreamForwardsOnlyFinalAnswerRound(t *testing.T) {
 	fake := newFakeStreamingProvider(
 		openAIToolStream("call-1", "test_tool", `{}`, "discard me"),

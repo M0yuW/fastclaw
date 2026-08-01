@@ -10,6 +10,7 @@ import (
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
 	"github.com/fastclaw-ai/fastclaw/internal/agent/tools"
+	"github.com/fastclaw-ai/fastclaw/internal/auth"
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 	"github.com/fastclaw-ai/fastclaw/internal/privacy"
 	"github.com/fastclaw-ai/fastclaw/internal/provider"
@@ -107,6 +108,19 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
+	ident, ok := auth.FromContext(r.Context())
+	if !ok {
+		writeJSON(w, http.StatusUnauthorized, map[string]any{
+			"error": map[string]string{"message": "request identity is missing", "type": "authentication_error"},
+		})
+		return
+	}
+	if !ident.CanAccessAgent(ag.Name()) {
+		writeJSON(w, http.StatusForbidden, map[string]any{
+			"error": map[string]string{"message": "agent access denied", "type": "permission_error"},
+		})
+		return
+	}
 
 	// Build session key from header
 	sessionKey := r.Header.Get("x-fastclaw-session-key")
@@ -173,7 +187,7 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 	}
 	agentCtx := r.Context()
 	if req.FastClaw != nil && req.FastClaw.Eval {
-		agentCtx = tools.ContextWithSubAgentDedup(agentCtx)
+		agentCtx = tools.ContextWithSubAgentTargetDedup(agentCtx)
 	}
 	var snapshotState func() map[string]any
 	var usageCollector *agent.ModelUsageCollector
@@ -343,14 +357,12 @@ func completionUsageFromModelCalls(calls []agent.ModelCallUsage) completionUsage
 }
 
 // resolveAgent picks an agent out of the caller's user space, preferring an
-// explicit agent ID from the x-fastclaw-agent-id header and falling back to
-// the default / first agent.
+// explicit agent ID from the x-fastclaw-agent-id header and otherwise falling
+// back to the default / first agent. An unknown explicit ID never falls back.
 func resolveAgent(space *UserSpaceView, agentID string) *agent.Agent {
 	mgr := space.Agents
 	if agentID != "" {
-		if ag := mgr.AgentByID(agentID); ag != nil {
-			return ag
-		}
+		return mgr.AgentByID(agentID)
 	}
 	if def := mgr.DefaultAgent(); def != nil {
 		return def

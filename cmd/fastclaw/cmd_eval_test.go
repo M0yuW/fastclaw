@@ -445,7 +445,7 @@ func TestEvalMultiAgentTenantProvisionCommandIntegration(t *testing.T) {
 	}
 	if result.Username != evaltenant.Username ||
 		result.APIKey == "" ||
-		len(result.AgentIDs) != 5 {
+		len(result.AgentIDs) != len(evaltenant.AgentIDs) {
 		t.Fatalf("provision result = %+v", result)
 	}
 	fileInfo, err := os.Stat(outputPath)

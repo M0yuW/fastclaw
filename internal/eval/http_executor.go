@@ -151,12 +151,18 @@ func (e *HTTPExecutor) Execute(ctx context.Context, request ExecutionRequest) (E
 	if len(completion.Choices) == 0 {
 		return ExecutionResponse{}, errors.New("chat completion response has no choices")
 	}
-	return ExecutionResponse{
+	execution := ExecutionResponse{
 		Output:     completion.Choices[0].Message.Content,
 		Model:      completion.Model,
 		Usage:      completion.Usage,
 		ModelCalls: completion.FastClaw.ModelCalls,
 		Trace:      completion.FastClaw.Trace,
 		State:      completion.FastClaw.State,
-	}, nil
+	}
+	for _, event := range execution.Trace {
+		if event.Type == "error" && strings.TrimSpace(event.Message) != "" {
+			return execution, fmt.Errorf("agent turn failed: %s", event.Message)
+		}
+	}
+	return execution, nil
 }

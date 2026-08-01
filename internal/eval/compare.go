@@ -33,8 +33,12 @@ type MetricDelta struct {
 	MAOracleTeamPoints          float64 `json:"multi_agent_oracle_team_success_rate_points"`
 	MAFairGainPoints            float64 `json:"multi_agent_fair_collaboration_gain_points"`
 	MAFairGainValid             bool    `json:"multi_agent_fair_collaboration_gain_valid"`
+	MASoloTwoPassPoints         float64 `json:"multi_agent_solo_two_pass_success_rate_points"`
+	MAComputeMatchedGainPoints  float64 `json:"multi_agent_compute_matched_gain_points"`
+	MAComputeMatchedGainValid   bool    `json:"multi_agent_compute_matched_gain_valid"`
 	MAMilestoneKPIPoints        float64 `json:"multi_agent_milestone_kpi_points"`
 	MACoordinationPoints        float64 `json:"multi_agent_coordination_score_points"`
+	MAGroundingAccuracyPoints   float64 `json:"multi_agent_grounding_accuracy_points"`
 	MAFaultInjectionPoints      float64 `json:"multi_agent_fault_injection_rate_points"`
 	MAFaultObservationPoints    float64 `json:"multi_agent_fault_observation_rate_points"`
 	MAFaultAttributionPoints    float64 `json:"multi_agent_fault_attribution_rate_points"`
@@ -111,11 +115,13 @@ func Compare(baseline, candidate Report) (Comparison, error) {
 			MATeamSuccessPoints:         percentagePointDelta(baseline.Metrics.MATeamSuccessRate, candidate.Metrics.MATeamSuccessRate),
 			MASoloSuccessPoints:         percentagePointDelta(baseline.Metrics.MASoloSuccessRate, candidate.Metrics.MASoloSuccessRate),
 			MASoloOpenBookPoints:        percentagePointDelta(baseline.Metrics.MASoloOpenBookSuccessRate, candidate.Metrics.MASoloOpenBookSuccessRate),
+			MASoloTwoPassPoints:         percentagePointDelta(baseline.Metrics.MASoloTwoPassSuccessRate, candidate.Metrics.MASoloTwoPassSuccessRate),
 			MATeamOutcomePoints:         percentagePointDelta(baseline.Metrics.MATeamOutcomeSuccessRate, candidate.Metrics.MATeamOutcomeSuccessRate),
 			MAOracleTeamPoints:          percentagePointDelta(baseline.Metrics.MAOracleTeamSuccessRate, candidate.Metrics.MAOracleTeamSuccessRate),
 			MAMilestoneKPIPoints:        percentagePointDelta(baseline.Metrics.MAMilestoneKPI, candidate.Metrics.MAMilestoneKPI),
 			MACoordinationPoints:        percentagePointDelta(baseline.Metrics.MACoordinationScore, candidate.Metrics.MACoordinationScore),
-			MAFaultInjectionPoints:      percentagePointDelta(faultObservationRate(baseline.Metrics), faultObservationRate(candidate.Metrics)),
+			MAGroundingAccuracyPoints:   percentagePointDelta(baseline.Metrics.MAGroundingAccuracy, candidate.Metrics.MAGroundingAccuracy),
+			MAFaultInjectionPoints:      percentagePointDelta(baseline.Metrics.MAFaultInjectionRate, candidate.Metrics.MAFaultInjectionRate),
 			MAFaultObservationPoints:    percentagePointDelta(faultObservationRate(baseline.Metrics), faultObservationRate(candidate.Metrics)),
 			MAFaultAttributionPoints:    percentagePointDelta(baseline.Metrics.MAFaultAttributionRate, candidate.Metrics.MAFaultAttributionRate),
 			MAGracefulDegradationPoints: percentagePointDelta(baseline.Metrics.MAGracefulDegradationRate, candidate.Metrics.MAGracefulDegradationRate),
@@ -141,6 +147,13 @@ func Compare(baseline, candidate Report) (Comparison, error) {
 		comparison.Delta.MAFairGainPoints = percentagePointDelta(
 			baseline.Metrics.MAFairCollaborationGain,
 			candidate.Metrics.MAFairCollaborationGain,
+		)
+	}
+	if computeMatchedGainAvailable(baseline.Metrics) && computeMatchedGainAvailable(candidate.Metrics) {
+		comparison.Delta.MAComputeMatchedGainValid = true
+		comparison.Delta.MAComputeMatchedGainPoints = percentagePointDelta(
+			baseline.Metrics.MAComputeMatchedGain,
+			candidate.Metrics.MAComputeMatchedGain,
 		)
 	}
 	return comparison, nil
@@ -226,10 +239,12 @@ func WriteComparisonText(writer io.Writer, comparison Comparison) error {
 		{"MA team success", comparison.Baseline.MATeamSuccessRate * 100, comparison.Candidate.MATeamSuccessRate * 100, comparison.Delta.MATeamSuccessPoints, "pp"},
 		{"MA solo success", comparison.Baseline.MASoloSuccessRate * 100, comparison.Candidate.MASoloSuccessRate * 100, comparison.Delta.MASoloSuccessPoints, "pp"},
 		{"MA solo open", comparison.Baseline.MASoloOpenBookSuccessRate * 100, comparison.Candidate.MASoloOpenBookSuccessRate * 100, comparison.Delta.MASoloOpenBookPoints, "pp"},
+		{"MA solo two-pass", comparison.Baseline.MASoloTwoPassSuccessRate * 100, comparison.Candidate.MASoloTwoPassSuccessRate * 100, comparison.Delta.MASoloTwoPassPoints, "pp"},
 		{"MA team outcome", comparison.Baseline.MATeamOutcomeSuccessRate * 100, comparison.Candidate.MATeamOutcomeSuccessRate * 100, comparison.Delta.MATeamOutcomePoints, "pp"},
 		{"MA oracle team", comparison.Baseline.MAOracleTeamSuccessRate * 100, comparison.Candidate.MAOracleTeamSuccessRate * 100, comparison.Delta.MAOracleTeamPoints, "pp"},
 		{"MA milestone KPI", comparison.Baseline.MAMilestoneKPI * 100, comparison.Candidate.MAMilestoneKPI * 100, comparison.Delta.MAMilestoneKPIPoints, "pp"},
 		{"MA coordination", comparison.Baseline.MACoordinationScore * 100, comparison.Candidate.MACoordinationScore * 100, comparison.Delta.MACoordinationPoints, "pp"},
+		{"MA grounding", comparison.Baseline.MAGroundingAccuracy * 100, comparison.Candidate.MAGroundingAccuracy * 100, comparison.Delta.MAGroundingAccuracyPoints, "pp"},
 		{"MA fault observed", faultObservationRate(comparison.Baseline) * 100, faultObservationRate(comparison.Candidate) * 100, comparison.Delta.MAFaultObservationPoints, "pp"},
 		{"MA fault attrib", comparison.Baseline.MAFaultAttributionRate * 100, comparison.Candidate.MAFaultAttributionRate * 100, comparison.Delta.MAFaultAttributionPoints, "pp"},
 		{"MA graceful", comparison.Baseline.MAGracefulDegradationRate * 100, comparison.Candidate.MAGracefulDegradationRate * 100, comparison.Delta.MAGracefulDegradationPoints, "pp"},
@@ -278,6 +293,16 @@ func WriteComparisonText(writer io.Writer, comparison Comparison) error {
 	); err != nil {
 		return err
 	}
+	if err := writeOptionalComparisonRow(
+		writer,
+		"MA compute gain",
+		comparison.Baseline.MAComputeMatchedGain*100,
+		comparison.Candidate.MAComputeMatchedGain*100,
+		comparison.Delta.MAComputeMatchedGainPoints,
+		comparison.Delta.MAComputeMatchedGainValid,
+	); err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -305,18 +330,15 @@ func writeOptionalComparisonRow(
 }
 
 func collaborationGainAvailable(metrics Metrics) bool {
-	if metrics.MACollaborationGainValid {
-		return true
-	}
-	return metrics.MASoloEvaluated > 0 && metrics.MAAttempts > 0
+	return metrics.MACollaborationGainValid
 }
 
 func fairCollaborationGainAvailable(metrics Metrics) bool {
-	if metrics.MAFairCollaborationValid {
-		return true
-	}
-	team, hasTeam := metrics.MABaselines[MultiAgentBaselineTeam]
-	return metrics.MASoloOpenBookEvaluated > 0 && hasTeam && team.Evaluated > 0
+	return metrics.MAFairCollaborationValid
+}
+
+func computeMatchedGainAvailable(metrics Metrics) bool {
+	return metrics.MAComputeMatchedGainValid
 }
 
 func faultObservationRate(metrics Metrics) float64 {

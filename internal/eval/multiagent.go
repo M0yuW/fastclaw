@@ -1,7 +1,9 @@
 package eval
 
 import (
+	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,31 +16,33 @@ import (
 )
 
 type MultiAgentSuite struct {
-	Version     int                     `json:"version" yaml:"version"`
-	Name        string                  `json:"name" yaml:"name"`
-	Description string                  `json:"description,omitempty" yaml:"description,omitempty"`
-	Defaults    Defaults                `json:"defaults,omitempty" yaml:"defaults,omitempty"`
-	Baselines   []string                `json:"baselines,omitempty" yaml:"baselines,omitempty"`
-	Pricing     map[string]ModelPricing `json:"pricing,omitempty" yaml:"pricing,omitempty"`
-	Cases       []MultiAgentCase        `json:"cases" yaml:"cases"`
-	Source      string                  `json:"-" yaml:"-"`
+	Version      int                     `json:"version" yaml:"version"`
+	Name         string                  `json:"name" yaml:"name"`
+	Description  string                  `json:"description,omitempty" yaml:"description,omitempty"`
+	Defaults     Defaults                `json:"defaults,omitempty" yaml:"defaults,omitempty"`
+	Baselines    []string                `json:"baselines,omitempty" yaml:"baselines,omitempty"`
+	Pricing      map[string]ModelPricing `json:"pricing,omitempty" yaml:"pricing,omitempty"`
+	Cases        []MultiAgentCase        `json:"cases" yaml:"cases"`
+	Source       string                  `json:"-" yaml:"-"`
+	SourceSHA256 string                  `json:"-" yaml:"-"`
 }
 
 type MultiAgentCase struct {
-	ID                 string                   `json:"id" yaml:"id"`
-	Description        string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	Prompt             string                   `json:"prompt" yaml:"prompt"`
-	ExecutionMode      string                   `json:"execution_mode,omitempty" yaml:"execution_mode,omitempty"`
-	CoordinatorAgentID string                   `json:"coordinator_agent_id,omitempty" yaml:"coordinator_agent_id,omitempty"`
-	Model              string                   `json:"model,omitempty" yaml:"model,omitempty"`
-	Repetitions        int                      `json:"repetitions,omitempty" yaml:"repetitions,omitempty"`
-	Timeout            Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty"`
-	Tags               []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
-	SkipSolo           bool                     `json:"skip_solo,omitempty" yaml:"skip_solo,omitempty"`
-	Baselines          []string                 `json:"baselines,omitempty" yaml:"baselines,omitempty"`
-	MaxDelegations     int                      `json:"max_delegations,omitempty" yaml:"max_delegations,omitempty"`
-	Agents             []MultiAgentCollaborator `json:"agents" yaml:"agents"`
-	Milestones         []MultiAgentMilestone    `json:"milestones" yaml:"milestones"`
+	ID                    string                   `json:"id" yaml:"id"`
+	Description           string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Prompt                string                   `json:"prompt" yaml:"prompt"`
+	ExecutionMode         string                   `json:"execution_mode,omitempty" yaml:"execution_mode,omitempty"`
+	CoordinatorAgentID    string                   `json:"coordinator_agent_id,omitempty" yaml:"coordinator_agent_id,omitempty"`
+	Model                 string                   `json:"model,omitempty" yaml:"model,omitempty"`
+	Repetitions           int                      `json:"repetitions,omitempty" yaml:"repetitions,omitempty"`
+	Timeout               Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	Tags                  []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
+	SkipSolo              bool                     `json:"skip_solo,omitempty" yaml:"skip_solo,omitempty"`
+	Baselines             []string                 `json:"baselines,omitempty" yaml:"baselines,omitempty"`
+	MaxDelegations        int                      `json:"max_delegations,omitempty" yaml:"max_delegations,omitempty"`
+	ForbiddenOutputValues []string                 `json:"forbidden_output_values,omitempty" yaml:"forbidden_output_values,omitempty"`
+	Agents                []MultiAgentCollaborator `json:"agents" yaml:"agents"`
+	Milestones            []MultiAgentMilestone    `json:"milestones" yaml:"milestones"`
 }
 
 type MultiAgentCollaborator struct {
@@ -77,6 +81,7 @@ type MultiAgentAttemptMetrics struct {
 	ExpectedDelegations     int     `json:"expected_delegations"`
 	ValidDelegations        int     `json:"valid_delegations"`
 	TotalDelegations        int     `json:"total_delegations"`
+	UniqueDelegations       int     `json:"unique_delegations"`
 	UnexpectedDelegations   int     `json:"unexpected_delegations"`
 	DelegationPrecision     float64 `json:"delegation_precision"`
 	DelegationRecall        float64 `json:"delegation_recall"`
@@ -94,24 +99,30 @@ type MultiAgentAttemptMetrics struct {
 	FaultObservationRate    float64 `json:"fault_observation_rate"`
 	FaultAttributionRate    float64 `json:"fault_attribution_rate"`
 	GracefullyDegraded      bool    `json:"gracefully_degraded"`
+	GroundingAssertions     int     `json:"grounding_assertions"`
+	GroundingViolations     int     `json:"grounding_violations"`
 }
 
 type MultiAgentBaselineResult struct {
-	Mode       string           `json:"mode"`
-	Passed     bool             `json:"passed"`
-	Output     string           `json:"output,omitempty"`
-	Error      string           `json:"error,omitempty"`
-	LatencyMS  float64          `json:"latency_ms"`
-	Usage      Usage            `json:"usage"`
-	ModelCalls []ModelCallUsage `json:"model_calls,omitempty"`
+	Mode                string           `json:"mode"`
+	Passed              bool             `json:"passed"`
+	Output              string           `json:"output,omitempty"`
+	Error               string           `json:"error,omitempty"`
+	LatencyMS           float64          `json:"latency_ms"`
+	Usage               Usage            `json:"usage"`
+	ModelCalls          []ModelCallUsage `json:"model_calls,omitempty"`
+	GroundingAssertions int              `json:"grounding_assertions"`
+	GroundingViolations int              `json:"grounding_violations"`
 }
 
 const (
 	MultiAgentBaselineSoloClosedBook = "solo_closed_book"
 	MultiAgentBaselineSoloOpenBook   = "solo_open_book"
+	MultiAgentBaselineSoloTwoPass    = "solo_two_pass"
 	MultiAgentBaselineTeam           = "team"
 	MultiAgentBaselineOracleTeam     = "oracle_team"
 	maxMultiAgentFaultDelay          = 5 * time.Minute
+	maxAssertionTokenGap             = 8
 )
 
 type multiAgentDelegation struct {
@@ -120,14 +131,13 @@ type multiAgentDelegation struct {
 }
 
 func LoadMultiAgentSuite(path string) (MultiAgentSuite, error) {
-	file, err := os.Open(path)
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return MultiAgentSuite{}, fmt.Errorf("open multi-agent eval suite: %w", err)
 	}
-	defer file.Close()
 
 	var suite MultiAgentSuite
-	decoder := yaml.NewDecoder(file)
+	decoder := yaml.NewDecoder(bytes.NewReader(data))
 	decoder.KnownFields(true)
 	if err := decoder.Decode(&suite); err != nil {
 		return MultiAgentSuite{}, fmt.Errorf("decode multi-agent eval suite: %w", err)
@@ -140,6 +150,7 @@ func LoadMultiAgentSuite(path string) (MultiAgentSuite, error) {
 		return MultiAgentSuite{}, fmt.Errorf("decode multi-agent eval suite: %w", err)
 	}
 	suite.Source = path
+	suite.SourceSHA256 = fmt.Sprintf("%x", sha256.Sum256(data))
 	if err := suite.Validate(); err != nil {
 		return MultiAgentSuite{}, err
 	}
@@ -216,6 +227,15 @@ func (s *MultiAgentSuite) Validate() error {
 		if evalCase.MaxDelegations > 0 && evalCase.MaxDelegations < len(evalCase.Agents) {
 			return fmt.Errorf("case %q: max_delegations cannot be less than collaborator count", evalCase.ID)
 		}
+		for valueIndex, value := range evalCase.ForbiddenOutputValues {
+			if strings.TrimSpace(value) == "" {
+				return fmt.Errorf(
+					"case %q forbidden_output_values %d: value is required",
+					evalCase.ID,
+					valueIndex+1,
+				)
+			}
+		}
 		seenAgents := make(map[string]struct{}, len(evalCase.Agents))
 		for agentIndex, collaborator := range evalCase.Agents {
 			if strings.TrimSpace(collaborator.ID) == "" {
@@ -244,7 +264,9 @@ func (s *MultiAgentSuite) Validate() error {
 			}
 		}
 		for _, baseline := range multiAgentBaselines(*s, *evalCase) {
-			if baseline != MultiAgentBaselineSoloOpenBook && baseline != MultiAgentBaselineOracleTeam {
+			if baseline != MultiAgentBaselineSoloOpenBook &&
+				baseline != MultiAgentBaselineSoloTwoPass &&
+				baseline != MultiAgentBaselineOracleTeam {
 				continue
 			}
 			for _, collaborator := range evalCase.Agents {
@@ -284,6 +306,7 @@ func validateMultiAgentBaselines(scope string, baselines []string) error {
 		switch baseline {
 		case MultiAgentBaselineSoloClosedBook,
 			MultiAgentBaselineSoloOpenBook,
+			MultiAgentBaselineSoloTwoPass,
 			MultiAgentBaselineTeam,
 			MultiAgentBaselineOracleTeam:
 		default:
@@ -343,6 +366,7 @@ func multiAgentBaselines(suite MultiAgentSuite, evalCase MultiAgentCase) []strin
 	if evalCase.SkipSolo {
 		result = removeBaseline(result, MultiAgentBaselineSoloClosedBook)
 		result = removeBaseline(result, MultiAgentBaselineSoloOpenBook)
+		result = removeBaseline(result, MultiAgentBaselineSoloTwoPass)
 	}
 	return result
 }
@@ -390,12 +414,13 @@ func (r MultiAgentRunner) Run(ctx context.Context, suite MultiAgentSuite) (Repor
 		runSequence.Add(1),
 	)
 	report := Report{
-		Version:     SuiteVersion,
-		Suite:       suite.Name,
-		Description: suite.Description,
-		Source:      suite.Source,
-		StartedAt:   startedAt,
-		Cases:       make([]CaseResult, 0, len(selectedCases)),
+		Version:      SuiteVersion,
+		Suite:        suite.Name,
+		Description:  suite.Description,
+		Source:       suite.Source,
+		SourceSHA256: suite.SourceSHA256,
+		StartedAt:    startedAt,
+		Cases:        make([]CaseResult, 0, len(selectedCases)),
 	}
 
 	for _, evalCase := range selectedCases {
@@ -552,6 +577,8 @@ func (r MultiAgentRunner) runBaseline(
 		request.Prompt = multiAgentSoloPrompt(evalCase)
 	case MultiAgentBaselineSoloOpenBook:
 		request.Prompt = multiAgentOpenBookPrompt(evalCase)
+	case MultiAgentBaselineSoloTwoPass:
+		return r.runSoloTwoPassBaseline(baselineContext, request, evalCase)
 	case MultiAgentBaselineOracleTeam:
 		request.Prompt = multiAgentOracleTeamPrompt(evalCase)
 	case MultiAgentBaselineTeam:
@@ -577,8 +604,63 @@ func (r MultiAgentRunner) runBaseline(
 		baselineResult.Error = err.Error()
 		return baselineResult, response
 	}
-	baselineResult.Passed = allMultiAgentMilestonesPass(response.Output, evalCase.Milestones)
+	if strings.TrimSpace(response.Output) == "" {
+		baselineResult.Error = "model returned empty output"
+		return baselineResult, response
+	}
+	baselineResult.GroundingAssertions, baselineResult.GroundingViolations = evaluateGrounding(
+		response.Output,
+		evalCase.ForbiddenOutputValues,
+	)
+	baselineResult.Passed = allMultiAgentMilestonesPass(response.Output, evalCase.Milestones) &&
+		baselineResult.GroundingViolations == 0
 	return baselineResult, response
+}
+
+func (r MultiAgentRunner) runSoloTwoPassBaseline(
+	ctx context.Context,
+	request ExecutionRequest,
+	evalCase MultiAgentCase,
+) (MultiAgentBaselineResult, ExecutionResponse) {
+	startedAt := time.Now()
+	request.Prompt = multiAgentTwoPassAnalysisPrompt(evalCase)
+	analysisResponse, err := r.Executor.Execute(ctx, request)
+	combinedResponse := analysisResponse
+	if err == nil && strings.TrimSpace(analysisResponse.Output) == "" {
+		err = errors.New("analysis pass returned empty output")
+	}
+	if err == nil {
+		request.Prompt = multiAgentTwoPassSynthesisPrompt()
+		finalResponse, finalErr := r.Executor.Execute(ctx, request)
+		combinedResponse = finalResponse
+		combinedResponse.Usage = addUsage(analysisResponse.Usage, finalResponse.Usage)
+		combinedResponse.ModelCalls = append(
+			append([]ModelCallUsage(nil), analysisResponse.ModelCalls...),
+			finalResponse.ModelCalls...,
+		)
+		err = finalErr
+		if err == nil && strings.TrimSpace(finalResponse.Output) == "" {
+			err = errors.New("synthesis pass returned empty output")
+		}
+	}
+	result := MultiAgentBaselineResult{
+		Mode:       MultiAgentBaselineSoloTwoPass,
+		Output:     combinedResponse.Output,
+		LatencyMS:  milliseconds(time.Since(startedAt)),
+		Usage:      combinedResponse.Usage,
+		ModelCalls: appendModelCallPhase(nil, combinedResponse.ModelCalls, MultiAgentBaselineSoloTwoPass),
+	}
+	if err != nil {
+		result.Error = err.Error()
+		return result, combinedResponse
+	}
+	result.GroundingAssertions, result.GroundingViolations = evaluateGrounding(
+		combinedResponse.Output,
+		evalCase.ForbiddenOutputValues,
+	)
+	result.Passed = allMultiAgentMilestonesPass(combinedResponse.Output, evalCase.Milestones) &&
+		result.GroundingViolations == 0
+	return result, combinedResponse
 }
 
 func appendModelCallPhase(target, calls []ModelCallUsage, phase string) []ModelCallUsage {
@@ -655,7 +737,8 @@ func multiAgentOpenBookPrompt(evalCase MultiAgentCase) string {
 	return fmt.Sprintf(
 		`Solve the following task independently. You have the same evidence
 available to the team, flattened into an anonymous evidence packet. Do not
-claim facts that are absent or marked unavailable.
+claim facts that are absent or marked unavailable. Preserve every evidence ID
+and exact numeric, versioned-state, and control term needed to audit the answer.
 
 Task:
 %s
@@ -667,12 +750,40 @@ Evidence packet:
 	)
 }
 
+func multiAgentTwoPassAnalysisPrompt(evalCase MultiAgentCase) string {
+	return fmt.Sprintf(
+		`Analyze the following task independently using the anonymous evidence
+packet. This is the first of two compute-matched passes. Build an evidence-to-
+claim audit plan and identify unsupported or conflicting claims. Preserve every
+evidence ID and exact numeric, versioned-state, and control term. Do not call
+tools and do not write the final answer yet.
+
+Task:
+%s
+
+Evidence packet:
+%s`,
+		evalCase.Prompt,
+		multiAgentEvidencePacket(evalCase, false),
+	)
+}
+
+func multiAgentTwoPassSynthesisPrompt() string {
+	return `Using the analysis from the previous pass, produce the final answer
+now. The final answer must be self-contained: evidence or reasoning mentioned
+only in the analysis pass does not count. Separate the decision, evidence, and
+remediation. Preserve every evidence ID and exact numeric, versioned-state, and
+control term. Do not add claims that are absent from the evidence packet.`
+}
+
 func multiAgentOracleTeamPrompt(evalCase MultiAgentCase) string {
 	return fmt.Sprintf(
 		`You are an oracle coordinator. Routing is assumed perfect and every
 specialist report that could be obtained is provided below. Synthesize the
 reports into one final answer. Explicitly identify unavailable, malformed, or
-conflicting evidence and do not invent replacements.
+conflicting evidence and do not invent replacements. Preserve every evidence
+ID and exact numeric, versioned-state, and control term needed to audit the
+answer.
 
 Task:
 %s
@@ -725,7 +836,8 @@ Available specialists:
 %s
 Delegate one focused task to every specialist with spawn_subagent, then
 synthesize their reports into one final answer. Do not delegate to unknown
-agents or call the same specialist twice.`,
+agents or call the same specialist twice. Preserve every evidence ID and exact
+numeric, versioned-state, and control term needed to audit the answer.`,
 		evalCase.Prompt,
 		team.String(),
 	)
@@ -758,7 +870,11 @@ func gradeMultiAgentAttempt(
 		expected[collaborator.ID] = collaborator
 	}
 	valid := make(map[string]bool, len(expected))
+	uniqueDelegations := make(map[string]struct{}, len(delegations))
 	for _, delegation := range delegations {
+		if delegation.AgentID != "" {
+			uniqueDelegations[delegation.AgentID] = struct{}{}
+		}
 		collaborator, exists := expected[delegation.AgentID]
 		if !exists {
 			metrics.UnexpectedDelegations++
@@ -769,8 +885,9 @@ func gradeMultiAgentAttempt(
 		}
 	}
 	metrics.ValidDelegations = len(valid)
-	if metrics.TotalDelegations > 0 {
-		metrics.DelegationPrecision = float64(metrics.ValidDelegations) / float64(metrics.TotalDelegations)
+	metrics.UniqueDelegations = len(uniqueDelegations)
+	if metrics.UniqueDelegations > 0 {
+		metrics.DelegationPrecision = float64(metrics.ValidDelegations) / float64(metrics.UniqueDelegations)
 	}
 	if metrics.ExpectedDelegations > 0 {
 		metrics.DelegationRecall = float64(metrics.ValidDelegations) / float64(metrics.ExpectedDelegations)
@@ -783,7 +900,7 @@ func gradeMultiAgentAttempt(
 	results := make([]GraderResult, 0, len(evalCase.Milestones)+7)
 	allMilestonesPassed := true
 	for _, milestone := range evalCase.Milestones {
-		passed := containsAllFold(output, milestone.Values)
+		passed := containsAllAssertions(output, milestone.Values)
 		if passed {
 			metrics.PassedMilestones++
 		} else {
@@ -799,7 +916,7 @@ func gradeMultiAgentAttempt(
 		if collaborator.Fault != nil {
 			continue
 		}
-		if valid[collaborator.ID] && containsAllFold(output, collaborator.ContributionValues) {
+		if valid[collaborator.ID] && containsAllAssertions(output, collaborator.ContributionValues) {
 			metrics.ContributionsUtilized++
 		}
 	}
@@ -864,6 +981,17 @@ func gradeMultiAgentAttempt(
 			Type:    "ma_graceful_degradation",
 			Passed:  metrics.GracefullyDegraded,
 			Message: multiAgentGracefulDegradationMessage(metrics),
+		})
+	}
+	metrics.GroundingAssertions, metrics.GroundingViolations = evaluateGrounding(
+		output,
+		evalCase.ForbiddenOutputValues,
+	)
+	if metrics.GroundingAssertions > 0 {
+		results = append(results, GraderResult{
+			Type:    "ma_grounding",
+			Passed:  metrics.GroundingViolations == 0,
+			Message: multiAgentGroundingMessage(metrics),
 		})
 	}
 	return results
@@ -977,11 +1105,19 @@ func multiAgentDelegations(trace []TraceEvent) []multiAgentDelegation {
 
 func allMultiAgentMilestonesPass(output string, milestones []MultiAgentMilestone) bool {
 	for _, milestone := range milestones {
-		if !containsAllFold(output, milestone.Values) {
+		if !containsAllAssertions(output, milestone.Values) {
 			return false
 		}
 	}
 	return true
+}
+
+func multiAgentOutcomePass(output string, evalCase MultiAgentCase) bool {
+	if !allMultiAgentMilestonesPass(output, evalCase.Milestones) {
+		return false
+	}
+	_, violations := evaluateGrounding(output, evalCase.ForbiddenOutputValues)
+	return violations == 0
 }
 
 func containsAllFold(text string, values []string) bool {
@@ -1001,6 +1137,82 @@ func containsAllFold(text string, values []string) bool {
 	return true
 }
 
+func containsAllInOrderFold(text string, values []string) bool {
+	return containsAllAssertions(text, values)
+}
+
+func containsAllAssertions(text string, values []string) bool {
+	for _, value := range values {
+		if !containsRequiredAssertion(text, value) {
+			return false
+		}
+	}
+	return true
+}
+
+func containsRequiredAssertion(text, value string) bool {
+	for _, alternative := range strings.Split(value, "||") {
+		expected := strings.Fields(normalizeMatchText(alternative))
+		if len(expected) == 0 {
+			continue
+		}
+		for _, clause := range assertionMatchClauses(text) {
+			actual := strings.Fields(normalizeMatchText(clause))
+			for searchFrom := 0; searchFrom < len(actual); {
+				start, end, ok := wordsAppearInOrder(actual, expected, searchFrom, maxAssertionTokenGap)
+				if !ok {
+					break
+				}
+				if expectedContainsNegation(expected) {
+					if !hasConditionalScope(actual, start) {
+						return true
+					}
+				} else if !hasNegationScope(actual, start, end, 0) {
+					return true
+				}
+				searchFrom = start + 1
+			}
+		}
+	}
+	return false
+}
+
+func wordsAppearInOrder(actual, expected []string, searchFrom, maxGap int) (int, int, bool) {
+	if len(expected) == 0 {
+		return 0, 0, false
+	}
+	for start := max(0, searchFrom); start < len(actual); start++ {
+		if !equalMatchWord(actual[start], expected[0]) {
+			continue
+		}
+		actualIndex := start
+		matched := true
+		for expectedIndex := 1; expectedIndex < len(expected); expectedIndex++ {
+			found := false
+			limit := min(len(actual), actualIndex+maxGap+2)
+			for candidate := actualIndex + 1; candidate < limit; candidate++ {
+				if equalMatchWord(actual[candidate], expected[expectedIndex]) {
+					actualIndex = candidate
+					found = true
+					break
+				}
+			}
+			if !found {
+				matched = false
+				break
+			}
+		}
+		if matched {
+			return start, actualIndex + 1, true
+		}
+	}
+	return 0, 0, false
+}
+
+func equalMatchWord(left, right string) bool {
+	return normalizeMatchWord(left) == normalizeMatchWord(right)
+}
+
 func containsForbiddenAssertion(text, value string) bool {
 	for _, alternative := range strings.Split(value, "||") {
 		expected := strings.Fields(normalizeMatchText(alternative))
@@ -1013,7 +1225,11 @@ func containsForbiddenAssertion(text, value string) bool {
 				if !equalWords(actual[start:start+len(expected)], expected) {
 					continue
 				}
-				if !hasNegationScope(actual, start, start+len(expected)) {
+				if expectedContainsNegation(expected) {
+					if !hasConditionalScope(actual, start) {
+						return true
+					}
+				} else if !hasNegationScope(actual, start, start+len(expected), 5) {
 					return true
 				}
 			}
@@ -1025,20 +1241,40 @@ func containsForbiddenAssertion(text, value string) bool {
 func forbiddenMatchClauses(text string) []string {
 	text = strings.ToLower(text)
 	text = strings.NewReplacer(
-		"\n", ".",
-		";", ".",
-		"。", ".",
-		"；", ".",
-		"!", ".",
-		"！", ".",
-		"?", ".",
-		"？", ".",
+		"\n", "\n",
+		";", "\n",
+		"。", "\n",
+		"；", "\n",
+		"!", "\n",
+		"！", "\n",
+		"?", "\n",
+		"？", "\n",
 		" but ", ".",
-		" and ", ".",
-		" however ", ".",
-		" yet ", ".",
+		" and ", "\n",
+		" however ", "\n",
+		" yet ", "\n",
 	).Replace(text)
-	return strings.Split(text, ".")
+	var clauses []string
+	var clause strings.Builder
+	for index := 0; index < len(text); index++ {
+		character := text[index]
+		if character == '.' &&
+			!(index > 0 && index+1 < len(text) &&
+				text[index-1] >= '0' && text[index-1] <= '9' &&
+				text[index+1] >= '0' && text[index+1] <= '9') {
+			clauses = append(clauses, clause.String())
+			clause.Reset()
+			continue
+		}
+		if character == '\n' {
+			clauses = append(clauses, clause.String())
+			clause.Reset()
+			continue
+		}
+		clause.WriteByte(character)
+	}
+	clauses = append(clauses, clause.String())
+	return clauses
 }
 
 func equalWords(actual, expected []string) bool {
@@ -1046,16 +1282,16 @@ func equalWords(actual, expected []string) bool {
 		return false
 	}
 	for index := range expected {
-		if actual[index] != expected[index] {
+		if !equalMatchWord(actual[index], expected[index]) {
 			return false
 		}
 	}
 	return true
 }
 
-func hasNegationScope(words []string, start, end int) bool {
+func hasNegationScope(words []string, start, end, trailingWindow int) bool {
 	windowStart := max(0, start-5)
-	windowEnd := min(len(words), end+5)
+	windowEnd := min(len(words), end+trailingWindow)
 	negations := map[string]struct{}{
 		"no":           {},
 		"not":          {},
@@ -1071,34 +1307,108 @@ func hasNegationScope(words []string, start, end int) bool {
 		"absent":       {},
 		"lack":         {},
 		"lacks":        {},
-		"may":          {},
-		"might":        {},
-		"could":        {},
-		"possible":     {},
-		"possibly":     {},
+		"none":         {},
+		"excluded":     {},
+		"exclude":      {},
+		"never":        {},
+		"refuse":       {},
+		"refused":      {},
+		"reject":       {},
+		"rejected":     {},
+		"deny":         {},
+		"denied":       {},
 	}
 	for index := windowStart; index < windowEnd; index++ {
-		if words[index] == "not" && index+1 < len(words) && words[index+1] == "only" {
+		word := normalizeMatchWord(words[index])
+		if word == "not" && index+1 < len(words) && normalizeMatchWord(words[index+1]) == "only" {
 			continue
 		}
-		if _, exists := negations[words[index]]; exists {
+		if _, exists := negations[word]; exists {
+			return true
+		}
+	}
+	hedges := map[string]struct{}{
+		"may":      {},
+		"might":    {},
+		"could":    {},
+		"possible": {},
+		"possibly": {},
+	}
+	for index := windowStart; index < start; index++ {
+		if _, exists := hedges[normalizeMatchWord(words[index])]; exists {
 			return true
 		}
 	}
 	return false
 }
 
+func hasConditionalScope(words []string, start int) bool {
+	windowStart := max(0, start-5)
+	for index := windowStart; index < start; index++ {
+		switch normalizeMatchWord(words[index]) {
+		case "if", "unless", "whether":
+			return true
+		}
+	}
+	return false
+}
+
+func expectedContainsNegation(words []string) bool {
+	for _, word := range words {
+		switch normalizeMatchWord(word) {
+		case "no", "not", "cannot", "can't", "without", "never", "none",
+			"unknown", "unconfirmed", "unverified", "unavailable", "uncertain",
+			"insufficient", "absent", "lack", "lacks", "excluded", "exclude",
+			"refuse", "refused", "reject", "rejected", "deny", "denied":
+			return true
+		}
+	}
+	return false
+}
+
+func assertionMatchClauses(text string) []string {
+	return forbiddenMatchClauses(text)
+}
+
+func evaluateGrounding(output string, forbiddenValues []string) (int, int) {
+	violations := 0
+	for _, forbidden := range forbiddenValues {
+		if containsForbiddenAssertion(output, forbidden) {
+			violations++
+		}
+	}
+	return len(forbiddenValues), violations
+}
+
 func normalizeMatchText(value string) string {
 	value = strings.ToLower(value)
+	value = strings.ReplaceAll(value, "instead of", "not")
+	value = strings.ReplaceAll(value, "rather than", "not")
 	value = strings.ReplaceAll(value, "%", " percent ")
 	value = strings.NewReplacer(
 		",", "",
 		"`", "",
 		"*", "",
 		"-", " ",
+		"‑", " ",
+		"–", " ",
+		"—", " ",
 		"_", " ",
 		"/", " ",
 		":", " ",
+		"=", " ",
+		">", " above ",
+		"<", " below ",
+		"¥", " ",
+		"￥", " ",
+		"→", " to ",
+		"“", " ",
+		"”", " ",
+		"‘", " ",
+		"’", " ",
+		"\"", " ",
+		"'", " ",
+		"|", " ",
 		"(", " ",
 		")", " ",
 	).Replace(value)
@@ -1116,9 +1426,14 @@ func normalizeMatchText(value string) string {
 		"ten":   "10",
 	}
 	stopWords := map[string]struct{}{
-		"a":   {},
-		"an":  {},
-		"the": {},
+		"a":    {},
+		"an":   {},
+		"are":  {},
+		"is":   {},
+		"of":   {},
+		"the":  {},
+		"was":  {},
+		"were": {},
 	}
 	fields := strings.Fields(value)
 	normalized := make([]string, 0, len(fields))
@@ -1129,12 +1444,26 @@ func normalizeMatchText(value string) string {
 		if number, ok := numberWords[field]; ok {
 			field = number
 		}
-		if len(field) > 3 && strings.HasSuffix(field, "s") {
-			field = strings.TrimSuffix(field, "s")
-		}
-		normalized = append(normalized, field)
+		normalized = append(normalized, normalizeMatchWord(field))
 	}
 	return strings.Join(normalized, " ")
+}
+
+func normalizeMatchWord(value string) string {
+	value = strings.Trim(strings.ToLower(value), `."'“”‘’[]{}|,;!?`)
+	if len(value) > 4 && strings.HasSuffix(value, "sses") {
+		return strings.TrimSuffix(value, "es")
+	}
+	if len(value) > 4 && strings.HasSuffix(value, "ies") {
+		return strings.TrimSuffix(value, "ies") + "y"
+	}
+	if len(value) > 3 && strings.HasSuffix(value, "s") &&
+		!strings.HasSuffix(value, "ss") &&
+		!strings.HasSuffix(value, "is") &&
+		!strings.HasSuffix(value, "us") {
+		return strings.TrimSuffix(value, "s")
+	}
+	return value
 }
 
 func multiAgentDelegationMessage(metrics *MultiAgentAttemptMetrics) string {
@@ -1190,6 +1519,17 @@ func multiAgentGracefulDegradationMessage(metrics *MultiAgentAttemptMetrics) str
 		metrics.FaultObservationRate,
 		metrics.FaultAttributionRate,
 		metrics.UnsupportedClaims,
+	)
+}
+
+func multiAgentGroundingMessage(metrics *MultiAgentAttemptMetrics) string {
+	if metrics.GroundingViolations == 0 {
+		return ""
+	}
+	return fmt.Sprintf(
+		"grounding violations %d/%d",
+		metrics.GroundingViolations,
+		metrics.GroundingAssertions,
 	)
 }
 

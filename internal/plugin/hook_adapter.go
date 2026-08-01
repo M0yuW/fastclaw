@@ -120,6 +120,7 @@ func buildHookFireParams(pointName string, hc *agent.HookContext) HookFireParams
 		ToolName:   hc.ToolName,
 		ToolArgs:   hc.ToolArgs,
 		ToolResult: hc.ToolResult,
+		DurationMS: float64(hc.Duration.Microseconds()) / 1000,
 	}
 
 	// Serialize messages

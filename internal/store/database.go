@@ -8,10 +8,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
-	_ "github.com/lib/pq"          // PostgreSQL driver
-	_ "modernc.org/sqlite"         // SQLite driver (pure Go)
+	_ "github.com/lib/pq"  // PostgreSQL driver
+	_ "modernc.org/sqlite" // SQLite driver (pure Go)
 )
 
 // DBStore implements Store using a SQL database (PostgreSQL or SQLite).
@@ -22,6 +24,14 @@ type DBStore struct {
 
 // NewDBStore creates a database-backed store.
 func NewDBStore(dialect, dsn string) (*DBStore, error) {
+	dialect = strings.ToLower(strings.TrimSpace(dialect))
+	if dialect == "sqlite" {
+		var err error
+		dsn, err = sqliteDSNWithDefaults(dsn)
+		if err != nil {
+			return nil, fmt.Errorf("normalize sqlite DSN: %w", err)
+		}
+	}
 	db, err := sql.Open(driverName(dialect), dsn)
 	if err != nil {
 		return nil, fmt.Errorf("open %s: %w", dialect, err)
@@ -34,6 +44,68 @@ func NewDBStore(dialect, dsn string) (*DBStore, error) {
 		return nil, fmt.Errorf("ping %s: %w", dialect, err)
 	}
 	return &DBStore{db: db, dialect: dialect}, nil
+}
+
+func sqliteDSNWithDefaults(dsn string) (string, error) {
+	main, fragment, hasFragment := strings.Cut(dsn, "#")
+	_, rawQuery, hasQuery := strings.Cut(main, "?")
+	query, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return "", err
+	}
+	hasJournalMode := false
+	hasForeignKeys := false
+	hasBusyTimeout := false
+	hasTxLock := false
+	for key, values := range query {
+		switch strings.ToLower(strings.TrimSpace(key)) {
+		case "_txlock":
+			hasTxLock = true
+		case "_pragma":
+			for _, value := range values {
+				switch sqlitePragmaName(value) {
+				case "journal_mode":
+					hasJournalMode = true
+				case "foreign_keys":
+					hasForeignKeys = true
+				case "busy_timeout":
+					hasBusyTimeout = true
+				}
+			}
+		}
+	}
+	defaults := make([]string, 0, 4)
+	if !hasJournalMode {
+		defaults = append(defaults, "_pragma=journal_mode(WAL)")
+	}
+	if !hasForeignKeys {
+		defaults = append(defaults, "_pragma=foreign_keys(1)")
+	}
+	if !hasBusyTimeout {
+		defaults = append(defaults, "_pragma=busy_timeout(5000)")
+	}
+	if !hasTxLock {
+		defaults = append(defaults, "_txlock=immediate")
+	}
+	if len(defaults) > 0 {
+		separator := "?"
+		if hasQuery {
+			separator = "&"
+		}
+		main += separator + strings.Join(defaults, "&")
+	}
+	if hasFragment {
+		main += "#" + fragment
+	}
+	return main, nil
+}
+
+func sqlitePragmaName(value string) string {
+	normalized := strings.ToLower(strings.TrimSpace(value))
+	if index := strings.IndexAny(normalized, "(= \t"); index >= 0 {
+		normalized = normalized[:index]
+	}
+	return normalized
 }
 
 func driverName(dialect string) string {
@@ -74,14 +146,14 @@ func (d *DBStore) Migrate(ctx context.Context) error {
 	return nil
 }
 
-// migrateAgentFilesDropTemplate clears the legacy user_id='' template
+// migrateAgentFilesDropTemplate clears the legacy user_id=” template
 // rows from agent_files. Each row is reparented to the agent's owner
 // when no per-user row already exists for that (agent_id, filename) —
 // preserves existing content as the owner's personal copy. After this
 // pass the table holds (agent_id, real_user_id, filename) tuples only;
 // any "shared SOUL.md across all users" use case should live in a local
 // FS file at <agent_home>/<name>, which the runtime falls back to.
-// Idempotent: re-runs find no user_id='' rows and exit clean.
+// Idempotent: re-runs find no user_id=” rows and exit clean.
 func (d *DBStore) migrateAgentFilesDropTemplate(ctx context.Context) error {
 	rows, err := d.db.QueryContext(ctx,
 		`SELECT agent_files.agent_id, agent_files.filename, agent_files.content, agents.user_id

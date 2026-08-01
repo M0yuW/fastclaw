@@ -2,6 +2,7 @@ package agent
 
 import (
 	"context"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -35,10 +36,11 @@ type ModelCallUsage struct {
 }
 
 type ModelUsageCollector struct {
-	mu          sync.Mutex
-	rootAgentID string
-	pricing     map[string]ModelPricing
-	calls       []ModelCallUsage
+	mu           sync.Mutex
+	rootAgentID  string
+	pricing      map[string]ModelPricing
+	nextSequence int
+	calls        []ModelCallUsage
 }
 
 type modelUsageCollectorKey struct{}
@@ -69,9 +71,44 @@ func RecordModelCall(
 	latency time.Duration,
 	callErr error,
 ) {
+	RecordModelCallWithSequence(
+		ctx,
+		BeginModelCall(ctx),
+		agentID,
+		model,
+		usage,
+		latency,
+		callErr,
+	)
+}
+
+func BeginModelCall(ctx context.Context) int {
+	collector, _ := ctx.Value(modelUsageCollectorKey{}).(*ModelUsageCollector)
+	if collector == nil {
+		return 0
+	}
+	collector.mu.Lock()
+	collector.nextSequence++
+	sequence := collector.nextSequence
+	collector.mu.Unlock()
+	return sequence
+}
+
+func RecordModelCallWithSequence(
+	ctx context.Context,
+	sequence int,
+	agentID string,
+	model string,
+	usage provider.Usage,
+	latency time.Duration,
+	callErr error,
+) {
 	collector, _ := ctx.Value(modelUsageCollectorKey{}).(*ModelUsageCollector)
 	if collector == nil {
 		return
+	}
+	if sequence <= 0 {
+		sequence = BeginModelCall(ctx)
 	}
 	callPath := bus.InternalCallPathFromContext(ctx)
 	role := "subagent"
@@ -80,6 +117,7 @@ func RecordModelCall(
 	}
 	price, priced := collector.priceFor(model)
 	call := ModelCallUsage{
+		Sequence:            sequence,
 		AgentID:             agentID,
 		Role:                role,
 		Model:               model,
@@ -99,7 +137,6 @@ func RecordModelCall(
 		call.Error = callErr.Error()
 	}
 	collector.mu.Lock()
-	call.Sequence = len(collector.calls) + 1
 	collector.calls = append(collector.calls, call)
 	collector.mu.Unlock()
 }
@@ -115,6 +152,9 @@ func (c *ModelUsageCollector) Snapshot() []ModelCallUsage {
 		result[index] = call
 		result[index].CallPath = append([]string(nil), call.CallPath...)
 	}
+	sort.Slice(result, func(i, j int) bool {
+		return result[i].Sequence < result[j].Sequence
+	})
 	return result
 }
 
