@@ -272,14 +272,14 @@ Serenity-specific evaluation must compare:
 The candidate universe, source snapshots, model, prompt budget, and tool access
 must remain identical. This isolates methodology lift from data-access lift.
 
-The bundled `evals/multiagent-finance-workflow.yaml` suite contains six
-fixed-evidence tasks covering catalyst confirmation, thesis invalidation,
-duplicate alert suppression, incomplete screening data, portfolio
-concentration, and contradictory primary evidence. It runs
-`solo_closed_book`, `solo_open_book`, `team`, and `oracle_team`; only
-`team - solo_open_book` is the fair collaboration gain because both modes
-receive the same evidence packet. This is a runtime-harness regression suite,
-not a return benchmark or official MultiAgentBench score.
+The bundled finance suites contain six fixed-evidence tasks covering catalyst
+confirmation, thesis invalidation, duplicate alert suppression, incomplete
+screening data, portfolio concentration, and contradictory primary evidence.
+The workflow suite retains `solo_closed_book` as an evidence-access diagnostic.
+The real-runtime suite uses `solo_open_book`, `solo_two_pass`, `team`, and
+`oracle_team`: `team - solo_open_book` is the fair collaboration gain and
+`team - solo_two_pass` is the compute-matched gain. These are runtime-harness
+regression suites, not return benchmarks or official MultiAgentBench scores.
 
 ## Next Phases
 

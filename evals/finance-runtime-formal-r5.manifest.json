@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "artifact": "finance-runtime-formal-r5.json",
+  "artifact_sha256": "5366a91398ca575d303af56d62da179f2a3f1fb13a1d0f5aae5c1773debfbc00",
+  "suite": "evals/multiagent-finance-runtime.yaml",
+  "suite_sha256": "4fbf54eca61dc7363342ea1db364cb84426e1541937a99c1e1266dbfb3e5dc44",
+  "run": {
+    "command_without_secret": "go run ./cmd/fastclaw eval multiagent run evals/multiagent-finance-runtime.yaml --base-url http://127.0.0.1:18953 --agent-id bench-coordinator --repetitions 1 --timeout 10m --format json --output finance-runtime-formal-r5.json",
+    "suite_default_repetitions": 3,
+    "actual_repetitions_override": 1,
+    "baseline_modes": [
+      "solo_open_book",
+      "solo_two_pass",
+      "team",
+      "oracle_team"
+    ],
+    "execution_mode": "runtime",
+    "case_filter": [],
+    "timeout": "10m",
+    "gateway_base_url": "http://127.0.0.1:18953",
+    "provider_endpoint_class": "OpenAI-compatible chat-completions API",
+    "pricing_table_date": "2026-08-01",
+    "coordinator_agent_id": "bench-coordinator",
+    "coordinator_model": "deepseek/deepseek-v4-pro",
+    "specialist_agent_ids": [
+      "finance-source",
+      "finance-methodology",
+      "finance-governance"
+    ],
+    "specialist_model": "deepseek/deepseek-v4-flash",
+    "started_at": "2026-08-01T05:18:15.294962+08:00",
+    "finished_at": "2026-08-01T05:26:57.901006+08:00"
+  },
+  "source_snapshot": {
+    "status": "dirty_working_tree",
+    "head_commit": "351ee422f25ef86fc3c0159f7894739be95ac1a6",
+    "go_version": "go1.26.4 darwin/arm64",
+    "critical_file_sha256": {
+      "internal/eval/multiagent.go": "0d0f4ccdb8e11717d81349ccdbb9e268922ee004eff2fa1cef62cf43cb3e3324",
+      "internal/evaltenant/tenant.go": "7db4341c9f6f501bf268fd66f09e2fadc0f73389584cffa33c463179d130f936"
+    },
+    "limitation": "The complete dirty patch was not archived at run time. The artifact can be regraded from the frozen suite and outputs, but the exact model execution cannot be claimed reproducible from the recorded HEAD alone."
+  },
+  "evidence": {
+    "specialist_evidence": "compiled fixed lookup table with verbatim-copy instructions",
+    "financial_tool_calls": 0,
+    "spawn_subagent_tool_calls": 18,
+    "faults_expected": 0,
+    "external_dependency": "The finskills directory is external and unvendored; the r5 runtime confirmation did not invoke its executables."
+  },
+  "secret_handling": "The API key was supplied through FASTCLAW_API_KEY and is intentionally absent from this manifest."
+}

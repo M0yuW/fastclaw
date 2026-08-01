@@ -1,10 +1,11 @@
 version: 1
-name: finance-research-workflow
-description: Fixed-evidence finance research tasks for fair Team/Solo comparison without return prediction.
+name: finance-research-runtime
+description: Fixed point-in-time finance workflows executed through a real Pro coordinator and three real Flash specialists.
 defaults:
+  agent_id: bench-coordinator
   repetitions: 3
-  timeout: 2m
-baselines: [solo_closed_book, solo_open_book, solo_two_pass, team, oracle_team]
+  timeout: 10m
+baselines: [solo_open_book, solo_two_pass, team, oracle_team]
 pricing:
   deepseek/deepseek-v4-flash:
     input_per_million: 0.14
@@ -17,115 +18,129 @@ pricing:
 cases:
   - id: earnings-catalyst-review
     description: Confirm a thesis catalyst from dated filing evidence and persist a bounded update.
-    tags: [finance, thesis, earnings, catalyst]
+    execution_mode: runtime
+    tags: [finance, runtime, thesis, earnings]
     max_delegations: 3
     forbidden_output_values:
       [trade is authorized, recommend a trade, execute a trade, catalyst is not confirmed, do not move conviction, refuse the positive upgrade]
     prompt: >-
-      Review the Q2 event using only evidence available on 2026-07-30.
-      Separate facts from interpretation, decide whether the thesis changes,
-      and state the exact research-state update. Do not recommend a trade.
+      [FIN-01] Review the Q2 event using only evidence available on
+      2026-07-30. Separate facts from interpretation, decide whether the thesis
+      changes, and state the exact research-state update. Do not recommend a
+      trade. Cite every evidence ID.
     agents:
-      - id: filing-agent
+      - id: finance-source
         role: Extract dated primary-source earnings facts.
         response: >-
           FIL-101: the 2026-07-30 Q2 filing reports services revenue growth of
           18 percent and gross-margin expansion of 220 basis points.
+        task_values: [FIN-01]
         contribution_values: [FIL-101, 18 percent, 220 basis points]
-      - id: thesis-agent
+      - id: finance-methodology
         role: Compare the filing with the stored thesis conditions.
         response: >-
           THS-111: thesis version 4 names services acceleration as a catalyst
           and services growth below hardware as an invalidation; the catalyst
           is confirmed and the invalidation is not observed.
+        task_values: [FIN-01]
         contribution_values:
-          [THS-111, thesis version 4, invalidation is not observed || invalidation was not observed || invalidation not observed || does not trigger the invalidation condition]
-      - id: risk-agent
+          [THS-111, thesis version 4, invalidation is not observed || invalidation was not observed || invalidation not observed]
+      - id: finance-governance
         role: Define a bounded, auditable research-state action.
         response: >-
           RSK-121: record a positive upgrade review, move conviction from 3 to
           4, retain active status, and require expected_version 4; no trade is
           authorized.
+        task_values: [FIN-01]
         contribution_values:
-          [RSK-121, conviction from 3 to 4 || conviction moves from 3 to 4 || conviction rises from 3 to 4 || conviction 3 to 4, expected_version 4 || expected thesis version 4, no trade]
+          [RSK-121, conviction from 3 to 4 || conviction 3 to 4, expected_version 4 || expected thesis version 4, no trade]
     milestones:
       - id: filing-facts
         values: [FIL-101, 18 percent, 220 basis points]
       - id: thesis-comparison
         values:
-          [THS-111, catalyst, invalidation is not observed || invalidation was not observed || invalidation not observed || does not trigger the invalidation condition]
+          [THS-111, catalyst, invalidation is not observed || invalidation was not observed || invalidation not observed]
       - id: state-update
         values:
           [positive upgrade || positive review, conviction from 3 to 4 || conviction moves from 3 to 4 || conviction rises from 3 to 4 || conviction 3 to 4, expected_version 4 || expected thesis version 4, no trade]
 
   - id: thesis-invalidation-review
     description: Invalidate a thesis when primary evidence crosses its explicit failure condition.
-    tags: [finance, thesis, invalidation, risk]
+    execution_mode: runtime
+    tags: [finance, runtime, invalidation, risk]
     max_delegations: 3
     forbidden_output_values:
       [target price is estimated, position should be closed entirely, will renew its contract, has renewed its contract, below 25 percent, do not invalidate]
     prompt: >-
-      Assess the dated customer-loss event against the stored thesis. Cite the
-      evidence IDs, avoid unsupported price predictions, and specify the safe
-      versioned state transition.
+      [FIN-02] Assess the dated customer-loss event against the stored thesis.
+      Cite every evidence ID, avoid unsupported price predictions, and specify
+      the safe versioned state transition.
     agents:
-      - id: filing-agent
+      - id: finance-source
         role: Extract the controlling customer disclosure.
         response: >-
           FIL-201: the 2026-07-29 exchange filing states that customer C-17,
           representing 31 percent of revenue, will not renew its contract.
+        task_values: [FIN-02]
         contribution_values: [FIL-201, C-17, 31 percent, will not renew]
-      - id: thesis-agent
+      - id: finance-methodology
         role: Apply the stored invalidation rule.
         response: >-
           THS-211: thesis version 2 is invalidated if any customer above 25
           percent of revenue is lost; FIL-201 crosses that threshold.
+        task_values: [FIN-02]
         contribution_values: [THS-211, thesis version 2, above 25 percent, crosses]
-      - id: risk-agent
+      - id: finance-governance
         role: Define the conservative research-state response.
         response: >-
           RSK-221: persist decision invalidate with expected_version 2, set
           status invalidated, and request a fresh evidence review without
           estimating a target price.
+        task_values: [FIN-02]
         contribution_values:
-          [RSK-221, invalidate, expected_version 2, status invalidated || status to invalidated, no target price || do not estimate a target price || without estimating a target price || without a target price estimate || no price prediction]
+          [RSK-221, invalidate, expected_version 2, status invalidated || status to invalidated, no target price || without estimating a target price || no price prediction]
     milestones:
       - id: primary-evidence
         values: [FIL-201, C-17, 31 percent, will not renew || non-renewal || customer loss]
       - id: invalidation-rule
-        values: [THS-211, above 25 percent || exceeding 25 percent, crosses]
+        values: [THS-211, above 25 percent || exceeding 25 percent, crosses || exceeds]
       - id: conservative-transition
         values:
-          [invalidate, expected_version 2, status invalidated || status to invalidated, no target price || do not estimate a target price || without estimating a target price || without a target price estimate || no price prediction]
+          [invalidate, expected_version 2, status invalidated || status to invalidated, no target price || without estimating a target price || no price prediction]
 
   - id: duplicate-event-alert
     description: Suppress a syndicated duplicate while preserving occurrence count and audit state.
-    tags: [finance, alert, deduplication, state]
+    execution_mode: runtime
+    tags: [finance, runtime, alert, state]
     max_delegations: 3
     forbidden_output_values:
       [create a second alert, run thesis review twice]
     prompt: >-
-      Process the incoming event against the current watch state. Determine
-      whether a new alert should be created and state the exact auditable
-      update without reviewing the thesis twice.
+      [FIN-03] Process the incoming event against the current watch state.
+      Determine whether a new alert should be created and state the exact
+      auditable update without reviewing the thesis twice. Cite every evidence
+      ID.
     agents:
-      - id: event-agent
+      - id: finance-source
         role: Normalize event identity across sources.
         response: >-
           EVT-301: the exchange feed and news wire both carry external event ID
           SSE-688981-77 with the same announcement, inside the 24-hour window.
-        contribution_values: [EVT-301, SSE-688981-77, same announcement, 24-hour window]
-      - id: state-agent
+        task_values: [FIN-03]
+        contribution_values: [EVT-301, SSE-688981-77, 24-hour window]
+      - id: finance-methodology
         role: Inspect existing watch and alert state.
         response: >-
           STA-311: watch WL-7 already has alert FA-9 for that fingerprint with
           duplicate_count 1 and status new.
+        task_values: [FIN-03]
         contribution_values: [STA-311, WL-7, FA-9, duplicate_count 1]
-      - id: policy-agent
+      - id: finance-governance
         role: Apply deterministic alert deduplication policy.
         response: >-
           POL-321: do not create a second alert; increment FA-9 duplicate_count
           to 2 and last_seen_at, then run thesis review only once.
+        task_values: [FIN-03]
         contribution_values:
           [POL-321, do not create a second alert, duplicate_count to 2, review only once || review exactly once]
     milestones:
@@ -140,33 +155,38 @@ cases:
 
   - id: incomplete-screening-data
     description: Reject a candidate whose apparent screen pass depends on missing metrics.
-    tags: [finance, screening, data-quality]
+    execution_mode: runtime
+    tags: [finance, runtime, screening, data-quality]
     max_delegations: 3
     forbidden_output_values:
       [missing fields pass, estimate missing values, candidate enters the ranked shortlist]
     prompt: >-
-      Decide whether candidate X may enter the ranked shortlist. Distinguish
-      observed metrics from missing values and follow the configured complete-
-      data policy without filling gaps from model knowledge.
+      [FIN-04] Decide whether candidate X may enter the ranked shortlist.
+      Distinguish observed metrics from missing values and follow the configured
+      complete-data policy without filling gaps from model knowledge. Cite
+      every evidence ID.
     agents:
-      - id: data-agent
+      - id: finance-source
         role: Report retrieved screening fields and missingness.
         response: >-
           DAT-401: candidate X has PE 14 and ROE 16 percent, but free cash flow
           and debt-to-asset ratio are missing from the retrieved record.
+        task_values: [FIN-04]
         contribution_values: [DAT-401, PE 14, ROE 16 percent, free cash flow, debt-to-asset ratio]
-      - id: methodology-agent
+      - id: finance-methodology
         role: Apply the deterministic screening contract.
         response: >-
           MET-411: require_complete is true, so every metric used by the screen
           must be present and missing fields cannot be treated as passing.
+        task_values: [FIN-04]
         contribution_values:
           [MET-411, require_complete is true || require_complete = true, cannot be treated as passing]
-      - id: risk-agent
+      - id: finance-governance
         role: Give the safe shortlist decision.
         response: >-
           RSK-421: reject candidate X as insufficient_data, exclude it from the
           ranking, and request source refresh instead of estimating values.
+        task_values: [FIN-04]
         contribution_values:
           [RSK-421, insufficient_data, exclude, source refresh, not estimate || instead of estimating]
     milestones:
@@ -181,7 +201,8 @@ cases:
 
   - id: portfolio-concentration-response
     description: Convert deterministic portfolio diagnostics into a reversible risk-control proposal.
-    tags: [finance, portfolio, concentration, risk]
+    execution_mode: runtime
+    tags: [finance, runtime, portfolio, risk]
     max_delegations: 3
     forbidden_output_values:
       - one-third of the excess exposure
@@ -195,32 +216,36 @@ cases:
       - do not rebalance
       - staged plan was rejected
     prompt: >-
-      Review the fixed portfolio-risk snapshot. Quantify the exposure, identify
-      the correlated risk cluster, and propose a reversible control with a
-      verification condition. Do not promise returns or invent tranche sizes,
-      timing, monitoring cadence, or methods absent from the evidence.
+      [FIN-05] Review the fixed portfolio-risk snapshot. Quantify the exposure,
+      identify the correlated risk cluster, and propose a reversible control
+      with a verification condition. Do not promise returns or invent tranche
+      sizes, timing, monitoring cadence, or methods absent from the evidence.
+      Cite every evidence ID.
     agents:
-      - id: portfolio-agent
+      - id: finance-source
         role: Quantify concentration and correlation.
         response: >-
           PTF-501: semiconductors are 62 percent of portfolio weight and the
           top three semiconductor holdings have average pairwise correlation
           0.89.
-        contribution_values: [PTF-501, 62 percent, top three, correlation 0.89]
-      - id: stress-agent
+        task_values: [FIN-05]
+        contribution_values: [PTF-501, 62 percent, correlation 0.89]
+      - id: finance-methodology
         role: Report deterministic stress output.
         response: >-
           STR-511: the configured sector-shock scenario estimates a 17 percent
           portfolio drawdown, compared with the 10 percent risk limit.
+        task_values: [FIN-05]
         contribution_values: [STR-511, 17 percent, 10 percent risk limit]
-      - id: risk-agent
+      - id: finance-governance
         role: Define a reversible control and verification gate.
         response: >-
           RSK-521: propose a staged rebalance that reduces semiconductor weight
           below 45 percent, then rerun concentration and stress checks before
           any execution; returns are not guaranteed.
+        task_values: [FIN-05]
         contribution_values:
-          [RSK-521, staged rebalance, below 45 percent, rerun || re-check || recheck, not guaranteed || no return guarantees || no returns are guaranteed || no returns are promised or guaranteed]
+          [RSK-521, staged rebalance, below 45 percent, rerun || re-check || recheck, not guaranteed || no returns are guaranteed]
     milestones:
       - id: concentration
         values: [PTF-501, 62 percent, correlation 0.89]
@@ -228,16 +253,24 @@ cases:
         values: [STR-511, 17 percent, 10 percent risk limit, above the 10 percent risk limit || exceeds the 10 percent risk limit || over the 10 percent risk limit]
       - id: reversible-control
         values:
-          [staged rebalance, below 45 percent, rerun || re-check || recheck, not guaranteed || no return guarantees || no returns are guaranteed || no returns are promised or guaranteed]
+          [staged rebalance, below 45 percent, rerun || re-run || re-running || re running || re-check || recheck, not guaranteed || no returns are guaranteed]
 
   - id: contradictory-primary-evidence
     description: Preserve uncertainty when two dated primary sources conflict.
-    tags: [finance, evidence, contradiction, governance]
+    execution_mode: runtime
+    tags: [finance, runtime, evidence, governance]
     max_delegations: 3
     forbidden_output_values:
       - higher evidentiary weight
       - lower evidentiary weight
       - superior evidentiary weight
+      - filing-level legal weight
+      - legal weight
+      - equal documentary standing
+      - source hierarchy
+      - hierarchy granting one precedence
+      - temporal proximity
+      - document formality
       - lower filed figure
       - filing overrides the transcript
       - no contradiction
@@ -246,30 +279,33 @@ cases:
       - conviction changed
       - no clarification
     prompt: >-
-      Reconcile the conflicting capex disclosures. Explicitly separate both
-      primary-source claims, avoid selecting the convenient one, and give the
-      bounded research-state action.
+      [FIN-06] Reconcile the conflicting capex disclosures. Explicitly separate
+      both primary-source claims, avoid selecting the convenient one, and give
+      the bounded research-state action. Cite every evidence ID.
     agents:
-      - id: filing-agent
+      - id: finance-source
         role: Extract the exchange filing claim.
         response: >-
           FIL-601: the 2026-07-28 exchange filing says full-year capex guidance
           was reduced from 8 billion to 5 billion yuan.
+        task_values: [FIN-06]
         contribution_values:
           [FIL-601, reduced from 8 billion to 5 billion yuan || reduced from 8 billion to 5 billion]
-      - id: transcript-agent
+      - id: finance-methodology
         role: Extract the later management-call claim.
         response: >-
           TRN-611: the 2026-07-29 official call transcript says the original
           8-billion-yuan expansion plan remains unchanged.
+        task_values: [FIN-06]
         contribution_values:
           [TRN-611, original 8-billion-yuan || original 8 billion, remains unchanged]
-      - id: risk-agent
+      - id: finance-governance
         role: Handle conflicting primary evidence conservatively.
         response: >-
           RSK-621: mark an explicit contradiction, choose needs_review, keep
           conviction unchanged, and request clarification before any upgrade
           or downgrade.
+        task_values: [FIN-06]
         contribution_values: [RSK-621, contradiction, needs_review, conviction unchanged, clarification]
     milestones:
       - id: filing-claim

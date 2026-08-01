@@ -177,29 +177,35 @@ go run ./cmd/fastclaw eval multiagent run \
 
 By default, specialists are deterministic simulated workers. This isolates the
 coordinator's planning, delegation, and synthesis behavior while keeping runs
-reproducible. The bundled suites declare four diagnostic modes:
+reproducible. A multi-agent suite may declare these diagnostic modes:
 
 - `solo_closed_book`: task only, without specialist evidence
 - `solo_open_book`: the same evidence packet available to the team, anonymized
   and flattened, without delegation tools
+- `solo_two_pass`: the same anonymous evidence packet across two coordinator
+  passes, controlling for the team's additional planning/synthesis opportunity
 - `team`: normal coordinator execution with simulated or real specialists
 - `oracle_team`: named specialist reports delivered directly, measuring the
   synthesis ceiling when routing and delivery are perfect
 
-The fair collaboration gain compares the team's milestone-only outcome rate
-with `solo_open_book`, so both sides use the same evidence and output grader.
+The fair collaboration gain compares the team's milestone-and-grounding outcome
+rate with `solo_open_book`, so both sides use the same evidence and output
+grader. Compute-matched gain compares the same Team outcome with
+`solo_two_pass`.
 The team's strict success rate additionally requires correct delegation,
 contribution use, and efficiency. The older
 `team - solo_closed_book` gain remains in reports as an optimistic diagnostic,
 but it must not be presented as proof that orchestration itself added value.
-Four-mode suites make three additional coordinator calls per attempt, so use a
+Suites with all five modes make several additional coordinator calls per attempt, so use a
 case filter and one repetition for low-cost pilots. Each mode receives an
 independent timeout and session key so a slow baseline cannot consume the
 team's execution budget or contaminate its conversation history. A baseline
 that times out or returns an execution error is reported as `errored` and is
 excluded from that mode's evaluated-success denominator. Collaboration gain is
-reported as `n/a` whenever either required mode has no valid evaluated output;
-an infrastructure failure is never converted into a model failure.
+reported as `n/a` unless both modes have equal paired evaluated counts and zero
+errors; an infrastructure failure is never converted into a model failure.
+Tokens and cost from errored calls remain in the resource ledger because failed
+provider calls can still consume billable resources.
 
 Set `execution_mode: runtime` to use the coordinator's real built-in
 `spawn_subagent` tool and FastClaw Gateway routing. Runtime mode measures real
@@ -235,13 +241,14 @@ The report includes:
 - **Contribution utilization:** delegated specialist evidence retained in the
   final synthesis
 - **Coordination score:** mean of delegation F1 and contribution utilization
-- **Four-mode baseline success:** closed-book solo, open-book solo, team, and
-  oracle-team
+- **Per-mode baseline success:** closed-book solo, open-book solo, two-pass
+  solo, team, and oracle-team when configured
 - **Fair collaboration gain:** team success minus open-book solo success
+- **Compute-matched gain:** team success minus two-pass solo success
 - **Average delegations and unexpected calls**
 - **Per-call usage tree:** phase, coordinator/sub-agent role, agent ID, model,
   call path, tokens, estimated USD cost, latency, and error
-- **Cost split:** closed-book solo, open-book solo, team, oracle team,
+- **Cost split:** closed-book solo, open-book solo, two-pass solo, team, oracle team,
   coordinator, sub-agent, total evaluation cost, and cost per successful team
   run
 - **Latency split:** average summed coordinator and sub-agent model-call
@@ -281,6 +288,8 @@ It measures whether the runtime helps the coordinator:
 
 Use `team - solo_open_book` as the fair collaboration gain. Both modes receive
 the same evidence, while only the team must route work through specialists.
+Use `team - solo_two_pass` as the compute-matched gain when `solo_two_pass` is
+configured.
 `team - solo_closed_book` also includes data-access advantage and is therefore
 only a diagnostic. The suite measures evidence handling and orchestration, not
 investment returns, alpha, or an official MultiAgentBench score.
@@ -472,8 +481,8 @@ The comparison reports:
 - Tool-trace accuracy and invalid-tool-call-rate change
 - Stateful task, communication, and policy-compliance change
 - SWE patch-generation, test-execution, and resolution-rate change
-- Multi-agent four-mode baseline success, closed/fair collaboration gain,
-  milestone KPI, and coordination change
+- Multi-agent per-mode baseline success, evidence-access/fair/compute-matched
+  gain, milestone KPI, grounding, and coordination change
 - Multi-agent fault observation, attribution, graceful degradation, and
   unsupported-claim change
 - Multi-agent team P50/P95 latency, team tokens per success, team cost, cost per

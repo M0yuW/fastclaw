@@ -47,12 +47,15 @@ synthesis, restraint, and state-transition instructions. It does not use future
 returns as ground truth and must not be reported as investment performance.
 
 Multi-agent suites may declare `baselines` using `solo_closed_book`,
-`solo_open_book`, `team`, and `oracle_team`. Fair collaboration gain compares
-the milestone-only team outcome with `solo_open_book` because both modes receive
-the same evidence and output grader; the closed-book gain remains a useful but
-optimistic diagnostic.
+`solo_open_book`, `solo_two_pass`, `team`, and `oracle_team`. Fair collaboration
+gain compares the Team milestone-and-grounding outcome with `solo_open_book`
+because both modes receive the same evidence and output grader. Compute-matched
+gain compares Team with `solo_two_pass`; the closed-book gain remains a useful
+but optimistic evidence-access diagnostic.
 
 Baseline execution errors are counted separately from valid evaluated outputs,
-and gains are unavailable when either required mode has no valid result.
+and gains are unavailable unless the paired modes have equal evaluated counts
+and no errors. Erroring calls retain their token and cost consumption in the
+resource ledger but do not enter the success or valid-latency denominator.
 Fault-suite forbidden values are assertion-sensitive, but unique fabricated
 evidence IDs remain preferable to broad phrases.
