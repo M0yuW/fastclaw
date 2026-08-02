@@ -19,6 +19,7 @@ type RunOptions struct {
 	Timeout          time.Duration
 	SessionKeyPrefix string
 	CaseIDs          []string
+	Modes            []string
 }
 
 type Runner struct {
@@ -132,18 +133,20 @@ func calculateMetrics(results []CaseResult) Metrics {
 	totalTurns := 0
 	turnRuns := 0
 	var (
-		maTeamPassed        int
-		maSoloPassed        int
-		maMilestones        int
-		maPassedMilestones  int
-		maExpected          int
-		maValid             int
-		maDelegations       int
-		maUniqueDelegations int
-		maContributions     int
-		maUsedContributions int
-		maFaultAttributed   int
-		maGraceful          int
+		maTeamPassed            int
+		maSoloPassed            int
+		maMilestones            int
+		maPassedMilestones      int
+		maExpected              int
+		maValid                 int
+		maDelegations           int
+		maUniqueDelegations     int
+		maContributions         int
+		maUsedContributions     int
+		maContributionItems     int
+		maUsedContributionItems int
+		maFaultAttributed       int
+		maGraceful              int
 	)
 	for _, result := range results {
 		if result.PassAt1 {
@@ -200,6 +203,8 @@ func calculateMetrics(results []CaseResult) Metrics {
 				metrics.MAUnexpectedDelegations += attempt.MultiAgent.UnexpectedDelegations
 				maContributions += attempt.MultiAgent.ContributionsExpected
 				maUsedContributions += attempt.MultiAgent.ContributionsUtilized
+				maContributionItems += attempt.MultiAgent.ContributionItemsExpected
+				maUsedContributionItems += attempt.MultiAgent.ContributionItemsUtilized
 				metrics.MAGroundingAssertions += attempt.MultiAgent.GroundingAssertions
 				metrics.MAGroundingViolations += attempt.MultiAgent.GroundingViolations
 				if attempt.MultiAgent.FaultsExpected > 0 {
@@ -440,6 +445,10 @@ func calculateMetrics(results []CaseResult) Metrics {
 	}
 	if maContributions > 0 {
 		metrics.MAContributionUtilization = float64(maUsedContributions) / float64(maContributions)
+	}
+	if maContributionItems > 0 {
+		metrics.MAContributionItemCoverage = float64(maUsedContributionItems) /
+			float64(maContributionItems)
 	}
 	if metrics.MAGroundingAssertions > 0 {
 		metrics.MAGroundingAccuracy = 1 -

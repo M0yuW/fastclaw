@@ -18,8 +18,25 @@ type SubAgentSpawner interface {
 }
 
 type spawnSubagentArgs struct {
+	AgentID       string                    `json:"agentId"`
+	Task          string                    `json:"task"`
+	SharedContext string                    `json:"sharedContext"`
+	Delegations   []spawnSubagentDelegation `json:"delegations"`
+}
+
+type spawnSubagentDelegation struct {
 	AgentID string `json:"agentId"`
 	Task    string `json:"task"`
+}
+
+type spawnSubagentBatchResult struct {
+	Results []spawnSubagentDelegationResult `json:"results"`
+}
+
+type spawnSubagentDelegationResult struct {
+	AgentID string `json:"agentId"`
+	Result  string `json:"result,omitempty"`
+	Error   string `json:"error,omitempty"`
 }
 
 var subAgentCallCounter uint64
@@ -65,7 +82,7 @@ func contextWithSubAgentDedup(ctx context.Context, targetOnly bool) context.Cont
 
 // RegisterSubAgent registers the spawn_subagent tool.
 func RegisterSubAgent(r *Registry, spawner SubAgentSpawner, callerAgentID string) {
-	r.Register("spawn_subagent", "Delegate to a specialized agent and return its response. Identical repeated target/task calls within one parent turn reuse the first result.", map[string]interface{}{
+	r.Register("spawn_subagent", "Delegate one task or a batch of independent tasks. Batch mode sends sharedContext to every delegation once at runtime and executes distinct targets concurrently. Identical repeated target/task calls within one parent turn reuse the first result.", map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
 			"agentId": map[string]interface{}{
@@ -76,8 +93,29 @@ func RegisterSubAgent(r *Registry, spawner SubAgentSpawner, callerAgentID string
 				"type":        "string",
 				"description": "The message/prompt to send to the sub-agent",
 			},
+			"sharedContext": map[string]interface{}{
+				"type":        "string",
+				"description": "Batch-only evidence or context appended once by the runtime to every delegated task",
+			},
+			"delegations": map[string]interface{}{
+				"type":        "array",
+				"description": "Batch-only list of independent specialist targets and focused tasks",
+				"minItems":    1,
+				"maxItems":    16,
+				"items": map[string]interface{}{
+					"type": "object",
+					"properties": map[string]interface{}{
+						"agentId": map[string]interface{}{"type": "string"},
+						"task":    map[string]interface{}{"type": "string"},
+					},
+					"required": []string{"agentId", "task"},
+				},
+			},
 		},
-		"required": []string{"agentId", "task"},
+		"anyOf": []map[string]interface{}{
+			{"required": []string{"agentId", "task"}},
+			{"required": []string{"sharedContext", "delegations"}},
+		},
 	}, makeSubAgentTool(spawner, callerAgentID))
 }
 
@@ -86,6 +124,12 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 		var args spawnSubagentArgs
 		if err := json.Unmarshal(rawArgs, &args); err != nil {
 			return "", fmt.Errorf("parse args: %w", err)
+		}
+		if len(args.Delegations) > 0 {
+			if args.AgentID != "" || args.Task != "" {
+				return "", fmt.Errorf("single and batch delegation fields cannot be combined")
+			}
+			return spawnSubAgentBatch(ctx, spawner, callerAgentID, args.SharedContext, args.Delegations)
 		}
 
 		if args.AgentID == "" {
@@ -104,6 +148,70 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 		}
 		return spawnSubAgent(ctx, spawner, callerAgentID, args)
 	}
+}
+
+func spawnSubAgentBatch(
+	ctx context.Context,
+	spawner SubAgentSpawner,
+	callerAgentID string,
+	sharedContext string,
+	delegations []spawnSubagentDelegation,
+) (string, error) {
+	if len(delegations) == 0 {
+		return "", fmt.Errorf("delegations are required")
+	}
+	if len(delegations) > 16 {
+		return "", fmt.Errorf("delegations cannot exceed 16")
+	}
+	seen := make(map[string]struct{}, len(delegations))
+	for _, delegation := range delegations {
+		if delegation.AgentID == "" {
+			return "", fmt.Errorf("delegation agentId is required")
+		}
+		if delegation.Task == "" {
+			return "", fmt.Errorf("delegation task is required")
+		}
+		if delegation.AgentID == callerAgentID {
+			return "", fmt.Errorf("cannot spawn yourself as a sub-agent")
+		}
+		if _, exists := seen[delegation.AgentID]; exists {
+			return "", fmt.Errorf("duplicate batch target %q", delegation.AgentID)
+		}
+		seen[delegation.AgentID] = struct{}{}
+	}
+
+	batch := spawnSubagentBatchResult{Results: make([]spawnSubagentDelegationResult, len(delegations))}
+	var waitGroup sync.WaitGroup
+	for index, delegation := range delegations {
+		waitGroup.Add(1)
+		go func() {
+			defer waitGroup.Done()
+			task := delegation.Task
+			if sharedContext != "" {
+				task += "\n\nShared context:\n" + sharedContext
+			}
+			args := spawnSubagentArgs{AgentID: delegation.AgentID, Task: task}
+			var result string
+			var err error
+			if dedup, ok := ctx.Value(subAgentDedupKey{}).(*subAgentDedup); ok {
+				result, err = dedup.call(ctx, args.AgentID, args.Task, func() (string, error) {
+					return spawnSubAgent(ctx, spawner, callerAgentID, args)
+				})
+			} else {
+				result, err = spawnSubAgent(ctx, spawner, callerAgentID, args)
+			}
+			batch.Results[index] = spawnSubagentDelegationResult{AgentID: delegation.AgentID, Result: result}
+			if err != nil {
+				batch.Results[index].Error = err.Error()
+			}
+		}()
+	}
+	waitGroup.Wait()
+	encoded, err := json.Marshal(batch)
+	if err != nil {
+		return "", fmt.Errorf("encode batch result: %w", err)
+	}
+	return string(encoded), nil
 }
 
 func (d *subAgentDedup) call(

@@ -8,7 +8,9 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math/big"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -28,21 +30,22 @@ type MultiAgentSuite struct {
 }
 
 type MultiAgentCase struct {
-	ID                    string                   `json:"id" yaml:"id"`
-	Description           string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	Prompt                string                   `json:"prompt" yaml:"prompt"`
-	ExecutionMode         string                   `json:"execution_mode,omitempty" yaml:"execution_mode,omitempty"`
-	CoordinatorAgentID    string                   `json:"coordinator_agent_id,omitempty" yaml:"coordinator_agent_id,omitempty"`
-	Model                 string                   `json:"model,omitempty" yaml:"model,omitempty"`
-	Repetitions           int                      `json:"repetitions,omitempty" yaml:"repetitions,omitempty"`
-	Timeout               Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty"`
-	Tags                  []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
-	SkipSolo              bool                     `json:"skip_solo,omitempty" yaml:"skip_solo,omitempty"`
-	Baselines             []string                 `json:"baselines,omitempty" yaml:"baselines,omitempty"`
-	MaxDelegations        int                      `json:"max_delegations,omitempty" yaml:"max_delegations,omitempty"`
-	ForbiddenOutputValues []string                 `json:"forbidden_output_values,omitempty" yaml:"forbidden_output_values,omitempty"`
-	Agents                []MultiAgentCollaborator `json:"agents" yaml:"agents"`
-	Milestones            []MultiAgentMilestone    `json:"milestones" yaml:"milestones"`
+	ID                      string                   `json:"id" yaml:"id"`
+	Description             string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Prompt                  string                   `json:"prompt" yaml:"prompt"`
+	ExecutionMode           string                   `json:"execution_mode,omitempty" yaml:"execution_mode,omitempty"`
+	CoordinatorAgentID      string                   `json:"coordinator_agent_id,omitempty" yaml:"coordinator_agent_id,omitempty"`
+	Model                   string                   `json:"model,omitempty" yaml:"model,omitempty"`
+	Repetitions             int                      `json:"repetitions,omitempty" yaml:"repetitions,omitempty"`
+	Timeout                 Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	Tags                    []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
+	SkipSolo                bool                     `json:"skip_solo,omitempty" yaml:"skip_solo,omitempty"`
+	Baselines               []string                 `json:"baselines,omitempty" yaml:"baselines,omitempty"`
+	MaxDelegations          int                      `json:"max_delegations,omitempty" yaml:"max_delegations,omitempty"`
+	ForbiddenOutputValues   []string                 `json:"forbidden_output_values,omitempty" yaml:"forbidden_output_values,omitempty"`
+	AuthorizedNumericValues []string                 `json:"authorized_numeric_values,omitempty" yaml:"authorized_numeric_values,omitempty"`
+	Agents                  []MultiAgentCollaborator `json:"agents" yaml:"agents"`
+	Milestones              []MultiAgentMilestone    `json:"milestones" yaml:"milestones"`
 }
 
 type MultiAgentCollaborator struct {
@@ -74,33 +77,36 @@ type MultiAgentRunner struct {
 }
 
 type MultiAgentAttemptMetrics struct {
-	SoloEvaluated           bool    `json:"solo_evaluated"`
-	SoloPassed              bool    `json:"solo_passed"`
-	TotalMilestones         int     `json:"total_milestones"`
-	PassedMilestones        int     `json:"passed_milestones"`
-	ExpectedDelegations     int     `json:"expected_delegations"`
-	ValidDelegations        int     `json:"valid_delegations"`
-	TotalDelegations        int     `json:"total_delegations"`
-	UniqueDelegations       int     `json:"unique_delegations"`
-	UnexpectedDelegations   int     `json:"unexpected_delegations"`
-	DelegationPrecision     float64 `json:"delegation_precision"`
-	DelegationRecall        float64 `json:"delegation_recall"`
-	DelegationF1            float64 `json:"delegation_f1"`
-	ContributionsExpected   int     `json:"contributions_expected"`
-	ContributionsUtilized   int     `json:"contributions_utilized"`
-	ContributionUtilization float64 `json:"contribution_utilization"`
-	CoordinationScore       float64 `json:"coordination_score"`
-	FaultsExpected          int     `json:"faults_expected"`
-	FaultsObserved          int     `json:"faults_observed"`
-	FaultsAttributed        int     `json:"faults_attributed"`
-	UnsupportedClaims       int     `json:"unsupported_claims"`
-	UncorrelatedToolResults int     `json:"uncorrelated_tool_results"`
-	FaultInjectionRate      float64 `json:"fault_injection_rate"`
-	FaultObservationRate    float64 `json:"fault_observation_rate"`
-	FaultAttributionRate    float64 `json:"fault_attribution_rate"`
-	GracefullyDegraded      bool    `json:"gracefully_degraded"`
-	GroundingAssertions     int     `json:"grounding_assertions"`
-	GroundingViolations     int     `json:"grounding_violations"`
+	SoloEvaluated             bool    `json:"solo_evaluated"`
+	SoloPassed                bool    `json:"solo_passed"`
+	TotalMilestones           int     `json:"total_milestones"`
+	PassedMilestones          int     `json:"passed_milestones"`
+	ExpectedDelegations       int     `json:"expected_delegations"`
+	ValidDelegations          int     `json:"valid_delegations"`
+	TotalDelegations          int     `json:"total_delegations"`
+	UniqueDelegations         int     `json:"unique_delegations"`
+	UnexpectedDelegations     int     `json:"unexpected_delegations"`
+	DelegationPrecision       float64 `json:"delegation_precision"`
+	DelegationRecall          float64 `json:"delegation_recall"`
+	DelegationF1              float64 `json:"delegation_f1"`
+	ContributionsExpected     int     `json:"contributions_expected"`
+	ContributionsUtilized     int     `json:"contributions_utilized"`
+	ContributionUtilization   float64 `json:"contribution_utilization"`
+	ContributionItemsExpected int     `json:"contribution_items_expected"`
+	ContributionItemsUtilized int     `json:"contribution_items_utilized"`
+	ContributionItemCoverage  float64 `json:"contribution_item_coverage"`
+	CoordinationScore         float64 `json:"coordination_score"`
+	FaultsExpected            int     `json:"faults_expected"`
+	FaultsObserved            int     `json:"faults_observed"`
+	FaultsAttributed          int     `json:"faults_attributed"`
+	UnsupportedClaims         int     `json:"unsupported_claims"`
+	UncorrelatedToolResults   int     `json:"uncorrelated_tool_results"`
+	FaultInjectionRate        float64 `json:"fault_injection_rate"`
+	FaultObservationRate      float64 `json:"fault_observation_rate"`
+	FaultAttributionRate      float64 `json:"fault_attribution_rate"`
+	GracefullyDegraded        bool    `json:"gracefully_degraded"`
+	GroundingAssertions       int     `json:"grounding_assertions"`
+	GroundingViolations       int     `json:"grounding_violations"`
 }
 
 type MultiAgentBaselineResult struct {
@@ -231,6 +237,15 @@ func (s *MultiAgentSuite) Validate() error {
 			if strings.TrimSpace(value) == "" {
 				return fmt.Errorf(
 					"case %q forbidden_output_values %d: value is required",
+					evalCase.ID,
+					valueIndex+1,
+				)
+			}
+		}
+		for valueIndex, value := range evalCase.AuthorizedNumericValues {
+			if _, ok := canonicalNumericValue(value, "", ""); !ok {
+				return fmt.Errorf(
+					"case %q authorized_numeric_values %d: valid numeric value is required",
 					evalCase.ID,
 					valueIndex+1,
 				)
@@ -608,9 +623,9 @@ func (r MultiAgentRunner) runBaseline(
 		baselineResult.Error = "model returned empty output"
 		return baselineResult, response
 	}
-	baselineResult.GroundingAssertions, baselineResult.GroundingViolations = evaluateGrounding(
+	baselineResult.GroundingAssertions, baselineResult.GroundingViolations = evaluateCaseGrounding(
 		response.Output,
-		evalCase.ForbiddenOutputValues,
+		evalCase,
 	)
 	baselineResult.Passed = allMultiAgentMilestonesPass(response.Output, evalCase.Milestones) &&
 		baselineResult.GroundingViolations == 0
@@ -654,9 +669,9 @@ func (r MultiAgentRunner) runSoloTwoPassBaseline(
 		result.Error = err.Error()
 		return result, combinedResponse
 	}
-	result.GroundingAssertions, result.GroundingViolations = evaluateGrounding(
+	result.GroundingAssertions, result.GroundingViolations = evaluateCaseGrounding(
 		combinedResponse.Output,
-		evalCase.ForbiddenOutputValues,
+		evalCase,
 	)
 	result.Passed = allMultiAgentMilestonesPass(combinedResponse.Output, evalCase.Milestones) &&
 		result.GroundingViolations == 0
@@ -916,6 +931,14 @@ func gradeMultiAgentAttempt(
 		if collaborator.Fault != nil {
 			continue
 		}
+		metrics.ContributionItemsExpected += len(collaborator.ContributionValues)
+		if valid[collaborator.ID] {
+			for _, value := range collaborator.ContributionValues {
+				if containsAllAssertions(output, []string{value}) {
+					metrics.ContributionItemsUtilized++
+				}
+			}
+		}
 		if valid[collaborator.ID] && containsAllAssertions(output, collaborator.ContributionValues) {
 			metrics.ContributionsUtilized++
 		}
@@ -923,6 +946,10 @@ func gradeMultiAgentAttempt(
 	if metrics.ContributionsExpected > 0 {
 		metrics.ContributionUtilization = float64(metrics.ContributionsUtilized) /
 			float64(metrics.ContributionsExpected)
+	}
+	if metrics.ContributionItemsExpected > 0 {
+		metrics.ContributionItemCoverage = float64(metrics.ContributionItemsUtilized) /
+			float64(metrics.ContributionItemsExpected)
 	}
 	metrics.CoordinationScore = metrics.DelegationF1
 	if metrics.ContributionsExpected > 0 {
@@ -983,10 +1010,7 @@ func gradeMultiAgentAttempt(
 			Message: multiAgentGracefulDegradationMessage(metrics),
 		})
 	}
-	metrics.GroundingAssertions, metrics.GroundingViolations = evaluateGrounding(
-		output,
-		evalCase.ForbiddenOutputValues,
-	)
+	metrics.GroundingAssertions, metrics.GroundingViolations = evaluateCaseGrounding(output, evalCase)
 	if metrics.GroundingAssertions > 0 {
 		results = append(results, GraderResult{
 			Type:    "ma_grounding",
@@ -1034,7 +1058,7 @@ func gradeMultiAgentFaults(
 }
 
 func multiAgentDelegationResults(trace []TraceEvent) (map[string][]string, int) {
-	agentsByCallID := make(map[string]string)
+	agentsByCallID := make(map[string][]string)
 	results := make(map[string][]string)
 	uncorrelated := 0
 	for _, event := range trace {
@@ -1043,10 +1067,21 @@ func multiAgentDelegationResults(trace []TraceEvent) (map[string][]string, int) 
 				continue
 			}
 			var arguments struct {
-				AgentID string `json:"agentId"`
+				AgentID     string `json:"agentId"`
+				Delegations []struct {
+					AgentID string `json:"agentId"`
+				} `json:"delegations"`
 			}
 			if json.Unmarshal([]byte(event.Arguments), &arguments) == nil {
-				agentsByCallID[event.ID] = arguments.AgentID
+				if arguments.AgentID != "" {
+					agentsByCallID[event.ID] = []string{arguments.AgentID}
+				} else {
+					for _, delegation := range arguments.Delegations {
+						if delegation.AgentID != "" {
+							agentsByCallID[event.ID] = append(agentsByCallID[event.ID], delegation.AgentID)
+						}
+					}
+				}
 			}
 			continue
 		}
@@ -1057,9 +1092,33 @@ func multiAgentDelegationResults(trace []TraceEvent) (map[string][]string, int) 
 			uncorrelated++
 			continue
 		}
-		if agentID := agentsByCallID[event.ID]; agentID != "" {
-			results[agentID] = append(results[agentID], event.Result)
-		} else {
+		agentIDs := agentsByCallID[event.ID]
+		if len(agentIDs) == 1 {
+			results[agentIDs[0]] = append(results[agentIDs[0]], event.Result)
+			continue
+		}
+		if len(agentIDs) > 1 {
+			var batch struct {
+				Results []struct {
+					AgentID string `json:"agentId"`
+					Result  string `json:"result"`
+					Error   string `json:"error"`
+				} `json:"results"`
+			}
+			if json.Unmarshal([]byte(event.Result), &batch) == nil && len(batch.Results) > 0 {
+				for _, item := range batch.Results {
+					value := item.Result
+					if item.Error != "" {
+						value = item.Error
+					}
+					if item.AgentID != "" {
+						results[item.AgentID] = append(results[item.AgentID], value)
+					}
+				}
+				continue
+			}
+		}
+		if len(agentIDs) == 0 {
 			uncorrelated++
 		}
 	}
@@ -1089,16 +1148,29 @@ func multiAgentDelegations(trace []TraceEvent) []multiAgentDelegation {
 			continue
 		}
 		var arguments struct {
-			AgentID string `json:"agentId"`
-			Task    string `json:"task"`
+			AgentID     string `json:"agentId"`
+			Task        string `json:"task"`
+			Delegations []struct {
+				AgentID string `json:"agentId"`
+				Task    string `json:"task"`
+			} `json:"delegations"`
 		}
 		if json.Unmarshal([]byte(event.Arguments), &arguments) != nil {
 			continue
 		}
-		delegations = append(delegations, multiAgentDelegation{
-			AgentID: arguments.AgentID,
-			Task:    arguments.Task,
-		})
+		if arguments.AgentID != "" {
+			delegations = append(delegations, multiAgentDelegation{
+				AgentID: arguments.AgentID,
+				Task:    arguments.Task,
+			})
+			continue
+		}
+		for _, delegation := range arguments.Delegations {
+			delegations = append(delegations, multiAgentDelegation{
+				AgentID: delegation.AgentID,
+				Task:    delegation.Task,
+			})
+		}
 	}
 	return delegations
 }
@@ -1116,7 +1188,7 @@ func multiAgentOutcomePass(output string, evalCase MultiAgentCase) bool {
 	if !allMultiAgentMilestonesPass(output, evalCase.Milestones) {
 		return false
 	}
-	_, violations := evaluateGrounding(output, evalCase.ForbiddenOutputValues)
+	_, violations := evaluateCaseGrounding(output, evalCase)
 	return violations == 0
 }
 
@@ -1239,8 +1311,12 @@ func containsForbiddenAssertion(text, value string) bool {
 }
 
 func forbiddenMatchClauses(text string) []string {
+	return matchAssertionClauses(text, true)
+}
+
+func matchAssertionClauses(text string, splitConjunctions bool) []string {
 	text = strings.ToLower(text)
-	text = strings.NewReplacer(
+	replacements := []string{
 		"\n", "\n",
 		";", "\n",
 		"。", "\n",
@@ -1249,11 +1325,16 @@ func forbiddenMatchClauses(text string) []string {
 		"！", "\n",
 		"?", "\n",
 		"？", "\n",
-		" but ", ".",
-		" and ", "\n",
-		" however ", "\n",
-		" yet ", "\n",
-	).Replace(text)
+	}
+	if splitConjunctions {
+		replacements = append(replacements,
+			" but ", ".",
+			" and ", "\n",
+			" however ", "\n",
+			" yet ", "\n",
+		)
+	}
+	text = strings.NewReplacer(replacements...).Replace(text)
 	var clauses []string
 	var clause strings.Builder
 	for index := 0; index < len(text); index++ {
@@ -1367,7 +1448,7 @@ func expectedContainsNegation(words []string) bool {
 }
 
 func assertionMatchClauses(text string) []string {
-	return forbiddenMatchClauses(text)
+	return matchAssertionClauses(text, false)
 }
 
 func evaluateGrounding(output string, forbiddenValues []string) (int, int) {
@@ -1378,6 +1459,150 @@ func evaluateGrounding(output string, forbiddenValues []string) (int, int) {
 		}
 	}
 	return len(forbiddenValues), violations
+}
+
+var (
+	accessionNumberPattern       = regexp.MustCompile(`\b\d{10}-\d{2}-\d{6}\b`)
+	evidenceIDNumberPattern      = regexp.MustCompile(`\b[A-Z][A-Z0-9]*(?:-[A-Z0-9]+){2,}\b`)
+	documentNumberPattern        = regexp.MustCompile(`\b(?:8-K|EX-99\.1)\b`)
+	markdownHeadingNumberPattern = regexp.MustCompile(`(?m)^#{1,6}\s+\d+(?:\.\d+)*\s*`)
+	numericValuePattern          = regexp.MustCompile(`[-−–]?\d[\d,]*(?:\.\d+)?%?[Mm]?(?:pp|bps?)?`)
+	negativeBeforeNumberPattern  = regexp.MustCompile(
+		`(?i)(?:declin(?:e|ed)|decreas(?:e|ed)|down|fell|fall|loss|negative)` +
+			`(?:\s+(?:first|initially|then|and|by|of|was|were|is|at|usd))*\s*$`,
+	)
+	coordinatedNegativeBeforeNumberPattern = regexp.MustCompile(
+		`(?i)(?:declin(?:e|ed)|decreas(?:e|ed)|fell|fall)` +
+			`(?:\s+first)?\s+by\s+[-−–]?\d[\d,]*(?:\.\d+)?` +
+			`\s*(?:%|percent|percentage\s+points?|pp|basis\s+points?|bps?)?` +
+			`\s+(?:then|and)\s+by\s*$`,
+	)
+	negativeAfterNumberPattern = regexp.MustCompile(
+		`(?i)^\s*(?:(?:percent|%)|(?:percentage|basis)\s+points?|\-\s*points?)?\s*` +
+			`(?:gross[-\s]+margin\s+)?(?:decline|decrease|down|loss)\b`,
+	)
+)
+
+const (
+	numericContextBeforeLength = 64
+	numericContextAfterLength  = 48
+)
+
+func evaluateCaseGrounding(output string, evalCase MultiAgentCase) (int, int) {
+	assertions, violations := evaluateGrounding(output, evalCase.ForbiddenOutputValues)
+	numericAssertions, numericViolations := evaluateNumericGrounding(output, evalCase.AuthorizedNumericValues)
+	return assertions + numericAssertions, violations + numericViolations
+}
+
+func evaluateNumericGrounding(output string, authorizedValues []string) (int, int) {
+	assertions, violationValues := evaluateNumericGroundingDetails(output, authorizedValues)
+	return assertions, len(violationValues)
+}
+
+func evaluateNumericGroundingDetails(output string, authorizedValues []string) (int, []string) {
+	if len(authorizedValues) == 0 {
+		return 0, nil
+	}
+	authorized := make(map[string]struct{}, len(authorizedValues))
+	for _, value := range authorizedValues {
+		if canonical, ok := canonicalNumericValue(value, "", ""); ok {
+			authorized[canonical] = struct{}{}
+		}
+	}
+	text := strings.NewReplacer(
+		"‑", "-",
+		"–", "-",
+		"—", "-",
+		"−", "-",
+	).Replace(output)
+	text = accessionNumberPattern.ReplaceAllString(text, " ")
+	text = evidenceIDNumberPattern.ReplaceAllString(text, " ")
+	text = documentNumberPattern.ReplaceAllString(text, " ")
+	text = markdownHeadingNumberPattern.ReplaceAllString(text, "# ")
+	assertions := 0
+	var violationValues []string
+	for _, location := range numericValuePattern.FindAllStringIndex(text, -1) {
+		if hasAlphaNumericBoundary(text, location[0]-1) || hasAlphaNumericBoundary(text, location[1]) {
+			continue
+		}
+		if isOrderedListMarker(text, location[0], location[1]) {
+			continue
+		}
+		before := text[max(0, location[0]-numericContextBeforeLength):location[0]]
+		after := text[location[1]:min(len(text), location[1]+numericContextAfterLength)]
+		canonical, ok := canonicalNumericValue(text[location[0]:location[1]], before, after)
+		if !ok {
+			continue
+		}
+		assertions++
+		if _, ok := authorized[canonical]; ok {
+			continue
+		}
+		if accountingCanonical, ok := canonicalAccountingNegative(canonical, before, after); ok {
+			if _, authorizedAccountingValue := authorized[accountingCanonical]; authorizedAccountingValue {
+				continue
+			}
+		}
+		violationValues = append(violationValues, strings.TrimSpace(text[location[0]:location[1]]))
+	}
+	return assertions, violationValues
+}
+
+func canonicalNumericValue(value, before, after string) (string, bool) {
+	normalized := strings.NewReplacer(
+		"−", "-",
+		"–", "-",
+		",", "",
+		"%", "",
+	).Replace(strings.TrimSpace(value))
+	normalized = strings.TrimSuffix(strings.TrimSuffix(strings.TrimSuffix(normalized, "bps"), "bp"), "pp")
+	normalized = strings.TrimSuffix(strings.TrimSuffix(normalized, "M"), "m")
+	if !strings.HasPrefix(normalized, "-") && hasNegativeNumericContext(before, after) {
+		normalized = "-" + normalized
+	}
+	number := new(big.Rat)
+	if _, ok := number.SetString(normalized); !ok {
+		return "", false
+	}
+	return number.RatString(), true
+}
+
+func hasAlphaNumericBoundary(value string, index int) bool {
+	if index < 0 || index >= len(value) {
+		return false
+	}
+	character := value[index]
+	return character >= 'a' && character <= 'z' ||
+		character >= 'A' && character <= 'Z' ||
+		character >= '0' && character <= '9'
+}
+
+func hasNegativeNumericContext(before, after string) bool {
+	return negativeBeforeNumberPattern.MatchString(before) ||
+		coordinatedNegativeBeforeNumberPattern.MatchString(before) ||
+		negativeAfterNumberPattern.MatchString(after)
+}
+
+func isOrderedListMarker(text string, start, end int) bool {
+	lineStart := strings.LastIndex(text[:start], "\n") + 1
+	if strings.TrimSpace(text[lineStart:start]) != "" {
+		return false
+	}
+	after := text[end:]
+	return strings.HasPrefix(after, ". ") || strings.HasPrefix(after, ") ")
+}
+
+func canonicalAccountingNegative(canonical, before, after string) (string, bool) {
+	if !strings.HasSuffix(strings.TrimSpace(before), "(") ||
+		!strings.HasPrefix(strings.TrimSpace(after), ")") ||
+		strings.HasPrefix(canonical, "-") {
+		return "", false
+	}
+	number := new(big.Rat)
+	if _, ok := number.SetString(canonical); !ok {
+		return "", false
+	}
+	return new(big.Rat).Neg(number).RatString(), true
 }
 
 func normalizeMatchText(value string) string {
@@ -1393,6 +1618,7 @@ func normalizeMatchText(value string) string {
 		"‑", " ",
 		"–", " ",
 		"—", " ",
+		"−", " ",
 		"_", " ",
 		"/", " ",
 		":", " ",

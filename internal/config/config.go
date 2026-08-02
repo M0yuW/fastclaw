@@ -408,6 +408,7 @@ type AgentFileConfig struct {
 	MaxTokens         int                        `json:"maxTokens,omitempty"`
 	Temperature       float64                    `json:"temperature,omitempty"`
 	MaxToolIterations int                        `json:"maxToolIterations,omitempty"`
+	Thinking          string                     `json:"thinking,omitempty"`
 	PolicyPreset      string                     `json:"policy,omitempty"`
 	RequiredIdentity  []string                   `json:"requiredIdentityFiles,omitempty"`
 	Workspace         string                     `json:"workspace,omitempty"`
@@ -623,6 +624,9 @@ func (cfg *Config) MergedAgentConfig(entry AgentEntry) ResolvedAgent {
 		}
 		if fileCfg.MaxToolIterations > 0 {
 			resolved.MaxToolIterations = fileCfg.MaxToolIterations
+		}
+		if fileCfg.Thinking != "" {
+			resolved.Thinking = fileCfg.Thinking
 		}
 		if fileCfg.PolicyPreset != "" {
 			resolved.PolicyPreset = fileCfg.PolicyPreset

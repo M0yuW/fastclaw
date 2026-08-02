@@ -92,6 +92,11 @@
 - unsupported claim 按“出现无依据断言的故障数 / 故障数”计数，否定或不确定语境不会误判，比例上限为 100%。
 - 报告新增 team-only P50/P95、总 token 和 token/success；四档 baseline 的成本分别入账，完整 harness 成本不再与 team 成本混用。
 - 这些结果是项目自定义的确定性代理指标，不是官方 benchmark 分数；简历中应明确写成 “style subset”。
+- 金融 SEC 简单四案例在 R7 被四档模式全部 4/4 饱和，只能证明证据约束和 runtime 链路可执行，不能证明多智能体增量准确性。
+- 新增 `evals/multiagent-finance-sec-hard.json` 四个纵向案例：每家公司串联三份锁定 SEC 观察，要求计算口径控制、`0→1→2→3` 状态链和 stale candidate 拒绝。
+- 冻结 R3 中 Team 与公平 `solo_open_book` 均为 3/4，公平增益 0pp；Team 相对 `solo_two_pass` 为 +50pp，但样本仅四个且单次重复，不支持显著性或等价性结论。
+- R3 Team 的 AMD 失败来自 governance sub-agent 连续空结果：coordinator 共发出五次委派、超过三次预算，最终缺失 STATE/STALE 证据。下一优先级是结构化空结果错误和按 specialist/turn 双重约束的重试预算。
+- 纵向实验、校准剔除、成本和失败归因见 `evals/finance_e2e/results/2026-08-02-hard-r3-final-summary.md`；论文主报告已增加对应结果段落。
 
 当前量化结果：
 
@@ -194,6 +199,47 @@ closed-book solo `$0.005848`，每个成功 team case `$0.001719`。这些结果
 - 新增 `evals/multiagent-finance-workflow.yaml` 六案例固定证据评测，覆盖
   催化剂确认、失效条件、重复告警、数据缺失、组合集中度和一手证据冲突。
   公平提升只比较 team 与相同 evidence 的 solo_open_book，不使用未来收益。
+
+### 金融检索—分析—综合端到端实验
+
+为避免“先把完整证据喂给所有模式”掩盖真实上下文成本，新增独立的
+`finance-retrieval` runner，并使用锁定 SEC 原始记录构造 24 个案例：
+NVDA、AMD、Intel、NIKE × point/longitudinal × small/medium/large。
+
+- 实验模式包括单体一次完成、单体分阶段、共享检索多智能体、原始上下文
+  多智能体和 Oracle evidence 五档。
+- 非 Oracle 模式只共享分析协议，不共享预期计算答案；suite 与 source lock
+  使用 SHA-256 固定，禁止捏造或替换来源数据。
+- 评测分解检索 recall/precision、摘要保真、最终 evidence recall、计算与决策
+  milestone、数值 grounding、delegation、各阶段延迟、token 和费用。
+- `spawn_subagent` 新增 batch 形式：一份 `sharedContext` 加多条 delegation，
+  对不同目标并行执行，避免把同一份 SEC 证据复制进三次工具参数。
+- trace 对 batch 调用和结果执行结构化压缩，保留合法 JSON、agent ID 与任务，
+  防止普通字节截断破坏 delegation/contribution 归因。
+- DeepSeek V4 支持请求级 thinking 开关；金融实验关闭 thinking，避免 reasoning
+  占满输出预算后正文为空，并保持 token 与费用口径稳定。
+
+最终中等上下文 Pilot 使用 `nvda-longitudinal-medium`，输入 30,518 字符，
+suite SHA-256 为
+`7b73f4b82a3f97cb1151b372dcf8172eb88c04d37e1e137ed80b2a87bfb44e20`。
+共享检索 Team 与分阶段 Solo 都达到 3/3 milestone 和 100% 最终证据召回，
+因此本例不能证明多智能体带来增量准确率。相比分阶段 Solo，共享检索 Team
+延迟降低 36.32%、费用降低 42.06%，但 provider-total tokens 增加 13.63%；
+检索 precision 从 66.67% 提升到 100%，grounding 提升 2.82 个百分点。
+这组成本差异包含 Pro coordinator/Solo 与 Flash retriever/specialist 的异构
+模型配置，属于系统级比较，不是等模型容量比较。
+
+共享检索与原始上下文 Team 都使用一次并行 batch delegation。共享检索相对
+原始上下文 Team 降低 14.15% 延迟、38.42% tokens 和 47.62% 费用，并把
+grounding 从 94.87% 提升到 98.28%。原始上下文模式仅以 0.128 个百分点
+未达到预声明的 95% grounding 门槛，主要问题是模型生成了证据未直接支持的
+附加比率和符号变体。详细结果、失败解释、校准排除和确认性实验设计见
+`evals/finance_e2e/results/2026-08-02-retrieval-pilot-final-summary.md`。
+
+当前数据只有一个公司、一个上下文档位和一次重复，只能作为机制 Pilot。
+正式论文实验应冻结 suite/grader，运行四家公司 × 三个上下文档位 × 至少
+三次随机顺序重复，并用配对差值与 bootstrap 区间报告结果；`v1` 到 `v7`
+是开发校准数据，不得混入确认性统计。
 
 完整架构、工具契约、默认工作流和 Eval 方案见 `FINANCE-RUNTIME.md`。
 

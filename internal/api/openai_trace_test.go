@@ -331,3 +331,46 @@ func TestStartTraceCaptureCollectsToolEvents(t *testing.T) {
 		t.Fatalf("unexpected trace: %+v", trace)
 	}
 }
+
+func TestConvertTraceEventCompactsBatchSubAgentJSON(t *testing.T) {
+	arguments, err := json.Marshal(map[string]any{
+		"sharedContext": strings.Repeat("evidence", 4096),
+		"delegations": []map[string]string{
+			{"agentId": "trend", "task": "analyze trend"},
+			{"agentId": "risk", "task": "analyze risk"},
+		},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	call, ok := convertTraceEvent(agent.ChatEvent{Type: "tool_call", Data: map[string]any{
+		"id": "batch", "name": "spawn_subagent", "arguments": string(arguments),
+	}})
+	if !ok || !json.Valid([]byte(call.Arguments)) || len(call.Arguments) >= maxTraceFieldBytes {
+		t.Fatalf("compacted call = %+v", call)
+	}
+	var compactedArguments struct {
+		SharedContext string `json:"sharedContext"`
+		Delegations   []any  `json:"delegations"`
+	}
+	if err := json.Unmarshal([]byte(call.Arguments), &compactedArguments); err != nil {
+		t.Fatal(err)
+	}
+	if len(compactedArguments.Delegations) != 2 || !strings.Contains(compactedArguments.SharedContext, "omitted") {
+		t.Fatalf("compacted arguments = %+v", compactedArguments)
+	}
+
+	result, err := json.Marshal(map[string]any{"results": []map[string]string{
+		{"agentId": "trend", "result": strings.Repeat("trend", 4096)},
+		{"agentId": "risk", "result": strings.Repeat("risk", 4096)},
+	}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	toolResult, ok := convertTraceEvent(agent.ChatEvent{Type: "tool_result", Data: map[string]any{
+		"id": "batch", "name": "spawn_subagent", "result": string(result),
+	}})
+	if !ok || !json.Valid([]byte(toolResult.Result)) || len(toolResult.Result) >= maxTraceFieldBytes {
+		t.Fatalf("compacted result length=%d valid=%v", len(toolResult.Result), json.Valid([]byte(toolResult.Result)))
+	}
+}

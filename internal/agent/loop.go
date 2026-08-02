@@ -693,7 +693,8 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		var resp *provider.Response
 		modelCallSequence := BeginModelCall(ctx)
 		modelCallStarted := time.Now()
-		stream, err := a.provider.ChatStream(ctx, llmMessages, toolDefs, a.model, a.maxTokens, a.temperature)
+		providerContext := provider.ContextWithThinkingMode(ctx, a.thinking)
+		stream, err := a.provider.ChatStream(providerContext, llmMessages, toolDefs, a.model, a.maxTokens, a.temperature)
 		if err == nil && stream == nil {
 			err = fmt.Errorf("LLM provider returned a nil stream")
 		}

@@ -23,6 +23,101 @@ func evalCmd() *cobra.Command {
 	command.AddCommand(evalTauCmd())
 	command.AddCommand(evalSWECmd())
 	command.AddCommand(evalMultiAgentCmd())
+	command.AddCommand(evalFinanceRetrievalCmd())
+	return command
+}
+
+func evalFinanceRetrievalCmd() *cobra.Command {
+	command := &cobra.Command{
+		Use:   "finance-retrieval",
+		Short: "Run end-to-end financial retrieval and synthesis evaluations",
+	}
+	command.AddCommand(evalFinanceRetrievalRunCmd())
+	return command
+}
+
+func evalFinanceRetrievalRunCmd() *cobra.Command {
+	var (
+		baseURL     string
+		apiKey      string
+		agentID     string
+		repetitions int
+		timeout     time.Duration
+		format      string
+		output      string
+		failUnder   float64
+		caseIDs     []string
+		modes       []string
+	)
+	command := &cobra.Command{
+		Use:   "run <suite.yaml>",
+		Short: "Compare monolithic, staged, team, and oracle finance pipelines",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(command *cobra.Command, args []string) error {
+			if format != "text" && format != "json" {
+				return fmt.Errorf("unsupported output format %q", format)
+			}
+			if failUnder < 0 || failUnder > 1 {
+				return errors.New("--fail-under must be between 0 and 1")
+			}
+			if repetitions < 0 {
+				return errors.New("--repetitions cannot be negative")
+			}
+			if timeout < 0 {
+				return errors.New("--timeout cannot be negative")
+			}
+			suite, err := evalpkg.LoadFinanceRetrievalSuite(args[0])
+			if err != nil {
+				return err
+			}
+			runner := evalpkg.FinanceRetrievalRunner{
+				Executor: &evalpkg.HTTPExecutor{BaseURL: baseURL, APIKey: apiKey},
+				Options: evalpkg.RunOptions{
+					AgentID:     agentID,
+					Repetitions: repetitions,
+					Timeout:     timeout,
+					CaseIDs:     caseIDs,
+					Modes:       modes,
+				},
+			}
+			report, err := runner.Run(command.Context(), suite)
+			if err != nil {
+				return err
+			}
+			writer, closeWriter, err := evalOutputWriter(command.OutOrStdout(), output)
+			if err != nil {
+				return err
+			}
+			defer closeWriter()
+			switch format {
+			case "text":
+				err = evalpkg.WriteFinanceRetrievalText(writer, report)
+			case "json":
+				err = evalpkg.WriteFinanceRetrievalJSON(writer, report)
+			}
+			if err != nil {
+				return err
+			}
+			team := report.Metrics.Modes[evalpkg.FinanceRetrievalModeTeamShared]
+			if team.Evaluated == 0 && failUnder > 0 {
+				return errors.New("team_shared_retrieval has no valid attempts")
+			}
+			if team.SuccessRate < failUnder {
+				return fmt.Errorf("finance team success %.3f is below threshold %.3f", team.SuccessRate, failUnder)
+			}
+			return nil
+		},
+	}
+	command.Flags().StringVar(&baseURL, "base-url", envOrDefault("FASTCLAW_EVAL_BASE_URL", "http://127.0.0.1:18953"), "FastClaw gateway base URL")
+	command.Flags().StringVar(&apiKey, "api-key", os.Getenv("FASTCLAW_API_KEY"), "API key (defaults to FASTCLAW_API_KEY)")
+	command.Flags().StringVar(&agentID, "agent-id", "", "override the coordinator agent ID")
+	command.Flags().IntVar(&repetitions, "repetitions", 0, "override repetitions per case")
+	command.Flags().DurationVar(&timeout, "timeout", 0, "override timeout per mode")
+	command.Flags().StringVar(&format, "format", "text", "output format: text or json")
+	command.Flags().StringVarP(&output, "output", "o", "", "write the report to a file")
+	command.Flags().Float64Var(&failUnder, "fail-under", 0, "fail when team shared-retrieval success is below this 0-1 threshold")
+	command.Flags().StringSliceVar(&caseIDs, "case", nil, "run only selected case IDs")
+	command.Flags().StringSliceVar(&modes, "mode", nil, "run only selected experiment modes")
 	return command
 }
 

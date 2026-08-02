@@ -23,6 +23,7 @@ func evalMultiAgentTenantCmd() *cobra.Command {
 func evalMultiAgentTenantProvisionCmd() *cobra.Command {
 	var coordinatorModel string
 	var specialistModel string
+	var evidenceFile string
 	var output string
 	command := &cobra.Command{
 		Use:   "provision",
@@ -37,6 +38,7 @@ func evalMultiAgentTenantProvisionCmd() *cobra.Command {
 			result, err := evaltenant.Provision(command.Context(), dataStore, evaltenant.Options{
 				CoordinatorModel: coordinatorModel,
 				SpecialistModel:  specialistModel,
+				EvidenceFile:     evidenceFile,
 			})
 			if err != nil {
 				return err
@@ -56,6 +58,7 @@ func evalMultiAgentTenantProvisionCmd() *cobra.Command {
 	}
 	command.Flags().StringVar(&coordinatorModel, "coordinator-model", "", "model configured for bench-coordinator")
 	command.Flags().StringVar(&specialistModel, "specialist-model", "", "model configured for specialists (defaults to coordinator model)")
+	command.Flags().StringVar(&evidenceFile, "evidence-file", "", "load a validated runtime specialist evidence pack")
 	command.Flags().StringVarP(&output, "output", "o", "", "write tenant credentials to a file")
 	_ = command.MarkFlagRequired("coordinator-model")
 	return command

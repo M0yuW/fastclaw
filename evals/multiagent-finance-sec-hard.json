@@ -1,0 +1,686 @@
+{
+  "baselines": [
+    "solo_open_book",
+    "solo_two_pass",
+    "team",
+    "oracle_team"
+  ],
+  "cases": [
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "LONG-SRC-NVDA-01",
+            "SEC-NVDA-01 || 0001045810-24-000113",
+            "NVDA-Q1-REV",
+            "NVDA-Q1-GM",
+            "NVDA-Q1-DC",
+            "SEC-NVDA-02 || 0001045810-24-000262",
+            "NVDA-Q2-REV",
+            "NVDA-Q2-GM",
+            "NVDA-Q2-DC",
+            "SEC-NVDA-03 || 0001045810-25-000021",
+            "NVDA-Q4-REV",
+            "NVDA-Q4-GM",
+            "NVDA-Q4-DC"
+          ],
+          "id": "finance-source",
+          "response": "LONG-SRC-NVDA-01: Three locked SEC observations, in accepted sequence: SEC-NVDA-01: SEC 8-K EX-99.1 accession 0001045810-24-000113 reports NVDA-Q1-REV USD 26,044 million (GAAP, exact); NVDA-Q1-GM 78.4 percent (GAAP, exact); NVDA-Q1-DC USD 22,600 million (reported_segment, rounded_to_100_million). SEC-NVDA-02: SEC 8-K EX-99.1 accession 0001045810-24-000262 reports NVDA-Q2-REV USD 30,040 million (GAAP, exact); NVDA-Q2-GM 75.1 percent (GAAP, exact); NVDA-Q2-DC USD 26,300 million (reported_segment, rounded_to_100_million). SEC-NVDA-03: SEC 8-K EX-99.1 accession 0001045810-25-000021 reports NVDA-Q4-REV USD 39,331 million (GAAP, exact); NVDA-Q4-GM 73 percent (GAAP, exact); NVDA-Q4-DC USD 35,600 million (reported_segment, rounded_to_100_million).",
+          "role": "Reconstruct the locked three-filing fact chronology without calculations.",
+          "task_values": [
+            "FHARD-NVDA-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "LONG-CALC-NVDA-01",
+            "CALC-NVDA-01",
+            "NVDA-Q1-DC-SHARE",
+            "86.8",
+            "CALC-NVDA-02",
+            "15.3",
+            "-3.3",
+            "CALC-NVDA-03",
+            "30.9",
+            "-2.1",
+            "The sampled Q2-to-Q4 change is not quarter-over-quarter."
+          ],
+          "id": "finance-methodology",
+          "response": "LONG-CALC-NVDA-01: Declared calculations and period controls, in accepted sequence: CALC-NVDA-01: NVDA-Q1-DC-SHARE equals NVDA-Q1-DC divided by NVDA-Q1-REV, or 86.8 percent. Within-period ratios use only the named verified facts and declared rounding. CALC-NVDA-02: NVDA-Q1-REV to NVDA-Q2-REV changed 15.3 percent; NVDA-Q1-GM to NVDA-Q2-GM changed -3.3 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter. CALC-NVDA-03: NVDA-Q2-REV to NVDA-Q4-REV changed 30.9 percent; NVDA-Q2-GM to NVDA-Q4-GM changed -2.1 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter. The sampled Q2-to-Q4 change is not quarter-over-quarter. No other arithmetic is authorized.",
+          "role": "Audit only declared cross-observation calculations and period labels.",
+          "task_values": [
+            "FHARD-NVDA-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "LONG-STATE-NVDA-01",
+            "STATE-NVDA-01",
+            "STATE-NVDA-02",
+            "STATE-NVDA-03",
+            "confirm_growth_retain_margin_risk",
+            "version 0 to 1 to 2 to 3 || version 0 \u2192 1 \u2192 2 \u2192 3 || state chain 0 to 1 to 2 to 3 || state chain 0 \u2192 1 \u2192 2 \u2192 3 || NVDA state versions 0 1 2 3",
+            "STALE-NVDA-03",
+            "reject STALE-NVDA-03 || rejected STALE-NVDA-03 || STALE-NVDA-03 is a rejected candidate || reject the stale control candidate",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "LONG-STATE-NVDA-01: Accepted version chain: STATE-NVDA-01: require expected_version 0, persist decision initialize_active_margin_watch, next_version 1, and status active; trade action is none. Evidence basis: NVDA-Q1-REV, NVDA-Q1-GM, NVDA-Q1-DC, CALC-NVDA-01. Rationale: Record the verified AI-infrastructure revenue concentration and margin baseline for subsequent monitoring. STATE-NVDA-02: require expected_version 1, persist decision retain_active_add_margin_risk, next_version 2, and status active; trade action is none. Evidence basis: NVDA-Q2-REV, NVDA-Q2-GM, CALC-NVDA-02. Rationale: Revenue expanded while verified GAAP gross margin fell 3.3 percentage points from the prior observation. STATE-NVDA-03: require expected_version 2, persist decision confirm_growth_retain_margin_risk, next_version 3, and status active; trade action is none. Evidence basis: NVDA-Q4-REV, NVDA-Q4-GM, CALC-NVDA-03. Rationale: Revenue rose between sampled observations, but GAAP gross margin declined again; the observations are not labelled quarter-over-quarter. STALE-NVDA-03 is a rejected candidate: decision clear_margin_risk at expected_version 1 does not match the accepted prior next_version 2. Apply only STATE-NVDA-03 with decision confirm_growth_retain_margin_risk, next_version 3, status active, and trade action none.",
+          "role": "Validate the contiguous state chain and reject stale control candidates.",
+          "task_values": [
+            "FHARD-NVDA-01"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-3.3",
+        "-2.1",
+        "0",
+        "1",
+        "2",
+        "3",
+        "15.3",
+        "22.6",
+        "26.3",
+        "30.9",
+        "35.6",
+        "73.0",
+        "75.1",
+        "78.4",
+        "86.8",
+        "100",
+        "2024",
+        "2025",
+        "22600",
+        "26044",
+        "26300",
+        "30040",
+        "35600",
+        "39331"
+      ],
+      "description": "NVIDIA Corporation three-observation SEC chronology, methodology, and state-conflict adjudication.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated",
+        "final decision clear_margin_risk || persisted decision clear_margin_risk"
+      ],
+      "id": "FHARD-NVDA-01",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "three-filing-chronology",
+          "values": [
+            "LONG-SRC-NVDA-01",
+            "SEC-NVDA-01 || 0001045810-24-000113",
+            "NVDA-Q1-REV",
+            "NVDA-Q1-GM",
+            "NVDA-Q1-DC",
+            "SEC-NVDA-02 || 0001045810-24-000262",
+            "NVDA-Q2-REV",
+            "NVDA-Q2-GM",
+            "NVDA-Q2-DC",
+            "SEC-NVDA-03 || 0001045810-25-000021",
+            "NVDA-Q4-REV",
+            "NVDA-Q4-GM",
+            "NVDA-Q4-DC"
+          ]
+        },
+        {
+          "id": "declared-calculation-audit",
+          "values": [
+            "LONG-CALC-NVDA-01",
+            "CALC-NVDA-01",
+            "NVDA-Q1-DC-SHARE",
+            "86.8",
+            "CALC-NVDA-02",
+            "15.3",
+            "-3.3",
+            "CALC-NVDA-03",
+            "30.9",
+            "-2.1",
+            "The sampled Q2-to-Q4 change is not quarter-over-quarter."
+          ]
+        },
+        {
+          "id": "state-conflict-resolution",
+          "values": [
+            "LONG-STATE-NVDA-01",
+            "STATE-NVDA-01",
+            "STATE-NVDA-02",
+            "STATE-NVDA-03",
+            "confirm_growth_retain_margin_risk",
+            "version 0 to 1 to 2 to 3 || version 0 \u2192 1 \u2192 2 \u2192 3 || state chain 0 to 1 to 2 to 3 || state chain 0 \u2192 1 \u2192 2 \u2192 3 || NVDA state versions 0 1 2 3",
+            "STALE-NVDA-03",
+            "reject STALE-NVDA-03 || rejected STALE-NVDA-03 || STALE-NVDA-03 is a rejected candidate || reject the stale control candidate",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FHARD-NVDA-01] Reconstruct the three-observation NVIDIA research-state chain, determine whether growth remains strong while the margin-risk flag remains active, and reject the stale control candidate. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Build the chronology before selecting the final state: verify all three SEC observations, reproduce only declared calculations, enforce the contiguous 0-to-1-to-2-to-3 version chain, and explicitly reject the stale candidate. Preserve every SEC, CALC, STATE, LONG, and STALE evidence ID. Do not use outside knowledge, recommend or authorize a trade, relabel sampled observations, or emit undeclared arithmetic. The only authorized numeric values are: -3.3, -2.1, 0, 1, 2, 3, 15.3, 22.6, 26.3, 30.9, 35.6, 73.0, 75.1, 78.4, 86.8, 100, 2024, 2025, 22600, 26044, 26300, 30040, 35600, 39331. Return Chronology, Decision, Evidence Reconciliation, Calculation Audit, Conflict Resolution, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "hard",
+        "longitudinal",
+        "state-conflict",
+        "nvda"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "LONG-SRC-AMD-01",
+            "SEC-AMD-01 || 0000002488-24-000121",
+            "AMD-Q2-REV",
+            "AMD-Q2-GM",
+            "AMD-Q2-DC",
+            "AMD-Q2-DC-YOY",
+            "AMD-Q2-GAME",
+            "AMD-Q2-GAME-YOY",
+            "SEC-AMD-02 || 0000002488-24-000161",
+            "AMD-Q3-REV",
+            "AMD-Q3-GM",
+            "AMD-Q3-GAME",
+            "SEC-AMD-03 || 0000002488-25-000009",
+            "AMD-Q4-REV",
+            "AMD-Q4-GM",
+            "AMD-Q4-GAME"
+          ],
+          "id": "finance-source",
+          "response": "LONG-SRC-AMD-01: Three locked SEC observations, in accepted sequence: SEC-AMD-01: SEC 8-K EX-99.1 accession 0000002488-24-000121 reports AMD-Q2-REV USD 5,835 million (GAAP, exact); AMD-Q2-GM 49 percent (GAAP, exact); AMD-Q2-DC USD 2,834 million (reported_segment, exact); AMD-Q2-DC-YOY 115 percent (reported_segment, exact); AMD-Q2-GAME USD 648 million (reported_segment, exact); AMD-Q2-GAME-YOY -59 percent (reported_segment, exact). SEC-AMD-02: SEC 8-K EX-99.1 accession 0000002488-24-000161 reports AMD-Q3-REV USD 6,819 million (GAAP, exact); AMD-Q3-GM 50 percent (GAAP, exact); AMD-Q3-GAME USD 462 million (reported_segment, exact). SEC-AMD-03: SEC 8-K EX-99.1 accession 0000002488-25-000009 reports AMD-Q4-REV USD 7,658 million (GAAP, exact); AMD-Q4-GM 51 percent (GAAP, exact); AMD-Q4-GAME USD 563 million (reported_segment, exact).",
+          "role": "Reconstruct the locked three-filing fact chronology without calculations.",
+          "task_values": [
+            "FHARD-AMD-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "LONG-CALC-AMD-01",
+            "CALC-AMD-01",
+            "AMD-Q2-DC-SHARE",
+            "48.6",
+            "CALC-AMD-02",
+            "16.9",
+            "1.0",
+            "CALC-AMD-03",
+            "12.3",
+            "1.0",
+            "Do not confuse quarterly observations with full-year figures."
+          ],
+          "id": "finance-methodology",
+          "response": "LONG-CALC-AMD-01: Declared calculations and period controls, in accepted sequence: CALC-AMD-01: AMD-Q2-DC-SHARE equals AMD-Q2-DC divided by AMD-Q2-REV, or 48.6 percent. Within-period ratios use only the named verified facts and declared rounding. CALC-AMD-02: AMD-Q2-REV to AMD-Q3-REV changed 16.9 percent; AMD-Q2-GM to AMD-Q3-GM changed 1.0 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter. CALC-AMD-03: AMD-Q3-REV to AMD-Q4-REV changed 12.3 percent; AMD-Q3-GM to AMD-Q4-GM changed 1.0 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter. Do not confuse quarterly observations with full-year figures. No other arithmetic is authorized.",
+          "role": "Audit only declared cross-observation calculations and period labels.",
+          "task_values": [
+            "FHARD-AMD-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "LONG-STATE-AMD-01",
+            "STATE-AMD-01",
+            "STATE-AMD-02",
+            "STATE-AMD-03",
+            "confirm_growth_retain_mix_risk",
+            "version 0 to 1 to 2 to 3 || version 0 \u2192 1 \u2192 2 \u2192 3 || state chain 0 to 1 to 2 to 3 || state chain 0 \u2192 1 \u2192 2 \u2192 3 || AMD state versions 0 1 2 3",
+            "STALE-AMD-03",
+            "reject STALE-AMD-03 || rejected STALE-AMD-03 || STALE-AMD-03 is a rejected candidate || reject the stale control candidate",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "LONG-STATE-AMD-01: Accepted version chain: STATE-AMD-01: require expected_version 0, persist decision initialize_active_segment_mix_watch, next_version 1, and status active; trade action is none. Evidence basis: AMD-Q2-DC, AMD-Q2-DC-YOY, AMD-Q2-GAME, AMD-Q2-GAME-YOY, CALC-AMD-01. Rationale: Record the verified Data Center growth and revenue-share baseline while tracking the disclosed Gaming contraction. STATE-AMD-02: require expected_version 1, persist decision positive_confirmation_retain_mix_risk, next_version 2, and status active; trade action is none. Evidence basis: AMD-Q3-REV, AMD-Q3-GM, AMD-Q3-GAME, CALC-AMD-02. Rationale: GAAP revenue and gross margin improved, while Gaming revenue remained materially below the prior observation. STATE-AMD-03: require expected_version 2, persist decision confirm_growth_retain_mix_risk, next_version 3, and status active; trade action is none. Evidence basis: AMD-Q4-REV, AMD-Q4-GM, AMD-Q4-GAME, CALC-AMD-03. Rationale: Quarterly GAAP revenue and gross margin improved again; segment-mix risk remains because Gaming stayed below the Q2 observation. STALE-AMD-03 is a rejected candidate: decision clear_segment_mix_risk at expected_version 1 does not match the accepted prior next_version 2. Apply only STATE-AMD-03 with decision confirm_growth_retain_mix_risk, next_version 3, status active, and trade action none.",
+          "role": "Validate the contiguous state chain and reject stale control candidates.",
+          "task_values": [
+            "FHARD-AMD-01"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-59",
+        "0",
+        "1",
+        "1.0",
+        "2",
+        "3",
+        "12.3",
+        "16.9",
+        "48.6",
+        "49",
+        "50",
+        "51",
+        "115",
+        "462",
+        "563",
+        "648",
+        "2024",
+        "2025",
+        "2834",
+        "5835",
+        "6819",
+        "7658"
+      ],
+      "description": "Advanced Micro Devices, Inc. three-observation SEC chronology, methodology, and state-conflict adjudication.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated",
+        "final decision clear_segment_mix_risk || persisted decision clear_segment_mix_risk"
+      ],
+      "id": "FHARD-AMD-01",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "three-filing-chronology",
+          "values": [
+            "LONG-SRC-AMD-01",
+            "SEC-AMD-01 || 0000002488-24-000121",
+            "AMD-Q2-REV",
+            "AMD-Q2-GM",
+            "AMD-Q2-DC",
+            "AMD-Q2-DC-YOY",
+            "AMD-Q2-GAME",
+            "AMD-Q2-GAME-YOY",
+            "SEC-AMD-02 || 0000002488-24-000161",
+            "AMD-Q3-REV",
+            "AMD-Q3-GM",
+            "AMD-Q3-GAME",
+            "SEC-AMD-03 || 0000002488-25-000009",
+            "AMD-Q4-REV",
+            "AMD-Q4-GM",
+            "AMD-Q4-GAME"
+          ]
+        },
+        {
+          "id": "declared-calculation-audit",
+          "values": [
+            "LONG-CALC-AMD-01",
+            "CALC-AMD-01",
+            "AMD-Q2-DC-SHARE",
+            "48.6",
+            "CALC-AMD-02",
+            "16.9",
+            "1.0",
+            "CALC-AMD-03",
+            "12.3",
+            "1.0",
+            "Do not confuse quarterly observations with full-year figures."
+          ]
+        },
+        {
+          "id": "state-conflict-resolution",
+          "values": [
+            "LONG-STATE-AMD-01",
+            "STATE-AMD-01",
+            "STATE-AMD-02",
+            "STATE-AMD-03",
+            "confirm_growth_retain_mix_risk",
+            "version 0 to 1 to 2 to 3 || version 0 \u2192 1 \u2192 2 \u2192 3 || state chain 0 to 1 to 2 to 3 || state chain 0 \u2192 1 \u2192 2 \u2192 3 || AMD state versions 0 1 2 3",
+            "STALE-AMD-03",
+            "reject STALE-AMD-03 || rejected STALE-AMD-03 || STALE-AMD-03 is a rejected candidate || reject the stale control candidate",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FHARD-AMD-01] Reconstruct AMD's three-observation state chain, reconcile improving revenue and margin with the remaining segment-mix risk, and reject the stale control candidate. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Build the chronology before selecting the final state: verify all three SEC observations, reproduce only declared calculations, enforce the contiguous 0-to-1-to-2-to-3 version chain, and explicitly reject the stale candidate. Preserve every SEC, CALC, STATE, LONG, and STALE evidence ID. Do not use outside knowledge, recommend or authorize a trade, relabel sampled observations, or emit undeclared arithmetic. The only authorized numeric values are: -59, 0, 1, 1.0, 2, 3, 12.3, 16.9, 48.6, 49, 50, 51, 115, 462, 563, 648, 2024, 2025, 2834, 5835, 6819, 7658. Return Chronology, Decision, Evidence Reconciliation, Calculation Audit, Conflict Resolution, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "hard",
+        "longitudinal",
+        "state-conflict",
+        "amd"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "LONG-SRC-INTC-01",
+            "SEC-INTC-01 || 0000050863-24-000068",
+            "INTC-2023-FOUNDRY-REV",
+            "INTC-2023-FOUNDRY-OI",
+            "INTC-2023-EXT-FOUNDRY",
+            "SEC-INTC-02 || 0000050863-24-000122",
+            "INTC-Q2-REV",
+            "INTC-Q2-GM",
+            "INTC-Q2-OM",
+            "INTC-Q2-HC",
+            "INTC-Q2-DIVIDEND",
+            "SEC-INTC-03 || 0000050863-24-000147",
+            "INTC-Q3-REV",
+            "INTC-Q3-GM",
+            "INTC-Q3-RESTRUCT",
+            "INTC-Q3-IMPAIR"
+          ],
+          "id": "finance-source",
+          "response": "LONG-SRC-INTC-01: Three locked SEC observations, in accepted sequence: SEC-INTC-01: SEC 8-K EX-99.1 accession 0000050863-24-000068 reports INTC-2023-FOUNDRY-REV USD 18,910 million (reported_segment, exact); INTC-2023-FOUNDRY-OI USD -6,955 million (reported_segment, exact); INTC-2023-EXT-FOUNDRY USD 953 million (reported_segment, exact). SEC-INTC-02: SEC 8-K EX-99.1 accession 0000050863-24-000122 reports INTC-Q2-REV USD 12,800 million (GAAP, rounded_to_100_million); INTC-Q2-GM 35.4 percent (GAAP, exact); INTC-Q2-OM -15.3 percent (GAAP, exact); INTC-Q2-HC 15 percent (management_action, lower_bound); INTC-Q2-DIVIDEND suspending dividend (management_action, exact). SEC-INTC-03: SEC 8-K EX-99.1 accession 0000050863-24-000147 reports INTC-Q3-REV USD 13,300 million (GAAP, rounded_to_100_million); INTC-Q3-GM 15 percent (GAAP, exact); INTC-Q3-RESTRUCT USD 2,800 million (GAAP, rounded_to_100_million); INTC-Q3-IMPAIR USD 15,900 million (GAAP, rounded_to_100_million).",
+          "role": "Reconstruct the locked three-filing fact chronology without calculations.",
+          "task_values": [
+            "FHARD-INTC-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "LONG-CALC-INTC-01",
+            "CALC-INTC-01",
+            "INTC-2023-EXT-SHARE",
+            "5.0",
+            "CALC-INTC-02",
+            "CALC-INTC-03",
+            "3.9",
+            "-20.4",
+            "Revenue growth does not override restructuring and impairment evidence."
+          ],
+          "id": "finance-methodology",
+          "response": "LONG-CALC-INTC-01: Declared calculations and period controls, in accepted sequence: CALC-INTC-01: INTC-2023-EXT-SHARE equals INTC-2023-EXT-FOUNDRY divided by INTC-2023-FOUNDRY-REV, or 5.0 percent. Within-period ratios use only the named verified facts and declared rounding. CALC-INTC-02: this is the initial verified observation; no inter-observation change is computed. CALC-INTC-03: INTC-Q2-REV to INTC-Q3-REV changed 3.9 percent; INTC-Q2-GM to INTC-Q3-GM changed -20.4 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter. Revenue growth does not override restructuring and impairment evidence. No other arithmetic is authorized.",
+          "role": "Audit only declared cross-observation calculations and period labels.",
+          "task_values": [
+            "FHARD-INTC-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "LONG-STATE-INTC-01",
+            "STATE-INTC-01",
+            "STATE-INTC-02",
+            "STATE-INTC-03",
+            "retain_high_risk_record_impairment",
+            "version 0 to 1 to 2 to 3 || version 0 \u2192 1 \u2192 2 \u2192 3 || state chain 0 to 1 to 2 to 3 || state chain 0 \u2192 1 \u2192 2 \u2192 3 || INTC state versions 0 1 2 3",
+            "STALE-INTC-03",
+            "reject STALE-INTC-03 || rejected STALE-INTC-03 || STALE-INTC-03 is a rejected candidate || reject the stale control candidate",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "LONG-STATE-INTC-01: Accepted version chain: STATE-INTC-01: require expected_version 0, persist decision initialize_needs_review_foundry_loss, next_version 1, and status needs_review; trade action is none. Evidence basis: INTC-2023-FOUNDRY-REV, INTC-2023-FOUNDRY-OI, INTC-2023-EXT-FOUNDRY, CALC-INTC-01. Rationale: The restated segment disclosure shows a large Foundry operating loss, while external revenue equals 5.0 percent of segment revenue. STATE-INTC-02: require expected_version 1, persist decision escalate_high_risk_cost_liquidity, next_version 2, and status high_risk; trade action is none. Evidence basis: INTC-Q2-OM, INTC-Q2-HC, INTC-Q2-DIVIDEND. Rationale: Negative GAAP operating margin coincided with a greater-than-15-percent headcount reduction and dividend suspension. STATE-INTC-03: require expected_version 2, persist decision retain_high_risk_record_impairment, next_version 3, and status high_risk; trade action is none. Evidence basis: INTC-Q3-REV, INTC-Q3-GM, INTC-Q3-RESTRUCT, INTC-Q3-IMPAIR, CALC-INTC-03. Rationale: A modest revenue increase did not offset the 20.4-point gross-margin decline and material restructuring and impairment charges. STALE-INTC-03 is a rejected candidate: decision downgrade_to_needs_review at expected_version 1 does not match the accepted prior next_version 2. Apply only STATE-INTC-03 with decision retain_high_risk_record_impairment, next_version 3, status high_risk, and trade action none.",
+          "role": "Validate the contiguous state chain and reject stale control candidates.",
+          "task_values": [
+            "FHARD-INTC-01"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-6955",
+        "-20.4",
+        "-15.3",
+        "0",
+        "1",
+        "2",
+        "2.8",
+        "3",
+        "3.9",
+        "5.0",
+        "12.8",
+        "13.3",
+        "15",
+        "15.0",
+        "15.9",
+        "35.4",
+        "100",
+        "953",
+        "2023",
+        "2024",
+        "2800",
+        "12800",
+        "13300",
+        "15900",
+        "18910"
+      ],
+      "description": "Intel Corporation three-observation SEC chronology, methodology, and state-conflict adjudication.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated",
+        "final decision downgrade_to_needs_review || persisted decision downgrade_to_needs_review"
+      ],
+      "id": "FHARD-INTC-01",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "three-filing-chronology",
+          "values": [
+            "LONG-SRC-INTC-01",
+            "SEC-INTC-01 || 0000050863-24-000068",
+            "INTC-2023-FOUNDRY-REV",
+            "INTC-2023-FOUNDRY-OI",
+            "INTC-2023-EXT-FOUNDRY",
+            "SEC-INTC-02 || 0000050863-24-000122",
+            "INTC-Q2-REV",
+            "INTC-Q2-GM",
+            "INTC-Q2-OM",
+            "INTC-Q2-HC",
+            "INTC-Q2-DIVIDEND",
+            "SEC-INTC-03 || 0000050863-24-000147",
+            "INTC-Q3-REV",
+            "INTC-Q3-GM",
+            "INTC-Q3-RESTRUCT",
+            "INTC-Q3-IMPAIR"
+          ]
+        },
+        {
+          "id": "declared-calculation-audit",
+          "values": [
+            "LONG-CALC-INTC-01",
+            "CALC-INTC-01",
+            "INTC-2023-EXT-SHARE",
+            "5.0",
+            "CALC-INTC-02",
+            "CALC-INTC-03",
+            "3.9",
+            "-20.4",
+            "Revenue growth does not override restructuring and impairment evidence."
+          ]
+        },
+        {
+          "id": "state-conflict-resolution",
+          "values": [
+            "LONG-STATE-INTC-01",
+            "STATE-INTC-01",
+            "STATE-INTC-02",
+            "STATE-INTC-03",
+            "retain_high_risk_record_impairment",
+            "version 0 to 1 to 2 to 3 || version 0 \u2192 1 \u2192 2 \u2192 3 || state chain 0 to 1 to 2 to 3 || state chain 0 \u2192 1 \u2192 2 \u2192 3 || INTC state versions 0 1 2 3",
+            "STALE-INTC-03",
+            "reject STALE-INTC-03 || rejected STALE-INTC-03 || STALE-INTC-03 is a rejected candidate || reject the stale control candidate",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FHARD-INTC-01] Reconstruct Intel's three-observation risk-state chain, reconcile the revenue change with the profitability, restructuring, impairment, workforce, and dividend evidence, and reject the stale candidate. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Build the chronology before selecting the final state: verify all three SEC observations, reproduce only declared calculations, enforce the contiguous 0-to-1-to-2-to-3 version chain, and explicitly reject the stale candidate. Preserve every SEC, CALC, STATE, LONG, and STALE evidence ID. Do not use outside knowledge, recommend or authorize a trade, relabel sampled observations, or emit undeclared arithmetic. The only authorized numeric values are: -6955, -20.4, -15.3, 0, 1, 2, 2.8, 3, 3.9, 5.0, 12.8, 13.3, 15, 15.0, 15.9, 35.4, 100, 953, 2023, 2024, 2800, 12800, 13300, 15900, 18910. Return Chronology, Decision, Evidence Reconciliation, Calculation Audit, Conflict Resolution, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "hard",
+        "longitudinal",
+        "state-conflict",
+        "intc"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "LONG-SRC-NKE-01",
+            "SEC-NKE-01 || 0000320187-24-000028",
+            "NKE-Q4FY24-REV",
+            "NKE-Q4FY24-GM",
+            "NKE-Q4FY24-GM-CHANGE",
+            "NKE-Q4FY24-DIRECT-YOY",
+            "NKE-Q4FY24-DIGITAL",
+            "SEC-NKE-02 || 0000320187-24-000069",
+            "NKE-Q2FY25-REV",
+            "NKE-Q2FY25-GM",
+            "NKE-Q2FY25-DIGITAL",
+            "SEC-NKE-03 || 0000320187-25-000034",
+            "NKE-Q4FY25-REV",
+            "NKE-Q4FY25-GM",
+            "NKE-Q4FY25-DIGITAL"
+          ],
+          "id": "finance-source",
+          "response": "LONG-SRC-NKE-01: Three locked SEC observations, in accepted sequence: SEC-NKE-01: SEC 8-K EX-99.1 accession 0000320187-24-000028 reports NKE-Q4FY24-REV USD 12,606 million (GAAP, exact); NKE-Q4FY24-GM 44.7 percent (GAAP, exact); NKE-Q4FY24-GM-CHANGE 110 basis points (GAAP, exact); NKE-Q4FY24-DIRECT-YOY -8 percent (reported_channel, exact); NKE-Q4FY24-DIGITAL -10 percent (reported_channel, exact). SEC-NKE-02: SEC 8-K EX-99.1 accession 0000320187-24-000069 reports NKE-Q2FY25-REV USD 12,354 million (GAAP, exact); NKE-Q2FY25-GM 43.6 percent (GAAP, exact); NKE-Q2FY25-DIGITAL -21 percent (reported_channel, exact). SEC-NKE-03: SEC 8-K EX-99.1 accession 0000320187-25-000034 reports NKE-Q4FY25-REV USD 11,097 million (GAAP, exact); NKE-Q4FY25-GM 40.3 percent (GAAP, exact); NKE-Q4FY25-DIGITAL -26 percent (reported_channel, exact).",
+          "role": "Reconstruct the locked three-filing fact chronology without calculations.",
+          "task_values": [
+            "FHARD-NKE-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "LONG-CALC-NKE-01",
+            "CALC-NKE-01",
+            "CALC-NKE-02",
+            "-2.0",
+            "-1.1",
+            "CALC-NKE-03",
+            "-10.2",
+            "-3.3",
+            "Keep GAAP margin evidence distinct from reported-channel evidence."
+          ],
+          "id": "finance-methodology",
+          "response": "LONG-CALC-NKE-01: Declared calculations and period controls, in accepted sequence: CALC-NKE-01: this is the initial verified observation; no inter-observation change is computed. CALC-NKE-02: NKE-Q4FY24-REV to NKE-Q2FY25-REV changed -2.0 percent; NKE-Q4FY24-GM to NKE-Q2FY25-GM changed -1.1 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter. CALC-NKE-03: NKE-Q2FY25-REV to NKE-Q4FY25-REV changed -10.2 percent; NKE-Q2FY25-GM to NKE-Q4FY25-GM changed -3.3 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter. Keep GAAP margin evidence distinct from reported-channel evidence. No other arithmetic is authorized.",
+          "role": "Audit only declared cross-observation calculations and period labels.",
+          "task_values": [
+            "FHARD-NKE-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "LONG-STATE-NKE-01",
+            "STATE-NKE-01",
+            "STATE-NKE-02",
+            "STATE-NKE-03",
+            "retain_high_risk_deeper_deterioration",
+            "version 0 to 1 to 2 to 3 || version 0 \u2192 1 \u2192 2 \u2192 3 || state chain 0 to 1 to 2 to 3 || state chain 0 \u2192 1 \u2192 2 \u2192 3 || NKE state versions 0 1 2 3",
+            "STALE-NKE-03",
+            "reject STALE-NKE-03 || rejected STALE-NKE-03 || STALE-NKE-03 is a rejected candidate || reject the stale control candidate",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "LONG-STATE-NKE-01: Accepted version chain: STATE-NKE-01: require expected_version 0, persist decision initialize_needs_review_digital, next_version 1, and status needs_review; trade action is none. Evidence basis: NKE-Q4FY24-GM-CHANGE, NKE-Q4FY24-DIRECT-YOY, NKE-Q4FY24-DIGITAL. Rationale: GAAP gross margin increased 110 basis points, while NIKE Direct declined 8 percent and NIKE Brand Digital fell 10 percent year over year. STATE-NKE-02: require expected_version 1, persist decision escalate_high_risk_channel_margin, next_version 2, and status high_risk; trade action is none. Evidence basis: NKE-Q2FY25-REV, NKE-Q2FY25-GM, NKE-Q2FY25-DIGITAL, CALC-NKE-02. Rationale: Revenue and gross margin declined between sampled observations while NIKE Brand Digital deteriorated to negative 21 percent year over year. STATE-NKE-03: require expected_version 2, persist decision retain_high_risk_deeper_deterioration, next_version 3, and status high_risk; trade action is none. Evidence basis: NKE-Q4FY25-REV, NKE-Q4FY25-GM, NKE-Q4FY25-DIGITAL, CALC-NKE-03. Rationale: Revenue and gross margin declined further between sampled observations, and NIKE Brand Digital fell 26 percent year over year. STALE-NKE-03 is a rejected candidate: decision resolve_digital_risk at expected_version 1 does not match the accepted prior next_version 2. Apply only STATE-NKE-03 with decision retain_high_risk_deeper_deterioration, next_version 3, status high_risk, and trade action none.",
+          "role": "Validate the contiguous state chain and reject stale control candidates.",
+          "task_values": [
+            "FHARD-NKE-01"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-26",
+        "-21",
+        "-10.2",
+        "-10",
+        "-8",
+        "-3.3",
+        "-2.0",
+        "-1.1",
+        "0",
+        "1",
+        "2",
+        "3",
+        "40.3",
+        "43.6",
+        "44.7",
+        "110",
+        "2024",
+        "2025",
+        "11097",
+        "12354",
+        "12606"
+      ],
+      "description": "NIKE, Inc. three-observation SEC chronology, methodology, and state-conflict adjudication.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated",
+        "final decision resolve_digital_risk || persisted decision resolve_digital_risk"
+      ],
+      "id": "FHARD-NKE-01",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "three-filing-chronology",
+          "values": [
+            "LONG-SRC-NKE-01",
+            "SEC-NKE-01 || 0000320187-24-000028",
+            "NKE-Q4FY24-REV",
+            "NKE-Q4FY24-GM",
+            "NKE-Q4FY24-GM-CHANGE",
+            "NKE-Q4FY24-DIRECT-YOY",
+            "NKE-Q4FY24-DIGITAL",
+            "SEC-NKE-02 || 0000320187-24-000069",
+            "NKE-Q2FY25-REV",
+            "NKE-Q2FY25-GM",
+            "NKE-Q2FY25-DIGITAL",
+            "SEC-NKE-03 || 0000320187-25-000034",
+            "NKE-Q4FY25-REV",
+            "NKE-Q4FY25-GM",
+            "NKE-Q4FY25-DIGITAL"
+          ]
+        },
+        {
+          "id": "declared-calculation-audit",
+          "values": [
+            "LONG-CALC-NKE-01",
+            "CALC-NKE-01",
+            "CALC-NKE-02",
+            "-2.0",
+            "-1.1",
+            "CALC-NKE-03",
+            "-10.2",
+            "-3.3",
+            "Keep GAAP margin evidence distinct from reported-channel evidence."
+          ]
+        },
+        {
+          "id": "state-conflict-resolution",
+          "values": [
+            "LONG-STATE-NKE-01",
+            "STATE-NKE-01",
+            "STATE-NKE-02",
+            "STATE-NKE-03",
+            "retain_high_risk_deeper_deterioration",
+            "version 0 to 1 to 2 to 3 || version 0 \u2192 1 \u2192 2 \u2192 3 || state chain 0 to 1 to 2 to 3 || state chain 0 \u2192 1 \u2192 2 \u2192 3 || NKE state versions 0 1 2 3",
+            "STALE-NKE-03",
+            "reject STALE-NKE-03 || rejected STALE-NKE-03 || STALE-NKE-03 is a rejected candidate || reject the stale control candidate",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FHARD-NKE-01] Reconstruct NIKE's three-observation channel-and-margin state chain, distinguish the initial margin improvement from subsequent deterioration, and reject the stale control candidate. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Build the chronology before selecting the final state: verify all three SEC observations, reproduce only declared calculations, enforce the contiguous 0-to-1-to-2-to-3 version chain, and explicitly reject the stale candidate. Preserve every SEC, CALC, STATE, LONG, and STALE evidence ID. Do not use outside knowledge, recommend or authorize a trade, relabel sampled observations, or emit undeclared arithmetic. The only authorized numeric values are: -26, -21, -10.2, -10, -8, -3.3, -2.0, -1.1, 0, 1, 2, 3, 40.3, 43.6, 44.7, 110, 2024, 2025, 11097, 12354, 12606. Return Chronology, Decision, Evidence Reconciliation, Calculation Audit, Conflict Resolution, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "hard",
+        "longitudinal",
+        "state-conflict",
+        "nke"
+      ]
+    }
+  ],
+  "defaults": {
+    "agent_id": "bench-coordinator",
+    "repetitions": 1,
+    "timeout": "8m"
+  },
+  "description": "Four evidence-matched hard tasks combining three locked SEC observations, declared calculations, contiguous research-state transitions, and an explicitly stale control candidate.",
+  "name": "finance-sec-hard-longitudinal-runtime-v1",
+  "pricing": {
+    "deepseek/deepseek-v4-flash": {
+      "cache_read_per_million": 0.0028,
+      "input_per_million": 0.14,
+      "output_per_million": 0.28
+    },
+    "deepseek/deepseek-v4-pro": {
+      "cache_read_per_million": 0.003625,
+      "input_per_million": 0.435,
+      "output_per_million": 0.87
+    }
+  },
+  "version": 1
+}

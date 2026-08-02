@@ -85,12 +85,13 @@ func WriteText(writer io.Writer, report Report) error {
 		soloClosed := formatRate(metrics.MASoloEvaluated > 0, metrics.MASoloSuccessRate)
 		if _, err := fmt.Fprintf(
 			writer,
-			"Multi-agent: strict team %.1f%% | solo closed %s | evidence-access delta %s | KPI %.1f%% | coordination %.1f%% | delegations %.1f\n",
+			"Multi-agent: strict team %.1f%% | solo closed %s | evidence-access delta %s | KPI %.1f%% | coordination %.1f%% | evidence items %.1f%% | delegations %.1f\n",
 			metrics.MATeamSuccessRate*100,
 			soloClosed,
 			closedGain,
 			metrics.MAMilestoneKPI*100,
 			metrics.MACoordinationScore*100,
+			metrics.MAContributionItemCoverage*100,
 			metrics.MAAverageDelegations,
 		); err != nil {
 			return err

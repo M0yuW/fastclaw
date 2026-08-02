@@ -38,21 +38,28 @@ func NewOpenAI(apiKey, apiBase string) *OpenAIProvider {
 // apiMessage is the wire format for a message sent to the OpenAI API.
 // It uses json.RawMessage for Content to support both string and array formats.
 type apiMessage struct {
-	Role       string          `json:"role"`
-	Content    json.RawMessage `json:"content,omitempty"`
-	ToolCalls  []ToolCall      `json:"tool_calls,omitempty"`
-	ToolCallID string          `json:"tool_call_id,omitempty"`
-	Name       string          `json:"name,omitempty"`
+	Role             string          `json:"role"`
+	Content          json.RawMessage `json:"content,omitempty"`
+	ReasoningContent string          `json:"reasoning_content,omitempty"`
+	ToolCalls        []ToolCall      `json:"tool_calls,omitempty"`
+	ToolCallID       string          `json:"tool_call_id,omitempty"`
+	Name             string          `json:"name,omitempty"`
 }
 
 type chatRequest struct {
-	Model         string            `json:"model"`
-	Messages      []json.RawMessage `json:"messages"`
-	Tools         []Tool            `json:"tools,omitempty"`
-	MaxTokens     int               `json:"max_tokens,omitempty"`
-	Temperature   float64           `json:"temperature,omitempty"`
-	Stream        bool              `json:"stream"`
-	StreamOptions *streamOptions    `json:"stream_options,omitempty"`
+	Model           string            `json:"model"`
+	Messages        []json.RawMessage `json:"messages"`
+	Tools           []Tool            `json:"tools,omitempty"`
+	MaxTokens       int               `json:"max_tokens,omitempty"`
+	Temperature     float64           `json:"temperature,omitempty"`
+	Stream          bool              `json:"stream"`
+	StreamOptions   *streamOptions    `json:"stream_options,omitempty"`
+	Thinking        *thinkingConfig   `json:"thinking,omitempty"`
+	ReasoningEffort string            `json:"reasoning_effort,omitempty"`
+}
+
+type thinkingConfig struct {
+	Type string `json:"type"`
 }
 
 type streamOptions struct {
@@ -72,10 +79,11 @@ func toAPIMessages(msgs []Message) []json.RawMessage {
 		}
 
 		am := apiMessage{
-			Role:       m.Role,
-			ToolCalls:  m.ToolCalls,
-			ToolCallID: m.ToolCallID,
-			Name:       m.Name,
+			Role:             m.Role,
+			ReasoningContent: m.Thinking,
+			ToolCalls:        m.ToolCalls,
+			ToolCallID:       m.ToolCallID,
+			Name:             m.Name,
 		}
 		if len(m.ContentParts) > 0 {
 			am.Content, _ = json.Marshal(m.ContentParts)
@@ -96,9 +104,10 @@ type sseToolCallDelta struct {
 }
 
 type sseDelta struct {
-	Role      string             `json:"role,omitempty"`
-	Content   string             `json:"content,omitempty"`
-	ToolCalls []sseToolCallDelta `json:"tool_calls,omitempty"`
+	Role             string             `json:"role,omitempty"`
+	Content          string             `json:"content,omitempty"`
+	ReasoningContent string             `json:"reasoning_content,omitempty"`
+	ToolCalls        []sseToolCallDelta `json:"tool_calls,omitempty"`
 }
 
 type sseChoice struct {
@@ -140,6 +149,21 @@ func (p *OpenAIProvider) buildRequestWithUsage(
 	if len(tools) > 0 {
 		req.Tools = tools
 	}
+	if strings.Contains(p.apiBase, "deepseek.com") {
+		switch thinkingModeFromContext(ctx) {
+		case "off":
+			req.Thinking = &thinkingConfig{Type: "disabled"}
+		case "low":
+			req.Thinking = &thinkingConfig{Type: "enabled"}
+			req.ReasoningEffort = "low"
+		case "medium", "high", "adaptive":
+			req.Thinking = &thinkingConfig{Type: "enabled"}
+			req.ReasoningEffort = "high"
+		case "max":
+			req.Thinking = &thinkingConfig{Type: "enabled"}
+			req.ReasoningEffort = "max"
+		}
+	}
 
 	body, err := json.Marshal(req)
 	if err != nil {
@@ -147,7 +171,17 @@ func (p *OpenAIProvider) buildRequestWithUsage(
 	}
 
 	url := p.apiBase + "/chat/completions"
-	slog.Info("openai request", "url", url, "model", req.Model)
+	thinkingType := "default"
+	if req.Thinking != nil {
+		thinkingType = req.Thinking.Type
+	}
+	slog.Info(
+		"openai request",
+		"url", url,
+		"model", req.Model,
+		"thinking", thinkingType,
+		"reasoning_effort", req.ReasoningEffort,
+	)
 	httpReq, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(body))
 	if err != nil {
 		return nil, fmt.Errorf("create request: %w", err)
@@ -295,6 +329,7 @@ func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
 	var contentBuilder strings.Builder
+	var thinkingBuilder strings.Builder
 	toolCalls := make(map[int]*ToolCall)
 	var usage Usage
 	complete := false
@@ -330,6 +365,7 @@ func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk
 		}
 
 		delta := chunk.Choices[0].Delta
+		thinkingBuilder.WriteString(delta.ReasoningContent)
 		if delta.Content != "" {
 			contentBuilder.WriteString(delta.Content)
 			if emit != nil {
@@ -374,19 +410,19 @@ func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk
 		return nil, io.ErrUnexpectedEOF
 	}
 
-	result := &Response{Content: contentBuilder.String(), Usage: usage}
+	result := &Response{Content: contentBuilder.String(), Thinking: thinkingBuilder.String(), Usage: usage}
 	for i := 0; i < len(toolCalls); i++ {
 		if tc, ok := toolCalls[i]; ok {
 			result.ToolCalls = append(result.ToolCalls, *tc)
 		}
 	}
 
-	rawMsg := apiMessage{Role: "assistant", ToolCalls: result.ToolCalls}
+	rawMsg := apiMessage{Role: "assistant", ReasoningContent: result.Thinking, ToolCalls: result.ToolCalls}
 	rawMsg.Content, _ = json.Marshal(result.Content)
 	result.RawAssistant, _ = json.Marshal(rawMsg)
 
 	if emit != nil {
-		if err := emit(StreamChunk{ToolCalls: result.ToolCalls, Done: true}); err != nil {
+		if err := emit(StreamChunk{ToolCalls: result.ToolCalls, Thinking: result.Thinking, Done: true}); err != nil {
 			return nil, err
 		}
 	}

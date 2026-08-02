@@ -1,0 +1,258 @@
+{
+  "version": 1,
+  "dataset": "fastclaw-finance-e2e-v1",
+  "verification_policy": {
+    "allowed_authority": "SEC EDGAR filing artifact",
+    "minimum_status": "primary_source_verified",
+    "raw_artifact_status": "sha256_locked",
+    "source_lock": "source-lock.json",
+    "note": "Facts entered the pilot only after manual verification against immutable SEC accessions; the SEC filing artifacts and Company Facts cross-checks are frozen by SHA-256 in source-lock.json."
+  },
+  "episodes": [
+    {
+      "id": "FSEC-NVDA-01",
+      "company": "NVIDIA Corporation",
+      "symbol": "NVDA",
+      "sequence": 1,
+      "observed_at": "2024-05-22",
+      "period_label": "Q1 FY2025 ended 2024-04-28",
+      "source_id": "nvda-2024-05-22-q1-fy2025",
+      "question": "Establish the initial AI-infrastructure growth and margin state without making a trading recommendation.",
+      "facts": [
+        {"id": "NVDA-Q1-REV", "metric": "quarterly_revenue", "value": "26044", "unit": "USD_million", "basis": "GAAP", "precision": "exact", "excerpt": "Revenue $26,044 million", "locator": "Q1 Fiscal 2025 Summary"},
+        {"id": "NVDA-Q1-GM", "metric": "gross_margin", "value": "78.4", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin 78.4 percent", "locator": "Q1 Fiscal 2025 Summary"},
+        {"id": "NVDA-Q1-DC", "metric": "data_center_revenue", "value": "22600", "unit": "USD_million", "basis": "reported_segment", "precision": "rounded_to_100_million", "excerpt": "Data Center revenue of $22.6 billion", "locator": "Data Center highlights"}
+      ],
+      "comparisons": [],
+      "calculations": [
+        {"id": "NVDA-Q1-DC-SHARE", "operation": "ratio_percent", "numerator_fact": "NVDA-Q1-DC", "denominator_fact": "NVDA-Q1-REV", "expected": "86.8", "unit": "percent", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 0, "next_version": 1, "decision": "initialize_active_margin_watch", "status": "active", "rationale": "Record the verified AI-infrastructure revenue concentration and margin baseline for subsequent monitoring.", "basis_evidence_ids": ["NVDA-Q1-REV", "NVDA-Q1-GM", "NVDA-Q1-DC", "CALC-NVDA-01"], "trade_action": "none"}
+    },
+    {
+      "id": "FSEC-NVDA-02",
+      "company": "NVIDIA Corporation",
+      "symbol": "NVDA",
+      "sequence": 2,
+      "observed_at": "2024-08-28",
+      "period_label": "Q2 FY2025 ended 2024-07-28",
+      "source_id": "nvda-2024-08-28-q2-fy2025",
+      "question": "Update the NVIDIA research state after revenue growth and gross-margin compression.",
+      "facts": [
+        {"id": "NVDA-Q2-REV", "metric": "quarterly_revenue", "value": "30040", "unit": "USD_million", "basis": "GAAP", "precision": "exact", "excerpt": "Revenue $30,040 million", "locator": "Q2 Fiscal 2025 Summary"},
+        {"id": "NVDA-Q2-GM", "metric": "gross_margin", "value": "75.1", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin 75.1 percent", "locator": "Q2 Fiscal 2025 Summary"},
+        {"id": "NVDA-Q2-DC", "metric": "data_center_revenue", "value": "26300", "unit": "USD_million", "basis": "reported_segment", "precision": "rounded_to_100_million", "excerpt": "Data Center revenue was $26.3 billion", "locator": "Data Center highlights"}
+      ],
+      "comparisons": [
+        {"from_fact": "NVDA-Q1-REV", "to_fact": "NVDA-Q2-REV", "operation": "percent_change", "expected": "15.3", "unit": "percent", "rounding": "0.1"},
+        {"from_fact": "NVDA-Q1-GM", "to_fact": "NVDA-Q2-GM", "operation": "difference", "expected": "-3.3", "unit": "percentage_point", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 1, "next_version": 2, "decision": "retain_active_add_margin_risk", "status": "active", "rationale": "Revenue expanded while verified GAAP gross margin fell 3.3 percentage points from the prior observation.", "basis_evidence_ids": ["NVDA-Q2-REV", "NVDA-Q2-GM", "CALC-NVDA-02"], "trade_action": "none"}
+    },
+    {
+      "id": "FSEC-NVDA-03",
+      "company": "NVIDIA Corporation",
+      "symbol": "NVDA",
+      "sequence": 3,
+      "observed_at": "2025-02-26",
+      "period_label": "Q4 FY2025 ended 2025-01-26",
+      "source_id": "nvda-2025-02-26-q4-fy2025",
+      "question": "Assess whether growth remains strong while explicitly preserving the margin-risk flag.",
+      "facts": [
+        {"id": "NVDA-Q4-REV", "metric": "quarterly_revenue", "value": "39331", "unit": "USD_million", "basis": "GAAP", "precision": "exact", "excerpt": "Revenue $39,331 million", "locator": "Q4 Fiscal 2025 Summary"},
+        {"id": "NVDA-Q4-GM", "metric": "gross_margin", "value": "73.0", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin 73.0 percent", "locator": "Q4 Fiscal 2025 Summary"},
+        {"id": "NVDA-Q4-DC", "metric": "data_center_revenue", "value": "35600", "unit": "USD_million", "basis": "reported_segment", "precision": "rounded_to_100_million", "excerpt": "Data Center revenue was $35.6 billion", "locator": "Data Center highlights"}
+      ],
+      "comparisons": [
+        {"from_fact": "NVDA-Q2-REV", "to_fact": "NVDA-Q4-REV", "operation": "percent_change", "expected": "30.9", "unit": "percent", "rounding": "0.1"},
+        {"from_fact": "NVDA-Q2-GM", "to_fact": "NVDA-Q4-GM", "operation": "difference", "expected": "-2.1", "unit": "percentage_point", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 2, "next_version": 3, "decision": "confirm_growth_retain_margin_risk", "status": "active", "rationale": "Revenue rose between sampled observations, but GAAP gross margin declined again; the observations are not labelled quarter-over-quarter.", "basis_evidence_ids": ["NVDA-Q4-REV", "NVDA-Q4-GM", "CALC-NVDA-03"], "trade_action": "none"}
+    },
+
+    {
+      "id": "FSEC-AMD-01",
+      "company": "Advanced Micro Devices, Inc.",
+      "symbol": "AMD",
+      "sequence": 1,
+      "observed_at": "2024-07-30",
+      "period_label": "Q2 2024",
+      "source_id": "amd-2024-07-30-q2",
+      "question": "Establish AMD's data-center-led growth baseline while retaining segment-mix risks.",
+      "facts": [
+        {"id": "AMD-Q2-REV", "metric": "quarterly_revenue", "value": "5835", "unit": "USD_million", "basis": "GAAP", "precision": "exact", "excerpt": "Revenue $5,835 million", "locator": "GAAP Quarterly Financial Results"},
+        {"id": "AMD-Q2-GM", "metric": "gross_margin", "value": "49", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin 49 percent", "locator": "GAAP Quarterly Financial Results"},
+        {"id": "AMD-Q2-DC", "metric": "data_center_revenue", "value": "2834", "unit": "USD_million", "basis": "reported_segment", "precision": "exact", "excerpt": "Data Center net revenue $2,834 million", "locator": "Segment and Category Information"},
+        {"id": "AMD-Q2-DC-YOY", "metric": "data_center_revenue_yoy", "value": "115", "unit": "percent", "basis": "reported_segment", "precision": "exact", "excerpt": "Data Center revenue was up 115 percent year-over-year", "locator": "Segment Summary"},
+        {"id": "AMD-Q2-GAME", "metric": "gaming_revenue", "value": "648", "unit": "USD_million", "basis": "reported_segment", "precision": "exact", "excerpt": "Gaming segment revenue was $648 million", "locator": "Segment Summary"},
+        {"id": "AMD-Q2-GAME-YOY", "metric": "gaming_revenue_yoy", "value": "-59", "unit": "percent", "basis": "reported_segment", "precision": "exact", "excerpt": "Gaming revenue was down 59 percent year-over-year", "locator": "Segment Summary"}
+      ],
+      "comparisons": [],
+      "calculations": [
+        {"id": "AMD-Q2-DC-SHARE", "operation": "ratio_percent", "numerator_fact": "AMD-Q2-DC", "denominator_fact": "AMD-Q2-REV", "expected": "48.6", "unit": "percent", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 0, "next_version": 1, "decision": "initialize_active_segment_mix_watch", "status": "active", "rationale": "Record the verified Data Center growth and revenue-share baseline while tracking the disclosed Gaming contraction.", "basis_evidence_ids": ["AMD-Q2-DC", "AMD-Q2-DC-YOY", "AMD-Q2-GAME", "AMD-Q2-GAME-YOY", "CALC-AMD-01"], "trade_action": "none"}
+    },
+    {
+      "id": "FSEC-AMD-02",
+      "company": "Advanced Micro Devices, Inc.",
+      "symbol": "AMD",
+      "sequence": 2,
+      "observed_at": "2024-10-29",
+      "period_label": "Q3 2024",
+      "source_id": "amd-2024-10-29-q3",
+      "question": "Update AMD's thesis using revenue, margin, and diverging segment evidence.",
+      "facts": [
+        {"id": "AMD-Q3-REV", "metric": "quarterly_revenue", "value": "6819", "unit": "USD_million", "basis": "GAAP", "precision": "exact", "excerpt": "Revenue $6,819 million", "locator": "GAAP Quarterly Financial Results"},
+        {"id": "AMD-Q3-GM", "metric": "gross_margin", "value": "50", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin 50 percent", "locator": "GAAP Quarterly Financial Results"},
+        {"id": "AMD-Q3-GAME", "metric": "gaming_revenue", "value": "462", "unit": "USD_million", "basis": "reported_segment", "precision": "exact", "excerpt": "Gaming segment revenue was $462 million", "locator": "Segment Summary"}
+      ],
+      "comparisons": [
+        {"from_fact": "AMD-Q2-REV", "to_fact": "AMD-Q3-REV", "operation": "percent_change", "expected": "16.9", "unit": "percent", "rounding": "0.1"},
+        {"from_fact": "AMD-Q2-GM", "to_fact": "AMD-Q3-GM", "operation": "difference", "expected": "1.0", "unit": "percentage_point", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 1, "next_version": 2, "decision": "positive_confirmation_retain_mix_risk", "status": "active", "rationale": "GAAP revenue and gross margin improved, while Gaming revenue remained materially below the prior observation.", "basis_evidence_ids": ["AMD-Q3-REV", "AMD-Q3-GM", "AMD-Q3-GAME", "CALC-AMD-02"], "trade_action": "none"}
+    },
+    {
+      "id": "FSEC-AMD-03",
+      "company": "Advanced Micro Devices, Inc.",
+      "symbol": "AMD",
+      "sequence": 3,
+      "observed_at": "2025-02-04",
+      "period_label": "Q4 2024",
+      "source_id": "amd-2025-02-04-fy2024",
+      "question": "Evaluate a third AMD observation without confusing annual and quarterly figures.",
+      "facts": [
+        {"id": "AMD-Q4-REV", "metric": "quarterly_revenue", "value": "7658", "unit": "USD_million", "basis": "GAAP", "precision": "exact", "excerpt": "Revenue $7,658 million", "locator": "GAAP Quarterly Financial Results"},
+        {"id": "AMD-Q4-GM", "metric": "gross_margin", "value": "51", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin 51 percent", "locator": "GAAP Quarterly Financial Results"},
+        {"id": "AMD-Q4-GAME", "metric": "gaming_revenue", "value": "563", "unit": "USD_million", "basis": "reported_segment", "precision": "exact", "excerpt": "Gaming segment revenue was $563 million", "locator": "Segment Summary"}
+      ],
+      "comparisons": [
+        {"from_fact": "AMD-Q3-REV", "to_fact": "AMD-Q4-REV", "operation": "percent_change", "expected": "12.3", "unit": "percent", "rounding": "0.1"},
+        {"from_fact": "AMD-Q3-GM", "to_fact": "AMD-Q4-GM", "operation": "difference", "expected": "1.0", "unit": "percentage_point", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 2, "next_version": 3, "decision": "confirm_growth_retain_mix_risk", "status": "active", "rationale": "Quarterly GAAP revenue and gross margin improved again; segment-mix risk remains because Gaming stayed below the Q2 observation.", "basis_evidence_ids": ["AMD-Q4-REV", "AMD-Q4-GM", "AMD-Q4-GAME", "CALC-AMD-03"], "trade_action": "none"}
+    },
+
+    {
+      "id": "FSEC-INTC-01",
+      "company": "Intel Corporation",
+      "symbol": "INTC",
+      "sequence": 1,
+      "observed_at": "2024-04-02",
+      "period_label": "Retrospective 2023 segment disclosure",
+      "source_id": "intel-2024-04-02-foundry-framework",
+      "question": "Establish Intel Foundry's structural economics under the new reporting model.",
+      "facts": [
+        {"id": "INTC-2023-FOUNDRY-REV", "metric": "foundry_segment_revenue", "value": "18910", "unit": "USD_million", "basis": "reported_segment", "precision": "exact", "excerpt": "Intel Foundry revenue $18,910 million", "locator": "Operating segment revenue"},
+        {"id": "INTC-2023-FOUNDRY-OI", "metric": "foundry_operating_income", "value": "-6955", "unit": "USD_million", "basis": "reported_segment", "precision": "exact", "excerpt": "Intel Foundry operating loss $6,955 million", "locator": "Segment operating income (loss)"},
+        {"id": "INTC-2023-EXT-FOUNDRY", "metric": "external_foundry_revenue", "value": "953", "unit": "USD_million", "basis": "reported_segment", "precision": "exact", "excerpt": "External customers were $953 million in 2023", "locator": "Intel Foundry segment revenue policy"}
+      ],
+      "comparisons": [],
+      "calculations": [
+        {"id": "INTC-2023-EXT-SHARE", "operation": "ratio_percent", "numerator_fact": "INTC-2023-EXT-FOUNDRY", "denominator_fact": "INTC-2023-FOUNDRY-REV", "expected": "5.0", "unit": "percent", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 0, "next_version": 1, "decision": "initialize_needs_review_foundry_loss", "status": "needs_review", "rationale": "The restated segment disclosure shows a large Foundry operating loss, while external revenue equals 5.0 percent of segment revenue.", "basis_evidence_ids": ["INTC-2023-FOUNDRY-REV", "INTC-2023-FOUNDRY-OI", "INTC-2023-EXT-FOUNDRY", "CALC-INTC-01"], "trade_action": "none"}
+    },
+    {
+      "id": "FSEC-INTC-02",
+      "company": "Intel Corporation",
+      "symbol": "INTC",
+      "sequence": 2,
+      "observed_at": "2024-08-01",
+      "period_label": "Q2 2024",
+      "source_id": "intel-2024-08-01-q2",
+      "question": "Assess Intel's cost and liquidity response after weak Q2 profitability.",
+      "facts": [
+        {"id": "INTC-Q2-REV", "metric": "quarterly_revenue", "value": "12800", "unit": "USD_million", "basis": "GAAP", "precision": "rounded_to_100_million", "excerpt": "Second-quarter revenue of $12.8 billion", "locator": "News Summary"},
+        {"id": "INTC-Q2-GM", "metric": "gross_margin", "value": "35.4", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross Margin 35.4 percent", "locator": "Q2 2024 Financial Highlights"},
+        {"id": "INTC-Q2-OM", "metric": "operating_margin", "value": "-15.3", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Operating Margin negative 15.3 percent", "locator": "Q2 2024 Financial Highlights"},
+        {"id": "INTC-Q2-HC", "metric": "headcount_reduction", "value": "15", "unit": "percent", "basis": "management_action", "precision": "lower_bound", "excerpt": "more than 15 percent headcount reduction", "locator": "News Summary"},
+        {"id": "INTC-Q2-DIVIDEND", "metric": "dividend_action", "value": "suspending dividend", "unit": "categorical", "basis": "management_action", "precision": "exact", "excerpt": "Suspending dividend starting in the fourth quarter of 2024", "locator": "News Summary"}
+      ],
+      "comparisons": [],
+      "research_state": {"expected_version": 1, "next_version": 2, "decision": "escalate_high_risk_cost_liquidity", "status": "high_risk", "rationale": "Negative GAAP operating margin coincided with a greater-than-15-percent headcount reduction and dividend suspension.", "basis_evidence_ids": ["INTC-Q2-OM", "INTC-Q2-HC", "INTC-Q2-DIVIDEND"], "trade_action": "none"}
+    },
+    {
+      "id": "FSEC-INTC-03",
+      "company": "Intel Corporation",
+      "symbol": "INTC",
+      "sequence": 3,
+      "observed_at": "2024-10-31",
+      "period_label": "Q3 2024",
+      "source_id": "intel-2024-10-31-q3",
+      "question": "Update Intel's risk state after restructuring and impairment charges.",
+      "facts": [
+        {"id": "INTC-Q3-REV", "metric": "quarterly_revenue", "value": "13300", "unit": "USD_million", "basis": "GAAP", "precision": "rounded_to_100_million", "excerpt": "Third-quarter revenue of $13.3 billion", "locator": "News Summary"},
+        {"id": "INTC-Q3-GM", "metric": "gross_margin", "value": "15.0", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross Margin 15.0 percent", "locator": "Q3 2024 Financial Highlights"},
+        {"id": "INTC-Q3-RESTRUCT", "metric": "restructuring_charges", "value": "2800", "unit": "USD_million", "basis": "GAAP", "precision": "rounded_to_100_million", "excerpt": "$2.8 billion in restructuring charges", "locator": "Q3 2024 Restructuring and Impairment Charges"},
+        {"id": "INTC-Q3-IMPAIR", "metric": "impairment_and_accelerated_depreciation", "value": "15900", "unit": "USD_million", "basis": "GAAP", "precision": "rounded_to_100_million", "excerpt": "$15.9 billion of impairment charges", "locator": "News Summary"}
+      ],
+      "comparisons": [
+        {"from_fact": "INTC-Q2-REV", "to_fact": "INTC-Q3-REV", "operation": "percent_change", "expected": "3.9", "unit": "percent", "rounding": "0.1"},
+        {"from_fact": "INTC-Q2-GM", "to_fact": "INTC-Q3-GM", "operation": "difference", "expected": "-20.4", "unit": "percentage_point", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 2, "next_version": 3, "decision": "retain_high_risk_record_impairment", "status": "high_risk", "rationale": "A modest revenue increase did not offset the 20.4-point gross-margin decline and material restructuring and impairment charges.", "basis_evidence_ids": ["INTC-Q3-REV", "INTC-Q3-GM", "INTC-Q3-RESTRUCT", "INTC-Q3-IMPAIR", "CALC-INTC-03"], "trade_action": "none"}
+    },
+
+    {
+      "id": "FSEC-NKE-01",
+      "company": "NIKE, Inc.",
+      "symbol": "NKE",
+      "sequence": 1,
+      "observed_at": "2024-06-27",
+      "period_label": "Q4 FY2024 ended 2024-05-31",
+      "source_id": "nike-2024-06-27-fy2024",
+      "question": "Establish NIKE's channel and margin baseline at fiscal year-end.",
+      "facts": [
+        {"id": "NKE-Q4FY24-REV", "metric": "quarterly_revenue", "value": "12606", "unit": "USD_million", "basis": "GAAP", "precision": "exact", "excerpt": "Revenues $12,606 million", "locator": "Consolidated Statements of Income"},
+        {"id": "NKE-Q4FY24-GM", "metric": "gross_margin", "value": "44.7", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin 44.7 percent", "locator": "Fourth Quarter Income Statement Review"},
+        {"id": "NKE-Q4FY24-GM-CHANGE", "metric": "gross_margin_yoy_change", "value": "110", "unit": "basis_point", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin increased 110 basis points", "locator": "Fourth Quarter Income Statement Review"},
+        {"id": "NKE-Q4FY24-DIRECT-YOY", "metric": "nike_direct_revenue_yoy", "value": "-8", "unit": "percent", "basis": "reported_channel", "precision": "exact", "excerpt": "NIKE Direct revenues were down 8 percent", "locator": "Fourth Quarter Income Statement Review"},
+        {"id": "NKE-Q4FY24-DIGITAL", "metric": "nike_brand_digital_yoy", "value": "-10", "unit": "percent", "basis": "reported_channel", "precision": "exact", "excerpt": "NIKE Brand Digital declined 10 percent", "locator": "Fourth Quarter Income Statement Review"}
+      ],
+      "comparisons": [],
+      "research_state": {"expected_version": 0, "next_version": 1, "decision": "initialize_needs_review_digital", "status": "needs_review", "rationale": "GAAP gross margin increased 110 basis points, while NIKE Direct declined 8 percent and NIKE Brand Digital fell 10 percent year over year.", "basis_evidence_ids": ["NKE-Q4FY24-GM-CHANGE", "NKE-Q4FY24-DIRECT-YOY", "NKE-Q4FY24-DIGITAL"], "trade_action": "none"}
+    },
+    {
+      "id": "FSEC-NKE-02",
+      "company": "NIKE, Inc.",
+      "symbol": "NKE",
+      "sequence": 2,
+      "observed_at": "2024-12-19",
+      "period_label": "Q2 FY2025 ended 2024-11-30",
+      "source_id": "nike-2024-12-19-q2-fy2025",
+      "question": "Update NIKE's research state after broader revenue, digital, and margin deterioration.",
+      "facts": [
+        {"id": "NKE-Q2FY25-REV", "metric": "quarterly_revenue", "value": "12354", "unit": "USD_million", "basis": "GAAP", "precision": "exact", "excerpt": "Revenues $12,354 million", "locator": "Consolidated Statements of Income"},
+        {"id": "NKE-Q2FY25-GM", "metric": "gross_margin", "value": "43.6", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin 43.6 percent", "locator": "Second Quarter Income Statement Review"},
+        {"id": "NKE-Q2FY25-DIGITAL", "metric": "nike_brand_digital_yoy", "value": "-21", "unit": "percent", "basis": "reported_channel", "precision": "exact", "excerpt": "NIKE Brand Digital decreased 21 percent", "locator": "Second Quarter Income Statement Review"}
+      ],
+      "comparisons": [
+        {"from_fact": "NKE-Q4FY24-REV", "to_fact": "NKE-Q2FY25-REV", "operation": "percent_change", "expected": "-2.0", "unit": "percent", "rounding": "0.1"},
+        {"from_fact": "NKE-Q4FY24-GM", "to_fact": "NKE-Q2FY25-GM", "operation": "difference", "expected": "-1.1", "unit": "percentage_point", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 1, "next_version": 2, "decision": "escalate_high_risk_channel_margin", "status": "high_risk", "rationale": "Revenue and gross margin declined between sampled observations while NIKE Brand Digital deteriorated to negative 21 percent year over year.", "basis_evidence_ids": ["NKE-Q2FY25-REV", "NKE-Q2FY25-GM", "NKE-Q2FY25-DIGITAL", "CALC-NKE-02"], "trade_action": "none"}
+    },
+    {
+      "id": "FSEC-NKE-03",
+      "company": "NIKE, Inc.",
+      "symbol": "NKE",
+      "sequence": 3,
+      "observed_at": "2025-06-26",
+      "period_label": "Q4 FY2025 ended 2025-05-31",
+      "source_id": "nike-2025-06-26-fy2025",
+      "question": "Assess whether NIKE's deterioration persisted at the next fiscal year-end observation.",
+      "facts": [
+        {"id": "NKE-Q4FY25-REV", "metric": "quarterly_revenue", "value": "11097", "unit": "USD_million", "basis": "GAAP", "precision": "exact", "excerpt": "Revenues $11,097 million", "locator": "Consolidated Statements of Income"},
+        {"id": "NKE-Q4FY25-GM", "metric": "gross_margin", "value": "40.3", "unit": "percent", "basis": "GAAP", "precision": "exact", "excerpt": "Gross margin 40.3 percent", "locator": "Fourth Quarter Income Statement Review"},
+        {"id": "NKE-Q4FY25-DIGITAL", "metric": "nike_brand_digital_yoy", "value": "-26", "unit": "percent", "basis": "reported_channel", "precision": "exact", "excerpt": "NIKE Brand Digital decreased 26 percent", "locator": "Fourth Quarter Income Statement Review"}
+      ],
+      "comparisons": [
+        {"from_fact": "NKE-Q2FY25-REV", "to_fact": "NKE-Q4FY25-REV", "operation": "percent_change", "expected": "-10.2", "unit": "percent", "rounding": "0.1"},
+        {"from_fact": "NKE-Q2FY25-GM", "to_fact": "NKE-Q4FY25-GM", "operation": "difference", "expected": "-3.3", "unit": "percentage_point", "rounding": "0.1"}
+      ],
+      "research_state": {"expected_version": 2, "next_version": 3, "decision": "retain_high_risk_deeper_deterioration", "status": "high_risk", "rationale": "Revenue and gross margin declined further between sampled observations, and NIKE Brand Digital fell 26 percent year over year.", "basis_evidence_ids": ["NKE-Q4FY25-REV", "NKE-Q4FY25-GM", "NKE-Q4FY25-DIGITAL", "CALC-NKE-03"], "trade_action": "none"}
+    }
+  ]
+}

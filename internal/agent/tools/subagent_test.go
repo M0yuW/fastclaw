@@ -6,7 +6,9 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 )
@@ -15,6 +17,27 @@ type fakeSubAgentSpawner struct {
 	messages []bus.InboundMessage
 	result   string
 	err      error
+}
+
+type concurrentSubAgentSpawner struct {
+	active  int32
+	maximum int32
+}
+
+func (s *concurrentSubAgentSpawner) SpawnSubAgent(_ context.Context, agentID string, msg bus.InboundMessage) (string, error) {
+	active := atomic.AddInt32(&s.active, 1)
+	for {
+		maximum := atomic.LoadInt32(&s.maximum)
+		if active <= maximum || atomic.CompareAndSwapInt32(&s.maximum, maximum, active) {
+			break
+		}
+	}
+	time.Sleep(20 * time.Millisecond)
+	atomic.AddInt32(&s.active, -1)
+	if !strings.Contains(msg.Text, "Shared context:\nlocked evidence") {
+		return "", errors.New("shared context missing")
+	}
+	return agentID + " result", nil
 }
 
 func (f *fakeSubAgentSpawner) SpawnSubAgent(_ context.Context, _ string, msg bus.InboundMessage) (string, error) {
@@ -108,5 +131,30 @@ func TestMakeSubAgentToolRejectsSelfSpawn(t *testing.T) {
 	_, err := tool(context.Background(), json.RawMessage(`{"agentId":"parent","task":"loop"}`))
 	if err == nil {
 		t.Fatal("expected self-spawn error")
+	}
+}
+
+func TestMakeSubAgentToolRunsBatchWithSharedContextConcurrently(t *testing.T) {
+	spawner := &concurrentSubAgentSpawner{}
+	tool := makeSubAgentTool(spawner, "parent")
+	result, err := tool(context.Background(), json.RawMessage(`{
+		"sharedContext":"locked evidence",
+		"delegations":[
+			{"agentId":"trend","task":"analyze trend"},
+			{"agentId":"risk","task":"analyze risk"}
+		]
+	}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if atomic.LoadInt32(&spawner.maximum) != 2 {
+		t.Fatalf("maximum concurrency = %d, want 2", spawner.maximum)
+	}
+	var batch spawnSubagentBatchResult
+	if err := json.Unmarshal([]byte(result), &batch); err != nil {
+		t.Fatal(err)
+	}
+	if len(batch.Results) != 2 || batch.Results[0].AgentID != "trend" || batch.Results[1].AgentID != "risk" {
+		t.Fatalf("batch result = %+v", batch)
 	}
 }

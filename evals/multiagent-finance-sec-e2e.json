@@ -1,0 +1,1252 @@
+{
+  "baselines": [
+    "solo_open_book",
+    "solo_two_pass",
+    "team",
+    "oracle_team"
+  ],
+  "cases": [
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-NVDA-01 || 0001045810-24-000113",
+            "NVDA-Q1-REV",
+            "NVDA-Q1-GM",
+            "NVDA-Q1-DC"
+          ],
+          "id": "finance-source",
+          "response": "SEC-NVDA-01: SEC 8-K EX-99.1 accession 0001045810-24-000113 reports NVDA-Q1-REV USD 26,044 million (GAAP, exact); NVDA-Q1-GM 78.4 percent (GAAP, exact); NVDA-Q1-DC USD 22,600 million (reported_segment, rounded_to_100_million).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-NVDA-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-NVDA-01",
+            "NVDA-Q1-DC-SHARE",
+            "86.8"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-NVDA-01: NVDA-Q1-DC-SHARE equals NVDA-Q1-DC divided by NVDA-Q1-REV, or 86.8 percent. Within-period ratios use only the named verified facts and declared rounding.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-NVDA-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-NVDA-01",
+            "initialize_active_margin_watch",
+            "next_version 1 || version 0 to 1 || version 0 \u2192 1 || new version 1 || next research-state version 1",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-NVDA-01: require expected_version 0, persist decision initialize_active_margin_watch, next_version 1, and status active; trade action is none. Evidence basis: NVDA-Q1-REV, NVDA-Q1-GM, NVDA-Q1-DC, CALC-NVDA-01. Rationale: Record the verified AI-infrastructure revenue concentration and margin baseline for subsequent monitoring.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-NVDA-01"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "0",
+        "1",
+        "22.6",
+        "78.4",
+        "86.8",
+        "100",
+        "2024",
+        "22600",
+        "26044"
+      ],
+      "description": "NVIDIA Corporation evidence-grounded research-state update for Q1 FY2025 ended 2024-04-28.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-NVDA-01",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-NVDA-01 || 0001045810-24-000113",
+            "NVDA-Q1-REV",
+            "NVDA-Q1-GM",
+            "NVDA-Q1-DC"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-NVDA-01",
+            "NVDA-Q1-DC-SHARE",
+            "86.8"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-NVDA-01",
+            "initialize_active_margin_watch",
+            "next_version 1 || version 0 to 1 || version 0 \u2192 1 || new version 1 || next research-state version 1",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-NVDA-01] Establish the initial AI-infrastructure growth and margin state without making a trading recommendation. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0001045810-24-000113. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: 0, 1, 22.6, 78.4, 86.8, 100, 2024, 22600, 26044. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "nvda"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-NVDA-02 || 0001045810-24-000262",
+            "NVDA-Q2-REV",
+            "NVDA-Q2-GM",
+            "NVDA-Q2-DC"
+          ],
+          "id": "finance-source",
+          "response": "SEC-NVDA-02: SEC 8-K EX-99.1 accession 0001045810-24-000262 reports NVDA-Q2-REV USD 30,040 million (GAAP, exact); NVDA-Q2-GM 75.1 percent (GAAP, exact); NVDA-Q2-DC USD 26,300 million (reported_segment, rounded_to_100_million).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-NVDA-02"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-NVDA-02",
+            "15.3",
+            "-3.3"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-NVDA-02: NVDA-Q1-REV to NVDA-Q2-REV changed 15.3 percent; NVDA-Q1-GM to NVDA-Q2-GM changed -3.3 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-NVDA-02"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-NVDA-02",
+            "retain_active_add_margin_risk",
+            "next_version 2 || version 1 to 2 || version 1 \u2192 2 || new version 2 || next research-state version 2",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-NVDA-02: require expected_version 1, persist decision retain_active_add_margin_risk, next_version 2, and status active; trade action is none. Evidence basis: NVDA-Q2-REV, NVDA-Q2-GM, CALC-NVDA-02. Rationale: Revenue expanded while verified GAAP gross margin fell 3.3 percentage points from the prior observation.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-NVDA-02"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-3.3",
+        "1",
+        "2",
+        "15.3",
+        "26.3",
+        "75.1",
+        "100",
+        "2024",
+        "26300",
+        "30040"
+      ],
+      "description": "NVIDIA Corporation evidence-grounded research-state update for Q2 FY2025 ended 2024-07-28.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-NVDA-02",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-NVDA-02 || 0001045810-24-000262",
+            "NVDA-Q2-REV",
+            "NVDA-Q2-GM",
+            "NVDA-Q2-DC"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-NVDA-02",
+            "15.3",
+            "-3.3"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-NVDA-02",
+            "retain_active_add_margin_risk",
+            "next_version 2 || version 1 to 2 || version 1 \u2192 2 || new version 2 || next research-state version 2",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-NVDA-02] Update the NVIDIA research state after revenue growth and gross-margin compression. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0001045810-24-000262. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: -3.3, 1, 2, 15.3, 26.3, 75.1, 100, 2024, 26300, 30040. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "nvda"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-NVDA-03 || 0001045810-25-000021",
+            "NVDA-Q4-REV",
+            "NVDA-Q4-GM",
+            "NVDA-Q4-DC"
+          ],
+          "id": "finance-source",
+          "response": "SEC-NVDA-03: SEC 8-K EX-99.1 accession 0001045810-25-000021 reports NVDA-Q4-REV USD 39,331 million (GAAP, exact); NVDA-Q4-GM 73 percent (GAAP, exact); NVDA-Q4-DC USD 35,600 million (reported_segment, rounded_to_100_million).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-NVDA-03"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-NVDA-03",
+            "30.9",
+            "-2.1"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-NVDA-03: NVDA-Q2-REV to NVDA-Q4-REV changed 30.9 percent; NVDA-Q2-GM to NVDA-Q4-GM changed -2.1 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-NVDA-03"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-NVDA-03",
+            "confirm_growth_retain_margin_risk",
+            "next_version 3 || version 2 to 3 || version 2 \u2192 3 || new version 3 || next research-state version 3",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-NVDA-03: require expected_version 2, persist decision confirm_growth_retain_margin_risk, next_version 3, and status active; trade action is none. Evidence basis: NVDA-Q4-REV, NVDA-Q4-GM, CALC-NVDA-03. Rationale: Revenue rose between sampled observations, but GAAP gross margin declined again; the observations are not labelled quarter-over-quarter.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-NVDA-03"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-2.1",
+        "2",
+        "3",
+        "30.9",
+        "35.6",
+        "73.0",
+        "100",
+        "2025",
+        "35600",
+        "39331"
+      ],
+      "description": "NVIDIA Corporation evidence-grounded research-state update for Q4 FY2025 ended 2025-01-26.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-NVDA-03",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-NVDA-03 || 0001045810-25-000021",
+            "NVDA-Q4-REV",
+            "NVDA-Q4-GM",
+            "NVDA-Q4-DC"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-NVDA-03",
+            "30.9",
+            "-2.1"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-NVDA-03",
+            "confirm_growth_retain_margin_risk",
+            "next_version 3 || version 2 to 3 || version 2 \u2192 3 || new version 3 || next research-state version 3",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-NVDA-03] Assess whether growth remains strong while explicitly preserving the margin-risk flag. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0001045810-25-000021. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: -2.1, 2, 3, 30.9, 35.6, 73.0, 100, 2025, 35600, 39331. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "nvda"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-AMD-01 || 0000002488-24-000121",
+            "AMD-Q2-REV",
+            "AMD-Q2-GM",
+            "AMD-Q2-DC",
+            "AMD-Q2-DC-YOY",
+            "AMD-Q2-GAME",
+            "AMD-Q2-GAME-YOY"
+          ],
+          "id": "finance-source",
+          "response": "SEC-AMD-01: SEC 8-K EX-99.1 accession 0000002488-24-000121 reports AMD-Q2-REV USD 5,835 million (GAAP, exact); AMD-Q2-GM 49 percent (GAAP, exact); AMD-Q2-DC USD 2,834 million (reported_segment, exact); AMD-Q2-DC-YOY 115 percent (reported_segment, exact); AMD-Q2-GAME USD 648 million (reported_segment, exact); AMD-Q2-GAME-YOY -59 percent (reported_segment, exact).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-AMD-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-AMD-01",
+            "AMD-Q2-DC-SHARE",
+            "48.6"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-AMD-01: AMD-Q2-DC-SHARE equals AMD-Q2-DC divided by AMD-Q2-REV, or 48.6 percent. Within-period ratios use only the named verified facts and declared rounding.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-AMD-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-AMD-01",
+            "initialize_active_segment_mix_watch",
+            "next_version 1 || version 0 to 1 || version 0 \u2192 1 || new version 1 || next research-state version 1",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-AMD-01: require expected_version 0, persist decision initialize_active_segment_mix_watch, next_version 1, and status active; trade action is none. Evidence basis: AMD-Q2-DC, AMD-Q2-DC-YOY, AMD-Q2-GAME, AMD-Q2-GAME-YOY, CALC-AMD-01. Rationale: Record the verified Data Center growth and revenue-share baseline while tracking the disclosed Gaming contraction.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-AMD-01"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-59",
+        "0",
+        "1",
+        "48.6",
+        "49",
+        "115",
+        "648",
+        "2024",
+        "2834",
+        "5835"
+      ],
+      "description": "Advanced Micro Devices, Inc. evidence-grounded research-state update for Q2 2024.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-AMD-01",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-AMD-01 || 0000002488-24-000121",
+            "AMD-Q2-REV",
+            "AMD-Q2-GM",
+            "AMD-Q2-DC",
+            "AMD-Q2-DC-YOY",
+            "AMD-Q2-GAME",
+            "AMD-Q2-GAME-YOY"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-AMD-01",
+            "AMD-Q2-DC-SHARE",
+            "48.6"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-AMD-01",
+            "initialize_active_segment_mix_watch",
+            "next_version 1 || version 0 to 1 || version 0 \u2192 1 || new version 1 || next research-state version 1",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-AMD-01] Establish AMD's data-center-led growth baseline while retaining segment-mix risks. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0000002488-24-000121. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: -59, 0, 1, 48.6, 49, 115, 648, 2024, 2834, 5835. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "amd"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-AMD-02 || 0000002488-24-000161",
+            "AMD-Q3-REV",
+            "AMD-Q3-GM",
+            "AMD-Q3-GAME"
+          ],
+          "id": "finance-source",
+          "response": "SEC-AMD-02: SEC 8-K EX-99.1 accession 0000002488-24-000161 reports AMD-Q3-REV USD 6,819 million (GAAP, exact); AMD-Q3-GM 50 percent (GAAP, exact); AMD-Q3-GAME USD 462 million (reported_segment, exact).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-AMD-02"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-AMD-02",
+            "16.9",
+            "1.0"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-AMD-02: AMD-Q2-REV to AMD-Q3-REV changed 16.9 percent; AMD-Q2-GM to AMD-Q3-GM changed 1.0 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-AMD-02"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-AMD-02",
+            "positive_confirmation_retain_mix_risk",
+            "next_version 2 || version 1 to 2 || version 1 \u2192 2 || new version 2 || next research-state version 2",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-AMD-02: require expected_version 1, persist decision positive_confirmation_retain_mix_risk, next_version 2, and status active; trade action is none. Evidence basis: AMD-Q3-REV, AMD-Q3-GM, AMD-Q3-GAME, CALC-AMD-02. Rationale: GAAP revenue and gross margin improved, while Gaming revenue remained materially below the prior observation.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-AMD-02"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "1",
+        "1.0",
+        "2",
+        "16.9",
+        "50",
+        "462",
+        "2024",
+        "6819"
+      ],
+      "description": "Advanced Micro Devices, Inc. evidence-grounded research-state update for Q3 2024.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-AMD-02",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-AMD-02 || 0000002488-24-000161",
+            "AMD-Q3-REV",
+            "AMD-Q3-GM",
+            "AMD-Q3-GAME"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-AMD-02",
+            "16.9",
+            "1.0"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-AMD-02",
+            "positive_confirmation_retain_mix_risk",
+            "next_version 2 || version 1 to 2 || version 1 \u2192 2 || new version 2 || next research-state version 2",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-AMD-02] Update AMD's thesis using revenue, margin, and diverging segment evidence. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0000002488-24-000161. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: 1, 1.0, 2, 16.9, 50, 462, 2024, 6819. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "amd"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-AMD-03 || 0000002488-25-000009",
+            "AMD-Q4-REV",
+            "AMD-Q4-GM",
+            "AMD-Q4-GAME"
+          ],
+          "id": "finance-source",
+          "response": "SEC-AMD-03: SEC 8-K EX-99.1 accession 0000002488-25-000009 reports AMD-Q4-REV USD 7,658 million (GAAP, exact); AMD-Q4-GM 51 percent (GAAP, exact); AMD-Q4-GAME USD 563 million (reported_segment, exact).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-AMD-03"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-AMD-03",
+            "12.3",
+            "1.0"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-AMD-03: AMD-Q3-REV to AMD-Q4-REV changed 12.3 percent; AMD-Q3-GM to AMD-Q4-GM changed 1.0 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-AMD-03"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-AMD-03",
+            "confirm_growth_retain_mix_risk",
+            "next_version 3 || version 2 to 3 || version 2 \u2192 3 || new version 3 || next research-state version 3",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-AMD-03: require expected_version 2, persist decision confirm_growth_retain_mix_risk, next_version 3, and status active; trade action is none. Evidence basis: AMD-Q4-REV, AMD-Q4-GM, AMD-Q4-GAME, CALC-AMD-03. Rationale: Quarterly GAAP revenue and gross margin improved again; segment-mix risk remains because Gaming stayed below the Q2 observation.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-AMD-03"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "1.0",
+        "2",
+        "3",
+        "12.3",
+        "51",
+        "563",
+        "2024",
+        "2025",
+        "7658"
+      ],
+      "description": "Advanced Micro Devices, Inc. evidence-grounded research-state update for Q4 2024.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-AMD-03",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-AMD-03 || 0000002488-25-000009",
+            "AMD-Q4-REV",
+            "AMD-Q4-GM",
+            "AMD-Q4-GAME"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-AMD-03",
+            "12.3",
+            "1.0"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-AMD-03",
+            "confirm_growth_retain_mix_risk",
+            "next_version 3 || version 2 to 3 || version 2 \u2192 3 || new version 3 || next research-state version 3",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-AMD-03] Evaluate a third AMD observation without confusing annual and quarterly figures. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0000002488-25-000009. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: 1.0, 2, 3, 12.3, 51, 563, 2024, 2025, 7658. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "amd"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-INTC-01 || 0000050863-24-000068",
+            "INTC-2023-FOUNDRY-REV",
+            "INTC-2023-FOUNDRY-OI",
+            "INTC-2023-EXT-FOUNDRY"
+          ],
+          "id": "finance-source",
+          "response": "SEC-INTC-01: SEC 8-K EX-99.1 accession 0000050863-24-000068 reports INTC-2023-FOUNDRY-REV USD 18,910 million (reported_segment, exact); INTC-2023-FOUNDRY-OI USD -6,955 million (reported_segment, exact); INTC-2023-EXT-FOUNDRY USD 953 million (reported_segment, exact).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-INTC-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-INTC-01",
+            "INTC-2023-EXT-SHARE",
+            "5.0"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-INTC-01: INTC-2023-EXT-SHARE equals INTC-2023-EXT-FOUNDRY divided by INTC-2023-FOUNDRY-REV, or 5.0 percent. Within-period ratios use only the named verified facts and declared rounding.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-INTC-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-INTC-01",
+            "initialize_needs_review_foundry_loss",
+            "next_version 1 || version 0 to 1 || version 0 \u2192 1 || new version 1 || next research-state version 1",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-INTC-01: require expected_version 0, persist decision initialize_needs_review_foundry_loss, next_version 1, and status needs_review; trade action is none. Evidence basis: INTC-2023-FOUNDRY-REV, INTC-2023-FOUNDRY-OI, INTC-2023-EXT-FOUNDRY, CALC-INTC-01. Rationale: The restated segment disclosure shows a large Foundry operating loss, while external revenue equals 5.0 percent of segment revenue.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-INTC-01"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-6955",
+        "0",
+        "1",
+        "5.0",
+        "953",
+        "2023",
+        "2024",
+        "18910"
+      ],
+      "description": "Intel Corporation evidence-grounded research-state update for Retrospective 2023 segment disclosure.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-INTC-01",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-INTC-01 || 0000050863-24-000068",
+            "INTC-2023-FOUNDRY-REV",
+            "INTC-2023-FOUNDRY-OI",
+            "INTC-2023-EXT-FOUNDRY"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-INTC-01",
+            "INTC-2023-EXT-SHARE",
+            "5.0"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-INTC-01",
+            "initialize_needs_review_foundry_loss",
+            "next_version 1 || version 0 to 1 || version 0 \u2192 1 || new version 1 || next research-state version 1",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-INTC-01] Establish Intel Foundry's structural economics under the new reporting model. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0000050863-24-000068. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: -6955, 0, 1, 5.0, 953, 2023, 2024, 18910. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "intc"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-INTC-02 || 0000050863-24-000122",
+            "INTC-Q2-REV",
+            "INTC-Q2-GM",
+            "INTC-Q2-OM",
+            "INTC-Q2-HC",
+            "INTC-Q2-DIVIDEND"
+          ],
+          "id": "finance-source",
+          "response": "SEC-INTC-02: SEC 8-K EX-99.1 accession 0000050863-24-000122 reports INTC-Q2-REV USD 12,800 million (GAAP, rounded_to_100_million); INTC-Q2-GM 35.4 percent (GAAP, exact); INTC-Q2-OM -15.3 percent (GAAP, exact); INTC-Q2-HC 15 percent (management_action, lower_bound); INTC-Q2-DIVIDEND suspending dividend (management_action, exact).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-INTC-02"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-INTC-02"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-INTC-02: this is the initial verified observation; no inter-observation change is computed.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-INTC-02"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-INTC-02",
+            "escalate_high_risk_cost_liquidity",
+            "next_version 2 || version 1 to 2 || version 1 \u2192 2 || new version 2 || next research-state version 2",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-INTC-02: require expected_version 1, persist decision escalate_high_risk_cost_liquidity, next_version 2, and status high_risk; trade action is none. Evidence basis: INTC-Q2-OM, INTC-Q2-HC, INTC-Q2-DIVIDEND. Rationale: Negative GAAP operating margin coincided with a greater-than-15-percent headcount reduction and dividend suspension.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-INTC-02"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-15.3",
+        "1",
+        "2",
+        "12.8",
+        "15",
+        "35.4",
+        "100",
+        "2024",
+        "12800"
+      ],
+      "description": "Intel Corporation evidence-grounded research-state update for Q2 2024.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-INTC-02",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-INTC-02 || 0000050863-24-000122",
+            "INTC-Q2-REV",
+            "INTC-Q2-GM",
+            "INTC-Q2-OM",
+            "INTC-Q2-HC",
+            "INTC-Q2-DIVIDEND"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-INTC-02"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-INTC-02",
+            "escalate_high_risk_cost_liquidity",
+            "next_version 2 || version 1 to 2 || version 1 \u2192 2 || new version 2 || next research-state version 2",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-INTC-02] Assess Intel's cost and liquidity response after weak Q2 profitability. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0000050863-24-000122. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: -15.3, 1, 2, 12.8, 15, 35.4, 100, 2024, 12800. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "intc"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-INTC-03 || 0000050863-24-000147",
+            "INTC-Q3-REV",
+            "INTC-Q3-GM",
+            "INTC-Q3-RESTRUCT",
+            "INTC-Q3-IMPAIR"
+          ],
+          "id": "finance-source",
+          "response": "SEC-INTC-03: SEC 8-K EX-99.1 accession 0000050863-24-000147 reports INTC-Q3-REV USD 13,300 million (GAAP, rounded_to_100_million); INTC-Q3-GM 15 percent (GAAP, exact); INTC-Q3-RESTRUCT USD 2,800 million (GAAP, rounded_to_100_million); INTC-Q3-IMPAIR USD 15,900 million (GAAP, rounded_to_100_million).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-INTC-03"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-INTC-03",
+            "3.9",
+            "-20.4"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-INTC-03: INTC-Q2-REV to INTC-Q3-REV changed 3.9 percent; INTC-Q2-GM to INTC-Q3-GM changed -20.4 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-INTC-03"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-INTC-03",
+            "retain_high_risk_record_impairment",
+            "next_version 3 || version 2 to 3 || version 2 \u2192 3 || new version 3 || next research-state version 3",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-INTC-03: require expected_version 2, persist decision retain_high_risk_record_impairment, next_version 3, and status high_risk; trade action is none. Evidence basis: INTC-Q3-REV, INTC-Q3-GM, INTC-Q3-RESTRUCT, INTC-Q3-IMPAIR, CALC-INTC-03. Rationale: A modest revenue increase did not offset the 20.4-point gross-margin decline and material restructuring and impairment charges.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-INTC-03"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-20.4",
+        "2",
+        "2.8",
+        "3",
+        "3.9",
+        "13.3",
+        "15.0",
+        "15.9",
+        "100",
+        "2024",
+        "2800",
+        "13300",
+        "15900"
+      ],
+      "description": "Intel Corporation evidence-grounded research-state update for Q3 2024.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-INTC-03",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-INTC-03 || 0000050863-24-000147",
+            "INTC-Q3-REV",
+            "INTC-Q3-GM",
+            "INTC-Q3-RESTRUCT",
+            "INTC-Q3-IMPAIR"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-INTC-03",
+            "3.9",
+            "-20.4"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-INTC-03",
+            "retain_high_risk_record_impairment",
+            "next_version 3 || version 2 to 3 || version 2 \u2192 3 || new version 3 || next research-state version 3",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-INTC-03] Update Intel's risk state after restructuring and impairment charges. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0000050863-24-000147. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: -20.4, 2, 2.8, 3, 3.9, 13.3, 15.0, 15.9, 100, 2024, 2800, 13300, 15900. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "intc"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-NKE-01 || 0000320187-24-000028",
+            "NKE-Q4FY24-REV",
+            "NKE-Q4FY24-GM",
+            "NKE-Q4FY24-GM-CHANGE",
+            "NKE-Q4FY24-DIRECT-YOY",
+            "NKE-Q4FY24-DIGITAL"
+          ],
+          "id": "finance-source",
+          "response": "SEC-NKE-01: SEC 8-K EX-99.1 accession 0000320187-24-000028 reports NKE-Q4FY24-REV USD 12,606 million (GAAP, exact); NKE-Q4FY24-GM 44.7 percent (GAAP, exact); NKE-Q4FY24-GM-CHANGE 110 basis points (GAAP, exact); NKE-Q4FY24-DIRECT-YOY -8 percent (reported_channel, exact); NKE-Q4FY24-DIGITAL -10 percent (reported_channel, exact).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-NKE-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-NKE-01"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-NKE-01: this is the initial verified observation; no inter-observation change is computed.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-NKE-01"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-NKE-01",
+            "initialize_needs_review_digital",
+            "next_version 1 || version 0 to 1 || version 0 \u2192 1 || new version 1 || next research-state version 1",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-NKE-01: require expected_version 0, persist decision initialize_needs_review_digital, next_version 1, and status needs_review; trade action is none. Evidence basis: NKE-Q4FY24-GM-CHANGE, NKE-Q4FY24-DIRECT-YOY, NKE-Q4FY24-DIGITAL. Rationale: GAAP gross margin increased 110 basis points, while NIKE Direct declined 8 percent and NIKE Brand Digital fell 10 percent year over year.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-NKE-01"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-10",
+        "-8",
+        "0",
+        "1",
+        "44.7",
+        "110",
+        "2024",
+        "12606"
+      ],
+      "description": "NIKE, Inc. evidence-grounded research-state update for Q4 FY2024 ended 2024-05-31.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-NKE-01",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-NKE-01 || 0000320187-24-000028",
+            "NKE-Q4FY24-REV",
+            "NKE-Q4FY24-GM",
+            "NKE-Q4FY24-GM-CHANGE",
+            "NKE-Q4FY24-DIRECT-YOY",
+            "NKE-Q4FY24-DIGITAL"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-NKE-01"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-NKE-01",
+            "initialize_needs_review_digital",
+            "next_version 1 || version 0 to 1 || version 0 \u2192 1 || new version 1 || next research-state version 1",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-NKE-01] Establish NIKE's channel and margin baseline at fiscal year-end. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0000320187-24-000028. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: -10, -8, 0, 1, 44.7, 110, 2024, 12606. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "nke"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-NKE-02 || 0000320187-24-000069",
+            "NKE-Q2FY25-REV",
+            "NKE-Q2FY25-GM",
+            "NKE-Q2FY25-DIGITAL"
+          ],
+          "id": "finance-source",
+          "response": "SEC-NKE-02: SEC 8-K EX-99.1 accession 0000320187-24-000069 reports NKE-Q2FY25-REV USD 12,354 million (GAAP, exact); NKE-Q2FY25-GM 43.6 percent (GAAP, exact); NKE-Q2FY25-DIGITAL -21 percent (reported_channel, exact).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-NKE-02"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-NKE-02",
+            "-2.0",
+            "-1.1"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-NKE-02: NKE-Q4FY24-REV to NKE-Q2FY25-REV changed -2.0 percent; NKE-Q4FY24-GM to NKE-Q2FY25-GM changed -1.1 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-NKE-02"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-NKE-02",
+            "escalate_high_risk_channel_margin",
+            "next_version 2 || version 1 to 2 || version 1 \u2192 2 || new version 2 || next research-state version 2",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-NKE-02: require expected_version 1, persist decision escalate_high_risk_channel_margin, next_version 2, and status high_risk; trade action is none. Evidence basis: NKE-Q2FY25-REV, NKE-Q2FY25-GM, NKE-Q2FY25-DIGITAL, CALC-NKE-02. Rationale: Revenue and gross margin declined between sampled observations while NIKE Brand Digital deteriorated to negative 21 percent year over year.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-NKE-02"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-21",
+        "-2.0",
+        "-1.1",
+        "1",
+        "2",
+        "43.6",
+        "2024",
+        "12354"
+      ],
+      "description": "NIKE, Inc. evidence-grounded research-state update for Q2 FY2025 ended 2024-11-30.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-NKE-02",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-NKE-02 || 0000320187-24-000069",
+            "NKE-Q2FY25-REV",
+            "NKE-Q2FY25-GM",
+            "NKE-Q2FY25-DIGITAL"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-NKE-02",
+            "-2.0",
+            "-1.1"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-NKE-02",
+            "escalate_high_risk_channel_margin",
+            "next_version 2 || version 1 to 2 || version 1 \u2192 2 || new version 2 || next research-state version 2",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-NKE-02] Update NIKE's research state after broader revenue, digital, and margin deterioration. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0000320187-24-000069. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: -21, -2.0, -1.1, 1, 2, 43.6, 2024, 12354. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "nke"
+      ]
+    },
+    {
+      "agents": [
+        {
+          "contribution_values": [
+            "SEC-NKE-03 || 0000320187-25-000034",
+            "NKE-Q4FY25-REV",
+            "NKE-Q4FY25-GM",
+            "NKE-Q4FY25-DIGITAL"
+          ],
+          "id": "finance-source",
+          "response": "SEC-NKE-03: SEC 8-K EX-99.1 accession 0000320187-25-000034 reports NKE-Q4FY25-REV USD 11,097 million (GAAP, exact); NKE-Q4FY25-GM 40.3 percent (GAAP, exact); NKE-Q4FY25-DIGITAL -26 percent (reported_channel, exact).",
+          "role": "Return only verified, point-in-time SEC filing facts with basis, unit, and precision.",
+          "task_values": [
+            "FSEC-NKE-03"
+          ]
+        },
+        {
+          "contribution_values": [
+            "CALC-NKE-03",
+            "-10.2",
+            "-3.3"
+          ],
+          "id": "finance-methodology",
+          "response": "CALC-NKE-03: NKE-Q2FY25-REV to NKE-Q4FY25-REV changed -10.2 percent; NKE-Q2FY25-GM to NKE-Q4FY25-GM changed -3.3 percentage points. Inter-observation changes are deterministic comparisons between sampled observations and are not relabelled as quarter-over-quarter.",
+          "role": "Return only deterministic calculations defined by the evidence ledger.",
+          "task_values": [
+            "FSEC-NKE-03"
+          ]
+        },
+        {
+          "contribution_values": [
+            "STATE-NKE-03",
+            "retain_high_risk_deeper_deterioration",
+            "next_version 3 || version 2 to 3 || version 2 \u2192 3 || new version 3 || next research-state version 3",
+            "trade action is none || no trade || trade authorization none"
+          ],
+          "id": "finance-governance",
+          "response": "STATE-NKE-03: require expected_version 2, persist decision retain_high_risk_deeper_deterioration, next_version 3, and status high_risk; trade action is none. Evidence basis: NKE-Q4FY25-REV, NKE-Q4FY25-GM, NKE-Q4FY25-DIGITAL, CALC-NKE-03. Rationale: Revenue and gross margin declined further between sampled observations, and NIKE Brand Digital fell 26 percent year over year.",
+          "role": "Apply the predeclared, versioned research-state rule without authorizing a trade.",
+          "task_values": [
+            "FSEC-NKE-03"
+          ]
+        }
+      ],
+      "authorized_numeric_values": [
+        "-26",
+        "-10.2",
+        "-3.3",
+        "2",
+        "3",
+        "40.3",
+        "2025",
+        "11097"
+      ],
+      "description": "NIKE, Inc. evidence-grounded research-state update for Q4 FY2025 ended 2025-05-31.",
+      "execution_mode": "runtime",
+      "forbidden_output_values": [
+        "trade is authorized",
+        "execute a trade",
+        "target price is",
+        "source data was estimated"
+      ],
+      "id": "FSEC-NKE-03",
+      "max_delegations": 3,
+      "milestones": [
+        {
+          "id": "verified-source",
+          "values": [
+            "SEC-NKE-03 || 0000320187-25-000034",
+            "NKE-Q4FY25-REV",
+            "NKE-Q4FY25-GM",
+            "NKE-Q4FY25-DIGITAL"
+          ]
+        },
+        {
+          "id": "deterministic-calculation",
+          "values": [
+            "CALC-NKE-03",
+            "-10.2",
+            "-3.3"
+          ]
+        },
+        {
+          "id": "bounded-state-update",
+          "values": [
+            "STATE-NKE-03",
+            "retain_high_risk_deeper_deterioration",
+            "next_version 3 || version 2 to 3 || version 2 \u2192 3 || new version 3 || next research-state version 3",
+            "trade action is none || no trade || trade authorization none"
+          ]
+        }
+      ],
+      "prompt": "[FSEC-NKE-03] Assess whether NIKE's deterioration persisted at the next fiscal year-end observation. Delegate exactly once to finance-source, finance-methodology, and finance-governance. Preserve every evidence ID, distinguish verified facts from deterministic calculations and policy decisions, and use no outside knowledge. The controlling source is SEC 8-K EX-99.1 accession 0000320187-25-000034. Do not recommend or authorize a trade. Do not emit intermediate arithmetic or a derived numeric value that is not returned by finance-methodology. The only authorized numeric values are: -26, -10.2, -3.3, 2, 3, 40.3, 2025, 11097. Return Decision, Evidence, Calculation, and State Update sections.",
+      "tags": [
+        "finance",
+        "sec",
+        "longitudinal",
+        "nke"
+      ]
+    }
+  ],
+  "defaults": {
+    "agent_id": "bench-coordinator",
+    "repetitions": 1,
+    "timeout": "5m"
+  },
+  "description": "Twelve evidence-grounded company episodes. Facts come from immutable SEC accessions; calculated values are generated with Decimal arithmetic; research-state decisions are explicit benchmark policy, not investment truth.",
+  "name": "finance-sec-longitudinal-runtime-v1",
+  "pricing": {
+    "deepseek/deepseek-v4-flash": {
+      "cache_read_per_million": 0.0028,
+      "input_per_million": 0.14,
+      "output_per_million": 0.28
+    },
+    "deepseek/deepseek-v4-pro": {
+      "cache_read_per_million": 0.003625,
+      "input_per_million": 0.435,
+      "output_per_million": 0.87
+    }
+  },
+  "version": 1
+}

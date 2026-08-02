@@ -29,8 +29,8 @@ func (r *failingReader) Read(p []byte) (int, error) {
 
 func openAIFixture() string {
 	return strings.Join([]string{
-		`data: {"choices":[{"delta":{"role":"assistant","content":"hel"},"finish_reason":""}]}`,
-		`data: {"choices":[{"delta":{"content":"lo","tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"get_","arguments":"{\"x\":"}}]},"finish_reason":""}]}`,
+		`data: {"choices":[{"delta":{"role":"assistant","reasoning_content":"rea","content":"hel"},"finish_reason":""}]}`,
+		`data: {"choices":[{"delta":{"reasoning_content":"son","content":"lo","tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"get_","arguments":"{\"x\":"}}]},"finish_reason":""}]}`,
 		`data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"name":"weather","arguments":"1}"}}]},"finish_reason":"tool_calls"}]}`,
 		`data: {"choices":[],"usage":{"prompt_tokens":120,"completion_tokens":18,"prompt_tokens_details":{"cached_tokens":40}}}`,
 		`data: [DONE]`, "",
@@ -75,7 +75,7 @@ func TestOpenAISSEStreamingResultEqualsChatResult(t *testing.T) {
 	if !reflect.DeepEqual(chat, stream) {
 		t.Fatalf("results differ:\nchat=%+v\nstream=%+v", chat, stream)
 	}
-	if stream.Content != "hello" || len(stream.ToolCalls) != 1 || stream.ToolCalls[0].Function.Arguments != `{"x":1}` {
+	if stream.Content != "hello" || stream.Thinking != "reason" || len(stream.ToolCalls) != 1 || stream.ToolCalls[0].Function.Arguments != `{"x":1}` {
 		t.Fatalf("unexpected result: %+v", stream)
 	}
 	if stream.Usage.PromptTokens != 120 || stream.Usage.CompletionTokens != 18 || stream.Usage.CacheReadTokens != 40 {
@@ -86,6 +86,58 @@ func TestOpenAISSEStreamingResultEqualsChatResult(t *testing.T) {
 	}
 	if len(chunks) != 3 || !chunks[2].Done {
 		t.Fatalf("unexpected chunks: %+v", chunks)
+	}
+}
+
+func TestOpenAIProviderAppliesExplicitDeepSeekThinkingMode(t *testing.T) {
+	openAIProvider := NewOpenAI("test-key", "https://api.deepseek.com")
+	request, err := openAIProvider.buildRequestWithUsage(
+		ContextWithThinkingMode(t.Context(), "off"),
+		[]Message{{Role: "user", Content: "hello"}},
+		nil,
+		"deepseek/deepseek-v4-flash",
+		100,
+		0,
+		true,
+		true,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	thinking, _ := body["thinking"].(map[string]any)
+	if thinking["type"] != "disabled" {
+		t.Fatalf("thinking = %+v", body["thinking"])
+	}
+	if _, exists := body["reasoning_effort"]; exists {
+		t.Fatalf("disabled request unexpectedly set reasoning_effort: %+v", body)
+	}
+}
+
+func TestOpenAIProviderPreservesThinkingDefaultForOtherProviders(t *testing.T) {
+	openAIProvider := NewOpenAI("test-key", "https://example.com/v1")
+	request, err := openAIProvider.buildRequestWithUsage(
+		ContextWithThinkingMode(t.Context(), "off"),
+		[]Message{{Role: "user", Content: "hello"}},
+		nil,
+		"compatible-model",
+		100,
+		0,
+		true,
+		true,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var body map[string]any
+	if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	if _, exists := body["thinking"]; exists {
+		t.Fatalf("non-DeepSeek request unexpectedly set thinking: %+v", body)
 	}
 }
 

@@ -215,6 +215,96 @@ func TestMultiAgentGroundingAppliesToTeamAndBaselines(t *testing.T) {
 	}
 }
 
+func TestNumericGroundingRejectsUndeclaredDerivedValues(t *testing.T) {
+	output := "In 2023, external revenue was 953 of 18,910, or 0.05039 before rounding to 5.0 percent. " +
+		"Operating margin was -36.8 percent."
+	assertions, violations := evaluateNumericGrounding(output, []string{"2023", "953", "18910", "5.0"})
+	if assertions != 6 || violations != 2 {
+		t.Fatalf("numeric grounding = %d assertions, %d violations", assertions, violations)
+	}
+	if multiAgentOutcomePass(output, MultiAgentCase{
+		AuthorizedNumericValues: []string{"2023", "953", "18910", "5.0"},
+	}) {
+		t.Fatal("output with undeclared calculations passed")
+	}
+}
+
+func TestNumericGroundingUnderstandsNegativeFinancialLanguage(t *testing.T) {
+	for _, output := range []string{
+		"NIKE Brand Digital declined 10 percent.",
+		"NIKE Brand Digital reported a 10 percent decline.",
+		"Intel Foundry reported an operating loss of USD 6,955 million.",
+		"Intel Foundry operating income was USD (6,955) million.",
+		"A revenue increase did not offset the 20.4-point gross-margin decline.",
+	} {
+		authorized := []string{"-10"}
+		if strings.Contains(output, "6,955") {
+			authorized = []string{"-6955"}
+		} else if strings.Contains(output, "20.4") {
+			authorized = []string{"-20.4"}
+		}
+		assertions, violations := evaluateNumericGrounding(output, authorized)
+		if assertions != 1 || violations != 0 {
+			t.Fatalf("%q = %d assertions, %d violations", output, assertions, violations)
+		}
+	}
+}
+
+func TestNumericGroundingUnderstandsFinancialUnitSuffixes(t *testing.T) {
+	output := "Gross margin changed -3.3pp and increased 110bps in the comparison table."
+	assertions, violations := evaluateNumericGrounding(output, []string{"-3.3", "110"})
+	if assertions != 2 || violations != 0 {
+		t.Fatalf("numeric grounding = %d assertions, %d violations", assertions, violations)
+	}
+}
+
+func TestRequiredAssertionsNormalizeUnicodeMinus(t *testing.T) {
+	if !containsRequiredAssertion("Gross margin changed −3.3 percentage points.", "-3.3 percentage points") {
+		t.Fatal("unicode minus assertion did not match")
+	}
+}
+
+func TestNumericGroundingUnderstandsCoordinatedDeclines(t *testing.T) {
+	output := "Gross margin declined first by 1.1 pp then by 3.3 pp."
+	assertions, violations := evaluateNumericGrounding(output, []string{"-1.1", "-3.3"})
+	if assertions != 2 || violations != 0 {
+		t.Fatalf("numeric grounding = %d assertions, %d violations", assertions, violations)
+	}
+}
+
+func TestNumericGroundingIgnoresOrderedListMarkers(t *testing.T) {
+	output := "1. Revenue was 10.\n2) Gross margin was 20 percent."
+	assertions, violations := evaluateNumericGrounding(output, []string{"10", "20"})
+	if assertions != 2 || violations != 0 {
+		t.Fatalf("numeric grounding = %d assertions, %d violations", assertions, violations)
+	}
+}
+
+func TestNumericGroundingIgnoresMarkdownSectionNumbers(t *testing.T) {
+	output := "## 3.1 Calculation Audit\nRevenue was 100."
+	assertions, violations := evaluateNumericGrounding(output, []string{"100"})
+	if assertions != 1 || violations != 0 {
+		t.Fatalf("numeric grounding = %d assertions, %d violations", assertions, violations)
+	}
+}
+
+func TestNumericGroundingDoesNotTreatDescriptiveParenthesesAsNegative(t *testing.T) {
+	output := "Foundry revenue (2023) was 18,910. NVDA-Q1-DC (22,600) divided by NVDA-Q1-REV (26,044)."
+	assertions, violations := evaluateNumericGrounding(output, []string{"2023", "18910", "22600", "26044"})
+	if assertions != 4 || violations != 0 {
+		t.Fatalf("numeric grounding = %d assertions, %d violations", assertions, violations)
+	}
+}
+
+func TestNumericGroundingIgnoresUnicodeHyphenatedIdentifiers(t *testing.T) {
+	output := "SEC‑INTC‑01 SEC 8‑K EX‑99.1 accession 0000050863‑24‑000068 reports " +
+		"INTC‑2023‑FOUNDRY‑REV USD 18,910 million."
+	assertions, violations := evaluateNumericGrounding(output, []string{"18910"})
+	if assertions != 1 || violations != 0 {
+		t.Fatalf("numeric grounding = %d assertions, %d violations", assertions, violations)
+	}
+}
+
 func TestContainsForbiddenAssertionIgnoresNegatedOrUncertainMentions(t *testing.T) {
 	for _, output := range []string{
 		"No refund is authorized until the duplicate-capture conflict is resolved.",
@@ -312,6 +402,13 @@ func TestRequiredAssertionIgnoresTrailingNegationForAnotherClaim(t *testing.T) {
 	output := "THS-111 says the catalyst is confirmed, while the invalidation is not observed."
 	if !containsAllAssertions(output, []string{"catalyst confirmed"}) {
 		t.Fatalf("trailing negation for another claim suppressed a positive assertion: %q", output)
+	}
+}
+
+func TestRequiredAssertionPreservesConjoinedEvidence(t *testing.T) {
+	output := "Revenue growth does not override restructuring and impairment evidence."
+	if !containsAllAssertions(output, []string{output}) {
+		t.Fatalf("conjoined required evidence did not match: %q", output)
 	}
 }
 
@@ -417,6 +514,7 @@ func TestLoadBundledMultiAgentSuite(t *testing.T) {
 		{"multiagent-fault-injection.yaml", "multiagent-runtime-fault-injection", 6},
 		{"multiagent-finance-workflow.yaml", "finance-research-workflow", 6},
 		{"multiagent-finance-runtime.yaml", "finance-research-runtime", 6},
+		{"multiagent-finance-sec-hard.json", "finance-sec-hard-longitudinal-runtime-v1", 4},
 	}
 	for _, test := range tests {
 		t.Run(test.file, func(t *testing.T) {
@@ -536,7 +634,8 @@ Database latency remained normal. Rollback to build 841 immediately.`,
 		t.Fatalf("unexpected attempt: %+v", attempt)
 	}
 	if attempt.MultiAgent.CoordinationScore != 1 ||
-		attempt.MultiAgent.PassedMilestones != 3 {
+		attempt.MultiAgent.PassedMilestones != 3 ||
+		attempt.MultiAgent.ContributionItemCoverage != 1 {
 		t.Fatalf("unexpected attempt metrics: %+v", attempt.MultiAgent)
 	}
 	metrics := report.Metrics
@@ -548,6 +647,7 @@ Database latency remained normal. Rollback to build 841 immediately.`,
 	}
 	if metrics.MAMilestoneKPI != 1 ||
 		metrics.MACoordinationScore != 1 ||
+		metrics.MAContributionItemCoverage != 1 ||
 		metrics.MAAverageDelegations != 3 {
 		t.Fatalf("unexpected coordination metrics: %+v", metrics)
 	}
@@ -991,6 +1091,24 @@ func TestMultiAgentDelegationResultsSkipEmptyCallIDs(t *testing.T) {
 	})
 	if len(results) != 0 || uncorrelated != 1 {
 		t.Fatalf("unexpected empty-ID correlation: results=%v uncorrelated=%d", results, uncorrelated)
+	}
+}
+
+func TestMultiAgentDelegationResultsExpandBatchCalls(t *testing.T) {
+	trace := []TraceEvent{
+		{
+			Type: "tool_call", ID: "batch-1", Name: "spawn_subagent",
+			Arguments: `{"sharedContext":"evidence","delegations":[{"agentId":"trend","task":"analyze trend"},{"agentId":"risk","task":"analyze risk"}]}`,
+		},
+		{
+			Type: "tool_result", ID: "batch-1", Name: "spawn_subagent",
+			Result: `{"results":[{"agentId":"trend","result":"trend result"},{"agentId":"risk","result":"risk result"}]}`,
+		},
+	}
+	delegations := multiAgentDelegations(trace)
+	results, uncorrelated := multiAgentDelegationResults(trace)
+	if len(delegations) != 2 || len(results["trend"]) != 1 || len(results["risk"]) != 1 || uncorrelated != 0 {
+		t.Fatalf("delegations=%+v results=%+v uncorrelated=%d", delegations, results, uncorrelated)
 	}
 }
 

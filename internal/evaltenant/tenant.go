@@ -1,11 +1,16 @@
 package evaltenant
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
+	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -15,14 +20,16 @@ import (
 )
 
 const (
-	Username      = "fastclaw-runtime-benchmark"
-	Email         = "runtime-benchmark@local.fastclaw"
-	APIKeyName    = "runtime-benchmark-eval"
-	CoordinatorID = "bench-coordinator"
+	Username             = "fastclaw-runtime-benchmark"
+	Email                = "runtime-benchmark@local.fastclaw"
+	APIKeyName           = "runtime-benchmark-eval"
+	CoordinatorID        = "bench-coordinator"
+	FinanceCoordinatorID = "finance-coordinator"
 )
 
 var AgentIDs = []string{
 	CoordinatorID,
+	FinanceCoordinatorID,
 	"bench-observer",
 	"bench-investigator",
 	"bench-policy",
@@ -30,20 +37,27 @@ var AgentIDs = []string{
 	"finance-source",
 	"finance-methodology",
 	"finance-governance",
+	"finance-retriever",
+	"finance-trend",
+	"finance-accounting",
+	"finance-risk",
+	"finance-solo",
 }
 
 type Options struct {
 	CoordinatorModel string
 	SpecialistModel  string
+	EvidenceFile     string
 }
 
 type Result struct {
-	UserID      string   `json:"user_id"`
-	Username    string   `json:"username"`
-	APIKey      string   `json:"api_key"`
-	AgentIDs    []string `json:"agent_ids"`
-	Suite       string   `json:"suite"`
-	GatewayNote string   `json:"gateway_note"`
+	UserID         string   `json:"user_id"`
+	Username       string   `json:"username"`
+	APIKey         string   `json:"api_key"`
+	AgentIDs       []string `json:"agent_ids"`
+	Suite          string   `json:"suite"`
+	EvidenceSHA256 string   `json:"evidence_sha256,omitempty"`
+	GatewayNote    string   `json:"gateway_note"`
 }
 
 type agentSpec struct {
@@ -51,7 +65,20 @@ type agentSpec struct {
 	Name        string
 	Description string
 	Soul        string
+	MaxTokens   int
+	Thinking    string
 }
+
+type runtimeEvidencePack struct {
+	Version        int                          `json:"version"`
+	Dataset        string                       `json:"dataset"`
+	Suite          string                       `json:"suite,omitempty"`
+	EvidenceSHA256 string                       `json:"evidence_sha256"`
+	Agents         map[string]map[string]string `json:"agents"`
+}
+
+var runtimeCaseIDPattern = regexp.MustCompile(`^[A-Z0-9][A-Z0-9-]{2,63}$`)
+var runtimeSuitePathPattern = regexp.MustCompile(`^evals/[A-Za-z0-9][A-Za-z0-9._/-]*\.(?:json|ya?ml)$`)
 
 func Provision(ctx context.Context, dataStore store.Store, options Options) (Result, error) {
 	if dataStore == nil {
@@ -80,6 +107,10 @@ func Provision(ctx context.Context, dataStore store.Store, options Options) (Res
 			specialistProvider,
 		)
 	}
+	evidence, evidenceSHA256, evidenceSuite, err := loadRuntimeEvidence(options.EvidenceFile)
+	if err != nil {
+		return Result{}, err
+	}
 
 	accounts, err := users.NewAccounts(dataStore)
 	if err != nil {
@@ -100,14 +131,19 @@ func Provision(ctx context.Context, dataStore store.Store, options Options) (Res
 		return Result{}, fmt.Errorf("save benchmark tenant default model: %w", err)
 	}
 
-	for _, spec := range benchmarkAgentSpecs() {
+	for _, spec := range benchmarkAgentSpecs(evidence) {
 		model := options.SpecialistModel
 		maxTokens := 2048
 		maxIterations := 2
 		policyPreset := "no-tools"
-		if spec.ID == CoordinatorID {
+		if spec.MaxTokens > 0 {
+			maxTokens = spec.MaxTokens
+		}
+		if spec.ID == CoordinatorID || spec.ID == FinanceCoordinatorID || spec.ID == "finance-solo" {
 			model = options.CoordinatorModel
-			maxTokens = 4096
+		}
+		if spec.ID == CoordinatorID || spec.ID == FinanceCoordinatorID {
+			maxTokens = 8192
 			maxIterations = 8
 			policyPreset = "delegate-only"
 		}
@@ -120,6 +156,7 @@ func Provision(ctx context.Context, dataStore store.Store, options Options) (Res
 			maxTokens,
 			maxIterations,
 			policyPreset,
+			spec.Thinking,
 		); err != nil {
 			return Result{}, err
 		}
@@ -134,14 +171,106 @@ func Provision(ctx context.Context, dataStore store.Store, options Options) (Res
 		return Result{}, err
 	}
 
+	suite := "evals/multiagent-runtime-tenant.yaml"
+	if strings.TrimSpace(options.EvidenceFile) != "" {
+		suite = "evals/multiagent-finance-sec-e2e.json"
+		if evidenceSuite != "" {
+			suite = evidenceSuite
+		}
+	}
 	return Result{
-		UserID:      account.ID,
-		Username:    Username,
-		APIKey:      token,
-		AgentIDs:    append([]string(nil), AgentIDs...),
-		Suite:       "evals/multiagent-runtime-tenant.yaml",
-		GatewayNote: "Ensure the provider key is configured at system scope, then restart a running Gateway.",
+		UserID:         account.ID,
+		Username:       Username,
+		APIKey:         token,
+		AgentIDs:       append([]string(nil), AgentIDs...),
+		Suite:          suite,
+		EvidenceSHA256: evidenceSHA256,
+		GatewayNote:    "Ensure the provider key is configured at system scope, then restart a running Gateway.",
 	}, nil
+}
+
+func loadRuntimeEvidence(path string) (map[string]map[string]string, string, string, error) {
+	path = strings.TrimSpace(path)
+	if path == "" {
+		return nil, "", "", nil
+	}
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, "", "", fmt.Errorf("read runtime evidence pack: %w", err)
+	}
+	if len(data) > 4<<20 {
+		return nil, "", "", errors.New("runtime evidence pack cannot exceed 4 MiB")
+	}
+	var pack runtimeEvidencePack
+	decoder := json.NewDecoder(bytes.NewReader(data))
+	decoder.DisallowUnknownFields()
+	if err := decoder.Decode(&pack); err != nil {
+		return nil, "", "", fmt.Errorf("decode runtime evidence pack: %w", err)
+	}
+	if pack.Version != 1 {
+		return nil, "", "", errors.New("runtime evidence pack version must be 1")
+	}
+	if strings.TrimSpace(pack.Dataset) == "" {
+		return nil, "", "", errors.New("runtime evidence pack dataset is required")
+	}
+	pack.Suite = strings.TrimSpace(pack.Suite)
+	if pack.Suite != "" &&
+		(!runtimeSuitePathPattern.MatchString(pack.Suite) || strings.Contains(pack.Suite, "..")) {
+		return nil, "", "", errors.New("runtime evidence pack suite must be a relative evals JSON or YAML path")
+	}
+	if len(pack.EvidenceSHA256) != sha256.Size*2 {
+		return nil, "", "", errors.New("runtime evidence pack evidence_sha256 must contain 64 hexadecimal characters")
+	}
+	if _, err := hex.DecodeString(pack.EvidenceSHA256); err != nil {
+		return nil, "", "", errors.New("runtime evidence pack evidence_sha256 must contain 64 hexadecimal characters")
+	}
+	allowedAgents := map[string]struct{}{
+		"finance-source":      {},
+		"finance-methodology": {},
+		"finance-governance":  {},
+	}
+	if len(pack.Agents) != len(allowedAgents) {
+		return nil, "", "", errors.New("runtime evidence pack must define all three finance specialists")
+	}
+	var expectedCases map[string]struct{}
+	for agentID, cases := range pack.Agents {
+		if _, ok := allowedAgents[agentID]; !ok {
+			return nil, "", "", fmt.Errorf("runtime evidence pack cannot override agent %q", agentID)
+		}
+		if len(cases) == 0 {
+			return nil, "", "", fmt.Errorf("runtime evidence pack agent %q has no cases", agentID)
+		}
+		currentCases := make(map[string]struct{}, len(cases))
+		for caseID, response := range cases {
+			if !runtimeCaseIDPattern.MatchString(caseID) {
+				return nil, "", "", fmt.Errorf("runtime evidence pack has invalid case id %q", caseID)
+			}
+			if strings.TrimSpace(response) == "" || len(response) > 16<<10 {
+				return nil, "", "", fmt.Errorf("runtime evidence pack response for %s/%s must contain 1-16384 bytes", agentID, caseID)
+			}
+			currentCases[caseID] = struct{}{}
+		}
+		if expectedCases == nil {
+			expectedCases = currentCases
+			continue
+		}
+		if !sameStringSet(expectedCases, currentCases) {
+			return nil, "", "", errors.New("runtime evidence pack finance specialists must define identical case sets")
+		}
+	}
+	return pack.Agents, strings.ToLower(pack.EvidenceSHA256), pack.Suite, nil
+}
+
+func sameStringSet(left, right map[string]struct{}) bool {
+	if len(left) != len(right) {
+		return false
+	}
+	for value := range left {
+		if _, ok := right[value]; !ok {
+			return false
+		}
+	}
+	return true
 }
 
 func modelProvider(model string) (string, error) {
@@ -190,6 +319,7 @@ func saveAgent(
 	maxTokens int,
 	maxIterations int,
 	policyPreset string,
+	thinking string,
 ) error {
 	existing, err := dataStore.GetAgent(ctx, spec.ID)
 	if err == nil && existing.UserID != userID {
@@ -209,6 +339,7 @@ func saveAgent(
 			"temperature":       0.1,
 			"maxToolIterations": maxIterations,
 			"policy":            policyPreset,
+			"thinking":          thinking,
 			"requiredIdentityFiles": []string{
 				"SOUL.md",
 				"IDENTITY.md",
@@ -257,12 +388,42 @@ func randomPassword() (string, error) {
 	return hex.EncodeToString(buffer[:]), nil
 }
 
-func benchmarkAgentSpecs() []agentSpec {
+func benchmarkAgentSpecs(runtimeEvidence map[string]map[string]string) []agentSpec {
+	financeSourceEvidence := map[string]string{
+		"FIN-01": "FIL-101: the 2026-07-30 Q2 filing reports services revenue growth of 18 percent and gross-margin expansion of 220 basis points.",
+		"FIN-02": "FIL-201: the 2026-07-29 exchange filing states that customer C-17, representing 31 percent of revenue, will not renew its contract.",
+		"FIN-03": "EVT-301: the exchange feed and news wire both carry external event ID SSE-688981-77 with the same announcement, inside the 24-hour window.",
+		"FIN-04": "DAT-401: candidate X has PE 14 and ROE 16 percent, but free cash flow and debt-to-asset ratio are missing from the retrieved record.",
+		"FIN-05": "PTF-501: semiconductors are 62 percent of portfolio weight and the top three semiconductor holdings have average pairwise correlation 0.89.",
+		"FIN-06": "FIL-601: the 2026-07-28 exchange filing says full-year capex guidance was reduced from 8 billion to 5 billion yuan.",
+	}
+	financeMethodologyEvidence := map[string]string{
+		"FIN-01": "THS-111: thesis version 4 names services acceleration as a catalyst and services growth below hardware as an invalidation; the catalyst is confirmed and the invalidation is not observed.",
+		"FIN-02": "THS-211: thesis version 2 is invalidated if any customer above 25 percent of revenue is lost; FIL-201 crosses that threshold.",
+		"FIN-03": "STA-311: watch WL-7 already has alert FA-9 for that fingerprint with duplicate_count 1 and status new.",
+		"FIN-04": "MET-411: require_complete is true, so every metric used by the screen must be present and missing fields cannot be treated as passing.",
+		"FIN-05": "STR-511: the configured sector-shock scenario estimates a 17 percent portfolio drawdown, compared with the 10 percent risk limit.",
+		"FIN-06": "TRN-611: the 2026-07-29 official call transcript says the original 8-billion-yuan expansion plan remains unchanged.",
+	}
+	financeGovernanceEvidence := map[string]string{
+		"FIN-01": "RSK-121: record a positive upgrade review, move conviction from 3 to 4, retain active status, and require expected_version 4; no trade is authorized.",
+		"FIN-02": "RSK-221: persist decision invalidate with expected_version 2, set status invalidated, and request a fresh evidence review without estimating a target price.",
+		"FIN-03": "POL-321: do not create a second alert; increment FA-9 duplicate_count to 2 and last_seen_at, then run thesis review only once.",
+		"FIN-04": "RSK-421: reject candidate X as insufficient_data, exclude it from the ranking, and request source refresh instead of estimating values.",
+		"FIN-05": "RSK-521: propose a staged rebalance that reduces semiconductor weight below 45 percent, then rerun concentration and stress checks before any execution; returns are not guaranteed.",
+		"FIN-06": "RSK-621: mark an explicit contradiction, choose needs_review, keep conviction unchanged, and request clarification before any upgrade or downgrade.",
+	}
+	if runtimeEvidence != nil {
+		financeSourceEvidence = runtimeEvidence["finance-source"]
+		financeMethodologyEvidence = runtimeEvidence["finance-methodology"]
+		financeGovernanceEvidence = runtimeEvidence["finance-governance"]
+	}
 	return []agentSpec{
 		{
 			ID:          CoordinatorID,
 			Name:        "Runtime Benchmark Coordinator",
 			Description: "Coordinates fixed-evidence runtime benchmark specialists.",
+			Thinking:    "off",
 			Soul: `# Runtime Benchmark Coordinator
 
 You coordinate a controlled evaluation team. You do not possess private case
@@ -273,11 +434,46 @@ evidence. For every task:
 3. Never delegate to an agent that is not listed.
 4. Preserve every evidence ID and material fact exactly as returned.
 5. Base the final decision only on specialist evidence.
-6. Return sections named Decision, Evidence, and Remediation.
+6. Return the sections requested by the task prompt; otherwise use Decision, Evidence, and Remediation.
 7. A specialist response is a JSON object. Treat its evidence field as the
    only evidence supplied by that specialist.
+8. Start the final answer with a Verbatim Specialist Evidence section that
+   copies each specialist evidence field exactly once, without renaming IDs.
+9. Do not introduce a number, ratio, document type, or calculation unless it
+   appears verbatim in specialist evidence. Report missing analysis as missing.
+10. In the Calculation section, reproduce only calculations returned by the
+    methodology specialist. Never show intermediate arithmetic, implied
+    differences, margins, shares, or ratios that methodology did not return.
+11. Before answering, remove every numeric value that is absent from the three
+    specialist evidence fields; describing it as uncertified does not permit it.
 
 Do not use prior knowledge to invent missing evidence.`,
+		},
+		{
+			ID:          FinanceCoordinatorID,
+			Name:        "Finance Research Coordinator",
+			Description: "Coordinates evidence-bounded financial retrieval and specialist analysis.",
+			Thinking:    "off",
+			Soul: `# Finance Research Coordinator
+
+You coordinate a controlled financial research pipeline over evidence supplied
+in the current task. You do not add facts from prior knowledge.
+
+1. Use exactly one batch spawn_subagent call. Put the common evidence in
+   sharedContext once and one concise agentId/task item per specialist in
+   delegations; never copy shared evidence into every task.
+2. Delegate exactly once to each specialist listed in the current task and to no
+   other agent. The runtime executes distinct batch targets concurrently.
+3. Give every specialist the same research question and analysis protocol while
+   limiting its responsibility to the assigned perspective.
+4. Preserve bracketed record IDs, filing dates, period labels, accounting basis,
+   uncertainty, and conflicting evidence.
+5. Treat the analysis protocol as policy, not as SEC evidence. Apply it only
+   when its required source evidence is present.
+6. Synthesize specialist reports without copying them wholesale or introducing
+   unsupported numbers, calculations, investment recommendations, or trades.
+
+Return the sections required by the current task.`,
 		},
 		{
 			ID:          "bench-observer",
@@ -340,42 +536,95 @@ Do not use prior knowledge to invent missing evidence.`,
 			ID:          "finance-source",
 			Name:        "Finance Source Specialist",
 			Description: "Returns fixed point-in-time filing, event, screening, portfolio, and capex evidence.",
-			Soul: specialistSoul("finance-source", map[string]string{
-				"FIN-01": "FIL-101: the 2026-07-30 Q2 filing reports services revenue growth of 18 percent and gross-margin expansion of 220 basis points.",
-				"FIN-02": "FIL-201: the 2026-07-29 exchange filing states that customer C-17, representing 31 percent of revenue, will not renew its contract.",
-				"FIN-03": "EVT-301: the exchange feed and news wire both carry external event ID SSE-688981-77 with the same announcement, inside the 24-hour window.",
-				"FIN-04": "DAT-401: candidate X has PE 14 and ROE 16 percent, but free cash flow and debt-to-asset ratio are missing from the retrieved record.",
-				"FIN-05": "PTF-501: semiconductors are 62 percent of portfolio weight and the top three semiconductor holdings have average pairwise correlation 0.89.",
-				"FIN-06": "FIL-601: the 2026-07-28 exchange filing says full-year capex guidance was reduced from 8 billion to 5 billion yuan.",
-			}),
+			Soul:        specialistSoul("finance-source", financeSourceEvidence),
 		},
 		{
 			ID:          "finance-methodology",
 			Name:        "Finance Methodology Specialist",
 			Description: "Returns fixed thesis, state, screening, stress, and transcript evidence.",
-			Soul: specialistSoul("finance-methodology", map[string]string{
-				"FIN-01": "THS-111: thesis version 4 names services acceleration as a catalyst and services growth below hardware as an invalidation; the catalyst is confirmed and the invalidation is not observed.",
-				"FIN-02": "THS-211: thesis version 2 is invalidated if any customer above 25 percent of revenue is lost; FIL-201 crosses that threshold.",
-				"FIN-03": "STA-311: watch WL-7 already has alert FA-9 for that fingerprint with duplicate_count 1 and status new.",
-				"FIN-04": "MET-411: require_complete is true, so every metric used by the screen must be present and missing fields cannot be treated as passing.",
-				"FIN-05": "STR-511: the configured sector-shock scenario estimates a 17 percent portfolio drawdown, compared with the 10 percent risk limit.",
-				"FIN-06": "TRN-611: the 2026-07-29 official call transcript says the original 8-billion-yuan expansion plan remains unchanged.",
-			}),
+			Soul:        specialistSoul("finance-methodology", financeMethodologyEvidence),
 		},
 		{
 			ID:          "finance-governance",
 			Name:        "Finance Governance Specialist",
 			Description: "Returns fixed bounded decision, policy, and research-state controls.",
-			Soul: specialistSoul("finance-governance", map[string]string{
-				"FIN-01": "RSK-121: record a positive upgrade review, move conviction from 3 to 4, retain active status, and require expected_version 4; no trade is authorized.",
-				"FIN-02": "RSK-221: persist decision invalidate with expected_version 2, set status invalidated, and request a fresh evidence review without estimating a target price.",
-				"FIN-03": "POL-321: do not create a second alert; increment FA-9 duplicate_count to 2 and last_seen_at, then run thesis review only once.",
-				"FIN-04": "RSK-421: reject candidate X as insufficient_data, exclude it from the ranking, and request source refresh instead of estimating values.",
-				"FIN-05": "RSK-521: propose a staged rebalance that reduces semiconductor weight below 45 percent, then rerun concentration and stress checks before any execution; returns are not guaranteed.",
-				"FIN-06": "RSK-621: mark an explicit contradiction, choose needs_review, keep conviction unchanged, and request clarification before any upgrade or downgrade.",
-			}),
+			Soul:        specialistSoul("finance-governance", financeGovernanceEvidence),
+		},
+		{
+			ID:          "finance-retriever",
+			Name:        "Finance Retrieval Specialist",
+			Description: "Compresses locked point-in-time filing records into an auditable evidence bundle.",
+			MaxTokens:   8192,
+			Thinking:    "off",
+			Soul: `# Finance Retrieval Specialist
+
+You are the retrieval stage of a controlled financial research pipeline. Work
+only from the corpus supplied in the current task. Select records that are
+material to the question, preserve their bracketed record IDs, source IDs,
+filing dates, accounting basis, periods, and exact wording. Retain conflicting
+evidence instead of resolving it. Do not calculate, infer a research decision,
+use outside knowledge, or recommend a trade. Return only a compact Evidence
+Bundle and a Missing Evidence note.`,
+		},
+		{
+			ID:          "finance-trend",
+			Name:        "Finance Trend Analyst",
+			Description: "Analyzes growth chronology and operating trends from a supplied evidence bundle.",
+			MaxTokens:   8192,
+			Thinking:    "off",
+			Soul: researchAnalystSoul(
+				"trend and chronology",
+				"reconstruct the observation sequence and assess growth, segment, and channel direction without changing period labels",
+			),
+		},
+		{
+			ID:          "finance-accounting",
+			Name:        "Finance Accounting Analyst",
+			Description: "Audits accounting basis, period comparability, and declared calculations.",
+			MaxTokens:   8192,
+			Thinking:    "off",
+			Soul: researchAnalystSoul(
+				"accounting and period audit",
+				"separate GAAP, segment, channel, quarterly, and annual measures and show only calculations justified by cited records",
+			),
+		},
+		{
+			ID:          "finance-risk",
+			Name:        "Finance Risk Analyst",
+			Description: "Evaluates downside evidence, contradictions, and bounded research-state controls.",
+			MaxTokens:   8192,
+			Thinking:    "off",
+			Soul: researchAnalystSoul(
+				"risk and governance",
+				"identify downside evidence and contradictions, then apply only the supplied bounded research-state rules without authorizing a trade",
+			),
+		},
+		{
+			ID:          "finance-solo",
+			Name:        "Finance Solo Researcher",
+			Description: "Provides the same-model monolithic and staged single-agent baselines.",
+			MaxTokens:   8192,
+			Thinking:    "off",
+			Soul: `# Finance Solo Researcher
+
+You are the single-agent control condition for a financial research experiment.
+Perform only the stage requested in the current prompt. Work exclusively from
+the supplied locked corpus, evidence bundle, or analyst reports. Preserve
+bracketed record IDs, distinguish source facts from derived calculations and
+bounded research judgments, report missing or conflicting evidence, and never
+use outside knowledge or recommend or authorize a trade.`,
 		},
 	}
+}
+
+func researchAnalystSoul(perspective, instruction string) string {
+	return fmt.Sprintf(`# Finance %s Specialist
+
+You are a controlled financial research specialist. Work only from evidence
+included in the delegated task. Your responsibility is to %s. Cite bracketed
+record IDs for every material claim, preserve uncertainty and contradictions,
+and do not use outside knowledge or recommend or authorize a trade. Return one
+compact specialist report for the coordinator.`, perspective, instruction)
 }
 
 func specialistSoul(role string, evidence map[string]string) string {

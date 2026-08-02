@@ -17,6 +17,7 @@ import (
 
 const maxRequestTools = 64
 const maxTraceFieldBytes = 16 << 10
+const maxBatchTraceResultBytes = 4 << 10
 const maxEvalToolFaultDelayMS = int((5 * time.Minute) / time.Millisecond)
 
 type fastClawRequestOptions struct {
@@ -509,12 +510,12 @@ func convertTraceEvent(event agent.ChatEvent) (completionTraceEvent, bool) {
 		trace.ID, _ = event.Data["id"].(string)
 		trace.Name, _ = event.Data["name"].(string)
 		trace.Arguments, _ = event.Data["arguments"].(string)
-		trace.Arguments = truncateTraceField(trace.Arguments)
+		trace.Arguments = compactTraceArguments(trace.Name, trace.Arguments)
 	case "tool_result":
 		trace.ID, _ = event.Data["id"].(string)
 		trace.Name, _ = event.Data["name"].(string)
 		trace.Result, _ = event.Data["result"].(string)
-		trace.Result = truncateTraceField(trace.Result)
+		trace.Result = compactTraceResult(trace.Name, trace.Result)
 	case "error":
 		trace.Message, _ = event.Data["message"].(string)
 		trace.Message = truncateTraceField(trace.Message)
@@ -524,11 +525,64 @@ func convertTraceEvent(event agent.ChatEvent) (completionTraceEvent, bool) {
 	return trace, true
 }
 
+func compactTraceArguments(name, value string) string {
+	if name != "spawn_subagent" {
+		return truncateTraceField(value)
+	}
+	var batch struct {
+		SharedContext string `json:"sharedContext,omitempty"`
+		Delegations   []struct {
+			AgentID string `json:"agentId"`
+			Task    string `json:"task"`
+		} `json:"delegations,omitempty"`
+	}
+	if json.Unmarshal([]byte(value), &batch) != nil || len(batch.Delegations) == 0 {
+		return truncateTraceField(value)
+	}
+	if batch.SharedContext != "" {
+		batch.SharedContext = fmt.Sprintf("[omitted %d bytes from trace]", len(batch.SharedContext))
+	}
+	encoded, err := json.Marshal(batch)
+	if err != nil {
+		return truncateTraceField(value)
+	}
+	return truncateTraceField(string(encoded))
+}
+
+func compactTraceResult(name, value string) string {
+	if name != "spawn_subagent" {
+		return truncateTraceField(value)
+	}
+	var batch struct {
+		Results []struct {
+			AgentID string `json:"agentId"`
+			Result  string `json:"result,omitempty"`
+			Error   string `json:"error,omitempty"`
+		} `json:"results"`
+	}
+	if json.Unmarshal([]byte(value), &batch) != nil || len(batch.Results) == 0 {
+		return truncateTraceField(value)
+	}
+	for index := range batch.Results {
+		batch.Results[index].Result = truncateTraceFieldTo(batch.Results[index].Result, maxBatchTraceResultBytes)
+		batch.Results[index].Error = truncateTraceFieldTo(batch.Results[index].Error, maxBatchTraceResultBytes)
+	}
+	encoded, err := json.Marshal(batch)
+	if err != nil {
+		return truncateTraceField(value)
+	}
+	return truncateTraceField(string(encoded))
+}
+
 func truncateTraceField(value string) string {
-	if len(value) <= maxTraceFieldBytes {
+	return truncateTraceFieldTo(value, maxTraceFieldBytes)
+}
+
+func truncateTraceFieldTo(value string, limit int) string {
+	if len(value) <= limit {
 		return value
 	}
-	return value[:maxTraceFieldBytes] + "...[truncated]"
+	return value[:limit] + "...[truncated]"
 }
 
 func traceRound(value any) int {

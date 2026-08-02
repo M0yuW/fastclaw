@@ -1,0 +1,332 @@
+{
+  "version": 1,
+  "suite": "finance-sec-retrieval-context-v1",
+  "description": "End-to-end comparison of monolithic, compute-matched staged, shared-retrieval team, raw-context team, and oracle-evidence financial research pipelines over SHA-256-locked SEC filing excerpts.",
+  "dataset": "fastclaw-finance-e2e-v1",
+  "source": "evals/finance-retrieval-sec.json",
+  "source_sha256": "c043c035f2e3699bce1b3bde5ed1907a39fcf114e4ae365e30abdf4371fc5ab5",
+  "source_lock_sha256": "a4d4b4dc3be440238e3d428d60d04fb4a4a9d21d8c0b4eec4cb313e2e181fe22",
+  "started_at": "2026-08-02T17:47:48.52244+08:00",
+  "finished_at": "2026-08-02T17:49:49.65079+08:00",
+  "duration_ms": 121126.454,
+  "metrics": {
+    "total_cases": 1,
+    "modes": {
+      "oracle_evidence": {
+        "attempts": 1,
+        "evaluated": 1,
+        "errored": 0,
+        "passed": 0,
+        "success_rate": 0,
+        "average_retrieval_recall": 0,
+        "average_retrieval_precision": 0,
+        "average_summary_retention": 0,
+        "average_final_evidence_recall": 1,
+        "average_synthesis_retention": 0,
+        "average_compression_ratio": 0,
+        "milestone_accuracy": 0.6666666666666666,
+        "delegation_precision": 0,
+        "delegation_recall": 0,
+        "grounding_accuracy": 0.9904761904761905,
+        "prompt_tokens": 4337,
+        "completion_tokens": 2532,
+        "total_tokens": 6869,
+        "estimated_cost_usd": 0.002267307,
+        "pricing_coverage": 1,
+        "latency_p50_ms": 36859.235,
+        "latency_p95_ms": 36859.235,
+        "average_retrieval_latency_ms": 0,
+        "average_collaboration_latency_ms": 0,
+        "average_coordination_latency_ms": 0,
+        "average_analysis_latency_ms": 0,
+        "average_synthesis_latency_ms": 36859.082
+      },
+      "team_shared_retrieval": {
+        "attempts": 1,
+        "evaluated": 1,
+        "errored": 0,
+        "passed": 0,
+        "success_rate": 0,
+        "average_retrieval_recall": 1,
+        "average_retrieval_precision": 0.7142857142857143,
+        "average_summary_retention": 1,
+        "average_final_evidence_recall": 1,
+        "average_synthesis_retention": 1,
+        "average_compression_ratio": 6.462939432443879,
+        "milestone_accuracy": 0.6666666666666666,
+        "delegation_precision": 1,
+        "delegation_recall": 1,
+        "grounding_accuracy": 0.9908256880733946,
+        "prompt_tokens": 33217,
+        "completion_tokens": 10991,
+        "total_tokens": 44208,
+        "estimated_cost_usd": 0.012134992600000002,
+        "pricing_coverage": 1,
+        "latency_p50_ms": 84180.552,
+        "latency_p95_ms": 84180.552,
+        "average_retrieval_latency_ms": 9981.764,
+        "average_collaboration_latency_ms": 74197.564,
+        "average_coordination_latency_ms": 31714.875,
+        "average_analysis_latency_ms": 21627.097,
+        "average_synthesis_latency_ms": 34369.92
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "FRET-NVDA-LONG-MEDIUM",
+      "description": "NVDA longitudinal financial retrieval and synthesis task with medium locked-corpus load.",
+      "corpus_load": "medium",
+      "tags": [
+        "finance",
+        "sec",
+        "retrieval",
+        "longitudinal",
+        "medium",
+        "nvda"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "modes": [
+            {
+              "mode": "team_shared_retrieval",
+              "passed": false,
+              "latency_ms": 84180.552,
+              "usage": {
+                "prompt_tokens": 33217,
+                "completion_tokens": 10991,
+                "total_tokens": 44208
+              },
+              "model_calls": [
+                {
+                  "sequence": 1,
+                  "phase": "team_shared_retrieval/retrieval",
+                  "agent_id": "finance-retriever",
+                  "role": "coordinator",
+                  "model": "deepseek/deepseek-v4-flash",
+                  "prompt_tokens": 11276,
+                  "completion_tokens": 1749,
+                  "total_tokens": 13025,
+                  "cache_read_tokens": 11264,
+                  "estimated_cost_usd": 0.0005229392,
+                  "priced": true,
+                  "latency_ms": 9910.895
+                },
+                {
+                  "sequence": 1,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-coordinator",
+                  "role": "coordinator",
+                  "model": "deepseek/deepseek-v4-pro",
+                  "prompt_tokens": 3538,
+                  "completion_tokens": 3320,
+                  "total_tokens": 6858,
+                  "estimated_cost_usd": 0.00442743,
+                  "priced": true,
+                  "latency_ms": 31714.875
+                },
+                {
+                  "sequence": 2,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-trend",
+                  "role": "subagent",
+                  "model": "deepseek/deepseek-v4-flash",
+                  "call_path": [
+                    "finance-coordinator",
+                    "finance-trend"
+                  ],
+                  "prompt_tokens": 2574,
+                  "completion_tokens": 1037,
+                  "total_tokens": 3611,
+                  "cache_read_tokens": 256,
+                  "estimated_cost_usd": 0.0006155968000000001,
+                  "priced": true,
+                  "latency_ms": 6906.247
+                },
+                {
+                  "sequence": 3,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-accounting",
+                  "role": "subagent",
+                  "model": "deepseek/deepseek-v4-flash",
+                  "call_path": [
+                    "finance-coordinator",
+                    "finance-accounting"
+                  ],
+                  "prompt_tokens": 2592,
+                  "completion_tokens": 1089,
+                  "total_tokens": 3681,
+                  "cache_read_tokens": 256,
+                  "estimated_cost_usd": 0.0006326768,
+                  "priced": true,
+                  "latency_ms": 6656.417
+                },
+                {
+                  "sequence": 4,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-risk",
+                  "role": "subagent",
+                  "model": "deepseek/deepseek-v4-flash",
+                  "call_path": [
+                    "finance-coordinator",
+                    "finance-risk"
+                  ],
+                  "prompt_tokens": 2590,
+                  "completion_tokens": 1414,
+                  "total_tokens": 4004,
+                  "cache_read_tokens": 256,
+                  "estimated_cost_usd": 0.0007233968000000001,
+                  "priced": true,
+                  "latency_ms": 8064.433
+                },
+                {
+                  "sequence": 5,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-coordinator",
+                  "role": "coordinator",
+                  "model": "deepseek/deepseek-v4-pro",
+                  "prompt_tokens": 10647,
+                  "completion_tokens": 2382,
+                  "total_tokens": 13029,
+                  "cache_read_tokens": 3456,
+                  "estimated_cost_usd": 0.005212953,
+                  "priced": true,
+                  "latency_ms": 34369.92
+                }
+              ],
+              "trace": [
+                {
+                  "type": "tool_call",
+                  "id": "call_00_RG45FvXeYGImU0qJN2OF7635",
+                  "name": "spawn_subagent",
+                  "arguments": "{\"sharedContext\": \"## Evidence Bundle\\n\\n### 1. Source Facts\\n\\n**NVDA-Q1-DC** (Data Center revenue, Q1 FY25):\\n- [REC-NVDA-01-03], source_id: nvda-2024-05-22-q1-fy2025, filed 2024-05-22, locator: Data Center highlights\\n- Exact wording: \\\"Record quarterly Data Center revenue of $22.6 billion, up 23% from Q4 and up 427% from a year ago\\\"\\n\\n**NVDA-Q1-REV** (Revenue, Q1 FY25, GAAP):\\n- [REC-NVDA-01-02], source_id: nvda-2024-05-22-q1-fy2025, filed 2024-05-22, locator: Q1 Fiscal 2025 Summary\\n- Exact wording: \\\"Revenue $26,044 $22,103 $7,192 Up 18% Up 262%\\\"\\n\\n**NVDA-Q1-GM** (Gross margin, Q1 FY25, GAAP):\\n- [REC-NVDA-01-02], source_id: nvda-2024-05-22-q1-fy2025, filed 2024-05-22, locator: Q1 Fiscal 2025 Summary\\n- Exact wording: \\\"Gross margin 78.4 % 76.0 % 64.6 % Up 2.4 pts Up 13.8 pts\\\"\\n\\n**NVDA-Q2-REV** (Revenue, Q2 FY25, GAAP):\\n- [REC-NVDA-02-02], source_id: nvda-2024-08-28-q2-fy2025, filed 2024-08-28, locator: Q2 Fiscal 2025 Summary\\n- Exact wording: \\\"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\\\"\\n\\n**NVDA-Q2-GM** (Gross margin, Q2 FY25, GAAP):\\n- [REC-NVDA-02-02], source_id: nvda-2024-08-28-q2-fy2025, filed 2024-08-28, locator: Q2 Fiscal 2025 Summary\\n- Exact wording: \\\"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\\\"\\n\\n**NVDA-Q4-REV** (Revenue, Q4 FY25, GAAP):\\n- [REC-NVDA-03-01], source_id: nvda-2025-02-26-q4-fy2025, filed 2025-02-26, locator: Q4 Fiscal 2025 Summary\\n- Exact wording: \\\"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\\\"\\n\\n**NVDA-Q4-GM** (Gross margin, Q4 FY25, GAAP):\\n- [REC-NVDA-03-01], source_id: nvda-2025-02-26-q4-fy2025, filed 2025-02-26, locator: Q4 Fiscal 2025 Summary\\n- Exact wording: \\\"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\\\"\\n\\n**Accounting basis note**: All cited revenue and gross margin figures above are GAAP. Non-GAAP figures are also present in the same records (e.g., [REC-NVDA-01-02] Non-GAAP gross margin 78.9%; [REC-NVDA-02-02] Non-GAAP gross margin 75.7%; [REC-NVDA-03-01] Non-GAAP gross margin 73.5%). The calculations below use GAAP figures as the primary basis; the Non-GAAP series shows the same directional trend (declining gross margin across Q1→Q2→Q4).\\n\\n**Downside evidence (conflicting signals preserved)**:\\n- [REC-NVDA-02-03], source_id: nvda-2024-08-28-q2-fy2025, filed 2024-08-28, locator: Data Center highlights: \\\"Record quarterly revenue of $30.0 billion, up 15% from Q1 and up 122% from a year ago\\\" — growth decelerating from Q1's 262% Y/Y.\\n- [REC-NVDA-03-03], source_id: nvda-2025-02-26-q4-fy2025, filed 2025-02-26, locator: Data Center highlights: \\\"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\\\" — Y/Y growth further decelerated to 78%.\\n- [REC-NVDA-03-01]: GAAP gross margin declined from 78.4% (Q1) to 75.1% (Q2) to 73.0% (Q4); Q4 gross margin \\\"Down 1.6 pts\\\" Q/Q and \\\"Down 3.0 pts\\\" Y/Y.\\n- [REC-NVDA-03-02], source_id: nvda-2025-02-26-q4-fy2025, filed 2025-02-26: \\\"We've successfully ramped up the massive-scale production of Blackwell AI supercomputers, achieving billions of dollars in sales in its first quarter\\\" — positive forward signal.\\n\\n### 2. Derived Calculations\\n\\n- **NVDA-Q1-DC-SHARE** (ratio_percent): NVDA-Q1-DC / NVDA-Q1-REV = 22,600 / 26,044 = **86.8%** (rounding 0.1)\\n- **FSEC-NVDA-02 comparison 2** (percent_change): (30,040 − 26,044) / 26,044 = **15.3%** (rounding 0.1)\\n- **FSEC-NVDA-02 comparison 3** (percentage_point): 75.1 − 78.4 = **−3.3** (rounding 0.1)\\n- **FSEC-NVDA-03 comparison 4** (percent_change): (39,331 − 30,040) / 30,040 = **30.9%** (rounding 0.1)\\n- **FSEC-NVDA-03 comparison 5** (percentage_point): 73.0 − 75.1 = **−2.1** (rounding 0.1)\\n\\n### 3. Policy-Driven State Judgments\\n\\n- **FSEC-NVDA-01**: Required source metrics (NVDA-Q1-DC, NVDA-Q1-REV) and calculation (NVDA-Q1-DC-SHARE) verified. Apply expected_version 0 → next_version 1, decision **initialize_active_margin_watch**, status **active**, trade action **none**.\\n- **FSEC-NVDA-02**: Required source metrics (NVDA-Q1-REV, NVDA-Q1-GM, NVDA-Q2-REV, NVDA-Q2-GM) and calculations (comparisons 2 and 3) verified. Apply expected_version 1 → next_version 2, decision **retain_active_add_margin_risk**, status **active**, trade action **none**.\\n- **FSEC-NVDA-03**: Required source metrics (NVDA-Q2-REV, NVDA-Q2-GM, NVDA-Q4-REV, NVDA-Q4-GM) and calculations (comparisons 4 and 5) verified. Apply expected_version 2 → next_version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\\n\\n**Final bounded research state**: version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\\n\\n### 4. Missing Evidence\\n\\nNone. All required source metrics and calculations for the three-observation chain are present and verified in the locked corpus.\", \"delegations\": [{\"agentId\": \"finance-trend\", \"task\": \"Research question: For NVDA, reconstruct the complete three-observation research-state chain from the locked SEC corpus. Determine how operating trends, growth direction, and segment/channel dynamics changed across observations.\\n\\nCommon analysis protocol: This is a predeclared experimental policy, not SEC evidence. Retrieve and cite the source metrics needed by each formula; compute results rather than treating policy text as a fact. Report only requested rounded calculation results and source numbers quoted verbatim; omit intermediate arithmetic, unrounded values, unit-converted duplicates, and additional derived metrics. Required deterministic calculations: NVDA-Q1-DC-SHARE (ratio_percent using NVDA-Q1-DC and NVDA-Q1-REV, rounding 0.1); FSEC-NVDA-02 comparison 2 (percent_change from NVDA-Q1-REV to NVDA-Q2-REV, rounding 0.1); FSEC-NVDA-02 comparison 3 (difference from NVDA-Q1-GM to NVDA-Q2-GM, percentage_point, rounding 0.1); FSEC-NVDA-03 comparison 4 (percent_change from NVDA-Q2-REV to NVDA-Q4-REV, rounding 0.1); FSEC-NVDA-03 comparison 5 (difference from NVDA-Q2-GM to NVDA-Q4-GM, percentage_point, rounding 0.1). Bounded research-state transition policy: FSEC-NVDA-01: only when required source metrics and calculations verified, apply expected_version 0 -\u003e next_version 1, decision initialize_active_margin_watch, status active, trade action none. FSEC-NVDA-02: only when verified, apply expected_version 1 -\u003e next_version 2, decision retain_active_add_margin_risk, status active, trade action none. FSEC-NVDA-03: only when verified, apply expected_version 2 -\u003e next_version 3, decision confirm_growth_retain_margin_risk, status active, trade action none. Keep source facts, derived calculations, and policy-driven state judgments in separate sections.\\n\\nYour specialist perspective (trend and chronology): Reconstruct the observation sequence and assess growth, segment, and channel direction without changing period labels.\"}, {\"agentId\": \"finance-accounting\", \"task\": \"Research question: For NVDA, reconstruct the complete three-observation research-state chain from the locked SEC corpus. Determine how operating trends, accounting basis, and downside evidence changed; verify every declared cross-observation calculation and the contiguous version transition.\\n\\nCommon analysis protocol: This is a predeclared experimental policy, not SEC evidence. Retrieve and cite the source metrics needed by each formula; compute results rather than treating policy text as a fact. Report only requested rounded calculation results and source numbers quoted verbatim; omit intermediate arithmetic, unrounded values, unit-converted duplicates, and additional derived metrics. Required deterministic calculations: NVDA-Q1-DC-SHARE (ratio_percent using NVDA-Q1-DC and NVDA-Q1-REV, rounding 0.1); FSEC-NVDA-02 comparison 2 (percent_change from NVDA-Q1-REV to NVDA-Q2-REV, rounding 0.1); FSEC-NVDA-02 comparison 3 (difference from NVDA-Q1-GM to NVDA-Q2-GM, percentage_point, rounding 0.1); FSEC-NVDA-03 comparison 4 (percent_change from NVDA-Q2-REV to NVDA-Q4-REV, rounding 0.1); FSEC-NVDA-03 comparison 5 (difference from NVDA-Q2-GM to NVDA-Q4-GM, percentage_point, rounding 0.1). Bounded research-state transition policy: FSEC-NVDA-01: only when required source metrics and calculations verified, apply expected_version 0 -\u003e next_version 1, decision initialize_active_margin_watch, status active, trade action none. FSEC-NVDA-02: only when verified, apply expected_version 1 -\u003e next_version 2, decision retain_active_add_margin_risk, status active, trade action none. FSEC-NVDA-03: only when verified, apply expected_version 2 -\u003e next_version 3, decision confirm_growth_retain_margin_risk, status active, trade action none. Keep source facts, derived calculations, and policy-driven state judgments in separate sections.\\n\\nYour specialist perspective (accounting and period audit): Separate GAAP, segment, channel, quarterly, and annual measures and show only calculations justified by cited records.\"}, {\"agentId\": \"finance-risk\", \"task\": \"Research question: For NVDA, reconstruct the complete three-observation research-state chain from the locked SEC corpus. Determine how operating trends, accounting basis, and downside evidence changed; verify every declared cross-observation calculation and the contiguous version transition; reconcile conflicting signals.\\n\\nCommon analysis protocol: This is a predeclared experimental policy, not SEC evidence. Retrieve and cite the source metrics needed by each formula; compute results rather than treating policy text as a fact. Report only requested rounded calculation results and source numbers quoted verbatim; omit intermediate arithmetic, unrounded values, unit-converted duplicates, and additional derived metrics. Required deterministic calculations: NVDA-Q1-DC-SHARE (ratio_percent using NVDA-Q1-DC and NVDA-Q1-REV, rounding 0.1); FSEC-NVDA-02 comparison 2 (percent_change from NVDA-Q1-REV to NVDA-Q2-REV, rounding 0.1); FSEC-NVDA-02 comparison 3 (difference from NVDA-Q1-GM to NVDA-Q2-GM, percentage_point, rounding 0.1); FSEC-NVDA-03 comparison 4 (percent_change from NVDA-Q2-REV to NVDA-Q4-REV, rounding 0.1); FSEC-NVDA-03 comparison 5 (difference from NVDA-Q2-GM to NVDA-Q4-GM, percentage_point, rounding 0.1). Bounded research-state transition policy: FSEC-NVDA-01: only when required source metrics and calculations verified, apply expected_version 0 -\u003e next_version 1, decision initialize_active_margin_watch, status active, trade action none. FSEC-NVDA-02: only when verified, apply expected_version 1 -\u003e next_version 2, decision retain_active_add_margin_risk, status active, trade action none. FSEC-NVDA-03: only when verified, apply expected_version 2 -\u003e next_version 3, decision confirm_growth_retain_margin_risk, status active, trade action none. Keep source facts, derived calculations, and policy-driven state judgments in separate sections.\\n\\nYour specialist perspective (risk and governance): Identify downside evidence and contradictions, then apply only supplied bounded research-state rules without authorizing a trade.\"}]}",
+                  "round": 1
+                },
+                {
+                  "type": "tool_result",
+                  "id": "call_00_RG45FvXeYGImU0qJN2OF7635",
+                  "name": "spawn_subagent",
+                  "result": "{\"results\":[{\"agentId\":\"finance-trend\",\"result\":\"# Finance Trend and Chronology Specialist Report\\n\\n## 1. Source Facts (Observation Sequence)\\n\\n**Observation 1 — Q1 FY25** (filed 2024-05-22):\\n- Revenue: $26,044M GAAP [REC-NVDA-01-02]\\n- Gross margin: 78.4% GAAP [REC-NVDA-01-02]\\n- Data Center revenue: $22.6B, \\\"up 23% from Q4 and up 427% from a year ago\\\" [REC-NVDA-01-03]\\n\\n**Observation 2 — Q2 FY25** (filed 2024-08-28):\\n- Revenue: $30,040M GAAP [REC-NVDA-02-02]\\n- Gross margin: 75.1% GAAP [REC-NVDA-02-02]\\n- Data Center: \\\"Record quarterly revenue of $30.0 billion, up 15% from Q1 and up 122% from a year ago\\\" [REC-NVDA-02-03]\\n\\n**Observation 3 — Q4 FY25** (filed 2025-02-26):\\n- Revenue: $39,331M GAAP [REC-NVDA-03-01]\\n- Gross margin: 73.0% GAAP [REC-NVDA-03-01]\\n- Data Center: \\\"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\\\" [REC-NVDA-03-03]\\n- Forward signal: \\\"We've successfully ramped up the massive-scale production of Blackwell AI supercomputers, achieving billions of dollars in sales in its first quarter\\\" [REC-NVDA-03-02]\\n\\n## 2. Derived Calculations (Verified)\\n\\n| Metric | Formula | Result |\\n|---|---|---|\\n| NVDA-Q1-DC-SHARE | 22,600 / 26,044 | **86.8%** |\\n| FSEC-NVDA-02 comp 2 | (30,040 − 26,044) / 26,044 | **15.3%** |\\n| FSEC-NVDA-02 comp 3 | 75.1 − 78.4 | **−3.3 pts** |\\n| FSEC-NVDA-03 comp 4 | (39,331 − 30,040) / 30,040 | **30.9%** |\\n| FSEC-NVDA-03 comp 5 | 73.0 − 75.1 | **−2.1 pts** |\\n\\n## 3. Trend and Chronology Assessment\\n\\n**Growth direction — decelerating but positive:**\\n- Revenue grew 15.3% Q1→Q2, then 30.9% Q2→Q4 (Q/Q basis)\\n- Y/Y growth decelerated sharply: 262% (Q1) → 122% (Q2) → 78% (Q4)\\n- Data Center Y/Y growth: 427% (Q1) → 122% (Q2) → 78% (Q4)\\n\\n**Segment dynamics — Data Center dominance:**\\n- Data Center = 86.8% of total revenue in Q1, remaining the dominant segment\\n- Data Center growth decelerating in line with overall company trajectory\\n\\n**Margin trend — persistent erosion:**\\n- GAAP gross margin: 78.4% → 75.1% → 73.0% (declining −3.3 pts, then −2.1 pts)\\n- Non-GAAP series confirms same direction (78.9% → 75.7% → 73.5%)\\n\\n**Conflicting signals preserved:**\\n- Downside: accelerating margin compression and growth deceleration\\n- Upside: Blackwell ramp generating \\\"billions of dollars in sales in its first quarter\\\" [REC-NVDA-03-02]\\n\\n## 4. Policy-Driven State Judgments (Separate from Evidence)\\n\\n- **FSEC-NVDA-01**: Verified → version 0→1, **initialize_active_margin_watch**, active, no trade\\n- **FSEC-NVDA-02**: Verified → version 1→2, **retain_active_add_margin_risk**, active, no trade\\n- **FSEC-NVDA-03**: Verified → version 2→3, **confirm_growth_retain_margin_risk**, active, no trade\\n\\n**Final bounded research state**: version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\\n\\n---\\n\\n**Specialist conclusion**: The three-observation chain shows a company with strong but decelerating growth, dominant Data Center segment (86.8% of revenue), and persistent gross margin erosion across all observations. The Blackwell ramp provides a positive forward signal that must be weighed against the margin compression trend. No trade action recommended.\"},{\"agentId\":\"finance-accounting\",\"result\":\"# Finance Accounting Specialist Report — NVDA Three-Observation Research-State Chain\\n\\n## 1. Source Facts (GAAP Basis)\\n\\n| Metric | Record ID | Value (GAAP) | Source Wording |\\n|---|---|---|---|\\n| NVDA-Q1-DC | [REC-NVDA-01-03] | $22.6B | \\\"Record quarterly Data Center revenue of $22.6 billion, up 23% from Q4 and up 427% from a year ago\\\" |\\n| NVDA-Q1-REV | [REC-NVDA-01-02] | $26,044M | \\\"Revenue $26,044 $22,103 $7,192 Up 18% Up 262%\\\" |\\n| NVDA-Q1-GM | [REC-NVDA-01-02] | 78.4% | \\\"Gross margin 78.4 % 76.0 % 64.6 % Up 2.4 pts Up 13.8 pts\\\" |\\n| NVDA-Q2-REV | [REC-NVDA-02-02] | $30,040M | \\\"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\\\" |\\n| NVDA-Q2-GM | [REC-NVDA-02-02] | 75.1% | \\\"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\\\" |\\n| NVDA-Q4-REV | [REC-NVDA-03-01] | $39,331M | \\\"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\\\" |\\n| NVDA-Q4-GM | [REC-NVDA-03-01] | 73.0% | \\\"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\\\" |\\n\\n**Accounting basis note**: All figures above are GAAP. Non-GAAP gross margins (78.9% Q1, 75.7% Q2, 73.5% Q4) show the same declining trend. All calculations below use GAAP figures.\\n\\n## 2. Derived Calculations (Verified)\\n\\n| Calculation | Formula | Result |\\n|---|---|---|\\n| NVDA-Q1-DC-SHARE | 22,600 / 26,044 | **86.8%** |\\n| FSEC-NVDA-02 comp 2 | (30,040 − 26,044) / 26,044 | **15.3%** |\\n| FSEC-NVDA-02 comp 3 | 75.1 − 78.4 | **−3.3 pts** |\\n| FSEC-NVDA-03 comp 4 | (39,331 − 30,040) / 30,040 | **30.9%** |\\n| FSEC-NVDA-03 comp 5 | 73.0 − 75.1 | **−2.1 pts** |\\n\\nAll calculations verified against cited source metrics.\\n\\n## 3. Policy-Driven State Judgments\\n\\n| Observation | Version Transition | Decision | Status | Trade Action |\\n|---|---|---|---|---|\\n| FSEC-NVDA-01 | 0 → 1 | initialize_active_margin_watch | active | none |\\n| FSEC-NVDA-02 | 1 → 2 | retain_active_add_margin_risk | active | none |\\n| FSEC-NVDA-03 | 2 → 3 | confirm_growth_retain_margin_risk | active | none |\\n\\n**Final state**: version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\\n\\n## 4. Operating Trends, Accounting Basis, and Downside Evidence\\n\\n**Operating trends**: Revenue grew sequentially ($26,044M → $30,040M → $39,331M) with Y/Y growth decelerating (262% → 122% → 78%). GAAP gross margin declined monotonically (78.4% → 75.1% → 73.0%).\\n\\n**Accounting basis**: All metrics GAAP; Non-GAAP series confirms same directional trend.\\n\\n**Downside evidence (conflicting signals preserved)**:\\n- Growth deceleration: Y/Y revenue growth fell from 262% (Q1) to 122% (Q2) to 78% (Q4) [REC-NVDA-01-02, REC-NVDA-02-02, REC-NVDA-03-01]\\n- Margin compression: GAAP GM down 3.3 pts Q/Q in Q2, down 1.6 pts Q/Q and 3.0 pts Y/Y in Q4 [REC-NVDA-02-02, REC-NVDA-03-01]\\n- Positive signal: Blackwell ramp \\\"achieving billions of dollars in sales in its first quarter\\\" [REC-NVDA-03-02]\\n\\n**Contiguous version transition**: Confirmed — all three observations verified sequentially (0→1→2→3) with no gaps or missing evidence.\"},{\"agentId\":\"finance-risk\",\"result\":\"# Finance Risk Specialist Report — NVDA Three-Observation Research-State Chain\\n\\n## 1. Source Facts (Verbatim, GAAP Basis)\\n\\n| Metric | Record ID | Source | Filed | Exact Wording |\\n|---|---|---|---|---|\\n| NVDA-Q1-DC | [REC-NVDA-01-03] | nvda-2024-05-22-q1-fy2025 | 2024-05-22 | \\\"Record quarterly Data Center revenue of $22.6 billion, up 23% from Q4 and up 427% from a year ago\\\" |\\n| NVDA-Q1-REV | [REC-NVDA-01-02] | nvda-2024-05-22-q1-fy2025 | 2024-05-22 | \\\"Revenue $26,044 $22,103 $7,192 Up 18% Up 262%\\\" |\\n| NVDA-Q1-GM | [REC-NVDA-01-02] | nvda-2024-05-22-q1-fy2025 | 2024-05-22 | \\\"Gross margin 78.4 % 76.0 % 64.6 % Up 2.4 pts Up 13.8 pts\\\" |\\n| NVDA-Q2-REV | [REC-NVDA-02-02] | nvda-2024-08-28-q2-fy2025 | 2024-08-28 | \\\"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\\\" |\\n| NVDA-Q2-GM | [REC-NVDA-02-02] | nvda-2024-08-28-q2-fy2025 | 2024-08-28 | \\\"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\\\" |\\n| NVDA-Q4-REV | [REC-NVDA-03-01] | nvda-2025-02-26-q4-fy2025 | 2025-02-26 | \\\"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\\\" |\\n| NVDA-Q4-GM | [REC-NVDA-03-01] | nvda-2025-02-26-q4-fy2025 | 2025-02-26 | \\\"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\\\" |\\n\\n**Accounting basis note**: All cited revenue and gross margin figures above are GAAP. Non-GAAP figures are also present in the same records (e.g., [REC-NVDA-01-02] Non-GAAP gross margin 78.9%; [REC-NVDA-02-02] Non-GAAP gross margin 75.7%; [REC-NVDA-03-01] Non-GAAP gross margin 73.5%). The calculations below use GAAP figures as the primary basis; the Non-GAAP series shows the same directional trend (declining gross margin across Q1→Q2→Q4).\\n\\n## 2. Derived Calculations (Verified)\\n\\n| Calculation ID | Formula | Result (rounded 0.1) |\\n|---|---|---|\\n| NVDA-Q1-DC-SHARE | NVDA-Q1-DC / NVDA-Q1-REV = 22,600 / 26,044 | **86.8%** |\\n| FSEC-NVDA-02 comparison 2 | (30,040 − 26,044) / 26,044 | **15.3%** |\\n| FSEC-NVDA-02 comparison 3 | 75.1 − 78.4 | **−3.3** |\\n| FSEC-NVDA-03 comparison 4 | (39,331 − 30,040) / 30,040 | **30.9%** |\\n| FSEC-NVDA-03 comparison 5 | 73.0 − 75.1 | **−2.1** |\\n\\nAll calculations verified against source metrics quoted verbatim in Section 1.\\n\\n## 3. Policy-Driven State Judgments (Bounded Rules Applied)\\n\\n| Transition | Expected Version → Next | Decision | Status | Trade Action |\\n|---|---|---|---|---|\\n| FSEC-NVDA-01 | 0 → 1 | **initialize_active_margin_watch** | active | none |\\n| FSEC-NVDA-02 | 1 → 2 | **retain_active_add_margin_risk** | active | none |\\n| FSEC-NVDA-03 | 2 → 3 | **confirm_growth_retain_margin_risk** | active | none |\\n\\n**Final bounded research state**: version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\\n\\n## 4. Downside Evidence and Contradictions (Risk Perspective)\\n\\n**Growth deceleration (Y/Y revenue)**:\\n- Q1: 262% Y/Y [REC-NVDA-01-02]\\n- Q2: 122% Y/Y [REC-NVDA-02-02]\\n- Q4: 78% Y/Y [REC-NVDA-03-01]\\n- Data Center segment mirrors this: 427% → 122% → 78% Y/Y [REC-NVDA-01-03], [REC-NVDA-02-03], [REC-NVDA-03-03]\\n\\n**Gross margin erosion (GAAP)**:\\n- Q1: 78.4% → Q2: 75.1% → Q4: 73.0% (cumulative −5.4 pts)\\n- Q4 Q/Q: \\\"Down 1.6 pts\\\"; Q4 Y/Y: \\\"Down 3.0 pts\\\" [REC-NVDA-03-01]\\n\\n**Contradiction / positive signal**:\\n- [REC-NVDA-03-02]: \\\"We've successfully ramped up the massive-scale production of Blackwell AI supercomputers, achieving billions of dollars in sales in its first quarter\\\" — forward positive signal conflicting with decelerating growth and margin compression.\\n\\n**Reconciliation**: Revenue growth remains positive but decelerating; gross margin declining consistently across all three observations. The Blackwell ramp provides a positive forward counter-signal but does not offset the margin erosion trend. No contradictions in source data or calculations; all figures internally consistent.\\n\\n## 5. Missing Evidence\\n\\nNone. All required source metrics and calculations for the three-observation chain are present and verified in the locked corpus.\"}]}",
+                  "round": 1
+                }
+              ],
+              "retrieval_output": "## Evidence Bundle\n\n### 1. Source Facts\n\n**NVDA-Q1-DC** (Data Center revenue, Q1 FY25):\n- [REC-NVDA-01-03], source_id: nvda-2024-05-22-q1-fy2025, filed 2024-05-22, locator: Data Center highlights\n- Exact wording: \"Record quarterly Data Center revenue of $22.6 billion, up 23% from Q4 and up 427% from a year ago\"\n\n**NVDA-Q1-REV** (Revenue, Q1 FY25, GAAP):\n- [REC-NVDA-01-02], source_id: nvda-2024-05-22-q1-fy2025, filed 2024-05-22, locator: Q1 Fiscal 2025 Summary\n- Exact wording: \"Revenue $26,044 $22,103 $7,192 Up 18% Up 262%\"\n\n**NVDA-Q1-GM** (Gross margin, Q1 FY25, GAAP):\n- [REC-NVDA-01-02], source_id: nvda-2024-05-22-q1-fy2025, filed 2024-05-22, locator: Q1 Fiscal 2025 Summary\n- Exact wording: \"Gross margin 78.4 % 76.0 % 64.6 % Up 2.4 pts Up 13.8 pts\"\n\n**NVDA-Q2-REV** (Revenue, Q2 FY25, GAAP):\n- [REC-NVDA-02-02], source_id: nvda-2024-08-28-q2-fy2025, filed 2024-08-28, locator: Q2 Fiscal 2025 Summary\n- Exact wording: \"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\"\n\n**NVDA-Q2-GM** (Gross margin, Q2 FY25, GAAP):\n- [REC-NVDA-02-02], source_id: nvda-2024-08-28-q2-fy2025, filed 2024-08-28, locator: Q2 Fiscal 2025 Summary\n- Exact wording: \"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\"\n\n**NVDA-Q4-REV** (Revenue, Q4 FY25, GAAP):\n- [REC-NVDA-03-01], source_id: nvda-2025-02-26-q4-fy2025, filed 2025-02-26, locator: Q4 Fiscal 2025 Summary\n- Exact wording: \"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\"\n\n**NVDA-Q4-GM** (Gross margin, Q4 FY25, GAAP):\n- [REC-NVDA-03-01], source_id: nvda-2025-02-26-q4-fy2025, filed 2025-02-26, locator: Q4 Fiscal 2025 Summary\n- Exact wording: \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n\n**Accounting basis note**: All cited revenue and gross margin figures above are GAAP. Non-GAAP figures are also present in the same records (e.g., [REC-NVDA-01-02] Non-GAAP gross margin 78.9%; [REC-NVDA-02-02] Non-GAAP gross margin 75.7%; [REC-NVDA-03-01] Non-GAAP gross margin 73.5%). The calculations below use GAAP figures as the primary basis; the Non-GAAP series shows the same directional trend (declining gross margin across Q1→Q2→Q4).\n\n**Downside evidence (conflicting signals preserved)**:\n- [REC-NVDA-02-03], source_id: nvda-2024-08-28-q2-fy2025, filed 2024-08-28, locator: Data Center highlights: \"Record quarterly revenue of $30.0 billion, up 15% from Q1 and up 122% from a year ago\" — growth decelerating from Q1's 262% Y/Y.\n- [REC-NVDA-03-03], source_id: nvda-2025-02-26-q4-fy2025, filed 2025-02-26, locator: Data Center highlights: \"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\" — Y/Y growth further decelerated to 78%.\n- [REC-NVDA-03-01]: GAAP gross margin declined from 78.4% (Q1) to 75.1% (Q2) to 73.0% (Q4); Q4 gross margin \"Down 1.6 pts\" Q/Q and \"Down 3.0 pts\" Y/Y.\n- [REC-NVDA-03-02], source_id: nvda-2025-02-26-q4-fy2025, filed 2025-02-26: \"We've successfully ramped up the massive-scale production of Blackwell AI supercomputers, achieving billions of dollars in sales in its first quarter\" — positive forward signal.\n\n### 2. Derived Calculations\n\n- **NVDA-Q1-DC-SHARE** (ratio_percent): NVDA-Q1-DC / NVDA-Q1-REV = 22,600 / 26,044 = **86.8%** (rounding 0.1)\n- **FSEC-NVDA-02 comparison 2** (percent_change): (30,040 − 26,044) / 26,044 = **15.3%** (rounding 0.1)\n- **FSEC-NVDA-02 comparison 3** (percentage_point): 75.1 − 78.4 = **−3.3** (rounding 0.1)\n- **FSEC-NVDA-03 comparison 4** (percent_change): (39,331 − 30,040) / 30,040 = **30.9%** (rounding 0.1)\n- **FSEC-NVDA-03 comparison 5** (percentage_point): 73.0 − 75.1 = **−2.1** (rounding 0.1)\n\n### 3. Policy-Driven State Judgments\n\n- **FSEC-NVDA-01**: Required source metrics (NVDA-Q1-DC, NVDA-Q1-REV) and calculation (NVDA-Q1-DC-SHARE) verified. Apply expected_version 0 → next_version 1, decision **initialize_active_margin_watch**, status **active**, trade action **none**.\n- **FSEC-NVDA-02**: Required source metrics (NVDA-Q1-REV, NVDA-Q1-GM, NVDA-Q2-REV, NVDA-Q2-GM) and calculations (comparisons 2 and 3) verified. Apply expected_version 1 → next_version 2, decision **retain_active_add_margin_risk**, status **active**, trade action **none**.\n- **FSEC-NVDA-03**: Required source metrics (NVDA-Q2-REV, NVDA-Q2-GM, NVDA-Q4-REV, NVDA-Q4-GM) and calculations (comparisons 4 and 5) verified. Apply expected_version 2 → next_version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\n\n**Final bounded research state**: version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\n\n### 4. Missing Evidence\n\nNone. All required source metrics and calculations for the three-observation chain are present and verified in the locked corpus.",
+              "analyst_outputs": {
+                "accounting and period audit": "# Finance Accounting Specialist Report — NVDA Three-Observation Research-State Chain\n\n## 1. Source Facts (GAAP Basis)\n\n| Metric | Record ID | Value (GAAP) | Source Wording |\n|---|---|---|---|\n| NVDA-Q1-DC | [REC-NVDA-01-03] | $22.6B | \"Record quarterly Data Center revenue of $22.6 billion, up 23% from Q4 and up 427% from a year ago\" |\n| NVDA-Q1-REV | [REC-NVDA-01-02] | $26,044M | \"Revenue $26,044 $22,103 $7,192 Up 18% Up 262%\" |\n| NVDA-Q1-GM | [REC-NVDA-01-02] | 78.4% | \"Gross margin 78.4 % 76.0 % 64.6 % Up 2.4 pts Up 13.8 pts\" |\n| NVDA-Q2-REV | [REC-NVDA-02-02] | $30,040M | \"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\" |\n| NVDA-Q2-GM | [REC-NVDA-02-02] | 75.1% | \"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\" |\n| NVDA-Q4-REV | [REC-NVDA-03-01] | $39,331M | \"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\" |\n| NVDA-Q4-GM | [REC-NVDA-03-01] | 73.0% | \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\" |\n\n**Accounting basis note**: All figures above are GAAP. Non-GAAP gross margins (78.9% Q1, 75.7% Q2, 73.5% Q4) show the same declining trend. All calculations below use GAAP figures.\n\n## 2. Derived Calculations (Verified)\n\n| Calculation | Formula | Result |\n|---|---|---|\n| NVDA-Q1-DC-SHARE | 22,600 / 26,044 | **86.8%** |\n| FSEC-NVDA-02 comp 2 | (30,040 − 26,044) / 26,044 | **15.3%** |\n| FSEC-NVDA-02 comp 3 | 75.1 − 78.4 | **−3.3 pts** |\n| FSEC-NVDA-03 comp 4 | (39,331 − 30,040) / 30,040 | **30.9%** |\n| FSEC-NVDA-03 comp 5 | 73.0 − 75.1 | **−2.1 pts** |\n\nAll calculations verified against cited source metrics.\n\n## 3. Policy-Driven State Judgments\n\n| Observation | Version Transition | Decision | Status | Trade Action |\n|---|---|---|---|---|\n| FSEC-NVDA-01 | 0 → 1 | initialize_active_margin_watch | active | none |\n| FSEC-NVDA-02 | 1 → 2 | retain_active_add_margin_risk | active | none |\n| FSEC-NVDA-03 | 2 → 3 | confirm_growth_retain_margin_risk | active | none |\n\n**Final state**: version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\n\n## 4. Operating Trends, Accounting Basis, and Downside Evidence\n\n**Operating trends**: Revenue grew sequentially ($26,044M → $30,040M → $39,331M) with Y/Y growth decelerating (262% → 122% → 78%). GAAP gross margin declined monotonically (78.4% → 75.1% → 73.0%).\n\n**Accounting basis**: All metrics GAAP; Non-GAAP series confirms same directional trend.\n\n**Downside evidence (conflicting signals preserved)**:\n- Growth deceleration: Y/Y revenue growth fell from 262% (Q1) to 122% (Q2) to 78% (Q4) [REC-NVDA-01-02, REC-NVDA-02-02, REC-NVDA-03-01]\n- Margin compression: GAAP GM down 3.3 pts Q/Q in Q2, down 1.6 pts Q/Q and 3.0 pts Y/Y in Q4 [REC-NVDA-02-02, REC-NVDA-03-01]\n- Positive signal: Blackwell ramp \"achieving billions of dollars in sales in its first quarter\" [REC-NVDA-03-02]\n\n**Contiguous version transition**: Confirmed — all three observations verified sequentially (0→1→2→3) with no gaps or missing evidence.",
+                "risk and governance": "# Finance Risk Specialist Report — NVDA Three-Observation Research-State Chain\n\n## 1. Source Facts (Verbatim, GAAP Basis)\n\n| Metric | Record ID | Source | Filed | Exact Wording |\n|---|---|---|---|---|\n| NVDA-Q1-DC | [REC-NVDA-01-03] | nvda-2024-05-22-q1-fy2025 | 2024-05-22 | \"Record quarterly Data Center revenue of $22.6 billion, up 23% from Q4 and up 427% from a year ago\" |\n| NVDA-Q1-REV | [REC-NVDA-01-02] | nvda-2024-05-22-q1-fy2025 | 2024-05-22 | \"Revenue $26,044 $22,103 $7,192 Up 18% Up 262%\" |\n| NVDA-Q1-GM | [REC-NVDA-01-02] | nvda-2024-05-22-q1-fy2025 | 2024-05-22 | \"Gross margin 78.4 % 76.0 % 64.6 % Up 2.4 pts Up 13.8 pts\" |\n| NVDA-Q2-REV | [REC-NVDA-02-02] | nvda-2024-08-28-q2-fy2025 | 2024-08-28 | \"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\" |\n| NVDA-Q2-GM | [REC-NVDA-02-02] | nvda-2024-08-28-q2-fy2025 | 2024-08-28 | \"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\" |\n| NVDA-Q4-REV | [REC-NVDA-03-01] | nvda-2025-02-26-q4-fy2025 | 2025-02-26 | \"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\" |\n| NVDA-Q4-GM | [REC-NVDA-03-01] | nvda-2025-02-26-q4-fy2025 | 2025-02-26 | \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\" |\n\n**Accounting basis note**: All cited revenue and gross margin figures above are GAAP. Non-GAAP figures are also present in the same records (e.g., [REC-NVDA-01-02] Non-GAAP gross margin 78.9%; [REC-NVDA-02-02] Non-GAAP gross margin 75.7%; [REC-NVDA-03-01] Non-GAAP gross margin 73.5%). The calculations below use GAAP figures as the primary basis; the Non-GAAP series shows the same directional trend (declining gross margin across Q1→Q2→Q4).\n\n## 2. Derived Calculations (Verified)\n\n| Calculation ID | Formula | Result (rounded 0.1) |\n|---|---|---|\n| NVDA-Q1-DC-SHARE | NVDA-Q1-DC / NVDA-Q1-REV = 22,600 / 26,044 | **86.8%** |\n| FSEC-NVDA-02 comparison 2 | (30,040 − 26,044) / 26,044 | **15.3%** |\n| FSEC-NVDA-02 comparison 3 | 75.1 − 78.4 | **−3.3** |\n| FSEC-NVDA-03 comparison 4 | (39,331 − 30,040) / 30,040 | **30.9%** |\n| FSEC-NVDA-03 comparison 5 | 73.0 − 75.1 | **−2.1** |\n\nAll calculations verified against source metrics quoted verbatim in Section 1.\n\n## 3. Policy-Driven State Judgments (Bounded Rules Applied)\n\n| Transition | Expected Version → Next | Decision | Status | Trade Action |\n|---|---|---|---|---|\n| FSEC-NVDA-01 | 0 → 1 | **initialize_active_margin_watch** | active | none |\n| FSEC-NVDA-02 | 1 → 2 | **retain_active_add_margin_risk** | active | none |\n| FSEC-NVDA-03 | 2 → 3 | **confirm_growth_retain_margin_risk** | active | none |\n\n**Final bounded research state**: version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\n\n## 4. Downside Evidence and Contradictions (Risk Perspective)\n\n**Growth deceleration (Y/Y revenue)**:\n- Q1: 262% Y/Y [REC-NVDA-01-02]\n- Q2: 122% Y/Y [REC-NVDA-02-02]\n- Q4: 78% Y/Y [REC-NVDA-03-01]\n- Data Center segment mirrors this: 427% → 122% → 78% Y/Y [REC-NVDA-01-03], [REC-NVDA-02-03], [REC-NVDA-03-03]\n\n**Gross margin erosion (GAAP)**:\n- Q1: 78.4% → Q2: 75.1% → Q4: 73.0% (cumulative −5.4 pts)\n- Q4 Q/Q: \"Down 1.6 pts\"; Q4 Y/Y: \"Down 3.0 pts\" [REC-NVDA-03-01]\n\n**Contradiction / positive signal**:\n- [REC-NVDA-03-02]: \"We've successfully ramped up the massive-scale production of Blackwell AI supercomputers, achieving billions of dollars in sales in its first quarter\" — forward positive signal conflicting with decelerating growth and margin compression.\n\n**Reconciliation**: Revenue growth remains positive but decelerating; gross margin declining consistently across all three observations. The Blackwell ramp provides a positive forward counter-signal but does not offset the margin erosion trend. No contradictions in source data or calculations; all figures internally consistent.\n\n## 5. Missing Evidence\n\nNone. All required source metrics and calculations for the three-observation chain are present and verified in the locked corpus.",
+                "trend and chronology": "# Finance Trend and Chronology Specialist Report\n\n## 1. Source Facts (Observation Sequence)\n\n**Observation 1 — Q1 FY25** (filed 2024-05-22):\n- Revenue: $26,044M GAAP [REC-NVDA-01-02]\n- Gross margin: 78.4% GAAP [REC-NVDA-01-02]\n- Data Center revenue: $22.6B, \"up 23% from Q4 and up 427% from a year ago\" [REC-NVDA-01-03]\n\n**Observation 2 — Q2 FY25** (filed 2024-08-28):\n- Revenue: $30,040M GAAP [REC-NVDA-02-02]\n- Gross margin: 75.1% GAAP [REC-NVDA-02-02]\n- Data Center: \"Record quarterly revenue of $30.0 billion, up 15% from Q1 and up 122% from a year ago\" [REC-NVDA-02-03]\n\n**Observation 3 — Q4 FY25** (filed 2025-02-26):\n- Revenue: $39,331M GAAP [REC-NVDA-03-01]\n- Gross margin: 73.0% GAAP [REC-NVDA-03-01]\n- Data Center: \"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\" [REC-NVDA-03-03]\n- Forward signal: \"We've successfully ramped up the massive-scale production of Blackwell AI supercomputers, achieving billions of dollars in sales in its first quarter\" [REC-NVDA-03-02]\n\n## 2. Derived Calculations (Verified)\n\n| Metric | Formula | Result |\n|---|---|---|\n| NVDA-Q1-DC-SHARE | 22,600 / 26,044 | **86.8%** |\n| FSEC-NVDA-02 comp 2 | (30,040 − 26,044) / 26,044 | **15.3%** |\n| FSEC-NVDA-02 comp 3 | 75.1 − 78.4 | **−3.3 pts** |\n| FSEC-NVDA-03 comp 4 | (39,331 − 30,040) / 30,040 | **30.9%** |\n| FSEC-NVDA-03 comp 5 | 73.0 − 75.1 | **−2.1 pts** |\n\n## 3. Trend and Chronology Assessment\n\n**Growth direction — decelerating but positive:**\n- Revenue grew 15.3% Q1→Q2, then 30.9% Q2→Q4 (Q/Q basis)\n- Y/Y growth decelerated sharply: 262% (Q1) → 122% (Q2) → 78% (Q4)\n- Data Center Y/Y growth: 427% (Q1) → 122% (Q2) → 78% (Q4)\n\n**Segment dynamics — Data Center dominance:**\n- Data Center = 86.8% of total revenue in Q1, remaining the dominant segment\n- Data Center growth decelerating in line with overall company trajectory\n\n**Margin trend — persistent erosion:**\n- GAAP gross margin: 78.4% → 75.1% → 73.0% (declining −3.3 pts, then −2.1 pts)\n- Non-GAAP series confirms same direction (78.9% → 75.7% → 73.5%)\n\n**Conflicting signals preserved:**\n- Downside: accelerating margin compression and growth deceleration\n- Upside: Blackwell ramp generating \"billions of dollars in sales in its first quarter\" [REC-NVDA-03-02]\n\n## 4. Policy-Driven State Judgments (Separate from Evidence)\n\n- **FSEC-NVDA-01**: Verified → version 0→1, **initialize_active_margin_watch**, active, no trade\n- **FSEC-NVDA-02**: Verified → version 1→2, **retain_active_add_margin_risk**, active, no trade\n- **FSEC-NVDA-03**: Verified → version 2→3, **confirm_growth_retain_margin_risk**, active, no trade\n\n**Final bounded research state**: version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\n\n---\n\n**Specialist conclusion**: The three-observation chain shows a company with strong but decelerating growth, dominant Data Center segment (86.8% of revenue), and persistent gross margin erosion across all observations. The Blackwell ramp provides a positive forward signal that must be weighed against the margin compression trend. No trade action recommended."
+              },
+              "final_output": "Now I'll synthesize the three specialist reports into the required sections.\n\n---\n\n# NVDA Three-Observation Research-State Chain — Synthesis Report\n\n## Chronology\n\nThe three-observation chain spans Q1 FY25 through Q4 FY25, with filings on 2024-05-22, 2024-08-28, and 2025-02-26 respectively.\n\n**Observation 1 — Q1 FY25** (filed 2024-05-22):\n- Revenue: $26,044M GAAP [REC-NVDA-01-02]\n- Gross margin: 78.4% GAAP [REC-NVDA-01-02]\n- Data Center revenue: $22.6B, \"up 23% from Q4 and up 427% from a year ago\" [REC-NVDA-01-03]\n- Data Center share of total revenue: 86.8% (verified calculation)\n\n**Observation 2 — Q2 FY25** (filed 2024-08-28):\n- Revenue: $30,040M GAAP [REC-NVDA-02-02]\n- Gross margin: 75.1% GAAP [REC-NVDA-02-02]\n- Data Center: \"Record quarterly revenue of $30.0 billion, up 15% from Q1 and up 122% from a year ago\" [REC-NVDA-02-03]\n- Sequential revenue growth: 15.3% (verified calculation); gross margin change: −3.3 percentage points\n\n**Observation 3 — Q4 FY25** (filed 2025-02-26):\n- Revenue: $39,331M GAAP [REC-NVDA-03-01]\n- Gross margin: 73.0% GAAP [REC-NVDA-03-01]\n- Data Center: \"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\" [REC-NVDA-03-03]\n- Sequential revenue growth (Q2→Q4): 30.9% (verified calculation); gross margin change: −2.1 percentage points\n- Forward signal: Blackwell ramp \"achieving billions of dollars in sales in its first quarter\" [REC-NVDA-03-02]\n\n**Trend summary**: Revenue grew across all observations ($26,044M → $30,040M → $39,331M). Y/Y growth decelerated sharply: 262% (Q1) → 122% (Q2) → 78% (Q4). Data Center Y/Y growth mirrored this: 427% → 122% → 78%. GAAP gross margin declined monotonically: 78.4% → 75.1% → 73.0%. The Non-GAAP series confirms the same directional trend (78.9% → 75.7% → 73.5%).\n\n---\n\n## Evidence Reconciliation\n\n**Consistent signals across all three observations:**\n- Revenue growth remains positive in absolute terms at every observation.\n- Data Center is the dominant segment (86.8% of Q1 revenue) and drives overall trends.\n- Gross margin is declining on both GAAP and Non-GAAP bases across all observations.\n\n**Conflicting signals preserved:**\n- **Downside**: Y/Y revenue growth deceleration from 262% (Q1) to 78% (Q4) [REC-NVDA-01-02, REC-NVDA-02-02, REC-NVDA-03-01]; Data Center Y/Y deceleration from 427% to 78% [REC-NVDA-01-03, REC-NVDA-02-03, REC-NVDA-03-03]; GAAP gross margin erosion from 78.4% to 73.0%, with Q4 \"Down 1.6 pts\" Q/Q and \"Down 3.0 pts\" Y/Y [REC-NVDA-03-01].\n- **Upside**: Blackwell AI supercomputer production ramp generating \"billions of dollars in sales in its first quarter\" [REC-NVDA-03-02].\n\n**Reconciliation**: The evidence shows a company with strong absolute revenue levels but decelerating growth rates and persistent margin compression. The Blackwell ramp is a forward-looking positive signal but does not offset the documented margin erosion trend across the three observations. No internal contradictions exist among the source records; all figures are internally consistent within their respective filings.\n\n**Accounting basis**: All revenue and gross margin figures cited are GAAP. Non-GAAP gross margins (78.9% Q1, 75.7% Q2, 73.5% Q4) show the same declining directional trend. No period-label changes occurred; all observations use the same GAAP quarterly reporting basis.\n\n---\n\n## Calculation Audit\n\nAll five required deterministic calculations were verified against cited source metrics. Results are reported with rounding 0.1 as specified.\n\n| Calculation ID | Formula | Source Metrics Used | Result |\n|---|---|---|---|\n| NVDA-Q1-DC-SHARE | NVDA-Q1-DC / NVDA-Q1-REV | $22.6B [REC-NVDA-01-03] / $26,044M [REC-NVDA-01-02] | **86.8%** |\n| FSEC-NVDA-02 comparison 2 | (NVDA-Q2-REV − NVDA-Q1-REV) / NVDA-Q1-REV | $30,040M [REC-NVDA-02-02], $26,044M [REC-NVDA-01-02] | **15.3%** |\n| FSEC-NVDA-02 comparison 3 | NVDA-Q2-GM − NVDA-Q1-GM | 75.1% [REC-NVDA-02-02], 78.4% [REC-NVDA-01-02] | **−3.3 pts** |\n| FSEC-NVDA-03 comparison 4 | (NVDA-Q4-REV − NVDA-Q2-REV) / NVDA-Q2-REV | $39,331M [REC-NVDA-03-01], $30,040M [REC-NVDA-02-02] | **30.9%** |\n| FSEC-NVDA-03 comparison 5 | NVDA-Q4-GM − NVDA-Q2-GM | 73.0% [REC-NVDA-03-01], 75.1% [REC-NVDA-02-02] | **−2.1 pts** |\n\nAll five calculations are justified by cited records. No intermediate arithmetic, unrounded values, unit-converted duplicates, or additional derived metrics are reported. The contiguous version transition (0→1→2→3) is verified: each observation's required source metrics and calculations are present and confirmed.\n\n---\n\n## Risk and Governance\n\n**Identified downside risks:**\n1. **Growth deceleration**: Y/Y revenue growth fell from 262% (Q1) to 122% (Q2) to 78% (Q4). Data Center Y/Y growth fell from 427% to 122% to 78% over the same period. The rate of deceleration is material.\n2. **Gross margin compression**: GAAP gross margin declined from 78.4% (Q1) to 75.1% (Q2) to 73.0% (Q4), a cumulative decline of 5.4 percentage points. The Non-GAAP series confirms the same trend. Q4 gross margin was \"Down 1.6 pts\" sequentially and \"Down 3.0 pts\" Y/Y [REC-NVDA-03-01].\n3. **Concentration risk**: Data Center represents 86.8% of total revenue (Q1), making the company highly dependent on a single segment.\n\n**Mitigating signal:**\n- Blackwell AI supercomputer production ramp: \"achieving billions of dollars in sales in its first quarter\" [REC-NVDA-03-02]. This is a forward-looking positive signal but does not reverse the documented margin erosion.\n\n**Bounded research-state transition rules applied (policy, not evidence):**\n\n| Transition | Required Metrics Verified | Version | Decision | Status | Trade Action |\n|---|---|---|---|---|---|\n| FSEC-NVDA-01 | NVDA-Q1-DC, NVDA-Q1-REV, NVDA-Q1-DC-SHARE ✓ | 0 → 1 | **initialize_active_margin_watch** | active | none |\n| FSEC-NVDA-02 | NVDA-Q1-REV, NVDA-Q1-GM, NVDA-Q2-REV, NVDA-Q2-GM, comp 2, comp 3 ✓ | 1 → 2 | **retain_active_add_margin_risk** | active | none |\n| FSEC-NVDA-03 | NVDA-Q2-REV, NVDA-Q2-GM, NVDA-Q4-REV, NVDA-Q4-GM, comp 4, comp 5 ✓ | 2 → 3 | **confirm_growth_retain_margin_risk** | active | none |\n\nAll three transitions are verified: required source metrics and calculations are present for each observation. No trade is authorized at any stage.\n\n---\n\n## Final Decision\n\n**Final bounded research state**: version 3, decision **confirm_growth_retain_margin_risk**, status **active**, trade action **none**.\n\nThe three-observation chain is complete and contiguous. Revenue growth remains positive but decelerating. Gross margin is declining persistently across all observations on both GAAP and Non-GAAP bases. The Blackwell ramp provides a positive forward signal. The policy-driven state judgment at version 3 confirms growth while retaining margin risk as an active concern. No trade is authorized.\n\n---\n\n## Limitations\n\n1. **Corpus scope**: The analysis is bounded to the locked SEC corpus provided. Observations are limited to three discrete filing dates (Q1 FY25, Q2 FY25, Q4 FY25). No Q3 FY25 observation is present in the evidence bundle, creating a gap in the quarterly sequence between Q2 and Q4.\n2. **Period labels**: The evidence uses fiscal-year labeling (FY25). No calendar-year conversion or restatement has been performed. Period labels are preserved as filed.\n3. **Accounting basis**: All primary calculations use GAAP figures. Non-GAAP figures are noted for directional confirmation only. No reconciliation between GAAP and Non-GAAP has been performed beyond noting the consistent directional trend.\n4. **Segment granularity**: Only Data Center segment revenue is separately identified. No Gaming, Professional Visualization, Automotive, or OEM/IP segment data is present in the evidence bundle.\n5. **Policy dependency**: The bounded research-state transitions and final decision are driven by the supplied policy rules, not by independent judgment. If the policy were different, the state judgments could differ.\n6. **No forward projections**: The analysis does not project future revenue, margins, or growth rates. The Blackwell signal [REC-NVDA-03-02] is noted as a qualitative forward indicator only.\n7. **Missing evidence**: None identified within the locked corpus for the three specified observations. All required source metrics and calculations are present and verified.",
+              "stages": {
+                "gold_records": 7,
+                "retrieved_relevant": 7,
+                "retrieved_total": 7,
+                "retrieval_evaluated": true,
+                "retrieval_recall": 1,
+                "retrieval_precision": 0.7142857142857143,
+                "summary_relevant": 7,
+                "summary_retention": 1,
+                "final_relevant": 7,
+                "final_evidence_recall": 1,
+                "synthesis_retention": 1,
+                "corpus_characters": 30518,
+                "retrieval_characters": 4722,
+                "evidence_compression_ratio": 6.462939432443879,
+                "milestones": 3,
+                "passed_milestones": 2,
+                "milestone_results": {
+                  "bounded-research-state": true,
+                  "declared-calculations": false,
+                  "evidence-separation": true
+                },
+                "unsupported_claims": 0,
+                "grounding_assertions": 109,
+                "grounding_violations": 1,
+                "grounding_violation_values": [
+                  "5.4"
+                ],
+                "expected_delegations": 3,
+                "valid_delegations": 3,
+                "total_delegations": 3,
+                "delegation_precision": 1,
+                "delegation_recall": 1,
+                "retrieval_latency_ms": 9981.764,
+                "collaboration_latency_ms": 74197.564,
+                "coordination_latency_ms": 31714.875,
+                "analysis_latency_ms": 21627.097,
+                "synthesis_latency_ms": 34369.92
+              }
+            },
+            {
+              "mode": "oracle_evidence",
+              "passed": false,
+              "latency_ms": 36859.235,
+              "usage": {
+                "prompt_tokens": 4337,
+                "completion_tokens": 2532,
+                "total_tokens": 6869
+              },
+              "model_calls": [
+                {
+                  "sequence": 1,
+                  "phase": "oracle_evidence/synthesis",
+                  "agent_id": "finance-solo",
+                  "role": "coordinator",
+                  "model": "deepseek/deepseek-v4-pro",
+                  "prompt_tokens": 4337,
+                  "completion_tokens": 2532,
+                  "total_tokens": 6869,
+                  "cache_read_tokens": 4224,
+                  "estimated_cost_usd": 0.002267307,
+                  "priced": true,
+                  "latency_ms": 36840.777
+                }
+              ],
+              "final_output": "## Chronology\n\nThe research-state chain consists of three observations drawn from the locked SEC corpus:\n\n1. **FSEC-NVDA-01** – Q1 FY2025 (filed 2024-05-22)  \n   Source records: [REC-NVDA-01-01], [REC-NVDA-01-02], [REC-NVDA-01-03]\n\n2. **FSEC-NVDA-02** – Q2 FY2025 (filed 2024-08-28)  \n   Source records: [REC-NVDA-02-01], [REC-NVDA-02-02]\n\n3. **FSEC-NVDA-03** – Q4 FY2025 (filed 2025-02-26)  \n   Source records: [REC-NVDA-03-01], [REC-NVDA-03-02]\n\n---\n\n## Evidence Reconciliation\n\n### Source Metrics Extracted (Verbatim from Records)\n\n| Metric ID | Value | Source Record |\n|-----------|-------|---------------|\n| NVDA-Q1-REV | $26,044 (GAAP, $ in millions) | [REC-NVDA-01-01], [REC-NVDA-01-02] |\n| NVDA-Q1-GM | 78.4% (GAAP) | [REC-NVDA-01-01], [REC-NVDA-01-02] |\n| NVDA-Q1-DC | $22.6 billion (Data Center revenue) | [REC-NVDA-01-03] |\n| NVDA-Q2-REV | $30,040 (GAAP, $ in millions) | [REC-NVDA-02-01], [REC-NVDA-02-02] |\n| NVDA-Q2-GM | 75.1% (GAAP) | [REC-NVDA-02-01], [REC-NVDA-02-02] |\n| NVDA-Q4-REV | $39,331 (GAAP, $ in millions) | [REC-NVDA-03-01], [REC-NVDA-03-02] |\n| NVDA-Q4-GM | 73.0% (GAAP) | [REC-NVDA-03-01], [REC-NVDA-03-02] |\n\n**Note on NVDA-Q1-DC:** [REC-NVDA-01-03] states \"Record quarterly Data Center revenue of $22.6 billion.\" This is $22,600 million. No conflicting Data Center figure appears in the Q1 records.\n\n**Note on Q3 FY2025:** [REC-NVDA-03-01] and [REC-NVDA-03-02] reference Q3 FY25 figures (Revenue $35,082, GM 74.6%) but the research-state chain per the policy only requires Q1, Q2, and Q4 observations. Q3 is not a separate observation in the chain and is not used in the required calculations.\n\n### Conflicting Signals\n\n- **Gross margin trend:** GAAP gross margin declined from 78.4% (Q1) → 75.1% (Q2) → 73.0% (Q4), a cumulative decline of 5.4 percentage points over the three observations. This represents a material operating trend deterioration.\n- **Revenue growth continues:** Revenue grew from $26,044 → $30,040 → $39,331, showing sequential acceleration in absolute dollar growth despite the margin compression.\n- **No evidence of accounting basis change:** All three observations use GAAP figures consistently. The stock split (ten-for-one, effective June 7, 2024) is noted in [REC-NVDA-02-01] and [REC-NVDA-02-02] with retroactive adjustment of per-share amounts. This does not affect the revenue or gross margin metrics used in calculations.\n- **Downside evidence:** The persistent gross margin decline (78.4% → 75.1% → 73.0%) constitutes the primary downside signal. No other adverse evidence (e.g., revenue decline, operating loss, going concern) is present in the corpus.\n\n---\n\n## Calculation Audit\n\n### FSEC-NVDA-01 Calculations\n\n**NVDA-Q1-DC-SHARE:** ratio_percent = (NVDA-Q1-DC / NVDA-Q1-REV) × 100  \n= ($22,600 / $26,044) × 100  \n**Result: 86.8%** (rounded to 0.1)\n\nSource numbers used: NVDA-Q1-DC = $22,600 [REC-NVDA-01-03]; NVDA-Q1-REV = $26,044 [REC-NVDA-01-01], [REC-NVDA-01-02].\n\n### FSEC-NVDA-02 Calculations\n\n**Comparison 2:** percent_change from NVDA-Q1-REV to NVDA-Q2-REV  \n= ((NVDA-Q2-REV - NVDA-Q1-REV) / NVDA-Q1-REV) × 100  \n= (($30,040 - $26,044) / $26,044) × 100  \n**Result: 15.3%** (rounded to 0.1)\n\nSource numbers used: NVDA-Q1-REV = $26,044 [REC-NVDA-01-01]; NVDA-Q2-REV = $30,040 [REC-NVDA-02-01].\n\n**Comparison 3:** difference from NVDA-Q1-GM to NVDA-Q2-GM  \n= NVDA-Q2-GM - NVDA-Q1-GM  \n= 75.1% - 78.4%  \n**Result: -3.3 percentage points** (rounded to 0.1)\n\nSource numbers used: NVDA-Q1-GM = 78.4% [REC-NVDA-01-01]; NVDA-Q2-GM = 75.1% [REC-NVDA-02-01].\n\n### FSEC-NVDA-03 Calculations\n\n**Comparison 4:** percent_change from NVDA-Q2-REV to NVDA-Q4-REV  \n= ((NVDA-Q4-REV - NVDA-Q2-REV) / NVDA-Q2-REV) × 100  \n= (($39,331 - $30,040) / $30,040) × 100  \n**Result: 30.9%** (rounded to 0.1)\n\nSource numbers used: NVDA-Q2-REV = $30,040 [REC-NVDA-02-01]; NVDA-Q4-REV = $39,331 [REC-NVDA-03-01].\n\n**Comparison 5:** difference from NVDA-Q2-GM to NVDA-Q4-GM  \n= NVDA-Q4-GM - NVDA-Q2-GM  \n= 73.0% - 75.1%  \n**Result: -2.1 percentage points** (rounded to 0.1)\n\nSource numbers used: NVDA-Q2-GM = 75.1% [REC-NVDA-02-01]; NVDA-Q4-GM = 73.0% [REC-NVDA-03-01].\n\n### Contiguous Version Transition Verification\n\n- FSEC-NVDA-01 → FSEC-NVDA-02: Q1 to Q2 is the next sequential fiscal quarter. Version transition 0→1 is contiguous. ✓\n- FSEC-NVDA-02 → FSEC-NVDA-03: Q2 to Q4 skips Q3. The policy explicitly defines the chain as three observations (FSEC-NVDA-01, FSEC-NVDA-02, FSEC-NVDA-03) and does not require Q3 as a separate observation. The version transition 1→2 is per policy. ✓\n\n---\n\n## Risk and Governance\n\n**Operating Trend Risk:** Gross margin compression from 78.4% → 75.1% → 73.0% across the three observations indicates sustained margin pressure. This is the primary risk signal. Revenue growth remains strong (15.3% Q1→Q2, 30.9% Q2→Q4), partially offsetting margin concerns.\n\n**Data Center Concentration Risk:** Data Center revenue represents 86.8% of total Q1 revenue [REC-NVDA-01-03], indicating extreme segment concentration. No subsequent Data Center revenue figures are provided in the Q2 or Q4 records to assess whether this concentration persisted or changed.\n\n**Accounting Basis Consistency:** All metrics are drawn from GAAP figures. No change in accounting basis is detected across observations. The stock split [REC-NVDA-02-01] is retroactively applied to per-share figures only and does not affect the revenue or margin metrics used.\n\n**Governance Observations:** Dividend maintained at $0.01 per share across all three observations [REC-NVDA-01-01], [REC-NVDA-02-01], [REC-NVDA-03-01]. Share repurchase authorization increased by $50.0 billion in Q2 [REC-NVDA-02-01]. No governance red flags identified in the corpus.\n\n---\n\n## Final Decision\n\nAll required source metrics are verified and all required calculations are completed for all three observations. The bounded research-state transitions are applied as follows:\n\n| Observation | Version Transition | Decision | Status | Trade Action |\n|-------------|-------------------|----------|--------|--------------|\n| FSEC-NVDA-01 | 0 → 1 | initialize_active_margin_watch | active | none |\n| FSEC-NVDA-02 | 1 → 2 | retain_active_add_margin_risk | active | none |\n| FSEC-NVDA-03 | 2 → 3 | confirm_growth_retain_margin_risk | active | none |\n\n**Final bounded research state: version 3, decision confirm_growth_retain_margin_risk, status active, trade action none.**\n\nThe state chain reflects: initial margin watch triggered by high Data Center concentration (86.8%) alongside strong margins (78.4%); margin risk added as gross margin declined 3.3pp in Q2 despite continued revenue growth; and final confirmation that growth persists (30.9% revenue increase Q2→Q4) while margin risk remains material (additional 2.1pp decline to 73.0%).\n\n---\n\n## Limitations\n\n1. **Missing Q3 observation:** The chain skips from Q2 to Q4. Q3 FY2025 figures appear in [REC-NVDA-03-01] (Revenue $35,082, GM 74.6%) but are not part of the three-observation chain per policy. The Q2→Q4 calculation spans two quarters rather than one sequential quarter.\n\n2. **Data Center revenue only available for Q1:** [REC-NVDA-01-03] provides the Data Center segment figure ($22.6 billion). No equivalent segment breakdown is present in the Q2 or Q4 records provided. The concentration ratio can only be calculated for FSEC-NVDA-01.\n\n3. **Non-GAAP figures excluded:** The policy requires only the specified calculations. Non-GAAP metrics (e.g., Q1 GM 78.9%, Q2 GM 75.7%, Q4 GM 73.5%) are present in the records but not used, as the policy specifies GAAP metrics for the required calculations.\n\n4. **No balance sheet or cash flow data:** The corpus contains only summary income statement metrics. Leverage, liquidity, and cash flow trends cannot be assessed.\n\n5. **Corpus completeness:** The records are presented as perfect-retrieval excerpts. [REC-NVDA-01-02] and [REC-NVDA-02-02] appear truncated mid-sentence. All required metrics are nevertheless extractable from the provided fragments.",
+              "stages": {
+                "gold_records": 7,
+                "retrieved_relevant": 0,
+                "retrieved_total": 0,
+                "retrieval_evaluated": false,
+                "retrieval_recall": 0,
+                "retrieval_precision": 0,
+                "summary_relevant": 0,
+                "summary_retention": 0,
+                "final_relevant": 7,
+                "final_evidence_recall": 1,
+                "synthesis_retention": 0,
+                "corpus_characters": 30518,
+                "retrieval_characters": 0,
+                "evidence_compression_ratio": 0,
+                "milestones": 3,
+                "passed_milestones": 2,
+                "milestone_results": {
+                  "bounded-research-state": false,
+                  "declared-calculations": true,
+                  "evidence-separation": true
+                },
+                "unsupported_claims": 0,
+                "grounding_assertions": 105,
+                "grounding_violations": 1,
+                "grounding_violation_values": [
+                  "5.4"
+                ],
+                "expected_delegations": 0,
+                "valid_delegations": 0,
+                "total_delegations": 0,
+                "delegation_precision": 0,
+                "delegation_recall": 0,
+                "retrieval_latency_ms": 0,
+                "collaboration_latency_ms": 0,
+                "coordination_latency_ms": 0,
+                "analysis_latency_ms": 0,
+                "synthesis_latency_ms": 36859.082
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
