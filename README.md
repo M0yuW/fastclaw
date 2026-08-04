@@ -56,6 +56,10 @@ Click an agent to enter its management panel:
 
 ## Architecture
 
+For the proposal to preserve this Go runtime and build an independent,
+protocol-compatible Python repository from scratch, see
+[Python Reimplementation Feasibility](docs/python-reimplementation-feasibility.md).
+
 ```
 ~/.fastclaw/
   fastclaw.json              # Global config (gateway, storage, providers, defaults)
