@@ -1,0 +1,207 @@
+version: 1
+name: tau-retail-scripted-subset
+description: Deterministic tau-bench-style retail tasks with scripted users and stateful tools.
+defaults:
+  repetitions: 3
+  timeout: 2m
+cases:
+  - id: cancel-after-confirmation
+    description: The agent must wait for explicit confirmation before cancelling.
+    tags: [tau, retail, multi-turn, policy]
+    initial_state:
+      orders:
+        ord-1001:
+          customer: Alice Chen
+          status: pending
+          shipping_address:
+            line1: 10 Old Road
+            city: Shanghai
+            postal_code: "200000"
+    tools:
+      - name: get_order
+        description: Look up an order by ID.
+        parameters:
+          type: object
+          properties:
+            order_id:
+              type: string
+          required: [order_id]
+        behavior:
+          result_path: orders.{order_id}
+      - name: cancel_order
+        description: Cancel a pending order after the user explicitly confirms.
+        parameters:
+          type: object
+          properties:
+            order_id:
+              type: string
+          required: [order_id]
+        behavior:
+          conditions:
+            - path: orders.{order_id}.status
+              equals: pending
+              error: Only pending orders can be cancelled.
+          updates:
+            - path: orders.{order_id}.status
+              value: cancelled
+          result_path: orders.{order_id}
+    turns:
+      - prompt: >-
+          Policy: cancellation is allowed only for pending orders, and you must
+          obtain explicit user confirmation before calling cancel_order.
+          I am Alice Chen. Please cancel order ord-1001.
+        expected_state:
+          orders:
+            ord-1001:
+              customer: Alice Chen
+              status: pending
+              shipping_address:
+                line1: 10 Old Road
+                city: Shanghai
+                postal_code: "200000"
+        communicate: [confirm]
+        forbidden_tools: [cancel_order]
+      - prompt: Yes, I explicitly confirm the cancellation of ord-1001.
+    expected_state:
+      orders:
+        ord-1001:
+          customer: Alice Chen
+          status: cancelled
+          shipping_address:
+            line1: 10 Old Road
+            city: Shanghai
+            postal_code: "200000"
+    communicate: [cancelled]
+
+  - id: refuse-shipped-cancellation
+    description: The agent must preserve state and explain why a shipped order cannot be cancelled.
+    tags: [tau, retail, policy, refusal]
+    initial_state:
+      orders:
+        ord-2002:
+          customer: Bob Li
+          status: shipped
+          shipping_address:
+            line1: 20 River Street
+            city: Beijing
+            postal_code: "100000"
+    tools:
+      - name: get_order
+        description: Look up an order by ID.
+        parameters:
+          type: object
+          properties:
+            order_id:
+              type: string
+          required: [order_id]
+        behavior:
+          result_path: orders.{order_id}
+      - name: cancel_order
+        description: Cancel a pending order after the user explicitly confirms.
+        parameters:
+          type: object
+          properties:
+            order_id:
+              type: string
+          required: [order_id]
+        behavior:
+          conditions:
+            - path: orders.{order_id}.status
+              equals: pending
+              error: Only pending orders can be cancelled.
+          updates:
+            - path: orders.{order_id}.status
+              value: cancelled
+          result_path: orders.{order_id}
+    turns:
+      - prompt: >-
+          Policy: only pending orders may be cancelled; shipped orders must not
+          be mutated. I confirm that I want to cancel order ord-2002.
+    expected_state:
+      orders:
+        ord-2002:
+          customer: Bob Li
+          status: shipped
+          shipping_address:
+            line1: 20 River Street
+            city: Beijing
+            postal_code: "100000"
+    communicate: [cannot, shipped]
+    forbidden_tools: [cancel_order]
+
+  - id: collect-missing-address-field
+    description: The agent must collect a missing postal code before updating the order.
+    tags: [tau, retail, multi-turn, state]
+    initial_state:
+      orders:
+        ord-3003:
+          customer: Carol Wang
+          status: pending
+          shipping_address:
+            line1: 30 Pine Lane
+            city: Shenzhen
+            postal_code: "518000"
+    tools:
+      - name: get_order
+        description: Look up an order by ID.
+        parameters:
+          type: object
+          properties:
+            order_id:
+              type: string
+          required: [order_id]
+        behavior:
+          result_path: orders.{order_id}
+      - name: update_shipping_address
+        description: Replace all shipping address fields for a pending order.
+        parameters:
+          type: object
+          properties:
+            order_id:
+              type: string
+            line1:
+              type: string
+            city:
+              type: string
+            postal_code:
+              type: string
+          required: [order_id, line1, city, postal_code]
+        behavior:
+          conditions:
+            - path: orders.{order_id}.status
+              equals: pending
+              error: Shipping addresses can only be changed for pending orders.
+          updates:
+            - path: orders.{order_id}.shipping_address.line1
+              value_from_argument: line1
+            - path: orders.{order_id}.shipping_address.city
+              value_from_argument: city
+            - path: orders.{order_id}.shipping_address.postal_code
+              value_from_argument: postal_code
+          result_path: orders.{order_id}
+    turns:
+      - prompt: >-
+          Policy: collect line1, city, and postal_code before updating an address.
+          Change the shipping address for ord-3003 to 88 Lake Avenue, Hangzhou.
+        expected_state:
+          orders:
+            ord-3003:
+              customer: Carol Wang
+              status: pending
+              shipping_address:
+                line1: 30 Pine Lane
+                city: Shenzhen
+                postal_code: "518000"
+        communicate: [postal]
+        forbidden_tools: [update_shipping_address]
+      - prompt: The postal code is 310000. Please make the change.
+    expected_state:
+      orders:
+        ord-3003:
+          customer: Carol Wang
+          status: pending
+          shipping_address:
+            line1: 88 Lake Avenue
+            city: Hangzhou
+            postal_code: "310000"
+    communicate: [updated]

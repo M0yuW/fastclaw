@@ -47,6 +47,10 @@ func LoadPreset(name string) *Policy {
 		return RestrictedPolicy()
 	case "standard":
 		return StandardPolicy()
+	case "no-tools":
+		return NoToolsPolicy()
+	case "delegate-only":
+		return DelegateOnlyPolicy()
 	default:
 		return DefaultPolicy()
 	}

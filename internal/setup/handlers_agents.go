@@ -80,7 +80,11 @@ func (s *Server) handleListAgents(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	out := make([]map[string]any, 0, len(records))
+	ident, _ := auth.FromContext(r.Context())
 	for _, ar := range records {
+		if !ident.CanAccessAgent(ar.ID) {
+			continue
+		}
 		desc, _ := ar.Config["description"].(string)
 		out = append(out, map[string]any{
 			"id":          ar.ID,
@@ -162,6 +166,10 @@ func (s *Server) requireAgentOwner(w http.ResponseWriter, r *http.Request, agent
 		return nil
 	}
 	ident, _ := auth.FromContext(r.Context())
+	if !ident.CanAccessAgent(agentID) {
+		jsonResponse(w, http.StatusForbidden, map[string]any{"error": "agent access denied"})
+		return nil
+	}
 	if rec.UserID != uid && ident.Role != users.RoleSuperAdmin {
 		jsonResponse(w, http.StatusForbidden, map[string]any{"error": "not your agent"})
 		return nil

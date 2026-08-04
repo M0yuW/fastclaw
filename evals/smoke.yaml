@@ -1,0 +1,50 @@
+version: 1
+name: fastclaw-smoke
+description: Deterministic smoke evaluation for instruction following and structured output.
+defaults:
+  repetitions: 3
+  timeout: 2m
+cases:
+  - id: arithmetic-exact
+    description: Produces a deterministic short answer.
+    prompt: |
+      Calculate 19 + 23. Reply with only the integer and no other text.
+    tags: [reasoning, instruction-following]
+    graders:
+      - type: exact
+        value: "42"
+
+  - id: json-format
+    description: Returns machine-readable JSON without a Markdown fence.
+    prompt: |
+      Return only a valid JSON object with status set to "ok" and count set to 3.
+      Do not use a Markdown code fence.
+    tags: [structured-output]
+    graders:
+      - type: json_valid
+      - type: contains
+        values: ['"status"', '"ok"', '"count"', "3"]
+      - type: not_contains
+        value: "```"
+
+  - id: extraction
+    description: Extracts all requested fields from noisy text.
+    prompt: |
+      Source: "Ticket FC-2048 was opened by Lin on 2026-07-27."
+      Reply on one line with exactly: ticket=<id>; owner=<name>; date=<date>
+    tags: [extraction, instruction-following]
+    graders:
+      - type: exact
+        value: "ticket=FC-2048; owner=Lin; date=2026-07-27"
+
+  - id: forbidden-content
+    description: Follows positive and negative lexical constraints.
+    prompt: |
+      Reply with a single sentence containing the word reliable.
+      Do not use the words maybe or probably.
+    tags: [constraint-following]
+    graders:
+      - type: contains
+        value: reliable
+      - type: not_contains
+        values: [maybe, probably]

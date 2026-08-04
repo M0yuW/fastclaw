@@ -1,0 +1,44 @@
+version: 1
+name: swebench-style-local-subset
+description: Offline repository issue-resolution tasks with virtual source access and hidden tests.
+defaults:
+  repetitions: 3
+  timeout: 2m
+cases:
+  - instance_id: fastclaw-fixtures__slug-1
+    repository: fastclaw-fixtures/slug
+    base_commit: fixture-v1
+    fixture: swebench/fixtures/slug
+    editable_files: [slug.go]
+    test_command: go test ./...
+    tags: [swe, go, strings]
+    problem_statement: >-
+      Slugify currently replaces only literal spaces, so repeated whitespace,
+      punctuation, and existing separators produce malformed slugs. Convert the
+      input to lowercase ASCII, replace every contiguous run of non-alphanumeric
+      characters with one hyphen, and remove leading or trailing hyphens.
+
+  - instance_id: fastclaw-fixtures__backoff-1
+    repository: fastclaw-fixtures/backoff
+    base_commit: fixture-v1
+    fixture: swebench/fixtures/backoff
+    editable_files: [backoff.go]
+    test_command: go test ./...
+    tags: [swe, go, time]
+    problem_statement: >-
+      Delay has an off-by-one error. Attempt zero and negative attempts must
+      return the base delay, each later attempt doubles it, and the result must
+      never exceed maximum. Preserve the existing function signature.
+
+  - instance_id: fastclaw-fixtures__pagination-1
+    repository: fastclaw-fixtures/pagination
+    base_commit: fixture-v1
+    fixture: swebench/fixtures/pagination
+    editable_files: [pagination.go]
+    test_command: go test ./...
+    tags: [swe, go, boundary]
+    problem_statement: >-
+      PageBounds must use one-based page numbers. Page 1 begins at zero, later
+      pages advance by pageSize, and the end is capped at total. Non-positive
+      page or pageSize values return (0, 0); pages beyond the data return
+      (total, total). Preserve the existing function signature.
