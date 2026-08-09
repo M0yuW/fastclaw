@@ -2,6 +2,7 @@ package gateway
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -270,8 +271,18 @@ func TestIntegrationSubagentRoundTripThroughGateway(t *testing.T) {
 		},
 	)
 
-	if result != "coordinator received: worker result" {
+	const resultPrefix = "coordinator received: "
+	if !strings.HasPrefix(result, resultPrefix) {
 		t.Fatalf("result = %q", result)
+	}
+	var delegation struct {
+		AgentID string `json:"agentId"`
+		Status  string `json:"status"`
+		Result  string `json:"result"`
+	}
+	if err := json.Unmarshal([]byte(strings.TrimPrefix(result, resultPrefix)), &delegation); err != nil ||
+		delegation.AgentID != "worker" || delegation.Status != "success" || delegation.Result != "worker result" {
+		t.Fatalf("structured delegation = %+v, err=%v", delegation, err)
 	}
 	if sequence := strings.Join(fixture.provider.callSequence(), ","); sequence != "test/coordinator,test/worker,test/coordinator" {
 		t.Fatalf("provider call sequence = %s", sequence)

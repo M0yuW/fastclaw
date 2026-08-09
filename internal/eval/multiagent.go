@@ -598,6 +598,8 @@ func (r MultiAgentRunner) runBaseline(
 		request.Prompt = multiAgentOracleTeamPrompt(evalCase)
 	case MultiAgentBaselineTeam:
 		request.Prompt = multiAgentTeamPrompt(evalCase)
+		request.SubAgentMaxCalls = firstPositive(evalCase.MaxDelegations, len(evalCase.Agents))
+		request.SubAgentMaxCallsPerTarget = 1
 		if evalCase.ExecutionMode == "runtime" {
 			request.IsolateTools = false
 		} else {

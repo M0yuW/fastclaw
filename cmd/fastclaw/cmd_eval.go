@@ -48,6 +48,7 @@ func evalFinanceRetrievalRunCmd() *cobra.Command {
 		failUnder   float64
 		caseIDs     []string
 		modes       []string
+		seed        int64
 	)
 	command := &cobra.Command{
 		Use:   "run <suite.yaml>",
@@ -73,11 +74,12 @@ func evalFinanceRetrievalRunCmd() *cobra.Command {
 			runner := evalpkg.FinanceRetrievalRunner{
 				Executor: &evalpkg.HTTPExecutor{BaseURL: baseURL, APIKey: apiKey},
 				Options: evalpkg.RunOptions{
-					AgentID:     agentID,
-					Repetitions: repetitions,
-					Timeout:     timeout,
-					CaseIDs:     caseIDs,
-					Modes:       modes,
+					AgentID:           agentID,
+					Repetitions:       repetitions,
+					Timeout:           timeout,
+					CaseIDs:           caseIDs,
+					Modes:             modes,
+					RandomizationSeed: seed,
 				},
 			}
 			report, err := runner.Run(command.Context(), suite)
@@ -118,6 +120,7 @@ func evalFinanceRetrievalRunCmd() *cobra.Command {
 	command.Flags().Float64Var(&failUnder, "fail-under", 0, "fail when team shared-retrieval success is below this 0-1 threshold")
 	command.Flags().StringSliceVar(&caseIDs, "case", nil, "run only selected case IDs")
 	command.Flags().StringSliceVar(&modes, "mode", nil, "run only selected experiment modes")
+	command.Flags().Int64Var(&seed, "seed", 0, "override the suite randomization seed")
 	return command
 }
 

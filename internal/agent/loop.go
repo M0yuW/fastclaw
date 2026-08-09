@@ -622,10 +622,11 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		userMsg.ContentParts = parts
 	}
 	sess.Append(userMsg)
+	activeModel := modelFromContext(ctx, a.model)
 
 	// Context compaction: check if session messages are too large
 	sessionMsgs := sess.GetMessages()
-	compactResult, err := CompactMessages(sessionMsgs, a.homePath, a.provider, a.model)
+	compactResult, err := CompactMessages(sessionMsgs, a.homePath, a.provider, activeModel)
 	if err != nil {
 		slog.Warn("compaction error", "agent", a.name, "error", err)
 	}
@@ -681,8 +682,8 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		}
 
 		if a.provider == nil {
-			slog.Error("agent has no provider configured", "agent", a.name, "model", a.model)
-			noProviderMsg := "Agent is not configured with a usable LLM provider. Check that cfg.Providers contains the prefix referenced by model `" + a.model + "`."
+			slog.Error("agent has no provider configured", "agent", a.name, "model", activeModel)
+			noProviderMsg := "Agent is not configured with a usable LLM provider. Check that cfg.Providers contains the prefix referenced by model `" + activeModel + "`."
 			noProviderErr := fmt.Errorf("%s", noProviderMsg)
 			hcAfter := &HookContext{AgentName: a.name, Point: AfterModelCall, Messages: messages, Error: noProviderErr, StartTime: hcBefore.StartTime, ChatID: msg.ChatID, UserID: a.ownerUserID}
 			a.hooks.Run(ctx, hcAfter)
@@ -694,7 +695,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		modelCallSequence := BeginModelCall(ctx)
 		modelCallStarted := time.Now()
 		providerContext := provider.ContextWithThinkingMode(ctx, a.thinking)
-		stream, err := a.provider.ChatStream(providerContext, llmMessages, toolDefs, a.model, a.maxTokens, a.temperature)
+		stream, err := a.provider.ChatStream(providerContext, llmMessages, toolDefs, activeModel, a.maxTokens, a.temperature)
 		if err == nil && stream == nil {
 			err = fmt.Errorf("LLM provider returned a nil stream")
 		}
@@ -725,7 +726,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			ctx,
 			modelCallSequence,
 			a.name,
-			a.model,
+			activeModel,
 			modelUsage,
 			modelCallLatency,
 			err,

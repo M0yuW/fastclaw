@@ -21,14 +21,16 @@ const maxBatchTraceResultBytes = 4 << 10
 const maxEvalToolFaultDelayMS = int((5 * time.Minute) / time.Millisecond)
 
 type fastClawRequestOptions struct {
-	Eval                  bool                          `json:"eval,omitempty"`
-	IncludeTrace          bool                          `json:"include_trace,omitempty"`
-	IncludeUsageBreakdown bool                          `json:"include_usage_breakdown,omitempty"`
-	IsolateTools          bool                          `json:"isolate_tools,omitempty"`
-	Pricing               map[string]agent.ModelPricing `json:"pricing,omitempty"`
-	ToolResults           map[string]string             `json:"tool_results,omitempty"`
-	State                 map[string]any                `json:"state,omitempty"`
-	ToolBehaviors         map[string]evalToolBehavior   `json:"tool_behaviors,omitempty"`
+	Eval                      bool                          `json:"eval,omitempty"`
+	IncludeTrace              bool                          `json:"include_trace,omitempty"`
+	IncludeUsageBreakdown     bool                          `json:"include_usage_breakdown,omitempty"`
+	IsolateTools              bool                          `json:"isolate_tools,omitempty"`
+	Pricing                   map[string]agent.ModelPricing `json:"pricing,omitempty"`
+	ToolResults               map[string]string             `json:"tool_results,omitempty"`
+	State                     map[string]any                `json:"state,omitempty"`
+	ToolBehaviors             map[string]evalToolBehavior   `json:"tool_behaviors,omitempty"`
+	SubAgentMaxCalls          int                           `json:"subagent_max_calls,omitempty"`
+	SubAgentMaxCallsPerTarget int                           `json:"subagent_max_calls_per_target,omitempty"`
 }
 
 type completionMetadata struct {

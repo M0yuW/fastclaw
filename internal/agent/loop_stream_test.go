@@ -22,6 +22,7 @@ type fakeStreamingProvider struct {
 	server      *httptest.Server
 	chatCalls   int
 	streamCalls int
+	models      []string
 }
 
 type recordingSubAgentSpawner struct {
@@ -69,6 +70,7 @@ func (p *fakeStreamingProvider) Chat(context.Context, []provider.Message, []prov
 func (p *fakeStreamingProvider) ChatStream(ctx context.Context, messages []provider.Message, tools []provider.Tool, model string, maxTokens int, temperature float64) (*provider.StreamReader, error) {
 	p.mu.Lock()
 	p.streamCalls++
+	p.models = append(p.models, model)
 	p.mu.Unlock()
 	return p.delegate.ChatStream(ctx, messages, tools, model, maxTokens, temperature)
 }
@@ -173,6 +175,22 @@ func TestRunTurnStreamsOnceAndPersistsCompleteAssistant(t *testing.T) {
 	messages := agent.Sessions().Get("test", "plain").GetMessages()
 	if len(messages) != 2 || messages[1].Role != "assistant" || messages[1].Content != "hello" {
 		t.Fatalf("unexpected session: %+v", messages)
+	}
+}
+
+func TestRunTurnUsesContextModelOverride(t *testing.T) {
+	fake := newFakeStreamingProvider(openAITextStream("overridden"))
+	defer fake.server.Close()
+	agent := newStreamingTestAgent(t, fake, 4)
+	ctx := ContextWithModelOverride(context.Background(), "provider/capacity-matched")
+
+	if got := agent.HandleMessage(ctx, bus.InboundMessage{Channel: "test", ChatID: "model-override", Text: "hi"}); got != "overridden" {
+		t.Fatalf("HandleMessage() = %q, want overridden", got)
+	}
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	if len(fake.models) != 1 || fake.models[0] != "provider/capacity-matched" {
+		t.Fatalf("provider models = %v, want context override", fake.models)
 	}
 }
 

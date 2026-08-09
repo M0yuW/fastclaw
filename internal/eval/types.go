@@ -132,14 +132,16 @@ type TraceEvent struct {
 }
 
 type ExecutionRequest struct {
-	Prompt       string
-	AgentID      string
-	Model        string
-	SessionKey   string
-	Tools        []ToolDefinition
-	State        map[string]any
-	IsolateTools bool
-	Pricing      map[string]ModelPricing
+	Prompt                    string
+	AgentID                   string
+	Model                     string
+	SessionKey                string
+	Tools                     []ToolDefinition
+	State                     map[string]any
+	IsolateTools              bool
+	Pricing                   map[string]ModelPricing
+	SubAgentMaxCalls          int
+	SubAgentMaxCallsPerTarget int
 }
 
 type ModelPricing struct {

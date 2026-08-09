@@ -13,13 +13,14 @@ import (
 var runSequence atomic.Uint64
 
 type RunOptions struct {
-	AgentID          string
-	Model            string
-	Repetitions      int
-	Timeout          time.Duration
-	SessionKeyPrefix string
-	CaseIDs          []string
-	Modes            []string
+	AgentID           string
+	Model             string
+	Repetitions       int
+	Timeout           time.Duration
+	SessionKeyPrefix  string
+	CaseIDs           []string
+	Modes             []string
+	RandomizationSeed int64
 }
 
 type Runner struct {

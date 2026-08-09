@@ -188,6 +188,12 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 	agentCtx := r.Context()
 	if req.FastClaw != nil && req.FastClaw.Eval {
 		agentCtx = tools.ContextWithSubAgentTargetDedup(agentCtx)
+		agentCtx = tools.ContextWithSubAgentBudget(
+			agentCtx,
+			req.FastClaw.SubAgentMaxCalls,
+			req.FastClaw.SubAgentMaxCallsPerTarget,
+		)
+		agentCtx = agent.ContextWithModelOverride(agentCtx, req.Model)
 	}
 	var snapshotState func() map[string]any
 	var usageCollector *agent.ModelUsageCollector

@@ -3,7 +3,9 @@ package tools
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -35,13 +37,24 @@ type spawnSubagentBatchResult struct {
 
 type spawnSubagentDelegationResult struct {
 	AgentID string `json:"agentId"`
+	Status  string `json:"status"`
 	Result  string `json:"result,omitempty"`
 	Error   string `json:"error,omitempty"`
 }
 
+const (
+	subAgentStatusSuccess       = "success"
+	subAgentStatusEmpty         = "empty"
+	subAgentStatusTimeout       = "timeout"
+	subAgentStatusCanceled      = "canceled"
+	subAgentStatusMalformed     = "malformed"
+	subAgentStatusProviderError = "provider_error"
+)
+
 var subAgentCallCounter uint64
 
 type subAgentDedupKey struct{}
+type subAgentBudgetKey struct{}
 
 type subAgentResult struct {
 	done   chan struct{}
@@ -55,6 +68,14 @@ type subAgentDedup struct {
 	results    map[string]*subAgentResult
 }
 
+type subAgentBudget struct {
+	mu           sync.Mutex
+	maxTotal     int
+	maxPerTarget int
+	total        int
+	perTarget    map[string]int
+}
+
 // ContextWithSubAgentDedup reuses an identical target/task delegation within
 // one parent turn while preserving distinct tasks for the same target.
 func ContextWithSubAgentDedup(ctx context.Context) context.Context {
@@ -65,6 +86,23 @@ func ContextWithSubAgentDedup(ctx context.Context) context.Context {
 // executes at most once during a parent turn, regardless of task wording.
 func ContextWithSubAgentTargetDedup(ctx context.Context) context.Context {
 	return contextWithSubAgentDedup(ctx, true)
+}
+
+// ContextWithSubAgentBudget bounds delegation attempts for one parent turn.
+// Limits count requested delegations, including cached retries, rather than
+// only successful sub-agent executions.
+func ContextWithSubAgentBudget(ctx context.Context, maxTotal, maxPerTarget int) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if maxTotal <= 0 && maxPerTarget <= 0 {
+		return ctx
+	}
+	return context.WithValue(ctx, subAgentBudgetKey{}, &subAgentBudget{
+		maxTotal:     maxTotal,
+		maxPerTarget: maxPerTarget,
+		perTarget:    make(map[string]int),
+	})
 }
 
 func contextWithSubAgentDedup(ctx context.Context, targetOnly bool) context.Context {
@@ -141,12 +179,17 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 		if args.AgentID == callerAgentID {
 			return "", fmt.Errorf("cannot spawn yourself as a sub-agent")
 		}
+		if budget, ok := ctx.Value(subAgentBudgetKey{}).(*subAgentBudget); ok {
+			if err := budget.reserve([]string{args.AgentID}); err != nil {
+				return "", err
+			}
+		}
 		if dedup, ok := ctx.Value(subAgentDedupKey{}).(*subAgentDedup); ok {
 			return dedup.call(ctx, args.AgentID, args.Task, func() (string, error) {
-				return spawnSubAgent(ctx, spawner, callerAgentID, args)
+				return spawnSubAgentResultJSON(ctx, spawner, callerAgentID, args)
 			})
 		}
-		return spawnSubAgent(ctx, spawner, callerAgentID, args)
+		return spawnSubAgentResultJSON(ctx, spawner, callerAgentID, args)
 	}
 }
 
@@ -179,6 +222,15 @@ func spawnSubAgentBatch(
 		}
 		seen[delegation.AgentID] = struct{}{}
 	}
+	if budget, ok := ctx.Value(subAgentBudgetKey{}).(*subAgentBudget); ok {
+		targets := make([]string, 0, len(delegations))
+		for _, delegation := range delegations {
+			targets = append(targets, delegation.AgentID)
+		}
+		if err := budget.reserve(targets); err != nil {
+			return "", err
+		}
+	}
 
 	batch := spawnSubagentBatchResult{Results: make([]spawnSubagentDelegationResult, len(delegations))}
 	var waitGroup sync.WaitGroup
@@ -200,10 +252,7 @@ func spawnSubAgentBatch(
 			} else {
 				result, err = spawnSubAgent(ctx, spawner, callerAgentID, args)
 			}
-			batch.Results[index] = spawnSubagentDelegationResult{AgentID: delegation.AgentID, Result: result}
-			if err != nil {
-				batch.Results[index].Error = err.Error()
-			}
+			batch.Results[index] = classifiedSubAgentResult(delegation.AgentID, result, err)
 		}()
 	}
 	waitGroup.Wait()
@@ -212,6 +261,26 @@ func spawnSubAgentBatch(
 		return "", fmt.Errorf("encode batch result: %w", err)
 	}
 	return string(encoded), nil
+}
+
+func (b *subAgentBudget) reserve(agentIDs []string) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	if b.maxTotal > 0 && b.total+len(agentIDs) > b.maxTotal {
+		return fmt.Errorf("sub-agent total delegation budget exceeded: requested %d, used %d, maximum %d", len(agentIDs), b.total, b.maxTotal)
+	}
+	pending := make(map[string]int, len(agentIDs))
+	for _, agentID := range agentIDs {
+		pending[agentID]++
+		if b.maxPerTarget > 0 && b.perTarget[agentID]+pending[agentID] > b.maxPerTarget {
+			return fmt.Errorf("sub-agent per-target delegation budget exceeded for %q: maximum %d", agentID, b.maxPerTarget)
+		}
+	}
+	b.total += len(agentIDs)
+	for agentID, count := range pending {
+		b.perTarget[agentID] += count
+	}
+	return nil
 }
 
 func (d *subAgentDedup) call(
@@ -264,4 +333,45 @@ func spawnSubAgent(
 		return "", fmt.Errorf("spawn sub-agent %q: %w", args.AgentID, err)
 	}
 	return result, nil
+}
+
+func spawnSubAgentResultJSON(
+	ctx context.Context,
+	spawner SubAgentSpawner,
+	callerAgentID string,
+	args spawnSubagentArgs,
+) (string, error) {
+	result, err := spawnSubAgent(ctx, spawner, callerAgentID, args)
+	payload := classifiedSubAgentResult(args.AgentID, result, err)
+	encoded, encodeErr := json.Marshal(payload)
+	if encodeErr != nil {
+		return "", fmt.Errorf("encode sub-agent result: %w", encodeErr)
+	}
+	return string(encoded), nil
+}
+
+func classifiedSubAgentResult(agentID, result string, err error) spawnSubagentDelegationResult {
+	payload := spawnSubagentDelegationResult{AgentID: agentID, Result: result}
+	switch {
+	case err == nil && strings.TrimSpace(result) != "":
+		payload.Status = subAgentStatusSuccess
+	case err == nil:
+		payload.Status = subAgentStatusEmpty
+		payload.Result = ""
+	case errors.Is(err, context.DeadlineExceeded):
+		payload.Status = subAgentStatusTimeout
+		payload.Error = err.Error()
+	case errors.Is(err, context.Canceled):
+		payload.Status = subAgentStatusCanceled
+		payload.Error = err.Error()
+	case strings.Contains(strings.ToLower(err.Error()), "malformed") ||
+		strings.Contains(strings.ToLower(err.Error()), "invalid json") ||
+		strings.Contains(strings.ToLower(err.Error()), "decode"):
+		payload.Status = subAgentStatusMalformed
+		payload.Error = err.Error()
+	default:
+		payload.Status = subAgentStatusProviderError
+		payload.Error = err.Error()
+	}
+	return payload
 }

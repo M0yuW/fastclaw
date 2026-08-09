@@ -3,6 +3,8 @@ package eval
 import (
 	"context"
 	"errors"
+	"reflect"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -161,6 +163,110 @@ func TestFinanceRetrievalRunnerSelectsRequestedModes(t *testing.T) {
 	}
 	if len(executor.requests) != 1 || len(report.Cases[0].Attempts[0].Modes) != 1 {
 		t.Fatalf("requests=%d report=%+v", len(executor.requests), report.Cases)
+	}
+}
+
+func TestFinanceRetrievalRunnerRandomizesPrimaryModesAndRunsDiagnosticsOnce(t *testing.T) {
+	suite := financeRetrievalTestSuite()
+	suite.Modes = []string{
+		FinanceRetrievalModeSoloStaged,
+		FinanceRetrievalModeTeamShared,
+		FinanceRetrievalModeTeamRawContext,
+		FinanceRetrievalModeSoloMonolithic,
+		FinanceRetrievalModeOracleEvidence,
+	}
+	suite.PrimaryModes = suite.Modes[:3]
+	suite.DiagnosticModes = suite.Modes[3:]
+	suite.RandomizationSeed = 20260802
+	suite.Defaults.Repetitions = 3
+
+	report, err := (FinanceRetrievalRunner{Executor: &financeRetrievalExecutorStub{}}).Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	attempts := report.Cases[0].Attempts
+	if len(attempts) != 3 {
+		t.Fatalf("attempts = %d, want 3", len(attempts))
+	}
+	for index, attempt := range attempts {
+		wantModes := 3
+		if index == 0 {
+			wantModes = 5
+		}
+		if len(attempt.Modes) != wantModes || len(attempt.RealizedOrder) != wantModes {
+			t.Fatalf("attempt %d modes/order = %d/%d, want %d", index+1, len(attempt.Modes), len(attempt.RealizedOrder), wantModes)
+		}
+		if attempt.PairID != "CASE|rep="+strconv.Itoa(index+1) {
+			t.Fatalf("attempt %d pair ID = %q", index+1, attempt.PairID)
+		}
+		for modeIndex, mode := range attempt.Modes {
+			if mode.OrderIndex != modeIndex+1 || mode.ObservationID != attempt.PairID+"|mode="+mode.Mode {
+				t.Fatalf("attempt %d mode metadata = %+v", index+1, mode)
+			}
+		}
+	}
+	if !reflect.DeepEqual(attempts[0].RealizedOrder, financeRetrievalExecutionOrder(suite, suite.Modes, "CASE", 1, 20260802)) {
+		t.Fatalf("realized order is not reproducible: %v", attempts[0].RealizedOrder)
+	}
+}
+
+func TestFinanceRetrievalRunnerRestrictsCapacityMatchedAblationAndOverridesModel(t *testing.T) {
+	suite := financeRetrievalTestSuite()
+	suite.Modes = []string{FinanceRetrievalModeTeamSharedAllPro}
+	suite.AblationModes = append([]string(nil), suite.Modes...)
+	suite.AblationCaseIDs = []string{"CASE"}
+	suite.Defaults.CapacityMatchedModel = "provider/capacity-matched"
+	executor := &financeRetrievalExecutorStub{}
+
+	report, err := (FinanceRetrievalRunner{
+		Executor: executor,
+		Options:  RunOptions{Modes: []string{FinanceRetrievalModeTeamSharedAllPro}},
+	}).Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases[0].Attempts) != 1 || len(report.Cases[0].Attempts[0].Modes) != 1 {
+		t.Fatalf("ablation report = %+v", report.Cases[0])
+	}
+	if len(executor.requests) != 2 {
+		t.Fatalf("ablation requests = %d, want retrieval and collaboration", len(executor.requests))
+	}
+	for _, request := range executor.requests {
+		if request.Model != "provider/capacity-matched" {
+			t.Fatalf("request model = %q, want capacity-matched model", request.Model)
+		}
+	}
+	if executor.requests[1].SubAgentMaxCalls != len(suite.Defaults.Analysts) || executor.requests[1].SubAgentMaxCallsPerTarget != 1 {
+		t.Fatalf("collaboration budget = %+v", executor.requests[1])
+	}
+
+	suite.Cases[0].ID = "NOT-PRESPECIFIED"
+	report, err = (FinanceRetrievalRunner{
+		Executor: &financeRetrievalExecutorStub{},
+		Options:  RunOptions{Modes: []string{FinanceRetrievalModeTeamSharedAllPro}},
+	}).Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(report.Cases[0].Attempts) != 0 {
+		t.Fatalf("non-prespecified ablation should not run: %+v", report.Cases[0].Attempts)
+	}
+}
+
+func TestFinanceDelegationStatusesSeparateFirstAttemptAndRecovery(t *testing.T) {
+	trace := []TraceEvent{
+		{Type: "tool_call", ID: "first", Name: "spawn_subagent", Arguments: `{"delegations":[{"agentId":"finance-trend"},{"agentId":"finance-risk"}]}`},
+		{Type: "tool_result", ID: "first", Name: "spawn_subagent", Result: `{"results":[{"agentId":"finance-trend","status":"success","result":"ok"},{"agentId":"finance-risk","status":"timeout","error":"deadline"}]}`},
+		{Type: "tool_call", ID: "recovery", Name: "spawn_subagent", Arguments: `{"agentId":"finance-risk"}`},
+		{Type: "tool_result", ID: "recovery", Name: "spawn_subagent", Result: `{"agentId":"finance-risk","status":"success","result":"ok"}`},
+	}
+	stages := FinanceRetrievalStageMetrics{}
+	evaluateFinanceDelegations(trace, []FinanceRetrievalAnalyst{{AgentID: "finance-trend"}, {AgentID: "finance-risk"}}, &stages)
+	if stages.FirstAttemptSuccesses != 1 || stages.RecoverySuccesses != 1 {
+		t.Fatalf("success classification = first %d recovery %d", stages.FirstAttemptSuccesses, stages.RecoverySuccesses)
+	}
+	if stages.DelegationStatusCounts["success"] != 2 || stages.DelegationStatusCounts["timeout"] != 1 {
+		t.Fatalf("status counts = %+v", stages.DelegationStatusCounts)
 	}
 }
 

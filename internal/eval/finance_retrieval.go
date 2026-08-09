@@ -4,13 +4,16 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"math/rand"
 	"os"
 	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,21 +26,34 @@ const (
 	FinanceRetrievalModeTeamShared        = "team_shared_retrieval"
 	FinanceRetrievalModeTeamRawContext    = "team_raw_context"
 	FinanceRetrievalModeOracleEvidence    = "oracle_evidence"
+	FinanceRetrievalModeTeamSharedAllPro  = "team_shared_retrieval_all_pro"
 	financeRetrievalDefaultMinStageRecall = 0.75
 )
 
 type FinanceRetrievalSuite struct {
-	Version          int                      `json:"version" yaml:"version"`
-	Name             string                   `json:"name" yaml:"name"`
-	Description      string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	Dataset          string                   `json:"dataset" yaml:"dataset"`
-	SourceLockSHA256 string                   `json:"source_lock_sha256" yaml:"source_lock_sha256"`
-	Defaults         FinanceRetrievalDefaults `json:"defaults" yaml:"defaults"`
-	Modes            []string                 `json:"modes" yaml:"modes"`
-	Pricing          map[string]ModelPricing  `json:"pricing,omitempty" yaml:"pricing,omitempty"`
-	Cases            []FinanceRetrievalCase   `json:"cases" yaml:"cases"`
-	Source           string                   `json:"-" yaml:"-"`
-	SourceSHA256     string                   `json:"-" yaml:"-"`
+	Version           int                      `json:"version" yaml:"version"`
+	Study             string                   `json:"study,omitempty" yaml:"study,omitempty"`
+	Status            string                   `json:"status,omitempty" yaml:"status,omitempty"`
+	Name              string                   `json:"name" yaml:"name"`
+	Description       string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Dataset           string                   `json:"dataset" yaml:"dataset"`
+	SourceLockSHA256  string                   `json:"source_lock_sha256" yaml:"source_lock_sha256"`
+	Defaults          FinanceRetrievalDefaults `json:"defaults" yaml:"defaults"`
+	Modes             []string                 `json:"modes" yaml:"modes"`
+	PrimaryModes      []string                 `json:"primary_modes,omitempty" yaml:"primary_modes,omitempty"`
+	DiagnosticModes   []string                 `json:"diagnostic_modes,omitempty" yaml:"diagnostic_modes,omitempty"`
+	AblationModes     []string                 `json:"ablation_modes,omitempty" yaml:"ablation_modes,omitempty"`
+	AblationCaseIDs   []string                 `json:"ablation_case_ids,omitempty" yaml:"ablation_case_ids,omitempty"`
+	RandomizationSeed int64                    `json:"randomization_seed,omitempty" yaml:"randomization_seed,omitempty"`
+	PromptVersion     string                   `json:"prompt_version,omitempty" yaml:"prompt_version,omitempty"`
+	GraderVersion     string                   `json:"grader_version,omitempty" yaml:"grader_version,omitempty"`
+	PricingDate       string                   `json:"pricing_date,omitempty" yaml:"pricing_date,omitempty"`
+	ModelAllocation   map[string]string        `json:"model_allocation,omitempty" yaml:"model_allocation,omitempty"`
+	ExecutionControls map[string]any           `json:"execution_controls,omitempty" yaml:"execution_controls,omitempty"`
+	Pricing           map[string]ModelPricing  `json:"pricing,omitempty" yaml:"pricing,omitempty"`
+	Cases             []FinanceRetrievalCase   `json:"cases" yaml:"cases"`
+	Source            string                   `json:"-" yaml:"-"`
+	SourceSHA256      string                   `json:"-" yaml:"-"`
 }
 
 type FinanceRetrievalDefaults struct {
@@ -51,6 +67,7 @@ type FinanceRetrievalDefaults struct {
 	MinSummaryRetention    float64                   `json:"min_summary_retention,omitempty" yaml:"min_summary_retention,omitempty"`
 	MinFinalEvidenceRecall float64                   `json:"min_final_evidence_recall,omitempty" yaml:"min_final_evidence_recall,omitempty"`
 	MinGroundingAccuracy   float64                   `json:"min_grounding_accuracy,omitempty" yaml:"min_grounding_accuracy,omitempty"`
+	CapacityMatchedModel   string                    `json:"capacity_matched_model,omitempty" yaml:"capacity_matched_model,omitempty"`
 }
 
 type FinanceRetrievalAnalyst struct {
@@ -61,6 +78,9 @@ type FinanceRetrievalAnalyst struct {
 
 type FinanceRetrievalCase struct {
 	ID                      string                   `json:"id" yaml:"id"`
+	Company                 string                   `json:"company,omitempty" yaml:"company,omitempty"`
+	TaskFamily              string                   `json:"task_family,omitempty" yaml:"task_family,omitempty"`
+	ClusterID               string                   `json:"cluster_id,omitempty" yaml:"cluster_id,omitempty"`
 	Description             string                   `json:"description,omitempty" yaml:"description,omitempty"`
 	Question                string                   `json:"question" yaml:"question"`
 	AnalysisProtocol        string                   `json:"analysis_protocol" yaml:"analysis_protocol"`
@@ -99,22 +119,28 @@ type FinanceRetrievalRunner struct {
 }
 
 type FinanceRetrievalReport struct {
-	Version          int                          `json:"version"`
-	Suite            string                       `json:"suite"`
-	Description      string                       `json:"description,omitempty"`
-	Dataset          string                       `json:"dataset"`
-	Source           string                       `json:"source,omitempty"`
-	SourceSHA256     string                       `json:"source_sha256"`
-	SourceLockSHA256 string                       `json:"source_lock_sha256"`
-	StartedAt        time.Time                    `json:"started_at"`
-	FinishedAt       time.Time                    `json:"finished_at"`
-	DurationMS       float64                      `json:"duration_ms"`
-	Metrics          FinanceRetrievalMetrics      `json:"metrics"`
-	Cases            []FinanceRetrievalCaseResult `json:"cases"`
+	Version           int                          `json:"version"`
+	Study             string                       `json:"study,omitempty"`
+	Status            string                       `json:"status,omitempty"`
+	RandomizationSeed int64                        `json:"randomization_seed,omitempty"`
+	Suite             string                       `json:"suite"`
+	Description       string                       `json:"description,omitempty"`
+	Dataset           string                       `json:"dataset"`
+	Source            string                       `json:"source,omitempty"`
+	SourceSHA256      string                       `json:"source_sha256"`
+	SourceLockSHA256  string                       `json:"source_lock_sha256"`
+	StartedAt         time.Time                    `json:"started_at"`
+	FinishedAt        time.Time                    `json:"finished_at"`
+	DurationMS        float64                      `json:"duration_ms"`
+	Metrics           FinanceRetrievalMetrics      `json:"metrics"`
+	Cases             []FinanceRetrievalCaseResult `json:"cases"`
 }
 
 type FinanceRetrievalCaseResult struct {
 	ID          string                          `json:"id"`
+	Company     string                          `json:"company,omitempty"`
+	TaskFamily  string                          `json:"task_family,omitempty"`
+	ClusterID   string                          `json:"cluster_id,omitempty"`
 	Description string                          `json:"description,omitempty"`
 	CorpusLoad  string                          `json:"corpus_load"`
 	Tags        []string                        `json:"tags,omitempty"`
@@ -122,12 +148,16 @@ type FinanceRetrievalCaseResult struct {
 }
 
 type FinanceRetrievalAttemptResult struct {
-	Attempt int                          `json:"attempt"`
-	Modes   []FinanceRetrievalModeResult `json:"modes"`
+	Attempt       int                          `json:"attempt"`
+	PairID        string                       `json:"pair_id"`
+	RealizedOrder []string                     `json:"realized_order"`
+	Modes         []FinanceRetrievalModeResult `json:"modes"`
 }
 
 type FinanceRetrievalModeResult struct {
 	Mode            string                       `json:"mode"`
+	ObservationID   string                       `json:"observation_id"`
+	OrderIndex      int                          `json:"order_index"`
 	Passed          bool                         `json:"passed"`
 	Error           string                       `json:"error,omitempty"`
 	LatencyMS       float64                      `json:"latency_ms"`
@@ -167,6 +197,9 @@ type FinanceRetrievalStageMetrics struct {
 	TotalDelegations         int             `json:"total_delegations"`
 	DelegationPrecision      float64         `json:"delegation_precision"`
 	DelegationRecall         float64         `json:"delegation_recall"`
+	DelegationStatusCounts   map[string]int  `json:"delegation_status_counts,omitempty"`
+	FirstAttemptSuccesses    int             `json:"first_attempt_successes"`
+	RecoverySuccesses        int             `json:"recovery_successes"`
 	RetrievalLatencyMS       float64         `json:"retrieval_latency_ms"`
 	CollaborationLatencyMS   float64         `json:"collaboration_latency_ms"`
 	CoordinationLatencyMS    float64         `json:"coordination_latency_ms"`
@@ -261,6 +294,39 @@ func (s FinanceRetrievalSuite) Validate() error {
 		}
 		seenModes[mode] = struct{}{}
 	}
+	seenTreatments := make(map[string]string)
+	for group, modes := range map[string][]string{
+		"primary_modes":    s.PrimaryModes,
+		"diagnostic_modes": s.DiagnosticModes,
+		"ablation_modes":   s.AblationModes,
+	} {
+		for _, mode := range modes {
+			if _, exists := seenModes[mode]; !exists {
+				return fmt.Errorf("finance retrieval %s contains undeclared mode %q", group, mode)
+			}
+			if previous := seenTreatments[mode]; previous != "" {
+				return fmt.Errorf("finance retrieval mode %q appears in both %s and %s", mode, previous, group)
+			}
+			seenTreatments[mode] = group
+		}
+	}
+	if len(s.PrimaryModes) > 0 && s.RandomizationSeed == 0 {
+		return errors.New("finance retrieval primary modes require a non-zero randomization_seed")
+	}
+	if len(s.AblationModes) > 0 && strings.TrimSpace(s.Defaults.CapacityMatchedModel) == "" {
+		return errors.New("finance retrieval ablation modes require defaults.capacity_matched_model")
+	}
+	if s.Study != "" {
+		if s.Status != "draft" && s.Status != "frozen" {
+			return errors.New("finance retrieval formal study status must be draft or frozen")
+		}
+		if s.PromptVersion == "" || s.GraderVersion == "" || s.PricingDate == "" || len(s.ModelAllocation) == 0 {
+			return errors.New("finance retrieval formal study requires prompt, grader, pricing, and model metadata")
+		}
+		if len(s.ExecutionControls) == 0 {
+			return errors.New("finance retrieval formal study requires execution_controls")
+		}
+	}
 	if strings.TrimSpace(s.Defaults.CoordinatorAgentID) == "" ||
 		strings.TrimSpace(s.Defaults.SoloAgentID) == "" ||
 		strings.TrimSpace(s.Defaults.RetrieverAgentID) == "" {
@@ -319,6 +385,9 @@ func validateFinanceRetrievalCase(evalCase FinanceRetrievalCase, seenCases map[s
 		return fmt.Errorf("duplicate finance retrieval case %q", evalCase.ID)
 	}
 	seenCases[evalCase.ID] = struct{}{}
+	if evalCase.ClusterID != "" && (strings.TrimSpace(evalCase.Company) == "" || strings.TrimSpace(evalCase.TaskFamily) == "") {
+		return fmt.Errorf("finance retrieval case %q cluster_id requires company and task_family", evalCase.ID)
+	}
 	switch evalCase.CorpusLoad {
 	case "small", "medium", "large":
 	default:
@@ -392,7 +461,8 @@ func isFinanceRetrievalMode(mode string) bool {
 		FinanceRetrievalModeSoloStaged,
 		FinanceRetrievalModeTeamShared,
 		FinanceRetrievalModeTeamRawContext,
-		FinanceRetrievalModeOracleEvidence:
+		FinanceRetrievalModeOracleEvidence,
+		FinanceRetrievalModeTeamSharedAllPro:
 		return true
 	default:
 		return false
@@ -410,35 +480,54 @@ func (r FinanceRetrievalRunner) Run(ctx context.Context, suite FinanceRetrievalS
 	if err != nil {
 		return FinanceRetrievalReport{}, err
 	}
-	selectedModes, err := selectFinanceRetrievalModes(suite.Modes, r.Options.Modes)
+	selectedModes, err := selectFinanceRetrievalModes(suite, r.Options.Modes)
 	if err != nil {
 		return FinanceRetrievalReport{}, err
 	}
 	startedAt := time.Now()
 	runID := fmt.Sprintf("finance-retrieval-%d-%d", startedAt.UnixNano(), runSequence.Add(1))
+	randomizationSeed := r.Options.RandomizationSeed
+	if randomizationSeed == 0 {
+		randomizationSeed = suite.RandomizationSeed
+	}
 	report := FinanceRetrievalReport{
-		Version:          SuiteVersion,
-		Suite:            suite.Name,
-		Description:      suite.Description,
-		Dataset:          suite.Dataset,
-		Source:           suite.Source,
-		SourceSHA256:     suite.SourceSHA256,
-		SourceLockSHA256: suite.SourceLockSHA256,
-		StartedAt:        startedAt,
-		Cases:            make([]FinanceRetrievalCaseResult, 0, len(selectedCases)),
+		Version:           suite.Version,
+		Study:             suite.Study,
+		Status:            suite.Status,
+		RandomizationSeed: randomizationSeed,
+		Suite:             suite.Name,
+		Description:       suite.Description,
+		Dataset:           suite.Dataset,
+		Source:            suite.Source,
+		SourceSHA256:      suite.SourceSHA256,
+		SourceLockSHA256:  suite.SourceLockSHA256,
+		StartedAt:         startedAt,
+		Cases:             make([]FinanceRetrievalCaseResult, 0, len(selectedCases)),
 	}
 	for _, evalCase := range selectedCases {
 		caseResult := FinanceRetrievalCaseResult{
 			ID:          evalCase.ID,
+			Company:     evalCase.Company,
+			TaskFamily:  evalCase.TaskFamily,
+			ClusterID:   evalCase.ClusterID,
 			Description: evalCase.Description,
 			CorpusLoad:  evalCase.CorpusLoad,
 			Tags:        append([]string(nil), evalCase.Tags...),
 		}
 		repetitions := firstPositive(r.Options.Repetitions, evalCase.Repetitions, suite.Defaults.Repetitions, 1)
 		for attempt := 1; attempt <= repetitions; attempt++ {
-			attemptResult := FinanceRetrievalAttemptResult{Attempt: attempt}
-			for _, mode := range selectedModes {
-				attemptResult.Modes = append(attemptResult.Modes, r.runMode(ctx, suite, evalCase, mode, attempt, runID))
+			order := financeRetrievalExecutionOrder(suite, selectedModes, evalCase.ID, attempt, randomizationSeed)
+			if len(order) == 0 {
+				continue
+			}
+			pairID := evalCase.ID + "|rep=" + strconv.Itoa(attempt)
+			attemptResult := FinanceRetrievalAttemptResult{
+				Attempt:       attempt,
+				PairID:        pairID,
+				RealizedOrder: append([]string(nil), order...),
+			}
+			for index, mode := range order {
+				attemptResult.Modes = append(attemptResult.Modes, r.runMode(ctx, suite, evalCase, mode, attempt, runID, pairID, index+1))
 			}
 			caseResult.Attempts = append(caseResult.Attempts, attemptResult)
 		}
@@ -450,9 +539,13 @@ func (r FinanceRetrievalRunner) Run(ctx context.Context, suite FinanceRetrievalS
 	return report, nil
 }
 
-func selectFinanceRetrievalModes(modes, requestedModes []string) ([]string, error) {
+func selectFinanceRetrievalModes(suite FinanceRetrievalSuite, requestedModes []string) ([]string, error) {
 	if len(requestedModes) == 0 {
-		return modes, nil
+		if len(suite.PrimaryModes)+len(suite.DiagnosticModes) > 0 {
+			selected := append([]string(nil), suite.PrimaryModes...)
+			return append(selected, suite.DiagnosticModes...), nil
+		}
+		return suite.Modes, nil
 	}
 	requested := make(map[string]struct{}, len(requestedModes))
 	for _, mode := range requestedModes {
@@ -461,7 +554,7 @@ func selectFinanceRetrievalModes(modes, requestedModes []string) ([]string, erro
 		}
 	}
 	selected := make([]string, 0, len(requested))
-	for _, mode := range modes {
+	for _, mode := range suite.Modes {
 		if _, exists := requested[mode]; exists {
 			selected = append(selected, mode)
 			delete(requested, mode)
@@ -476,6 +569,58 @@ func selectFinanceRetrievalModes(modes, requestedModes []string) ([]string, erro
 		return nil, fmt.Errorf("finance retrieval modes not found in suite: %s", strings.Join(missing, ", "))
 	}
 	return selected, nil
+}
+
+func financeRetrievalExecutionOrder(
+	suite FinanceRetrievalSuite,
+	selectedModes []string,
+	caseID string,
+	attempt int,
+	seed int64,
+) []string {
+	if len(suite.PrimaryModes)+len(suite.DiagnosticModes)+len(suite.AblationModes) == 0 {
+		return append([]string(nil), selectedModes...)
+	}
+	selected := make(map[string]struct{}, len(selectedModes))
+	for _, mode := range selectedModes {
+		selected[mode] = struct{}{}
+	}
+	primary := selectedFinanceModes(suite.PrimaryModes, selected)
+	if len(primary) > 1 {
+		digest := sha256.Sum256([]byte(fmt.Sprintf("%d|%s|%d", seed, caseID, attempt)))
+		blockSeed := int64(binary.LittleEndian.Uint64(digest[:8]))
+		random := rand.New(rand.NewSource(blockSeed))
+		random.Shuffle(len(primary), func(left, right int) {
+			primary[left], primary[right] = primary[right], primary[left]
+		})
+	}
+	order := primary
+	if attempt == 1 {
+		order = append(order, selectedFinanceModes(suite.DiagnosticModes, selected)...)
+	}
+	if len(suite.AblationCaseIDs) == 0 || stringSliceContains(suite.AblationCaseIDs, caseID) {
+		order = append(order, selectedFinanceModes(suite.AblationModes, selected)...)
+	}
+	return order
+}
+
+func selectedFinanceModes(configured []string, selected map[string]struct{}) []string {
+	result := make([]string, 0, len(configured))
+	for _, mode := range configured {
+		if _, exists := selected[mode]; exists {
+			result = append(result, mode)
+		}
+	}
+	return result
+}
+
+func stringSliceContains(values []string, expected string) bool {
+	for _, value := range values {
+		if value == expected {
+			return true
+		}
+	}
+	return false
 }
 
 func selectFinanceRetrievalCases(cases []FinanceRetrievalCase, requestedIDs []string) ([]FinanceRetrievalCase, error) {
@@ -506,13 +651,24 @@ func selectFinanceRetrievalCases(cases []FinanceRetrievalCase, requestedIDs []st
 	return selected, nil
 }
 
-func (r FinanceRetrievalRunner) runMode(ctx context.Context, suite FinanceRetrievalSuite, evalCase FinanceRetrievalCase, mode string, attempt int, runID string) FinanceRetrievalModeResult {
+func (r FinanceRetrievalRunner) runMode(
+	ctx context.Context,
+	suite FinanceRetrievalSuite,
+	evalCase FinanceRetrievalCase,
+	mode string,
+	attempt int,
+	runID string,
+	pairID string,
+	orderIndex int,
+) FinanceRetrievalModeResult {
 	timeout := firstPositiveDuration(r.Options.Timeout, evalCase.Timeout.Value(), suite.Defaults.Timeout.Value(), 8*time.Minute)
 	modeContext, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 	startedAt := time.Now()
 	result := FinanceRetrievalModeResult{
 		Mode:           mode,
+		ObservationID:  pairID + "|mode=" + mode,
+		OrderIndex:     orderIndex,
 		AnalystOutputs: make(map[string]string),
 		Stages: FinanceRetrievalStageMetrics{
 			GoldRecords:      len(financeGoldRecordGroups(evalCase)),
@@ -524,6 +680,9 @@ func (r FinanceRetrievalRunner) runMode(ctx context.Context, suite FinanceRetrie
 	sessionBase := fmt.Sprintf("%s-%s-%d-%s", runID, sanitizeSessionPart(evalCase.ID), attempt, sanitizeSessionPart(mode))
 	coordinatorID := firstNonEmpty(r.Options.AgentID, suite.Defaults.CoordinatorAgentID)
 	model := r.Options.Model
+	if mode == FinanceRetrievalModeTeamSharedAllPro {
+		model = suite.Defaults.CapacityMatchedModel
+	}
 
 	switch mode {
 	case FinanceRetrievalModeSoloMonolithic:
@@ -541,16 +700,18 @@ func (r FinanceRetrievalRunner) runMode(ctx context.Context, suite FinanceRetrie
 		setFinanceModeError(&result, err)
 	case FinanceRetrievalModeSoloStaged:
 		r.runSoloStaged(modeContext, suite, evalCase, model, sessionBase, &result)
-	case FinanceRetrievalModeTeamShared:
+	case FinanceRetrievalModeTeamShared, FinanceRetrievalModeTeamSharedAllPro:
 		r.runTeamShared(modeContext, suite, evalCase, coordinatorID, model, sessionBase, &result)
 	case FinanceRetrievalModeTeamRawContext:
 		response, latency, err := r.executeFinanceStage(modeContext, ExecutionRequest{
-			Prompt:       financeTeamPrompt(evalCase, suite.Defaults.Analysts, renderFinanceCorpus(evalCase.Records), false),
-			AgentID:      coordinatorID,
-			Model:        model,
-			SessionKey:   sessionBase,
-			IsolateTools: false,
-			Pricing:      suite.Pricing,
+			Prompt:                    financeTeamPrompt(evalCase, suite.Defaults.Analysts, renderFinanceCorpus(evalCase.Records), false),
+			AgentID:                   coordinatorID,
+			Model:                     model,
+			SessionKey:                sessionBase,
+			IsolateTools:              false,
+			Pricing:                   suite.Pricing,
+			SubAgentMaxCalls:          len(suite.Defaults.Analysts),
+			SubAgentMaxCallsPerTarget: 1,
 		}, mode+"/collaboration")
 		result.Stages.CollaborationLatencyMS = latency
 		r.consumeFinanceResponse(&result, response)
@@ -646,12 +807,14 @@ func (r FinanceRetrievalRunner) runTeamShared(ctx context.Context, suite Finance
 		return
 	}
 	response, latency, err := r.executeFinanceStage(ctx, ExecutionRequest{
-		Prompt:       financeTeamPrompt(evalCase, suite.Defaults.Analysts, retrieval.Output, true),
-		AgentID:      coordinatorID,
-		Model:        model,
-		SessionKey:   sessionBase + "-coordination",
-		IsolateTools: false,
-		Pricing:      suite.Pricing,
+		Prompt:                    financeTeamPrompt(evalCase, suite.Defaults.Analysts, retrieval.Output, true),
+		AgentID:                   coordinatorID,
+		Model:                     model,
+		SessionKey:                sessionBase + "-coordination",
+		IsolateTools:              false,
+		Pricing:                   suite.Pricing,
+		SubAgentMaxCalls:          len(suite.Defaults.Analysts),
+		SubAgentMaxCallsPerTarget: 1,
 	}, result.Mode+"/collaboration")
 	result.Stages.CollaborationLatencyMS = latency
 	r.consumeFinanceResponse(result, response)
@@ -757,7 +920,7 @@ func evaluateFinanceRetrievalMode(suite FinanceRetrievalSuite, evalCase FinanceR
 		AuthorizedNumericValues: evalCase.AuthorizedNumericValues,
 	})
 	_, stages.GroundingViolationValues = evaluateNumericGroundingDetails(result.FinalOutput, evalCase.AuthorizedNumericValues)
-	if result.Mode == FinanceRetrievalModeTeamShared || result.Mode == FinanceRetrievalModeTeamRawContext {
+	if result.Mode == FinanceRetrievalModeTeamShared || result.Mode == FinanceRetrievalModeTeamSharedAllPro || result.Mode == FinanceRetrievalModeTeamRawContext {
 		evaluateFinanceDelegations(result.Trace, suite.Defaults.Analysts, stages)
 	}
 	minRetrieval := financeThreshold(evalCase.MinRetrievalRecall, suite.Defaults.MinRetrievalRecall)
@@ -766,12 +929,12 @@ func evaluateFinanceRetrievalMode(suite FinanceRetrievalSuite, evalCase FinanceR
 	minGrounding := financeThreshold(evalCase.MinGroundingAccuracy, suite.Defaults.MinGroundingAccuracy)
 	passed := stages.PassedMilestones == stages.Milestones && stages.UnsupportedClaims == 0 && safeGroundingAccuracy(stages.GroundingAssertions, stages.GroundingViolations) >= minGrounding && stages.FinalEvidenceRecall >= minFinal
 	switch result.Mode {
-	case FinanceRetrievalModeSoloStaged, FinanceRetrievalModeTeamShared:
+	case FinanceRetrievalModeSoloStaged, FinanceRetrievalModeTeamShared, FinanceRetrievalModeTeamSharedAllPro:
 		passed = passed && stages.RetrievalRecall >= minRetrieval && stages.SummaryRetention >= minSummary
 	case FinanceRetrievalModeTeamRawContext:
 		passed = passed && stages.DelegationPrecision == 1 && stages.DelegationRecall == 1
 	}
-	if result.Mode == FinanceRetrievalModeTeamShared {
+	if result.Mode == FinanceRetrievalModeTeamShared || result.Mode == FinanceRetrievalModeTeamSharedAllPro {
 		passed = passed && stages.DelegationPrecision == 1 && stages.DelegationRecall == 1
 	}
 	result.Passed = passed
@@ -836,6 +999,84 @@ func evaluateFinanceDelegations(trace []TraceEvent, analysts []FinanceRetrievalA
 		}
 		stages.DelegationPrecision = float64(validCalls) / float64(len(delegations))
 	}
+	statuses := financeDelegationStatuses(trace)
+	if len(statuses) > 0 {
+		stages.DelegationStatusCounts = make(map[string]int)
+	}
+	for _, agentStatuses := range statuses {
+		for _, status := range agentStatuses {
+			stages.DelegationStatusCounts[status]++
+		}
+		if agentStatuses[0] == "success" {
+			stages.FirstAttemptSuccesses++
+			continue
+		}
+		for _, status := range agentStatuses[1:] {
+			if status == "success" {
+				stages.RecoverySuccesses++
+				break
+			}
+		}
+	}
+}
+
+func financeDelegationStatuses(trace []TraceEvent) map[string][]string {
+	agentsByCallID := make(map[string][]string)
+	statuses := make(map[string][]string)
+	for _, event := range trace {
+		if event.Type == "tool_call" && event.Name == "spawn_subagent" && event.ID != "" {
+			var arguments struct {
+				AgentID     string `json:"agentId"`
+				Delegations []struct {
+					AgentID string `json:"agentId"`
+				} `json:"delegations"`
+			}
+			if json.Unmarshal([]byte(event.Arguments), &arguments) == nil {
+				if arguments.AgentID != "" {
+					agentsByCallID[event.ID] = []string{arguments.AgentID}
+				} else {
+					for _, delegation := range arguments.Delegations {
+						agentsByCallID[event.ID] = append(agentsByCallID[event.ID], delegation.AgentID)
+					}
+				}
+			}
+			continue
+		}
+		if event.Type != "tool_result" || event.Name != "spawn_subagent" || event.ID == "" {
+			continue
+		}
+		agentIDs := agentsByCallID[event.ID]
+		if len(agentIDs) == 1 {
+			var item struct {
+				AgentID string `json:"agentId"`
+				Status  string `json:"status"`
+			}
+			if json.Unmarshal([]byte(event.Result), &item) == nil && item.Status != "" {
+				agentID := item.AgentID
+				if agentID == "" {
+					agentID = agentIDs[0]
+				}
+				statuses[agentID] = append(statuses[agentID], item.Status)
+			}
+			continue
+		}
+		if len(agentIDs) > 1 {
+			var batch struct {
+				Results []struct {
+					AgentID string `json:"agentId"`
+					Status  string `json:"status"`
+				} `json:"results"`
+			}
+			if json.Unmarshal([]byte(event.Result), &batch) == nil {
+				for _, item := range batch.Results {
+					if item.AgentID != "" && item.Status != "" {
+						statuses[item.AgentID] = append(statuses[item.AgentID], item.Status)
+					}
+				}
+			}
+		}
+	}
+	return statuses
 }
 
 func financeAnalystOutputs(trace []TraceEvent, analysts []FinanceRetrievalAnalyst) map[string]string {
@@ -1099,7 +1340,7 @@ func WriteFinanceRetrievalJSON(writer io.Writer, report FinanceRetrievalReport) 
 }
 
 func WriteFinanceRetrievalText(writer io.Writer, report FinanceRetrievalReport) error {
-	if _, err := fmt.Fprintf(writer, "Finance retrieval suite: %s\nDataset: %s\nSuite SHA-256: %s\nSource-lock SHA-256: %s\n", report.Suite, report.Dataset, report.SourceSHA256, report.SourceLockSHA256); err != nil {
+	if _, err := fmt.Fprintf(writer, "Finance retrieval suite: %s\nStudy/status: %s / %s\nRandomization seed: %d\nDataset: %s\nSuite SHA-256: %s\nSource-lock SHA-256: %s\n", report.Suite, report.Study, report.Status, report.RandomizationSeed, report.Dataset, report.SourceSHA256, report.SourceLockSHA256); err != nil {
 		return err
 	}
 	for _, modeName := range []string{FinanceRetrievalModeSoloMonolithic, FinanceRetrievalModeSoloStaged, FinanceRetrievalModeTeamShared, FinanceRetrievalModeTeamRawContext, FinanceRetrievalModeOracleEvidence} {
@@ -1116,6 +1357,9 @@ func WriteFinanceRetrievalText(writer io.Writer, report FinanceRetrievalReport) 
 			return err
 		}
 		for _, attempt := range evalCase.Attempts {
+			if _, err := fmt.Fprintf(writer, "  pair %s | order %s\n", attempt.PairID, strings.Join(attempt.RealizedOrder, ", ")); err != nil {
+				return err
+			}
 			for _, mode := range attempt.Modes {
 				status := "PASS"
 				if mode.Error != "" {

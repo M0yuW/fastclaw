@@ -51,7 +51,8 @@ func TestMakeSubAgentToolCreatesUniqueInternalMessages(t *testing.T) {
 	args := json.RawMessage(`{"agentId":"child","task":"analyze"}`)
 	for i := 0; i < 2; i++ {
 		result, err := tool(context.Background(), args)
-		if err != nil || result != "ok" {
+		payload := decodeSingleSubAgentResult(t, result)
+		if err != nil || payload.Status != subAgentStatusSuccess || payload.Result != "ok" {
 			t.Fatalf("call %d: result=%q err=%v", i, result, err)
 		}
 	}
@@ -76,7 +77,8 @@ func TestMakeSubAgentToolDeduplicatesIdenticalDelegationWithinTurn(t *testing.T)
 	for _, task := range []string{"same request", "same request"} {
 		args := json.RawMessage(`{"agentId":"child","task":` + strconv.Quote(task) + `}`)
 		result, err := tool(ctx, args)
-		if err != nil || result != "fixed evidence" {
+		payload := decodeSingleSubAgentResult(t, result)
+		if err != nil || payload.Status != subAgentStatusSuccess || payload.Result != "fixed evidence" {
 			t.Fatalf("task %q: result=%q err=%v", task, result, err)
 		}
 	}
@@ -120,9 +122,43 @@ func TestMakeSubAgentToolEvalDeduplicatesTargetWithinTurn(t *testing.T) {
 func TestMakeSubAgentToolReturnsSpawnerError(t *testing.T) {
 	spawner := &fakeSubAgentSpawner{err: errors.New("queue stopped")}
 	tool := makeSubAgentTool(spawner, "parent")
-	_, err := tool(context.Background(), json.RawMessage(`{"agentId":"child","task":"analyze"}`))
-	if err == nil || !strings.Contains(err.Error(), "queue stopped") {
-		t.Fatalf("expected propagated error, got %v", err)
+	result, err := tool(context.Background(), json.RawMessage(`{"agentId":"child","task":"analyze"}`))
+	payload := decodeSingleSubAgentResult(t, result)
+	if err != nil || payload.Status != subAgentStatusProviderError || !strings.Contains(payload.Error, "queue stopped") {
+		t.Fatalf("expected structured provider error, result=%q err=%v", result, err)
+	}
+}
+
+func TestMakeSubAgentToolReturnsStructuredEmptyAndTimeout(t *testing.T) {
+	tool := makeSubAgentTool(&fakeSubAgentSpawner{}, "parent")
+	result, err := tool(context.Background(), json.RawMessage(`{"agentId":"child","task":"analyze"}`))
+	if payload := decodeSingleSubAgentResult(t, result); err != nil || payload.Status != subAgentStatusEmpty {
+		t.Fatalf("empty result=%q err=%v", result, err)
+	}
+
+	tool = makeSubAgentTool(&fakeSubAgentSpawner{err: context.DeadlineExceeded}, "parent")
+	result, err = tool(context.Background(), json.RawMessage(`{"agentId":"child","task":"analyze"}`))
+	if payload := decodeSingleSubAgentResult(t, result); err != nil || payload.Status != subAgentStatusTimeout {
+		t.Fatalf("timeout result=%q err=%v", result, err)
+	}
+}
+
+func TestMakeSubAgentToolEnforcesDelegationBudgets(t *testing.T) {
+	spawner := &fakeSubAgentSpawner{result: "ok"}
+	tool := makeSubAgentTool(spawner, "parent")
+	ctx := ContextWithSubAgentBudget(context.Background(), 2, 1)
+	for _, agentID := range []string{"first", "second"} {
+		arguments := json.RawMessage(`{"agentId":` + strconv.Quote(agentID) + `,"task":"analyze"}`)
+		if _, err := tool(ctx, arguments); err != nil {
+			t.Fatalf("first call for %s: %v", agentID, err)
+		}
+	}
+	if _, err := tool(ctx, json.RawMessage(`{"agentId":"first","task":"retry"}`)); err == nil ||
+		!strings.Contains(err.Error(), "budget exceeded") {
+		t.Fatalf("expected bounded retry rejection, got %v", err)
+	}
+	if len(spawner.messages) != 2 {
+		t.Fatalf("spawner received %d messages, want 2", len(spawner.messages))
 	}
 }
 
@@ -157,4 +193,13 @@ func TestMakeSubAgentToolRunsBatchWithSharedContextConcurrently(t *testing.T) {
 	if len(batch.Results) != 2 || batch.Results[0].AgentID != "trend" || batch.Results[1].AgentID != "risk" {
 		t.Fatalf("batch result = %+v", batch)
 	}
+}
+
+func decodeSingleSubAgentResult(t *testing.T, encoded string) spawnSubagentDelegationResult {
+	t.Helper()
+	var result spawnSubagentDelegationResult
+	if err := json.Unmarshal([]byte(encoded), &result); err != nil {
+		t.Fatalf("decode sub-agent result %q: %v", encoded, err)
+	}
+	return result
 }

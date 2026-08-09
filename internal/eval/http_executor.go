@@ -55,14 +55,16 @@ type chatCompletionToolFunction struct {
 }
 
 type chatCompletionFastClaw struct {
-	Eval                  bool                         `json:"eval,omitempty"`
-	IncludeTrace          bool                         `json:"include_trace"`
-	IncludeUsageBreakdown bool                         `json:"include_usage_breakdown"`
-	IsolateTools          bool                         `json:"isolate_tools,omitempty"`
-	Pricing               map[string]ModelPricing      `json:"pricing,omitempty"`
-	ToolResults           map[string]string            `json:"tool_results,omitempty"`
-	State                 map[string]any               `json:"state,omitempty"`
-	ToolBehaviors         map[string]StateToolBehavior `json:"tool_behaviors,omitempty"`
+	Eval                      bool                         `json:"eval,omitempty"`
+	IncludeTrace              bool                         `json:"include_trace"`
+	IncludeUsageBreakdown     bool                         `json:"include_usage_breakdown"`
+	IsolateTools              bool                         `json:"isolate_tools,omitempty"`
+	Pricing                   map[string]ModelPricing      `json:"pricing,omitempty"`
+	ToolResults               map[string]string            `json:"tool_results,omitempty"`
+	State                     map[string]any               `json:"state,omitempty"`
+	ToolBehaviors             map[string]StateToolBehavior `json:"tool_behaviors,omitempty"`
+	SubAgentMaxCalls          int                          `json:"subagent_max_calls,omitempty"`
+	SubAgentMaxCallsPerTarget int                          `json:"subagent_max_calls_per_target,omitempty"`
 }
 
 func (e *HTTPExecutor) Execute(ctx context.Context, request ExecutionRequest) (ExecutionResponse, error) {
@@ -96,14 +98,16 @@ func (e *HTTPExecutor) Execute(ctx context.Context, request ExecutionRequest) (E
 		Stream: false,
 		Tools:  tools,
 		FastClaw: chatCompletionFastClaw{
-			Eval:                  true,
-			IncludeTrace:          true,
-			IncludeUsageBreakdown: true,
-			IsolateTools:          request.IsolateTools,
-			Pricing:               request.Pricing,
-			ToolResults:           toolResults,
-			State:                 request.State,
-			ToolBehaviors:         toolBehaviors,
+			Eval:                      true,
+			IncludeTrace:              true,
+			IncludeUsageBreakdown:     true,
+			IsolateTools:              request.IsolateTools,
+			Pricing:                   request.Pricing,
+			ToolResults:               toolResults,
+			State:                     request.State,
+			ToolBehaviors:             toolBehaviors,
+			SubAgentMaxCalls:          request.SubAgentMaxCalls,
+			SubAgentMaxCallsPerTarget: request.SubAgentMaxCallsPerTarget,
 		},
 	})
 	if err != nil {
