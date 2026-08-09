@@ -12,6 +12,7 @@ from typing import Any
 
 VERDICTS = {"PASS", "FAIL", "NOT_ASSESSABLE"}
 DEFAULT_PROVENANCE = Path(__file__).resolve().parent / "gold-fact-provenance.json"
+DEFAULT_REVIEW_TEMPLATE = Path(__file__).resolve().parent / "stage2_review_template.html"
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -27,6 +28,15 @@ def write_csv(path: Path, rows: list[dict[str, Any]], fieldnames: list[str]) -> 
         writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
+
+
+def write_review_page(path: Path, tasks: list[dict[str, Any]], template_path: Path) -> None:
+    template = template_path.read_text(encoding="utf-8")
+    task_json = json.dumps(tasks, ensure_ascii=False, separators=(",", ":")).replace("<", "\\u003c")
+    marker = "__STAGE2_REVIEW_TASKS__"
+    if template.count(marker) != 1:
+        raise ValueError(f"review template must contain exactly one {marker} marker")
+    path.write_text(template.replace(marker, task_json), encoding="utf-8")
 
 
 def audit_material(
@@ -162,7 +172,11 @@ def audit_material(
 
 
 def prepare(
-    evidence_path: Path, suite_path: Path, output_dir: Path, provenance_path: Path = DEFAULT_PROVENANCE
+    evidence_path: Path,
+    suite_path: Path,
+    output_dir: Path,
+    provenance_path: Path = DEFAULT_PROVENANCE,
+    review_template_path: Path = DEFAULT_REVIEW_TEMPLATE,
 ) -> dict[str, int]:
     tasks, machine = audit_material(read_json(evidence_path), read_json(suite_path), read_json(provenance_path))
     task_fields = [
@@ -182,6 +196,7 @@ def prepare(
     reviewer_fields = task_fields + ["verdict", "independent_result", "notes"]
     write_csv(output_dir / "reviewer-a.csv", reviewer_rows, reviewer_fields)
     write_csv(output_dir / "reviewer-b.csv", reviewer_rows, reviewer_fields)
+    write_review_page(output_dir / "review.html", tasks, review_template_path)
     (output_dir / "README.md").write_text(
         "# Stage 2 freeze audit\n\n"
         "Two reviewers independently work in `reviewer-a.csv` and `reviewer-b.csv`; each row contains the task context needed for review. `audit-tasks.csv` is the immutable shared task set.\n\n"
@@ -189,7 +204,8 @@ def prepare(
         "- Calculation tasks include input facts and the operation but hide the expected result. Record the arithmetic and rounded result in `independent_result`.\n"
         "- Evidence-group tasks include record locators and text previews. Record `VALID` or list suspect record IDs in `independent_result`.\n"
         "- Allowed verdicts are `PASS`, `FAIL`, and `NOT_ASSESSABLE`; add a concise note for any non-PASS verdict.\n"
-        "- Do not open `machine-reference.csv` until both reviewer files are complete. Any disagreement, failure, or not-assessable item requires documented adjudication before freeze.\n",
+        "- Do not open `machine-reference.csv` until both reviewer files are complete. Any disagreement, failure, or not-assessable item requires documented adjudication before freeze.\n"
+        "- For a guided local interface, open `review.html` directly in a browser. It stores drafts in local browser storage and exports a compatible reviewer CSV.\n",
         encoding="utf-8",
     )
     return {
@@ -272,6 +288,7 @@ def main() -> int:
     prepare_parser.add_argument("--suite", type=Path, required=True)
     prepare_parser.add_argument("--output-dir", type=Path, required=True)
     prepare_parser.add_argument("--provenance", type=Path, default=DEFAULT_PROVENANCE)
+    prepare_parser.add_argument("--review-template", type=Path, default=DEFAULT_REVIEW_TEMPLATE)
     analyze_parser = commands.add_parser("analyze")
     analyze_parser.add_argument("--tasks", type=Path, required=True)
     analyze_parser.add_argument("--reviewer-a", type=Path, required=True)
@@ -279,7 +296,7 @@ def main() -> int:
     analyze_parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "prepare":
-        result = prepare(args.evidence, args.suite, args.output_dir, args.provenance)
+        result = prepare(args.evidence, args.suite, args.output_dir, args.provenance, args.review_template)
     else:
         result = analyze(args.tasks, args.reviewer_a, args.reviewer_b, args.output_dir)
     print(json.dumps(result, sort_keys=True))

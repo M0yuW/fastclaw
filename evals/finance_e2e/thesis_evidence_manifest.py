@@ -55,10 +55,12 @@ GROUPS = {
         ("evals/finance_e2e/STAGE2-EXPERIMENT-PROTOCOL.md", "draft_protocol"),
         ("evals/finance_e2e/stage2_artifacts.py", "analysis_source"),
         ("evals/finance_e2e/stage2_freeze_audit.py", "audit_source"),
+        ("evals/finance_e2e/stage2_review_template.html", "human_audit_ui_template"),
         ("evals/finance_e2e/build_stage2_suite.py", "suite_generator"),
         ("evals/finance_e2e/stage2-freeze-audit-draft/audit-tasks.csv", "human_audit_tasks"),
         ("evals/finance_e2e/stage2-freeze-audit-draft/machine-reference.csv", "sealed_machine_reference"),
         ("evals/finance_e2e/stage2-freeze-audit-draft/README.md", "human_audit_instructions"),
+        ("evals/finance_e2e/stage2-freeze-audit-draft/review.html", "human_audit_ui"),
         ("project-report/fastclaw_project_report.md", "thesis_source"),
     ],
 }
