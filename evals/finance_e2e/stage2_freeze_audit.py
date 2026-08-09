@@ -79,12 +79,12 @@ def audit_material(
                     "calculation_spec": "",
                     "record_previews": "",
                     "review_task": (
-                        f"Verify value={fact.get('value')} unit={fact.get('unit')} basis={fact.get('basis')} "
-                        f"period={episode.get('period_label')} and the claimed excerpt in the locked primary source."
+                        f"在已锁定的一手资料中核验 value={fact.get('value')}、unit={fact.get('unit')}、"
+                        f"basis={fact.get('basis')}、period={episode.get('period_label')}，并核对给出的原文摘录。"
                     ),
                     "review_guidance": (
-                        "Open the SEC URL, locate the excerpt, and independently transcribe the value, unit, "
-                        "basis, and period into independent_result before assigning a verdict."
+                        "打开 SEC 链接并找到对应原文；先在 independent_result 中独立抄录数值、单位、"
+                        "统计口径和报告期间，再选择审阅结论。"
                     ),
                 }
             )
@@ -123,10 +123,10 @@ def audit_material(
                         "input_facts": json.dumps(input_facts, sort_keys=True),
                         "calculation_spec": json.dumps(inputs, sort_keys=True),
                         "record_previews": "",
-                        "review_task": "Independently recompute the result from input_facts and calculation_spec; the expected result is intentionally hidden.",
+                        "review_task": "根据 input_facts 和 calculation_spec 独立重新计算；预期答案有意保持隐藏。",
                         "review_guidance": (
-                            "Write the unrounded arithmetic and final rounded value in independent_result. "
-                            "Do not open machine-reference.csv before both reviewers finish."
+                            "在 independent_result 中写出未舍入的计算过程以及最终舍入结果。"
+                            "两名审阅者完成前不得打开 machine-reference.csv。"
                         ),
                     }
                 )
@@ -160,10 +160,10 @@ def audit_material(
                 "input_facts": "",
                 "calculation_spec": "",
                 "record_previews": json.dumps(previews, sort_keys=True),
-                "review_task": "Verify that these record IDs are valid alternatives for one required evidence group: " + " | ".join(group),
+                "review_task": "核验以下记录编号能否作为同一必需证据组的有效替代项：" + " | ".join(group),
                 "review_guidance": (
-                    "Compare the supplied locators and text previews. Record VALID or list any non-equivalent "
-                    "record IDs in independent_result; inspect the suite text if a preview is insufficient."
+                    "比较给出的定位信息和原文预览。在 independent_result 中填写 VALID，或列出任何不等价的"
+                    "记录编号；若预览不足以判断，请检查 suite 中的完整文本。"
                 ),
             }
         )
@@ -205,7 +205,7 @@ def prepare(
         "- Evidence-group tasks include record locators and text previews. Record `VALID` or list suspect record IDs in `independent_result`.\n"
         "- Allowed verdicts are `PASS`, `FAIL`, and `NOT_ASSESSABLE`; add a concise note for any non-PASS verdict.\n"
         "- Do not open `machine-reference.csv` until both reviewer files are complete. Any disagreement, failure, or not-assessable item requires documented adjudication before freeze.\n"
-        "- For a guided local interface, open `review.html` directly in a browser. It stores drafts in local browser storage and exports a compatible reviewer CSV.\n",
+        "- 中文审阅界面可直接用浏览器打开 `review.html`。草稿只保存在浏览器本地，并可导出兼容的 reviewer CSV。\n",
         encoding="utf-8",
     )
     return {

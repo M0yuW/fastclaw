@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FastClaw Stage 2 Freeze Audit</title>
+  <title>FastClaw Stage 2 冻结审计</title>
   <style>
     :root {
       --ink: #17211c;
@@ -105,31 +105,31 @@
   <header class="topbar">
     <div class="brand">
       <div class="mark">F2</div>
-      <div><h1>Stage 2 Freeze Audit</h1><div class="subtitle">Independent source and oracle review</div></div>
+      <div><h1>Stage 2 冻结审计</h1><div class="subtitle">一手资料与人工标准答案独立复核</div></div>
     </div>
     <div class="top-actions">
-      <span class="local-badge">Local-only · no upload</span>
-      <select id="reviewer" aria-label="Reviewer"><option value="a">Reviewer A</option><option value="b">Reviewer B</option></select>
-      <button class="export" id="export">Export CSV</button>
+      <span class="local-badge">仅在本机保存 · 不上传</span>
+      <select id="reviewer" aria-label="审阅者"><option value="a">审阅者 A</option><option value="b">审阅者 B</option></select>
+      <button class="export" id="export">导出 CSV</button>
     </div>
   </header>
   <div class="shell">
     <aside>
       <div class="summary">
-        <div class="summary-row"><span>Completion</span><strong id="completion">0 / 98</strong></div>
+        <div class="summary-row"><span>完成进度</span><strong id="completion">0 / 98</strong></div>
         <div class="progress"><div id="progress"></div></div>
-        <div class="stats"><div class="stat"><b id="pass-count">0</b><span>Pass</span></div><div class="stat"><b id="issue-count">0</b><span>Issues</span></div><div class="stat"><b id="pending-count">98</b><span>Pending</span></div></div>
+        <div class="stats"><div class="stat"><b id="pass-count">0</b><span>通过</span></div><div class="stat"><b id="issue-count">0</b><span>有问题</span></div><div class="stat"><b id="pending-count">98</b><span>待审</span></div></div>
       </div>
       <div class="tools">
-        <input class="search" id="search" type="search" placeholder="Search task ID or source…">
+        <input class="search" id="search" type="search" placeholder="搜索任务编号或来源…">
         <div class="filters" id="filters">
-          <button class="filter active" data-filter="all">All</button>
-          <button class="filter" data-filter="pending">Pending</button>
-          <button class="filter" data-filter="pass">Pass</button>
-          <button class="filter" data-filter="issues">Issues</button>
-          <button class="filter" data-filter="source">Sources</button>
-          <button class="filter" data-filter="oracle_calculation">Calculations</button>
-          <button class="filter" data-filter="evidence_equivalence_group">Groups</button>
+          <button class="filter active" data-filter="all">全部</button>
+          <button class="filter" data-filter="pending">待审</button>
+          <button class="filter" data-filter="pass">通过</button>
+          <button class="filter" data-filter="issues">有问题</button>
+          <button class="filter" data-filter="source">来源事实</button>
+          <button class="filter" data-filter="oracle_calculation">计算</button>
+          <button class="filter" data-filter="evidence_equivalence_group">证据组</button>
         </div>
       </div>
       <div class="task-list" id="task-list"></div>
@@ -155,13 +155,14 @@
     function saveResponses() {
       localStorage.setItem(key(reviewer), JSON.stringify(responses));
       const saved = $("saved");
-      if (saved) saved.textContent = `Saved locally · ${new Date().toLocaleTimeString([], {hour: "2-digit", minute: "2-digit"})}`;
+      if (saved) saved.textContent = `已在本机保存 · ${new Date().toLocaleTimeString("zh-CN", {hour: "2-digit", minute: "2-digit"})}`;
       renderStats(); renderList();
     }
     function response(task) { return responses[task.audit_id] || {verdict: "", independent_result: "", notes: ""}; }
     function complete(task) { const r = response(task); return Boolean(r.verdict && r.independent_result.trim()); }
     function escapeHtml(value) { return String(value ?? "").replace(/[&<>'"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[ch])); }
-    function prettyType(type) { return ({source:"Source fact",oracle_calculation:"Oracle calculation",evidence_equivalence_group:"Evidence group"})[type] || type; }
+    function prettyType(type) { return ({source:"来源事实",oracle_calculation:"人工标准答案计算",evidence_equivalence_group:"证据等价组"})[type] || type; }
+    function verdictLabel(value) { return ({PASS:"通过（PASS）",FAIL:"不通过（FAIL）",NOT_ASSESSABLE:"无法判断（NOT ASSESSABLE）"})[value] || value; }
     function parseJson(value, fallback) { try { return JSON.parse(value); } catch (_) { return fallback; } }
     function visibleTasks() {
       return TASKS.filter(task => {
@@ -188,28 +189,28 @@
         const index = TASKS.indexOf(task); const r = response(task);
         const state = r.verdict === "PASS" ? "pass" : r.verdict ? "issue" : "";
         return `<button class="task ${index === selected ? "active" : ""}" data-index="${index}"><div class="task-top"><span class="dot ${state}"></span><span class="task-id">${escapeHtml(task.audit_id)}</span></div><div class="task-type">${escapeHtml(prettyType(task.audit_type))}</div></button>`;
-      }).join("") : '<div class="empty">No tasks match this view.</div>';
+      }).join("") : '<div class="empty">没有符合当前条件的任务。</div>';
       document.querySelectorAll(".task").forEach(button => button.addEventListener("click", () => { selected = Number(button.dataset.index); render(); }));
     }
     function meta(task) {
-      const items = [["Source", task.source_id], ["Locator", task.locator], ["Filing date", task.filing_date], ["Accepted at", task.accepted_at], ["Accession", task.accession], ["SHA-256", task.source_sha256]];
+      const items = [["资料来源", task.source_id], ["定位信息", task.locator], ["申报日期", task.filing_date], ["SEC 接收时间", task.accepted_at], ["Accession 编号", task.accession], ["文件 SHA-256", task.source_sha256]];
       return `<div class="meta">${items.filter(([,v]) => v).map(([k,v]) => `<div class="meta-item"><span>${k}</span><div>${escapeHtml(v)}</div></div>`).join("")}</div>`;
     }
     function taskMaterial(task) {
       if (task.audit_type === "source") {
-        const link = /^https:\/\/www\.sec\.gov\//.test(task.url) ? `<p><a href="${escapeHtml(task.url)}" target="_blank" rel="noopener noreferrer">Open locked SEC source ↗</a></p>` : "";
-        return `<section class="card"><h3>Locked source metadata</h3>${meta(task)}${link}</section><section class="card"><h3>Claimed excerpt</h3><blockquote>${escapeHtml(task.claimed_excerpt)}</blockquote></section>`;
+        const link = /^https:\/\/www\.sec\.gov\//.test(task.url) ? `<p><a href="${escapeHtml(task.url)}" target="_blank" rel="noopener noreferrer">打开已锁定的 SEC 一手资料 ↗</a></p>` : "";
+        return `<section class="card"><h3>已锁定资料的元数据</h3>${meta(task)}${link}</section><section class="card"><h3>待核对的原文摘录</h3><blockquote>${escapeHtml(task.claimed_excerpt)}</blockquote></section>`;
       }
       if (task.audit_type === "oracle_calculation") {
         const facts = parseJson(task.input_facts, []);
-        return `<section class="card"><h3>Input facts</h3>${facts.map(f => `<div class="record"><strong>${escapeHtml(f.fact_id)}</strong><p>${escapeHtml(f.value)} ${escapeHtml(f.unit)} · ${escapeHtml(f.basis)}</p></div>`).join("")}<h3 style="margin-top:18px">Calculation specification</h3><pre>${escapeHtml(JSON.stringify(parseJson(task.calculation_spec, {}), null, 2))}</pre></section>`;
+        return `<section class="card"><h3>计算输入事实</h3>${facts.map(f => `<div class="record"><strong>${escapeHtml(f.fact_id)}</strong><p>${escapeHtml(f.value)} ${escapeHtml(f.unit)} · 口径：${escapeHtml(f.basis)}</p></div>`).join("")}<h3 style="margin-top:18px">计算规则</h3><pre>${escapeHtml(JSON.stringify(parseJson(task.calculation_spec, {}), null, 2))}</pre></section>`;
       }
       const records = parseJson(task.record_previews, []);
-      return `<section class="card"><h3>Candidate equivalent records</h3>${records.map(record => `<div class="record"><strong>${escapeHtml(record.record_id)}</strong><div class="mono">${escapeHtml(record.source_id)} · ${escapeHtml(record.locator)}${record.accepted_at ? ` · ${escapeHtml(record.accepted_at)}` : ""}</div><p>${escapeHtml(record.text_preview)}</p></div>`).join("")}</section>`;
+      return `<section class="card"><h3>候选等价证据记录</h3>${records.map(record => `<div class="record"><strong>${escapeHtml(record.record_id)}</strong><div class="mono">${escapeHtml(record.source_id)} · ${escapeHtml(record.locator)}${record.accepted_at ? ` · ${escapeHtml(record.accepted_at)}` : ""}</div><p>${escapeHtml(record.text_preview)}</p></div>`).join("")}</section>`;
     }
     function renderDetail() {
       const task = TASKS[selected]; const r = response(task);
-      $("content").innerHTML = `<div class="eyebrow">${escapeHtml(prettyType(task.audit_type))} · ${selected + 1} of ${TASKS.length}</div><h2>${escapeHtml(task.audit_id)}</h2><div class="subtitle">${escapeHtml(task.review_task)}</div><div class="notice"><strong>Blind review</strong><span>Expected results remain hidden. Record your independent result before assigning a verdict.</span></div>${taskMaterial(task)}<section class="card"><h3>Review guidance</h3><p>${escapeHtml(task.review_guidance)}</p></section><section class="card"><div class="form-title"><h3>Your review</h3><span class="saved" id="saved">Stored only in this browser</span></div><div class="verdicts">${["PASS","FAIL","NOT_ASSESSABLE"].map(v => `<button class="verdict ${r.verdict === v ? "selected" : ""}" data-value="${v}">${v.replace("_", " ")}</button>`).join("")}</div><label for="independent-result">Independent result <small>required for completion</small></label><textarea id="independent-result" placeholder="Transcribe the verified fact, show the arithmetic, or record VALID / suspect record IDs…">${escapeHtml(r.independent_result)}</textarea><label for="notes">Notes <small>required context for non-PASS verdicts</small></label><textarea id="notes" placeholder="Concise rationale, ambiguity, or follow-up needed…">${escapeHtml(r.notes)}</textarea></section><div class="nav"><div class="nav-group"><button class="secondary" id="previous" ${selected === 0 ? "disabled" : ""}>← Previous</button><button class="secondary" id="next" ${selected === TASKS.length - 1 ? "disabled" : ""}>Next →</button></div><button class="secondary" id="next-pending">Next pending</button></div><div class="footer-tools"><span>Reviewer ${reviewer.toUpperCase()} · ${TASKS.length} frozen tasks</span><div><button class="secondary" id="import">Import CSV</button> <button class="secondary danger" id="reset">Reset reviewer</button></div></div>`;
+      $("content").innerHTML = `<div class="eyebrow">${escapeHtml(prettyType(task.audit_type))} · 第 ${selected + 1} 项，共 ${TASKS.length} 项</div><h2>${escapeHtml(task.audit_id)}</h2><div class="subtitle">${escapeHtml(task.review_task)}</div><div class="notice"><strong>盲审要求</strong><span>预期答案继续隐藏。请先填写独立核验结果，再给出审阅结论。</span></div>${taskMaterial(task)}<section class="card"><h3>审阅指引</h3><p>${escapeHtml(task.review_guidance)}</p></section><section class="card"><div class="form-title"><h3>你的审阅结果</h3><span class="saved" id="saved">仅保存在当前浏览器</span></div><div class="verdicts">${["PASS","FAIL","NOT_ASSESSABLE"].map(v => `<button class="verdict ${r.verdict === v ? "selected" : ""}" data-value="${v}">${verdictLabel(v)}</button>`).join("")}</div><label for="independent-result">独立核验结果 <small>必填，填写后才计为完成</small></label><textarea id="independent-result" placeholder="填写核验后的事实、完整计算过程，或填写 VALID / 有问题的记录编号……">${escapeHtml(r.independent_result)}</textarea><label for="notes">备注 <small>选择不通过或无法判断时，请说明原因</small></label><textarea id="notes" placeholder="简要说明问题、歧义或需要后续处理的事项……">${escapeHtml(r.notes)}</textarea></section><div class="nav"><div class="nav-group"><button class="secondary" id="previous" ${selected === 0 ? "disabled" : ""}>← 上一项</button><button class="secondary" id="next" ${selected === TASKS.length - 1 ? "disabled" : ""}>下一项 →</button></div><button class="secondary" id="next-pending">跳到下一项待审任务</button></div><div class="footer-tools"><span>审阅者 ${reviewer.toUpperCase()} · ${TASKS.length} 项冻结任务</span><div><button class="secondary" id="import">导入 CSV</button> <button class="secondary danger" id="reset">清空当前审阅</button></div></div>`;
       document.querySelectorAll(".verdict").forEach(button => button.addEventListener("click", () => update({verdict: button.dataset.value})));
       $("independent-result").addEventListener("input", event => update({independent_result: event.target.value}, false));
       $("notes").addEventListener("input", event => update({notes: event.target.value}, false));
@@ -226,7 +227,7 @@
     function move(delta) { selected = Math.max(0, Math.min(TASKS.length - 1, selected + delta)); render(); }
     function nextPending() {
       for (let step = 1; step <= TASKS.length; step++) { const index = (selected + step) % TASKS.length; if (!complete(TASKS[index])) { selected = index; render(); return; } }
-      alert("All tasks are complete for this reviewer.");
+      alert("当前审阅者的全部任务均已完成。");
     }
     function csvEscape(value) { const text = String(value ?? ""); return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text; }
     function exportCsv() {
@@ -241,8 +242,8 @@
       const header = rows.shift() || []; return rows.filter(r => r.some(Boolean)).map(r => Object.fromEntries(header.map((h,i) => [h.replace(/^\ufeff/, ""), r[i] || ""])));
     }
     function importCsv(file) {
-      const reader = new FileReader(); reader.onload = () => { try { const rows = parseCsv(reader.result); const ids = new Set(TASKS.map(t => t.audit_id)); if (rows.length !== TASKS.length || rows.some(r => !ids.has(r.audit_id))) throw new Error("CSV does not cover the frozen 98-task set."); responses = Object.fromEntries(rows.map(r => [r.audit_id, {verdict:r.verdict || "", independent_result:r.independent_result || "", notes:r.notes || ""}])); saveResponses(); render(); alert(`Imported ${rows.length} rows for Reviewer ${reviewer.toUpperCase()}.`); } catch (error) { alert(`Import failed: ${error.message}`); } }; reader.readAsText(file); }
-    function resetReviewer() { if (confirm(`Clear all locally stored answers for Reviewer ${reviewer.toUpperCase()}?`)) { responses = {}; localStorage.removeItem(key(reviewer)); render(); } }
+      const reader = new FileReader(); reader.onload = () => { try { const rows = parseCsv(reader.result); const ids = new Set(TASKS.map(t => t.audit_id)); if (rows.length !== TASKS.length || rows.some(r => !ids.has(r.audit_id))) throw new Error("该 CSV 未完整覆盖冻结的 98 项任务。"); responses = Object.fromEntries(rows.map(r => [r.audit_id, {verdict:r.verdict || "", independent_result:r.independent_result || "", notes:r.notes || ""}])); saveResponses(); render(); alert(`已为审阅者 ${reviewer.toUpperCase()} 导入 ${rows.length} 行。`); } catch (error) { alert(`导入失败：${error.message}`); } }; reader.readAsText(file); }
+    function resetReviewer() { if (confirm(`确定清空审阅者 ${reviewer.toUpperCase()} 保存在本机的全部答案吗？`)) { responses = {}; localStorage.removeItem(key(reviewer)); render(); } }
     function render() { renderStats(); renderList(); renderDetail(); }
     $("reviewer").value = reviewer;
     $("reviewer").addEventListener("change", event => { reviewer = event.target.value; localStorage.setItem("fastclaw-stage2-reviewer", reviewer); responses = loadResponses(reviewer); render(); });

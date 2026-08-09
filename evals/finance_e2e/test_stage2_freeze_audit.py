@@ -34,7 +34,7 @@ class Stage2FreezeAuditTest(unittest.TestCase):
             self.assertNotIn("__STAGE2_REVIEW_TASKS__", review_html)
             self.assertIn(source["audit_id"], review_html)
             self.assertIn(source["claimed_excerpt"], review_html)
-            self.assertIn("Expected results remain hidden", review_html)
+            self.assertIn("预期答案继续隐藏", review_html)
 
     def test_analysis_requires_complete_independent_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
