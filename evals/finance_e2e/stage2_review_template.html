@@ -62,6 +62,15 @@
     .eyebrow { color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
     h2 { margin: 7px 0 4px; font: 700 clamp(25px, 3vw, 34px)/1.2 Georgia, "Times New Roman", serif; overflow-wrap: anywhere; }
     .notice { display: flex; gap: 10px; margin: 22px 0; padding: 13px 15px; border: 1px solid #e3c9b9; border-radius: 10px; color: #713a20; background: var(--orange-soft); }
+    .glossary { margin: 16px 0; border: 1px solid #bfd0c6; border-radius: 13px; background: #f0f6f2; }
+    .glossary summary { padding: 15px 18px; color: var(--green); font-weight: 800; cursor: pointer; user-select: none; }
+    .glossary[open] summary { border-bottom: 1px solid #ceddd5; }
+    .glossary-body { padding: 4px 18px 17px; }
+    .glossary-intro { color: var(--muted); font-size: 13px; }
+    .definition-list { display: grid; grid-template-columns: minmax(135px, .36fr) 1fr; margin: 12px 0 0; }
+    .definition-list dt, .definition-list dd { margin: 0; padding: 9px 0; border-top: 1px solid #d8e3dd; }
+    .definition-list dt { padding-right: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+    .definition-list dd { color: #39453f; }
     .card { margin: 16px 0; padding: 20px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel); box-shadow: var(--shadow); }
     .card h3 { margin: 0 0 12px; font-size: 14px; }
     .meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; }
@@ -95,7 +104,9 @@
       .shell { display: block; }
       aside { position: static; width: 100%; height: auto; max-height: 340px; border-right: 0; border-bottom: 1px solid var(--line); }
       main { padding: 24px 15px 50px; }
-      .meta, .verdicts { grid-template-columns: 1fr; }
+      .meta, .verdicts, .definition-list { grid-template-columns: 1fr; }
+      .definition-list dt { padding-bottom: 2px; }
+      .definition-list dd { padding-top: 2px; border-top: 0; }
       .top-actions { width: 100%; }
       .top-actions select { flex: 1; }
     }
@@ -164,6 +175,52 @@
     function prettyType(type) { return ({source:"来源事实",oracle_calculation:"人工标准答案计算",evidence_equivalence_group:"证据等价组"})[type] || type; }
     function verdictLabel(value) { return ({PASS:"通过（PASS）",FAIL:"不通过（FAIL）",NOT_ASSESSABLE:"无法判断（NOT ASSESSABLE）"})[value] || value; }
     function parseJson(value, fallback) { try { return JSON.parse(value); } catch (_) { return fallback; } }
+    function definitions(items) {
+      return `<dl class="definition-list">${items.map(([term, description]) => `<dt>${escapeHtml(term)}</dt><dd>${escapeHtml(description)}</dd>`).join("")}</dl>`;
+    }
+    function fieldHelp(task) {
+      const common = [
+        ["audit_id", "本次审计任务的唯一编号；导入、导出和后续一致性分析都依赖它，请勿修改。"],
+        ["independent_result", "审阅者独立得到的抄录、计算过程或等价性判断。必须先填写它，任务才计为完成。"],
+        ["verdict", "PASS 表示核验一致；FAIL 表示发现实质差异；NOT_ASSESSABLE 表示现有材料不足以可靠判断。"],
+        ["notes", "记录差异原因、材料不足、歧义及待裁决事项。FAIL 或 NOT_ASSESSABLE 时应填写。"]
+      ];
+      let specific;
+      if (task.audit_type === "source") {
+        specific = [
+          ["source_id", "锁定的一手资料标识，通常对应某家公司在特定日期披露的一份 SEC 文件。"],
+          ["locator", "目标信息在文件中的章节、表格或段落位置，用于快速定位；它本身不是证据结论。"],
+          ["filing_date", "该文件的申报日期。"],
+          ["accepted_at", "SEC 接收该文件的精确时间；用于判断文件在指定 as-of 时点是否已经公开可用。"],
+          ["accession", "SEC 为该次申报分配的唯一提交编号。"],
+          ["source_sha256", "锁定文件内容的 SHA-256 摘要；用于发现文件缺失或内容漂移，不代表事实一定正确。"],
+          ["claimed_excerpt", "待核对的原文摘录。它是需要验证的主张，不应因为显示在页面中就直接视为正确答案。"],
+          ["value / unit", "value 是待核对数值；unit 是单位，例如 USD_million 表示百万美元，percent 表示百分比。"],
+          ["basis", "统计口径。例如 GAAP 表示按美国通用会计准则披露，reported_segment 表示公司报告的业务分部口径。"],
+          ["period", "数值对应的报告期间或截止日期，必须与原始文件一致。"]
+        ];
+      } else if (task.audit_type === "oracle_calculation") {
+        specific = [
+          ["input_facts", "计算允许使用的已锁定输入事实；每项包含 fact_id、value、unit 和 basis。"],
+          ["fact_id", "输入事实的唯一编号，用于追溯来源并避免把不同期间或口径的数据混在一起。"],
+          ["operation", "计算类型：ratio_percent 为占比，percent_change 为百分比变化，difference 为直接相减。"],
+          ["rounding", "最终结果的舍入精度；应同时写下未舍入过程和最终舍入值。"],
+          ["numerator / denominator", "ratio_percent 的分子与分母事实编号，计算为分子 ÷ 分母 × 100。"],
+          ["from_fact / to_fact", "变化或差值计算的起始事实与结束事实；顺序会影响正负号。"],
+          ["expected", "机器参考答案在盲审阶段保持隐藏，页面和导出的 reviewer CSV 均不会展示。"]
+        ];
+      } else {
+        specific = [
+          ["record_id", "suite 中一条证据记录的唯一编号。"],
+          ["source_id", "该记录所属的锁定一手资料。"],
+          ["locator", "该记录在原始资料中的章节或段落位置。"],
+          ["text_preview", "为了便于初筛而截取的短文本，不一定包含完整上下文；不足以判断时应查看 suite 完整文本。"],
+          ["证据等价组", "组内记录应当能独立支持同一项必需证据要求，属于可替代证据；不能仅因为来自同一公司或主题相近就判为等价。"],
+          ["VALID", "表示组内全部记录都可作为该证据要求的有效替代项；若不是，请在 independent_result 中列出有问题的 record_id。"]
+        ];
+      }
+      return `<details class="glossary"><summary>字段说明与判断口径</summary><div class="glossary-body"><p class="glossary-intro">这里解释字段含义，不提供或暗示本题的预期答案。英文机器字段保留是为了保证 CSV 和分析脚本兼容。</p>${definitions([...specific, ...common])}</div></details>`;
+    }
     function visibleTasks() {
       return TASKS.filter(task => {
         const r = response(task);
@@ -210,7 +267,7 @@
     }
     function renderDetail() {
       const task = TASKS[selected]; const r = response(task);
-      $("content").innerHTML = `<div class="eyebrow">${escapeHtml(prettyType(task.audit_type))} · 第 ${selected + 1} 项，共 ${TASKS.length} 项</div><h2>${escapeHtml(task.audit_id)}</h2><div class="subtitle">${escapeHtml(task.review_task)}</div><div class="notice"><strong>盲审要求</strong><span>预期答案继续隐藏。请先填写独立核验结果，再给出审阅结论。</span></div>${taskMaterial(task)}<section class="card"><h3>审阅指引</h3><p>${escapeHtml(task.review_guidance)}</p></section><section class="card"><div class="form-title"><h3>你的审阅结果</h3><span class="saved" id="saved">仅保存在当前浏览器</span></div><div class="verdicts">${["PASS","FAIL","NOT_ASSESSABLE"].map(v => `<button class="verdict ${r.verdict === v ? "selected" : ""}" data-value="${v}">${verdictLabel(v)}</button>`).join("")}</div><label for="independent-result">独立核验结果 <small>必填，填写后才计为完成</small></label><textarea id="independent-result" placeholder="填写核验后的事实、完整计算过程，或填写 VALID / 有问题的记录编号……">${escapeHtml(r.independent_result)}</textarea><label for="notes">备注 <small>选择不通过或无法判断时，请说明原因</small></label><textarea id="notes" placeholder="简要说明问题、歧义或需要后续处理的事项……">${escapeHtml(r.notes)}</textarea></section><div class="nav"><div class="nav-group"><button class="secondary" id="previous" ${selected === 0 ? "disabled" : ""}>← 上一项</button><button class="secondary" id="next" ${selected === TASKS.length - 1 ? "disabled" : ""}>下一项 →</button></div><button class="secondary" id="next-pending">跳到下一项待审任务</button></div><div class="footer-tools"><span>审阅者 ${reviewer.toUpperCase()} · ${TASKS.length} 项冻结任务</span><div><button class="secondary" id="import">导入 CSV</button> <button class="secondary danger" id="reset">清空当前审阅</button></div></div>`;
+      $("content").innerHTML = `<div class="eyebrow">${escapeHtml(prettyType(task.audit_type))} · 第 ${selected + 1} 项，共 ${TASKS.length} 项</div><h2>${escapeHtml(task.audit_id)}</h2><div class="subtitle">${escapeHtml(task.review_task)}</div><div class="notice"><strong>盲审要求</strong><span>预期答案继续隐藏。请先填写独立核验结果，再给出审阅结论。</span></div>${fieldHelp(task)}${taskMaterial(task)}<section class="card"><h3>审阅指引</h3><p>${escapeHtml(task.review_guidance)}</p></section><section class="card"><div class="form-title"><h3>你的审阅结果</h3><span class="saved" id="saved">仅保存在当前浏览器</span></div><div class="verdicts">${["PASS","FAIL","NOT_ASSESSABLE"].map(v => `<button class="verdict ${r.verdict === v ? "selected" : ""}" data-value="${v}">${verdictLabel(v)}</button>`).join("")}</div><label for="independent-result">独立核验结果 <small>必填，填写后才计为完成</small></label><textarea id="independent-result" placeholder="填写核验后的事实、完整计算过程，或填写 VALID / 有问题的记录编号……">${escapeHtml(r.independent_result)}</textarea><label for="notes">备注 <small>选择不通过或无法判断时，请说明原因</small></label><textarea id="notes" placeholder="简要说明问题、歧义或需要后续处理的事项……">${escapeHtml(r.notes)}</textarea></section><div class="nav"><div class="nav-group"><button class="secondary" id="previous" ${selected === 0 ? "disabled" : ""}>← 上一项</button><button class="secondary" id="next" ${selected === TASKS.length - 1 ? "disabled" : ""}>下一项 →</button></div><button class="secondary" id="next-pending">跳到下一项待审任务</button></div><div class="footer-tools"><span>审阅者 ${reviewer.toUpperCase()} · ${TASKS.length} 项冻结任务</span><div><button class="secondary" id="import">导入 CSV</button> <button class="secondary danger" id="reset">清空当前审阅</button></div></div>`;
       document.querySelectorAll(".verdict").forEach(button => button.addEventListener("click", () => update({verdict: button.dataset.value})));
       $("independent-result").addEventListener("input", event => update({independent_result: event.target.value}, false));
       $("notes").addEventListener("input", event => update({notes: event.target.value}, false));
