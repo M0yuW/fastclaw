@@ -25,6 +25,7 @@ from evals.finance_e2e.build_retrieval_suite import (
 
 
 DEFAULT_OUTPUT = ROOT / "evals" / "finance-retrieval-stage2a-v2.json"
+DEFAULT_ACCEPTANCE_LOCK = ROOT / "evals" / "finance_e2e" / "acceptance-time-lock.json"
 PRIMARY_MODES = ["solo_staged", "team_shared_retrieval", "team_raw_context"]
 DIAGNOSTIC_MODES = ["solo_monolithic", "oracle_evidence"]
 ABLATION_MODE = "team_shared_retrieval_all_pro"
@@ -39,8 +40,21 @@ def case_metadata(case_id: str) -> tuple[str, str, str]:
     return company, task_family, f"{company}|{task_family}"
 
 
-def build_stage2_suite(evidence: Path, sources: Path, lock: Path) -> dict[str, Any]:
+def build_stage2_suite(
+    evidence: Path, sources: Path, lock: Path, acceptance_lock: Path = DEFAULT_ACCEPTANCE_LOCK
+) -> dict[str, Any]:
     suite = build_suite(evidence, sources, lock)
+    accepted_by_accession = {
+        row["accession"]: row for row in read_json(acceptance_lock)["entries"]
+    }
+    for case in suite["cases"]:
+        for record in case["records"]:
+            accepted = accepted_by_accession.get(record["accession"])
+            if accepted is None:
+                raise ValueError(f"missing acceptance metadata: {record['accession']}")
+            if accepted["filing_date"] != record["filed_at"]:
+                raise ValueError(f"acceptance metadata filing-date mismatch: {record['accession']}")
+            record["accepted_at"] = accepted["accepted_at"]
     suite.update(
         {
             "study": "finance-sec-retrieval-stage2a-v1",
@@ -88,6 +102,21 @@ def build_stage2_suite(evidence: Path, sources: Path, lock: Path) -> dict[str, A
         case["company"] = company
         case["task_family"] = task_family
         case["cluster_id"] = cluster_id
+        if task_family == "point_in_time":
+            gold_ids = set(case["gold_record_ids"])
+            target_times = [record["accepted_at"] for record in case["records"] if record["id"] in gold_ids]
+            if not target_times:
+                raise ValueError(f"point-in-time case has no dated gold records: {case['id']}")
+            as_of_timestamp = max(target_times)
+            excluded = sorted({record["source_id"] for record in case["records"] if record["accepted_at"] > as_of_timestamp})
+            case["records"] = [record for record in case["records"] if record["accepted_at"] <= as_of_timestamp]
+            case["as_of_timestamp"] = as_of_timestamp
+            case["accepted_at_verified"] = True
+            case["temporal_verification_note"] = (
+                "Verified against the locked SEC submissions API acceptance timestamp; "
+                "later-accepted candidate corpus sources are excluded."
+            )
+            case["excluded_future_source_ids"] = excluded
         if (task_family == "longitudinal" and case["corpus_load"] == "medium") or (
             task_family == "point_in_time" and case["corpus_load"] == "large"
         ):
@@ -97,6 +126,9 @@ def build_stage2_suite(evidence: Path, sources: Path, lock: Path) -> dict[str, A
         raise ValueError("Stage 2A must contain 24 configurations and 8 company-task clusters")
     if len(ablation_cases) != 8:
         raise ValueError("Stage 2A all-Pro ablation must contain 8 prespecified configurations")
+    suite["formal_freeze_blockers"] = [
+        "Complete two independent human reviews of all 98 source/oracle freeze-audit items and adjudicate every non-PASS item."
+    ]
     return suite
 
 
@@ -105,10 +137,11 @@ def main() -> int:
     parser.add_argument("--evidence", type=Path, default=DEFAULT_EVIDENCE)
     parser.add_argument("--sources", type=Path, default=DEFAULT_SOURCES)
     parser.add_argument("--lock", type=Path, default=DEFAULT_LOCK)
+    parser.add_argument("--acceptance-lock", type=Path, default=DEFAULT_ACCEPTANCE_LOCK)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    suite = build_stage2_suite(args.evidence, args.sources, args.lock)
+    suite = build_stage2_suite(args.evidence, args.sources, args.lock, args.acceptance_lock)
     if args.check:
         if not args.output.exists() or read_json(args.output) != suite:
             raise RuntimeError(f"generated Stage 2 artifact is stale: {args.output}")

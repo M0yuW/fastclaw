@@ -26,6 +26,17 @@ class BuildStage2SuiteTest(unittest.TestCase):
         for case_id in self.suite["ablation_case_ids"]:
             self.assertTrue(case_id.endswith("LONG-MEDIUM") or case_id.endswith("POINT-LARGE"))
 
+    def test_point_in_time_temporal_gate_is_explicitly_blocked(self) -> None:
+        point_cases = [case for case in self.suite["cases"] if case["task_family"] == "point_in_time"]
+        self.assertEqual(12, len(point_cases))
+        self.assertTrue(all(case["as_of_timestamp"].endswith("Z") for case in point_cases))
+        self.assertTrue(all(case["accepted_at_verified"] is True for case in point_cases))
+        self.assertTrue(all("Verified" in case["temporal_verification_note"] for case in point_cases))
+        self.assertTrue(any(case["excluded_future_source_ids"] for case in point_cases))
+        for case in point_cases:
+            self.assertTrue(all(record["accepted_at"] <= case["as_of_timestamp"] for record in case["records"]))
+        self.assertTrue(self.suite["formal_freeze_blockers"])
+
 
 if __name__ == "__main__":
     unittest.main()

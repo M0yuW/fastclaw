@@ -4,7 +4,7 @@ AFFILIATION: Faculty of Science and Technology, University of Macau
 EMAIL: mc45505@um.edu.mo
 REPORT DATE: August 2026
 
-ABSTRACT: Large-language-model agents are increasingly deployed as long-running services rather than single prompts, yet reported evaluations commonly attribute outcomes to the model while treating the runtime as neutral infrastructure. This thesis argues that the runtime—the layer that constructs prompts, resolves identity, filters tools, routes delegation, allocates context, persists state, handles cancellation, and grades outputs—is itself part of the experimental treatment. FastClaw is a multi-tenant Go agent runtime with a bounded streaming execution state machine, per-chat FIFO scheduling, root-level concurrency admission, correlated internal request/reply, transitive wait-graph cycle detection, policy-filtered tools, panic containment, batch shared-context delegation, and coordinator/specialist telemetry. A financial research application adds seventeen deterministic plugin tools, a typed evidence envelope, optimistic version control, tenant-isolated thesis and alert state, duplicate-event suppression, and an optional independent challenger. Three experimental tracks are reported. A historical eight-case regression sequence recorded 0/8, 4/8, and 8/8 strict success while total tokens declined, but evidence visibility and the grader changed with the runtime. A six-case, four-mode confirmation matched evidence visibility; Team, Solo Open-Book, and Solo Two-Pass each passed 5/6 cases, while the available sample could not resolve a modest orchestration effect. A retrieval-mediated SEC pilot then compared monolithic Solo, staged Solo, shared-retrieval Team, raw-context Team, and Oracle evidence on one medium-context longitudinal case drawn from a frozen 24-configuration suite. Shared-retrieval Team and staged Solo both achieved all milestones and 100% final evidence recall, so no incremental accuracy effect was observed. Relative to staged Solo, shared-retrieval Team reduced wall-clock latency by 36.32% and estimated cost by 42.06%, while using 13.63% more provider-total tokens under heterogeneous model allocation. Relative to raw-context Team, it reduced tokens by 38.42% and cost by 47.62% while increasing numeric grounding from 94.87% to 98.28%. These are single-case descriptive observations, not population estimates. The demonstrated contribution is an auditable runtime and evaluation harness that separates evidence access, context allocation, orchestration, model assignment, and grader behavior; it is not evidence of superior financial judgment, factual entailment, or investment performance.
+ABSTRACT: Large-language-model agents are increasingly deployed as long-running services rather than single prompts, yet reported evaluations commonly attribute outcomes to the model while treating the runtime as neutral infrastructure. This thesis argues that the runtime—the layer that constructs prompts, resolves identity, filters tools, routes delegation, allocates context, persists state, handles cancellation, and grades outputs—is itself part of the experimental treatment. FastClaw is a multi-tenant Go agent runtime with a bounded streaming execution state machine, per-chat FIFO scheduling, root-level concurrency admission, correlated internal request/reply, transitive wait-graph cycle detection, policy-filtered tools, panic containment, batch shared-context delegation, and coordinator/specialist telemetry. A financial research application adds deterministic tools and tenant-scoped state. Three experimental tracks are reported. A historical regression sequence is diagnostic because evidence visibility and the grader changed with the runtime. In a six-case evidence-matched confirmation, Team, Solo Open-Book, and Solo Two-Pass each passed 5/6 cases; the available sample did not establish an incremental Team accuracy effect. A retrieval-mediated SEC Pilot compared five modes on one medium-context longitudinal case. Shared-retrieval Team and staged Solo both achieved all milestones and 100% final evidence recall. Relative to staged Solo, the Team observation had 36.32% lower wall-clock latency and 42.06% lower frozen-price estimated cost, with 13.63% more provider-total tokens under heterogeneous model allocation. Relative to raw-context Team, it had 38.42% fewer tokens, 47.62% lower estimated cost, and numeric grounding of 98.28% rather than 94.87%. Non-random order, one repetition, provider variability, and heterogeneous allocation make these descriptive associations rather than causal or population estimates. The two empirical conclusions are therefore bounded: current evidence does not establish an evidence-matched Team accuracy advantage, and the single-case Pilot records limited latency–cost–grounding differences. The demonstrated contribution is an auditable runtime and evaluation method, not evidence of superior financial judgment, full factual correctness, investment performance, or inherent multi-agent superiority.
 
 INDEX TERMS: LLM agents, agent runtime, multi-agent systems, tool calling, context allocation, evidence retrieval, financial research, evaluation harness, fault injection, tenant isolation, observability.
 ABBREVIATION: ACL | Agent access-control list
@@ -28,13 +28,11 @@ The reasoning–action–observation pattern introduced by ReAct [1] provides a 
 
 Financial research is an appropriate application domain because it combines deterministic and probabilistic work. Price histories, ratios, portfolio concentration, event fingerprints, and duplicate suppression should be computed by deterministic programs. Interpretation of catalysts, contradictions, and invalidation conditions can benefit from an LLM, but every material claim should retain its source and timestamp. The target system is therefore a research copilot, not an autonomous trading engine: it assists evidence collection, prioritization, monitoring, and challenge while leaving portfolio actions to a human.
 
-This report makes five contributions:
+This report makes three bounded contributions:
 
-1. It presents the complete FastClaw runtime architecture, from authenticated ingress and lazy tenant loading to provider streaming, tool execution, session persistence, and shutdown.
-2. It explains the concrete execution semantics of one agent turn, including identity validation, prompt construction, policy-filtered tool registries, concurrent tool calls, loop detection, terminal persistence, and event streaming.
-3. It describes a real multi-agent request/reply path that uses an internal MessageBus and TaskQueue with correlation identifiers, per-chat serialization, cancellation propagation, tenant checks, backpressure, and cycle detection.
-4. It develops an evidence-grounded financial research layer composed of a native `finance-tools` plugin, a pinned Serenity research Skill, a tenant-isolated Thesis Ledger, watchlists, and deduplicated event alerts.
-5. It constructs an evaluation stack with project-specific tests and BFCL-, τ-bench-, SWE-bench-, and MultiAgentBench-style subsets, then separates historical regression evidence, evidence-matched financial comparisons, source-locked SEC retrieval experiments, and replayable grader sensitivity analysis.
+1. **Auditable runtime artifact:** FastClaw implements authenticated ingress, bounded streaming turns, policy-filtered tools, correlated coordinator–specialist request/reply, tenant-scoped state, cancellation, and role-level telemetry as an inspectable Go artifact.
+2. **Measurement method:** the evaluation separates evidence visibility, planning opportunity, orchestration, model allocation, runtime failure, context allocation, and grader behavior, while retaining content-addressed artifacts for offline replay.
+3. **Limited empirical result:** the retained experiments do not establish an incremental accuracy advantage for evidence-matched Team execution. A single-case descriptive Pilot instead records bounded differences in latency, frozen-price estimated cost, and numeric grounding that are consistent with context-allocation effects but are not causal or population-level estimates.
 
 The central research question is not whether a stronger model can improve a score. It is whether an engineered runtime can make an explicitly declared model allocation more reliable, cheaper, faster, and easier to diagnose. The present experiments only partially examine that question. The historical study changes runtime behavior, evidence visibility, and grading together; the fixed-evidence financial study changes orchestration mode while holding evidence visibility more carefully; and the retrieval-mediated pilot changes context allocation within a declared heterogeneous deployment. Their combination motivates a measurement method and identifies unresolved confounding, but it does not isolate a universal causal runtime effect.
 
@@ -80,27 +78,27 @@ The resulting runtime requirements are:
 5. **Observability:** model calls, tool traces, call paths, token usage, latency, and estimated cost must be attributable to coordinator and specialist roles.
 6. **Evaluability:** Team/Solo comparisons must control evidence visibility, and infrastructure errors must not be counted as model failures.
 
-## E. Research Questions
+## E. Validity Preconditions and Empirical Questions
 
-The study is organized around five research questions.
+The study uses two validity preconditions, two primary empirical questions, and one prospective validation question.
 
-1. **RQ1—Runtime correctness:** Can the runtime preserve tenant scope, tool-call ordering, terminal streaming semantics, and bounded execution under normal and interrupted requests?
+1. **VP1—Selected runtime control paths:** Do executable tests support the specific tenant-scope, tool-call ordering, terminal-streaming, cancellation, and bounded-execution paths used by the experiments?
 2. **RQ2—Orchestration benefit:** Across fixed-evidence and retrieval-mediated conditions, does coordinator–specialist execution improve deterministic task outcomes relative to an evidence-matched staged Solo baseline?
 3. **RQ3—Context allocation and efficiency:** Under a fixed task, source snapshot, and declared model allocation, how do monolithic, staged, shared-retrieval, and raw-context execution trade evidence retention, grounding, token consumption, latency, and estimated cost?
-4. **RQ4—Fault tolerance:** Can the coordinator identify specialist-local failure, attribute missing evidence correctly, avoid unsupported claims, and still produce a safe partial answer?
-5. **RQ5—Financial-workflow validity:** Can the application preserve source dates, data completeness, explicit thesis conditions, versioned state transitions, alert identity, and human-decision boundaries in representative research workflows?
+4. **Prospective RQ4—Fault tolerance:** Can the coordinator identify specialist-local failure, attribute missing evidence correctly, avoid unsupported claims, and still produce a safe partial answer in a future retained fault study?
+5. **VP2—Selected financial-workflow invariants:** Do deterministic tests support the specific provenance, completeness, version-transition, alert-identity, and human-decision boundaries exercised by the evaluation fixtures?
 
-RQ1 is addressed through selected unit and integration tests of runtime control paths. RQ2 and RQ3 are examined with fixed-evidence Team/Solo baselines, historical runtime evidence, and a retrieval-mediated SEC pilot. RQ4 is operationalized in the harness but is not exercised by the primary financial artifact. RQ5 is split among deterministic plugin tests, six fixed-evidence governance cases, a four-company longitudinal extension, and the SEC retrieval pilot; none of the model experiments executes a live portfolio action.
+VP1 and VP2 are validity preconditions supported only for selected tested paths and invariants; they are not empirical claims of production reliability or complete workflow validity. RQ2 and RQ3 are the primary empirical questions. Prospective RQ4 is operationalized in the harness but is not an executed research question. None of the model experiments executes a live portfolio action.
 
-TABLE_CAPTION: Mapping from research questions to hypotheses, estimands, evidence, and present status.
+TABLE_CAPTION: Mapping from validity preconditions and empirical questions to evaluation propositions, estimands, evidence, and present status.
 
-| RQ | Related hypotheses | Operational estimand | Primary evidence | Present status |
+| Question | Related propositions | Operational estimand | Primary evidence | Present status |
 |---|---|---|---|---|
-| RQ1 | H1 | Correct terminal state, scope, cancellation, and bounded execution | Go unit/integration tests | Partially supported; the proposed causal ablation has not run |
-| RQ2 | H2 | Paired Team minus evidence-matched staged Solo success and milestone retention | Six-case r5, longitudinal SEC extension, and retrieval-mediated pilot | No incremental accuracy effect established; Stage 2 confirmation pending |
-| RQ3 | H3, H6 | Evidence retention, grounding, tokens, latency, and cost under explicit context and model allocation | Per-call usage trace and five-mode retrieval pilot | Descriptive one-case mechanism evidence; capacity-matched confirmation pending |
-| RQ4 | H4 | Safe output under observed and attributed specialist faults | Fault-injection instrumentation and deterministic harness tests | Instrument contributed; not exercised by the primary financial artifacts |
-| RQ5 | H5 | Evidence-attributed governance wording and deterministic ledger behavior | r5 text graders plus plugin tests | Split evidence; no model-run ledger mutation |
+| VP1 | EP1 | Correct terminal state, scope, cancellation, and bounded execution on selected paths | Go unit/integration tests | Partially supported for selected paths; not production assurance |
+| RQ2 | EP2 | Paired Team minus evidence-matched staged Solo success and milestone retention | Six-case r5, longitudinal SEC extension, and retrieval-mediated Pilot | No incremental accuracy effect established; Stage 2 proposed |
+| RQ3 | EP3, EP6 | Evidence retention, grounding, tokens, latency, and frozen-price estimated cost | Per-call usage trace and five-mode retrieval Pilot | Descriptive one-case evidence; capacity-matched confirmation proposed |
+| Prospective RQ4 | EP4 | Safe output under observed and attributed specialist faults | Instrumentation and deterministic harness tests only | Not tested by a retained primary financial artifact |
+| VP2 | EP5 | Selected provenance and deterministic ledger invariants | Plugin tests and source/oracle records | Supported only for selected deterministic invariants |
 
 ## F. Threat Model and Design Principles
 
@@ -241,6 +239,10 @@ For one model call, the estimated cost is
 `C = (Tin × Pin + Tout × Pout + Tcache-read × Pcache-read + Tcache-write × Pcache-write) / 10^6`,
 
 where cached prompt tokens are removed from ordinary prompt tokens when the provider reports that they are already included. Reports aggregate coordinator and specialist cost, Team and Solo cost, full-harness cost, and cost per successful Team case.
+
+Every monetary value in this thesis is an estimate computed from the frozen
+suite price table. It is not a provider invoice and is not presented as a general
+cost law outside the recorded model allocation and date.
 
 # V. FINANCIAL RESEARCH APPLICATION
 
@@ -397,20 +399,20 @@ The cases are intentionally fixed-evidence tasks rather than return-prediction t
 
 # VI. EVALUATION METHODOLOGY
 
-## A. Research Design and Hypotheses
+## A. Research Design and Evaluation Propositions
 
-The evaluation follows a controlled artifact-evaluation design. The execution unit is one isolated case–repetition–mode attempt. For inference over the retrieval suite, the clustering unit is the company–task pair: corpus loads and repeated provider calls derived from the same source records are not treated as independent financial cases. The principal independent variable depends on the experimental track. Fixed-evidence comparisons vary orchestration while holding evidence and model assignment constant. Retrieval-mediated comparisons vary execution topology and context allocation under an explicitly declared model assignment. The dependent variables are deterministic task success, evidence retention, numeric grounding, collaboration quality, fault-handling quality, token usage, latency, and estimated cost.
+The evaluation follows a controlled artifact-evaluation design. The execution unit is one isolated case–repetition–mode attempt. For the retrieval suite, the company–task pair is an analysis cluster: corpus loads and repeated provider calls derived from the same source records are not treated as independent financial cases, but the eight clusters are not claimed to be strictly independent draws from a population. The principal independent variable depends on the experimental track. Fixed-evidence comparisons vary orchestration while holding evidence and model assignment constant. Retrieval-mediated comparisons vary execution topology and context allocation under an explicitly declared model assignment. The dependent variables are deterministic task success, evidence retention, numeric grounding, collaboration quality, fault-handling quality, token usage, latency, and estimated cost under a frozen price table.
 
-The hypotheses are:
+The evaluation propositions are directional design expectations with explicit evidence states, not externally registered population hypotheses:
 
-1. **H1:** enforcing identity files, tool policy, structured specialist output, and bounded delegation improves strict task success without changing the assigned models;
-2. **H2:** shared-retrieval Team preserves strict outcome and final evidence recall relative to staged Solo while reducing wall-clock latency through parallel specialist execution;
-3. **H3:** sharing one bounded evidence packet reduces tokens, cost, and unsupported numeric assertions relative to sending the raw corpus through the same Team topology;
-4. **H4:** fault-aware coordination reduces unsupported claims relative to a coordinator that treats failed specialists as successful;
-5. **H5:** deterministic finance controls achieve exact state and policy invariants even when open-ended wording varies;
-6. **H6:** unnecessary delegation or repeated context replication increases tokens, cost, and latency without improving milestone outcome.
+1. **EP1:** selected runtime controls are executable and observable on the tested paths;
+2. **EP2:** shared-retrieval Team preserves strict outcome and final evidence recall relative to staged Solo while reducing wall-clock latency through parallel specialist execution;
+3. **EP3:** sharing one bounded evidence packet reduces tokens, frozen-price estimated cost, and unsupported numeric assertions relative to sending the raw corpus through the same Team topology;
+4. **EP4:** fault-aware coordination reduces unsupported claims relative to a coordinator that treats failed specialists as successful;
+5. **EP5:** deterministic finance controls achieve exact selected state and policy invariants even when open-ended wording varies;
+6. **EP6:** unnecessary delegation or repeated context replication increases tokens, frozen-price estimated cost, and latency without improving milestone outcome.
 
-The design separates infrastructure failure from model failure. A timeout, transport error, or unavailable provider is marked `errored` and excluded from the evaluated-success denominator. Otherwise an unstable provider could create an artificial Team/Solo gain by lowering one baseline’s apparent success rate.
+The design separates infrastructure failure from model failure. A timeout, transport error, or unavailable provider is marked `errored` and excluded from the completed-output conditional-success denominator, while remaining in the assigned-attempt system-success denominator. The report shows assigned, evaluated, errored, and unavailable counts together; an errored attempt is not interpreted as a model failure.
 
 ## B. Evaluation Stack
 
@@ -450,7 +452,7 @@ The fair collaboration gain is
 
 `Gfair = S(team) − S(solo_open_book)`,
 
-where `S` is outcome success under the same milestone and attribution graders. Compute-matched gain is `S(team) − S(solo_two_pass)`. The older `team − solo_closed_book` value remains an evidence-access diagnostic in legacy suites but is not evidence that orchestration itself added value. Each mode receives an independent session and timeout. If a baseline times out, returns an empty output, exposes a streamed turn error, or otherwise fails at the infrastructure layer, it is marked `errored`, excluded from the success denominator, and any dependent gain is reported as unavailable. The implementation guard verifies equal evaluated counts and zero baseline errors; it does not compare case/repetition identifiers. The thesis therefore constructs paired tables explicitly from case and repetition keys before computing paired statistics.
+where `S` is outcome success under the same milestone and attribution graders. Planning-opportunity-matched gain is `S(team) − S(solo_two_pass)`. This label is deliberately narrower than compute matching: Two-Pass matches an additional coordinator planning opportunity but does not match Team's three specialist calls. The older `team − solo_closed_book` value remains an evidence-access diagnostic in legacy suites but is not evidence that orchestration itself added value. Each mode receives an independent session and timeout. If a baseline times out, returns an empty output, exposes a streamed turn error, or otherwise fails at the infrastructure layer, it is marked `errored`; it remains in the assigned-attempt denominator but is excluded from completed-output conditional task success, and any dependent paired effect is unavailable. Infrastructure errors are not interpreted as model failures. The thesis constructs paired tables explicitly from case and repetition keys before computing paired statistics.
 
 ## E. Multi-Agent Metrics
 
@@ -506,7 +508,7 @@ Functional feasibility is defined conservatively. All configured wording and pol
 
 The retrieval track introduces evidence acquisition as an explicit stage rather than assuming that a complete evidence packet is already available. Its frozen suite contains four companies—NVIDIA, AMD, Intel, and NIKE—crossed with two task families and three corpus loads. Point-in-time cases require one bounded observation and declared calculations. Longitudinal cases require chronology reconstruction, accounting-basis checks, cross-observation calculations, a contiguous research-state chain, and a bounded governance decision. Small, medium, and large loads add progressively more same-company, adjacent-period, peer, and irrelevant records. The resulting 24 configurations are treatment combinations, not 24 independent issuers.
 
-All records are extracted from archived SEC filing material and carry a source identifier, accession, filing date, locator, source hash, and record identifier. The suite and source lock are content-addressed. Gold evidence is represented as equivalence groups so overlapping source windows can satisfy the same factual requirement without penalizing a semantically correct retrieval. Expected calculation outputs remain hidden from non-Oracle modes; all modes receive the same formulas, rounding rules, output sections, and bounded decision protocol.
+All records are extracted from archived SEC filing material and carry a source identifier, accession, filing date, locator, source hash, and record identifier. The suite and source lock are content-addressed. A unified provenance table covers all 44 human-oracle facts with company, symbol, concept, value, unit, basis, explicitly available scope, reporting period, filing date, SEC acceptance timestamp, accession, form, document type, URL, locator, and source SHA-256. A separate acceptance-time lock records SEC submissions API metadata for all twelve source accessions. The point-in-time generator excludes candidate records accepted after the target gold-record timestamp; all twelve point-in-time configurations pass this machine check. A separate 17-row derived-value table preserves formulas, input fact identifiers, unit, rounding rule, and expected result. Gold evidence is represented as 37 equivalence groups so overlapping source windows can satisfy the same factual requirement without penalizing a semantically correct retrieval. The human oracle—not model output or grader consensus—is the declared ground truth. Expected calculation outputs remain hidden from non-Oracle modes; all modes receive the same formulas, rounding rules, output sections, and bounded decision protocol. Independent human verification of the acceptance metadata remains part of the pre-freeze audit.
 
 The five modes are:
 
@@ -559,7 +561,7 @@ The replay duplicates the production matcher in an independent analysis program 
 
 ## K. Statistical Reporting and Reproducibility
 
-For repeated binary outcomes, the report provides the raw numerator and denominator together with a Wilson confidence interval [15]. Because cases are paired across modes, Team and `solo_open_book` are compared at the case–repetition level rather than as unrelated samples. Discordant pairs are summarized with the exact two-sided McNemar/binomial test [16]. If there are no discordant pairs, that exact test is undefined rather than evidence of equality. Case-bootstrap intervals are reserved for a larger preregistered sample [17]. With a small suite, effect sizes and paired outcome tables are more informative than significance labels. Latency and token distributions are summarized by median, P95, and individual-case values because a mean can hide delegation loops.
+The primary result is the raw case-level paired outcome table with assigned, evaluated, errored, and unavailable counts. Historical r2–r5 Wilson intervals and exact-binomial/McNemar calculations are retained only as naive descriptive sensitivity analyses: pooling repeated versions and treating the cases as independent does not model their dependence or post hoc selection. If there are no discordant pairs, the exact test is undefined rather than evidence of equality. Stage 2 prespecifies company–task cluster bootstrap intervals, but with only eight analysis clusters those intervals remain descriptive. Latency and token distributions are summarized by median, P95, and individual-case values because a mean can hide delegation loops.
 
 The retrieval suite requires an additional dependence correction. Three corpus loads and repeated calls derived from one company–task pair share source material and cannot be counted as independent cases. Stage 2 therefore reports paired effects at every configuration but constructs uncertainty intervals by resampling company–task clusters. Load-specific effects are reported as within-cluster contrasts. With only eight company–task clusters in the initial four-company matrix, these intervals remain descriptive; expansion to additional issuers is required before a population-level superiority or non-inferiority claim.
 
@@ -654,12 +656,12 @@ The secret-free run configuration is archived in `evals/finance-runtime-formal-r
 
 TABLE_CAPTION: Frozen post-fix financial confirmation, one repetition and six cases.
 
-| Mode | Passed | Billable-like tokens | Provider total tokens | Cost (USD) | Mean latency |
-|:---|---:|---:|---:|---:|---:|
-| Solo Open-Book | 5/6 | 6,557 | 9,885 | 0.005510 | 13.65 s |
-| Solo Two-Pass | 5/6 | 23,910 | 30,822 | 0.017798 | 42.65 s |
-| Team | 5/6 | 13,955 | 41,219 | 0.008335 | 19.45 s |
-| Routed Team Diagnostic | 4/6 | 5,062 | 8,902 | 0.004320 | 11.32 s |
+| Mode | Assigned | Evaluated | Errored | Unavailable | Conditional passed | Billable-like tokens | Provider total tokens | Frozen-price estimated cost (USD) | Mean latency |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Solo Open-Book | 6 | 6 | 0 | 0 | 5/6 | 6,557 | 9,885 | 0.005510 | 13.65 s |
+| Solo Two-Pass | 6 | 6 | 0 | 0 | 5/6 | 23,910 | 30,822 | 0.017798 | 42.65 s |
+| Team | 6 | 6 | 0 | 0 | 5/6 | 13,955 | 41,219 | 0.008335 | 19.45 s |
+| Routed Team Diagnostic | 6 | 6 | 0 | 0 | 4/6 | 5,062 | 8,902 | 0.004320 | 11.32 s |
 
 Billable-like tokens are uncached prompt plus completion tokens and are presented first. Provider total tokens include cache-read tokens inside prompt totals and therefore answer a different telemetry question. By the billable-like measure, Team used 2.13 times the Open-Book tokens and 41.6% fewer tokens than Two-Pass. By provider totals, the same comparisons are 4.17 times and 33.7% more. The Team/Two-Pass direction therefore reverses under the two accounting conventions. Team cost 51.3% more than Open-Book but 53.2% less than Two-Pass; model assignment, completion length, cache treatment, and provider prices all contribute, so the difference is not attributed solely to Flash specialists.
 
@@ -689,12 +691,12 @@ The four-company initial-observation study reached a 4/4 ceiling in Team, Open-B
 
 TABLE_CAPTION: Frozen longitudinal SEC extension, one repetition and four companies.
 
-| Mode | Passed | Provider total tokens | Cost (USD) | Mean latency |
-|:---|---:|---:|---:|---:|
-| Solo Open-Book | 3/4 | 27,847 | 0.018099 | 57.32 s |
-| Solo Two-Pass | 1/4 | 51,556 | 0.029369 | 94.31 s |
-| Team | 3/4 | 78,800 | 0.022718 | 65.31 s |
-| Routed Team Diagnostic | 1/4 | 24,021 | 0.014562 | 48.69 s |
+| Mode | Assigned | Evaluated | Errored | Unavailable | Conditional passed | Provider total tokens | Frozen-price estimated cost (USD) | Mean latency |
+|:---|---:|---:|---:|---:|---:|---:|---:|---:|
+| Solo Open-Book | 4 | 4 | 0 | 0 | 3/4 | 27,847 | 0.018099 | 57.32 s |
+| Solo Two-Pass | 4 | 4 | 0 | 0 | 1/4 | 51,556 | 0.029369 | 94.31 s |
+| Team | 4 | 4 | 0 | 0 | 3/4 | 78,800 | 0.022718 | 65.31 s |
+| Routed Team Diagnostic | 4 | 4 | 0 | 0 | 1/4 | 24,021 | 0.014562 | 48.69 s |
 
 Team achieved 100% delegation F1, 91.7% specialist-contribution utilization, 95.6% contribution-item coverage, 100% configured grounding accuracy, and no unauthorized numeric value. Team and Open-Book each passed 75%, so the fair collaboration gain was zero. Their paired outcomes contained one Team-only success, one Open-Book-only success, and two ties. Team exceeded Two-Pass by 50 percentage points, but only two pairs were discordant and the sample is not adequate for an inferential claim. Relative to Open-Book, Team used 183.0% more tokens, cost 25.5% more, and increased mean latency by 13.9% without improving strict success. Relative to Two-Pass, Team cost 22.6% less and reduced mean latency by 30.8% despite using 52.8% more provider-total tokens.
 
@@ -710,19 +712,19 @@ The case, task wording, required report sections, calculation protocol, evidence
 
 TABLE_CAPTION: Retrieval-mediated NVDA medium-context pilot, one repetition.
 
-| Mode | Strict pass | Milestones | Final evidence recall | Grounding | Latency | Provider-total tokens | Cost (USD) | Compression |
-|:---|:---:|---:|---:|---:|---:|---:|---:|---:|
-| Solo monolithic | No | 2/3 | 100% | 98.29% | 55.96 s | 15,259 | 0.008263 | N/A |
-| Solo staged | Yes | 3/3 | 100% | 95.45% | 141.04 s | 37,693 | 0.020690 | 6.12x |
-| Team shared retrieval | Yes | 3/3 | 100% | 98.28% | 89.81 s | 42,829 | 0.011987 | 7.58x |
-| Team raw context | No | 3/3 | 100% | 94.87% | 104.61 s | 69,553 | 0.022884 | N/A |
-| Oracle evidence | Yes | 3/3 | 100% | 100% | 37.89 s | 7,095 | 0.002464 | N/A |
+| Mode | Assigned | Evaluated | Errored | Unavailable | Conditional strict pass | Milestones | Final evidence recall | Grounding | Latency | Provider-total tokens | Frozen-price estimated cost (USD) | Compression |
+|:---|---:|---:|---:|---:|:---:|---:|---:|---:|---:|---:|---:|---:|
+| Solo monolithic | 1 | 1 | 0 | 0 | No | 2/3 | 100% | 98.29% | 55.96 s | 15,259 | 0.008263 | N/A |
+| Solo staged | 1 | 1 | 0 | 0 | Yes | 3/3 | 100% | 95.45% | 141.04 s | 37,693 | 0.020690 | 6.12x |
+| Team shared retrieval | 1 | 1 | 0 | 0 | Yes | 3/3 | 100% | 98.28% | 89.81 s | 42,829 | 0.011987 | 7.58x |
+| Team raw context | 1 | 1 | 0 | 0 | No | 3/3 | 100% | 94.87% | 104.61 s | 69,553 | 0.022884 | N/A |
+| Oracle evidence | 1 | 1 | 0 | 0 | Yes | 3/3 | 100% | 100% | 37.89 s | 7,095 | 0.002464 | N/A |
 
 The staged Solo and shared-retrieval Team both passed every milestone and retained every gold evidence group. This observation therefore provides no incremental final-answer accuracy result for collaboration. It does reveal an efficiency and evidence-discipline difference. Relative to staged Solo, shared-retrieval Team reduced end-to-end latency by 36.32% and estimated cost by 42.06%, despite using 13.63% more provider-total tokens. The cost direction follows from heterogeneous model allocation rather than token reduction. Retrieval precision increased from 66.67% to 100%, evidence compression increased from 6.12x to 7.58x, and numeric grounding increased by 2.82 percentage points.
 
-The raw-context ablation identifies context allocation as a relevant mechanism within the same multi-agent topology. Both Team modes issued one parallel batch delegation and reached perfect target precision and recall. Shared retrieval nevertheless reduced latency by 14.15%, tokens by 38.42%, and cost by 47.62% relative to raw-context Team, while improving grounding by 3.40 percentage points. Raw-context Team produced eight unsupported or unrequested numeric forms and missed the prespecified grounding threshold by 0.128 percentage points; shared-retrieval Team produced two such forms. The monolithic mode was faster and cheaper than either complete pipeline but omitted the required separation of sourced fact, declared calculation, and analyst judgment. Its failure is therefore one of research-process compliance, not evidence recall.
+The raw-context ablation was associated with a context-allocation difference within the same multi-agent topology. Both Team modes issued one parallel batch delegation and reached perfect target precision and recall. Shared retrieval was associated with 14.15% lower latency, 38.42% fewer tokens, and 47.62% lower frozen-price estimated cost than raw-context Team, alongside a 3.40-percentage-point grounding difference. Raw-context Team produced eight unsupported or unrequested numeric forms and missed the prespecified grounding threshold by 0.128 percentage points; shared-retrieval Team produced two such forms. Because mode order was not randomized, provider conditions could vary, and the model allocation was heterogeneous, these observations do not identify a causal context-allocation effect. The monolithic mode was faster and cheaper than either complete pipeline but omitted the required separation of sourced fact, declared calculation, and analyst judgment. Its failure is therefore one of research-process compliance, not evidence recall.
 
-These findings support a bounded claim: on one medium-context filing task, explicit retrieval and shared-context delegation moved a heterogeneous Team to a better latency-cost-grounding frontier than sequential staged Solo or raw-context Team. They do not establish that multiple agents intrinsically improve financial accuracy. The observation has one company and one repetition, mode order was not randomized, and the grounding evaluator checks numeric support rather than full semantic entailment. Confirmatory work must freeze the suite and grader, cross four companies with small, medium, and large corpus loads, use at least three randomized repetitions, retain paired case-repetition identifiers, and report bootstrap intervals. A separate capacity-matched ablation should hold model assignment constant across Team and Solo.
+These findings support only a bounded descriptive claim: on one medium-context filing task, explicit retrieval and shared-context delegation were associated with a different latency–cost–grounding profile from sequential staged Solo and raw-context Team. They do not establish that multiple agents intrinsically improve financial accuracy. The observation has one company and one repetition, mode order was not randomized, provider conditions could vary, and the grounding evaluator checks numeric support rather than full semantic entailment. Confirmatory work must freeze the suite and grader, cross four companies with small, medium, and large corpus loads, use at least three randomized repetitions, retain paired case-repetition identifiers, and report bootstrap intervals. A separate capacity-matched ablation should hold model assignment constant across Team and Solo.
 
 For Team modes, reported analysis latency is the sum of specialist model-service times, whereas specialists execute concurrently. End-to-end mode latency is the wall-clock quantity and must not be reconstructed by summing stage totals. The complete descriptive record and calibration exclusions are documented in `evals/finance_e2e/results/2026-08-02-retrieval-pilot-final-summary.md`.
 
@@ -772,30 +774,30 @@ TABLE_CAPTION: Zero-model-call grader ablation over r1–r5, thirty outputs per 
 
 Negation scope has the largest protective effect because disabling it converts correct denials into forbidden positive assertions. Hedge and conditional scope each move one Team cell. Removing the token-gap guard has no effect on these artifacts, directly contradicting the earlier diagnosis that r5 failed because related phrases were too far apart. The permissive inflection switch raises Team to 27/30 and Open-Book to 25/30 while reducing the routed diagnostic to 21/30, illustrating that a linguistically plausible normalizer can change both absolute scores and relative conclusions. The ablation supports a measurement-validity finding, not a recommendation to select the switch that maximizes Team.
 
-## G. Answers to the Research Questions
+## G. Validity Preconditions and Answers to the Empirical Questions
 
-**RQ1—Runtime correctness.** The passing unit and integration tests, together with explicit tests for cancellation, stream failure, task snapshots, tenant scope, and session normalization, support the feasibility of the runtime control paths. The result is functional verification rather than formal proof or production certification.
+**VP1—Selected runtime control paths.** The passing unit and integration tests, together with explicit tests for cancellation, stream failure, task snapshots, tenant scope, and session normalization, support the feasibility of selected runtime control paths. The result is functional verification rather than formal proof or production certification.
 
-**RQ2—Orchestration benefit.** The present instrument does not establish an incremental accuracy effect. The simple four-company SEC study saturated at 4/4 in every mode. The longitudinal extension removed that ceiling, but Team and evidence-matched Open-Book each passed 3/4 cases, with one paired win and one paired loss for Team. r5 likewise recorded equal 5/6 counts, while post hoc r2–r5 pooling moves the point estimates to +12.5 and +8.3 points for Team without statistical support. In the retrieval-mediated pilot, shared-retrieval Team and staged Solo both passed all milestones and retained every gold evidence group. These results do not establish superiority, inferiority, or equivalence. They show that additional task difficulty and retrieval realism are necessary for measurement, but they do not by themselves create an accuracy advantage. A repeated, randomized study with a frozen grader and more independent company–task clusters is required.
+**RQ2—Orchestration benefit.** The present instrument does not establish an incremental accuracy effect. The simple four-company SEC study saturated at 4/4 in every mode. The longitudinal extension removed that ceiling, but Team and evidence-matched Open-Book each passed 3/4 cases, with one paired win and one paired loss for Team. r5 likewise recorded equal 5/6 counts, while post hoc r2–r5 pooling moves the point estimates to +12.5 and +8.3 points for Team without statistical support. In the retrieval-mediated Pilot, shared-retrieval Team and staged Solo both passed all milestones and retained every gold evidence group. These results do not establish superiority, inferiority, or equivalence. A repeated, randomized study with a frozen grader and more company–task analysis clusters is required.
 
 **RQ3—Context allocation and efficiency.** The historical sequence is consistent with substantial harness-level reductions but does not isolate causes. In r5, Team was more expensive and slower than one-pass Open-Book Solo. Relative to Pro-only Two-Pass Solo, Team was cheaper and faster and used 41.6% fewer billable-like tokens, even though provider totals were 33.7% higher. The retrieval pilot provides a more direct context-allocation contrast. Shared-retrieval Team reduced latency by 36.32% and cost by 42.06% relative to staged Solo, but used 13.63% more provider-total tokens because Flash specialists replaced Pro analytical stages. Relative to raw-context Team, shared retrieval reduced tokens by 38.42%, cost by 47.62%, and latency by 14.15%, while improving grounding by 3.40 percentage points. These are deployment-level point estimates under declared heterogeneous allocation, not a capacity-matched causal effect.
 
-**RQ4—Fault tolerance.** The harness implements bounded simulated faults, error-aware denominators, negation-aware unsupported-claim checks, and graceful-degradation metrics. r5 configured `faults_expected=0`, so its zero fault metrics are vacuous. This work contributes an instrument but does not exercise it in the primary financial confirmation.
+**Prospective RQ4—Fault tolerance.** The harness implements bounded simulated faults, error-aware denominators, negation-aware unsupported-claim checks, and graceful-degradation metrics. r5 configured `faults_expected=0`, so its zero fault metrics are vacuous. This work contributes an instrument but does not execute the question in a retained primary financial artifact.
 
-**RQ5—Financial-workflow validity.** The evidence is split. Ten plugin tests exercise deterministic ledger and alert behavior. r5 exercises real coordinator–specialist routing over compiled evidence fixtures and grades whether the final prose states expected governance actions; it performs no finance-tool call and no ledger mutation. The experiment therefore supports attribution and wording behavior, not end-to-end persistent state validity. The incremental value of Serenity or an independent challenger remains prospective.
+**VP2—Selected financial-workflow invariants.** The evidence is split. Ten plugin tests exercise deterministic ledger and alert behavior. r5 exercises real coordinator–specialist routing over compiled evidence fixtures and grades whether the final prose states expected governance actions; it performs no finance-tool call and no ledger mutation. The evidence supports selected attribution and wording behavior, not end-to-end persistent state validity. The incremental value of Serenity or an independent challenger remains prospective.
 
-## H. Hypothesis Resolution
+## H. Evaluation-Proposition Resolution
 
-The declared hypotheses are resolved against the retained evidence rather than inferred from the direction of a preferred result:
+The declared evaluation propositions are resolved against the retained evidence rather than inferred from the direction of a preferred result:
 
-| Hypothesis | Current resolution | Evidence boundary |
+| Proposition | Current resolution | Evidence boundary |
 |---|---|---|
-| H1 | Not tested as a causal hypothesis | The historical 0/8 to 8/8 sequence changed evidence delivery, runtime behavior, and grading together; the required cumulative ablation remains proposed. |
-| H2 | Descriptively supported in one pilot; not confirmed | Shared-retrieval Team and staged Solo preserved the same observed milestones and evidence recall while Team was faster, but the result has one case, one repetition, non-random order, and heterogeneous model allocation. |
-| H3 | Descriptively supported in one pilot; not confirmed | Shared retrieval reduced raw-Team tokens, cost, and unsupported numeric forms on one NVDA medium case; Stage 2 load-stratified confirmation has not run. |
-| H4 | Not tested by a retained primary financial artifact | The harness and deterministic tests implement fault injection, but r5 expected zero faults and no repeated formal fault run is retained. |
-| H5 | Supported only for the deterministic plugin layer | Plugin tests exercise versioning, isolation, and alert invariants; r5 and the SEC runs perform zero finance-tool calls and zero ledger mutations. |
-| H6 | Partially supported descriptively; not confirmed | Raw-context replication increased tokens and cost without improving milestone completion in the pilot, while other delegation comparisons remain confounded by model allocation and task differences. |
+| EP1 | Partially supported for selected paths | Executable tests cover selected control paths, but the historical 0/8 to 8/8 sequence changed evidence delivery, runtime behavior, and grading together. |
+| EP2 | Descriptively supported in one Pilot; not confirmed | Shared-retrieval Team and staged Solo preserved the same observed milestones and evidence recall while Team was faster, but the result has one case, one repetition, non-random order, and heterogeneous model allocation. |
+| EP3 | Descriptively supported in one Pilot; not confirmed | Shared retrieval reduced raw-Team tokens, frozen-price estimated cost, and unsupported numeric forms on one NVDA medium case; Stage 2 load-stratified confirmation has not run. |
+| EP4 | Not tested by a retained primary financial artifact | The harness and deterministic tests implement fault injection, but r5 expected zero faults and no repeated formal fault run is retained. |
+| EP5 | Supported only for selected deterministic invariants | Plugin tests exercise versioning, isolation, and alert invariants; r5 and the SEC runs perform zero finance-tool calls and zero ledger mutations. |
+| EP6 | Partially supported descriptively; not confirmed | Raw-context replication increased tokens and frozen-price estimated cost without improving milestone completion in the Pilot, while other comparisons remain confounded by model allocation and task differences. |
 
 These labels are `not tested`, `descriptively supported`, `partially supported`, or `supported only for a bounded layer`; none is a population-level confirmation. Stage 2 remains proposed/draft and may yield zero or negative Team effects.
 
@@ -825,9 +827,9 @@ The `solo_open_book`, `solo_two_pass`, and routed-diagnostic baselines provide a
 
 The contrast between the initial-observation and longitudinal SEC suites clarifies the role of task difficulty. The simple suite was saturated by all four modes and could not measure incremental accuracy. The longitudinal suite created mode-level failures, but the frozen Team and Open-Book rates remained equal. Difficulty is therefore a necessary condition for avoiding a ceiling effect, not sufficient evidence that collaboration adds value. The AMD failure further shows that a correctly routed specialist can still return no usable evidence; a multi-agent treatment includes availability, response validation, and retry policy as well as nominal role decomposition.
 
-The retrieval-mediated pilot further separates role count from information flow. Shared-retrieval Team and staged Solo reached the same strict quality outcome, whereas raw-context Team missed the numeric-grounding threshold despite using the same coordinator, specialists, and one batch delegation. Shared retrieval generated a smaller specialist evidence packet, fewer unsupported numeric forms, lower wall-clock latency, and lower estimated cost than raw-context Team. The relevant mechanism is therefore not “more agents.” It is the combination of selective retrieval, one-copy shared context, parallel analytical roles, and bounded synthesis.
+The retrieval-mediated Pilot further distinguishes role count from information flow descriptively. Shared-retrieval Team and staged Solo reached the same strict quality outcome, whereas raw-context Team missed the numeric-grounding threshold despite using the same coordinator, specialists, and one batch delegation. Shared retrieval generated a smaller specialist evidence packet, fewer unsupported numeric forms, lower wall-clock latency, and lower estimated cost than raw-context Team. This single-case pattern is consistent with selective retrieval and one-copy shared context being relevant mechanisms; it does not identify their causal contribution or show that adding agents is sufficient.
 
-Case-level replay shows why one aggregate recommendation would be premature. Team achieved 4/4 on thesis invalidation versus 2/4 Open-Book and 3/4 on portfolio concentration versus 1/4. These cases require combining threshold evidence with a governance action and are consistent with the preregistered expectation that role separation may help. In contrast, Team achieved 0/4 on incomplete screening while Open-Book achieved 3/4, but the failure is traceable to `estimate` versus `estimated` rather than to an unsafe decision. A domain-adaptive router should therefore be evaluated against mechanism classes, not only a global mean.
+Case-level replay shows why one aggregate recommendation would be premature. Team achieved 4/4 on thesis invalidation versus 2/4 Open-Book and 3/4 on portfolio concentration versus 1/4. These cases require combining threshold evidence with a governance action and are consistent with the prespecified proposition that role separation may help. In contrast, Team achieved 0/4 on incomplete screening while Open-Book achieved 3/4, but the failure is traceable to `estimate` versus `estimated` rather than to an unsafe decision. A domain-adaptive router should therefore be evaluated against mechanism classes, not only a global mean.
 
 Selective delegation is the practical implication. A coordinator can first classify whether the task requires independent evidence extraction, methodology application, or adversarial challenge. Deterministic data collection and state mutation remain tools. A specialist is admitted only when its information or role is expected to change a measurable decision. This admission rule converts multi-agent orchestration from a default architecture into a bounded experimental treatment.
 
@@ -872,12 +874,13 @@ TABLE_CAPTION: Principal threats to validity and mitigation status.
 | Internal | r2–r5 pooling selected post hoc | Positive direction may reflect analysis choice | Keep r5 primary; label sensitivity analysis |
 | Internal | Gain guard checks counts, not pair identifiers | Misaligned cases could produce invalid gain | Pair manually by case/repetition; add identifier guard |
 | Internal | Retrieval Pilot modes were not randomized | Provider load, cache state, or order can confound latency | Seed and randomize mode order within case–repetition blocks |
+| Internal | The researcher authored the runtime, suite, and deterministic graders | Design choices or post hoc interpretation may favor the artifact under study | Content-address artifacts; retain raw outputs; require two independent source/oracle reviewers; report disagreements and sensitivity analyses |
 | External | Fixed suite has six cases; retrieval pilot has one executed case and one model family | Results may not transfer to other issuers, loads, or providers | Execute frozen 24-configuration matrix, then expand company–task clusters |
 | External | No finance-tool calls in r5 | End-to-end application generalization is unsupported | Add retrieval-and-mutation integration suite |
 | Conclusion | r5 has n=6; retrieval Pilot has n=1; both use one repetition | Modest paired effects and variance are not estimable | Three randomized repetitions and cluster-aware paired reporting |
 | Conclusion | Graders and retrieval runtime were calibrated on earlier outputs | Final observations are not independent holdouts | Freeze suite, grader, runtime settings, and exclusions before Stage 2 |
 
-The table makes the central limitation explicit: measurement and capability are entangled. The present evidence is strongest where executable tests define a transition and weakest where natural-language wording stands in for semantic or persistent state correctness. The recommended next experiment is therefore not simply “more cases.” It is a preregistered separation of evidence source, runtime policy, orchestration mode, and grader version.
+The table makes the central limitation explicit: measurement and capability are entangled. The present evidence is strongest where executable tests define a transition and weakest where natural-language wording stands in for semantic or persistent state correctness. The recommended next experiment is therefore not simply “more cases.” It is a prespecified separation of evidence source, runtime policy, orchestration mode, and grader version.
 
 # IX. SECURITY, ETHICS, LIMITATIONS, AND FUTURE WORK
 
@@ -944,17 +947,17 @@ The highest-priority engineering work is:
 
 This thesis treated an LLM agent as a controlled software runtime rather than a prompt wrapper. FastClaw turns a reasoning–action loop into an authenticated, tenant-scoped, stateful, streaming execution system. Its principal mechanisms are a per-chat FIFO TaskQueue with bounded root admission, a correlated MessageBus with transitive wait-graph cycle prevention, a policy-filtered tool registry, a terminally consistent turn emitter, session normalization, fail-closed required identity loading, request-scoped evaluation tools, and per-call role, token, cost, and latency attribution. The implementation also demonstrates why these mechanisms require explicit invariants: every assistant tool call must receive one result, every protected target must be authorized after resolution, and every waiting sub-agent lane must preserve an acyclic graph.
 
-RQ1 is partially supported. Focused unit and integration tests execute authentication, provider parsing, cancellation, tool panic containment, internal calls, task snapshots, storage contention, evaluation reporting, and the corrected OpenAI-compatible ACL path. They show that the mechanisms are executable and that several previously silent failures are now observable. They do not provide formal verification or comprehensive production assurance. Statement coverage is approximately 27.2% for the runtime and production packages, or 28.4% when the report's own analysis program is included. Important packages such as policy, scope, session, plugin, MCP, and Skills have no measured test coverage in that profile. Correctness claims are therefore limited to tested behaviors.
+VP1 is satisfied only for selected tested control paths. Focused unit and integration tests execute authentication, provider parsing, cancellation, tool panic containment, internal calls, task snapshots, storage contention, evaluation reporting, and the corrected OpenAI-compatible ACL path. They show that these selected mechanisms are executable and that several previously silent failures are observable. They do not provide formal verification, exhaustive path coverage, or production assurance. Statement coverage is approximately 27.2% for the runtime and production packages, or 28.4% when the report's own analysis program is included. Important packages such as policy, scope, session, plugin, MCP, and Skills have no measured test coverage in that profile.
 
 RQ2 remains not determinable as an accuracy claim. In the primary six-case confirmation, Team, Open-Book, and Two-Pass each passed 5/6 cases. A zero-point difference at one repetition does not establish equivalence. Post hoc replay produces a positive but unsupported Team direction, while the incomplete-screening case shows that one morphology defect can reverse a mode comparison. The longitudinal SEC extension again produced equal Team and evidence-matched Open-Book totals. In the retrieval pilot, shared-retrieval Team and staged Solo both passed all milestones and retained every gold evidence group. Across three designs, no result establishes that multiple agents intrinsically improve financial answer accuracy.
 
-RQ3 is supported only descriptively. In r5, Team was more expensive than one-pass Open-Book but cheaper than Pro-only Two-Pass, and billable-like versus provider-total token definitions produced opposite directional comparisons. In the retrieval pilot, shared-retrieval Team and staged Solo reached the same strict outcome; Team reduced latency by 36.32% and cost by 42.06% but used 13.63% more provider-total tokens under heterogeneous allocation. Against raw-context Team, shared retrieval reduced latency by 14.15%, tokens by 38.42%, and cost by 47.62%, while grounding increased by 3.40 percentage points. The mechanism-level conclusion is that retrieval compaction and one-copy shared context can improve a deployment Pareto frontier. The result does not isolate parallelism from heterogeneous model price or establish a population effect.
+RQ3 has only descriptive evidence. In r5, Team had higher frozen-price estimated cost than one-pass Open-Book and lower estimated cost than Pro-only Two-Pass, while billable-like versus provider-total token definitions produced opposite directional comparisons. In the single-case retrieval Pilot, shared-retrieval Team and staged Solo reached the same strict outcome; the Team observation had 36.32% lower latency and 42.06% lower estimated cost but 13.63% more provider-total tokens under heterogeneous allocation. Against raw-context Team, shared retrieval was associated with 14.15% lower latency, 38.42% fewer tokens, 47.62% lower estimated cost, and a 3.40-percentage-point grounding difference. These observations are consistent with a limited latency–cost–grounding difference, but non-random order, provider variability, one repetition, and heterogeneous allocation prevent a causal or general Pareto claim.
 
-RQ4 is unanswered by the primary artifact. FastClaw implements simulated, request-scoped fault injection, error-aware denominators, fault observation and attribution, unsupported-claim checks, and graceful-degradation metrics. However, r5 has `faults_expected=0`; its zero fault rates are empty values rather than evidence of robust coordinator behavior. A repeated real-model fault suite remains required.
+Prospective RQ4 is not an executed empirical question. FastClaw implements simulated, request-scoped fault injection, error-aware denominators, fault observation and attribution, unsupported-claim checks, and graceful-degradation metrics. However, r5 has `faults_expected=0`; its zero fault rates are empty values rather than evidence of robust coordinator behavior. A repeated retained fault suite remains required.
 
-RQ5 is supported only after separating three constructs. Deterministic plugin tests exercise tenant-isolated theses, optimistic versioning, immutable reviews, watchlist filtering, and alert deduplication. The fixed-evidence runtime experiment supports controlled routing and governance wording but not retrieval. The SEC pilot supports archived-record selection, evidence compression, specialist analysis, and bounded synthesis for one case. Neither model experiment invokes finance tools or mutates the ledger. The evidence therefore supports selected workflow mechanisms, not a complete live financial-research transaction.
+VP2 is satisfied only for selected deterministic invariants. Plugin tests exercise tenant-isolated theses, optimistic versioning, immutable reviews, watchlist filtering, and alert deduplication. The fixed-evidence runtime experiment supports controlled routing and governance wording but not retrieval. The SEC Pilot supports archived-record selection, evidence compression, specialist analysis, and bounded synthesis for one case. Neither model experiment invokes finance tools or mutates the ledger. The evidence therefore does not validate a complete live financial-research transaction.
 
-The principal contribution is consequently a measurement-oriented agent runtime and a transparent negative result. FastClaw makes runtime policy, evidence visibility, execution errors, role-specific cost, and grader behavior inspectable. The analysis can change a lexical feature and replay retained outputs without purchasing another model call, exposing how much of an apparent capability result belongs to the oracle. This is stronger evidence for auditability than for financial intelligence.
+The principal contribution is consequently a measurement-oriented, auditable agent runtime and an inconclusive accuracy result: no incremental Team effect was detected at the present resolution. FastClaw makes runtime policy, evidence visibility, execution errors, role-specific frozen-price estimated cost, and grader behavior inspectable. The analysis can change a lexical feature and replay retained outputs without purchasing another model call, exposing how much of an apparent capability result belongs to the oracle. This is stronger evidence for auditability than for financial intelligence.
 
 Future work should complete and freeze the proposed second-stage protocol before executing it across the existing 24 SEC configurations with three seeded repetitions, randomized mode order, preserved company–task cluster identifiers, and paired cluster-bootstrap reporting. It should then expand the issuer panel and run a capacity-matched Team/Solo ablation. A separate mutation track should invoke deterministic finance tools, write versioned ledger state, and use human-reviewed claim-to-evidence links. Return-based evaluation should remain separate until the dataset controls publication time, constituent membership, corporate actions, delisting, turnover, and transaction costs. Until those conditions are met, FastClaw should be presented as a research copilot and runtime evaluation platform—not an autonomous adviser, an official benchmark submission, or evidence of investment performance.
 
@@ -985,6 +988,15 @@ Before execution:
 4. verify that each mode uses an independent session and the same relevant evidence;
 5. verify that no baseline begins with cached conversation history;
 6. record company–task cluster identifiers and the planned pair key.
+
+The repository-level evidence entrypoint is `evals/thesis-evidence-manifest.json`.
+It separates confirmatory, descriptive-Pilot, and proposed artifacts and hashes the
+suite, source lock, raw report, analysis, summary, grader/analysis source, and
+sub-manifest chain. From a clean checkout, run
+`python3 evals/finance_e2e/thesis_evidence_manifest.py --check`. A missing file,
+hash drift, stale generated manifest, or confirmatory-status mixing fails the
+check. This supports offline reconstruction and regrading of retained outputs;
+it does not claim exact regeneration of historical stochastic provider trajectories.
 
 During execution:
 
@@ -1040,7 +1052,10 @@ TABLE_CAPTION: Pre-execution design record for the retrieval-mediated Stage 2 st
 | Status | Draft until the freeze checklist passes; immutable after first formal request |
 | Stage 2A panel | NVIDIA, AMD, Intel, and NIKE |
 | Task and load matrix | Point-in-time and longitudinal × small, medium, and large context |
-| Configurations / clusters | 24 treatment configurations / 8 company–task clusters |
+| Configurations / analysis clusters | 24 treatment configurations / 8 company–task analysis clusters |
+| Observation ID | `(company, task_family, corpus_load, repetition, mode)` |
+| Pair key | `(company, task_family, corpus_load, repetition)`; mode is excluded |
+| Counts | 72 case–repetition blocks; 216 primary observations; 48 diagnostics; 24 ablation observations; 288 total |
 | Primary modes | `solo_staged`, `team_shared_retrieval`, `team_raw_context` |
 | Repetitions | Three per primary mode and configuration |
 | Diagnostics | `solo_monolithic` and `oracle_evidence`, once per configuration |
@@ -1049,11 +1064,12 @@ TABLE_CAPTION: Pre-execution design record for the retrieval-mediated Stage 2 st
 | Primary comparisons | Shared Team versus staged Solo; shared Team versus raw-context Team |
 | Dependence correction | Pair within configuration; bootstrap company–task clusters; report load interactions |
 | Capacity ablation | All-Pro shared Team on eight prespecified medium-longitudinal and large-point configurations |
+| Point-in-time gate | Record `as_of_timestamp`; verify every included `accepted_at <= as_of_timestamp`; list later excluded filings |
 | Human audit | Two reviewers on prespecified outputs; supported, derived, unsupported, or not assessable claims |
 | Resource gate | Pause at USD 10 or twelve serial hours pending review |
 | Invalidation | Any source, suite, grader, model-alias, pricing, or treatment change creates a new study version |
 
-The 24 configurations must not be reported as 24 independent issuers. Stage 2A is a mechanism confirmation over eight company–task clusters. Stage 2B adds JPMorgan Chase, Visa, PayPal, and Microsoft only after source and oracle audit, increasing business-model diversity without changing the frozen Stage 2A result.
+The 24 configurations must not be reported as 24 independent issuers, and the eight company–task analysis clusters are not asserted to be strictly independent population draws. Diagnostics and the separately reported all-Pro ablation do not enter the primary analysis. Stage 2 remains proposed/draft until the two-reviewer 98-item source/oracle audit is complete and every non-PASS item is adjudicated. Stage 2B adds JPMorgan Chase, Visa, PayPal, and Microsoft only after source and oracle audit, increasing business-model diversity without changing the frozen Stage 2A result.
 
 # REFERENCES
 

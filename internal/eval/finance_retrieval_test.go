@@ -253,6 +253,15 @@ func TestFinanceRetrievalRunnerRestrictsCapacityMatchedAblationAndOverridesModel
 	}
 }
 
+func TestFinanceRetrievalPairIDExcludesMode(t *testing.T) {
+	evalCase := FinanceRetrievalCase{Company: "NVDA", TaskFamily: "point_in_time", CorpusLoad: "large"}
+	got := financeRetrievalPairID(evalCase, 2)
+	want := "company=NVDA|task_family=point_in_time|corpus_load=large|repetition=2"
+	if got != want {
+		t.Fatalf("pair ID = %q, want %q", got, want)
+	}
+}
+
 func TestFinanceDelegationStatusesSeparateFirstAttemptAndRecovery(t *testing.T) {
 	trace := []TraceEvent{
 		{Type: "tool_call", ID: "first", Name: "spawn_subagent", Arguments: `{"delegations":[{"agentId":"finance-trend"},{"agentId":"finance-risk"}]}`},

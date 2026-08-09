@@ -25,7 +25,7 @@ The practical financial workflow is:
    retrieval, coordination, specialist analysis, and synthesis.
 
 Stage 2 asks whether retrieving one bounded evidence packet before parallel
-specialist analysis improves the quality–cost–latency frontier relative to a
+specialist analysis is associated with a different quality–cost–latency profile relative to a
 sequential single-agent pipeline and a Team that repeatedly analyzes raw
 context.
 
@@ -52,7 +52,7 @@ context.
 - independent observations from every load and repetition of one company–task
   source set.
 
-## 4. Preregistered questions and hypotheses
+## 4. Prespecified questions and evaluation propositions
 
 ### RQ2-S2: orchestration outcome
 
@@ -65,21 +65,21 @@ Does `team_shared_retrieval` reduce raw-context replication, unsupported numeric
 assertions, latency, tokens, or estimated cost relative to
 `team_raw_context`, and does the effect change with corpus load?
 
-### Hypotheses
+### Evaluation propositions
 
-- **H2a—quality preservation:** shared-retrieval Team will not reduce final
+- **EP2a—quality preservation:** shared-retrieval Team will not reduce final
   evidence recall or milestone accuracy relative to staged Solo.
-- **H2b—parallel latency:** shared-retrieval Team will have lower paired
+- **EP2b—parallel latency:** shared-retrieval Team will have lower paired
   wall-clock latency than staged Solo.
-- **H3a—context compaction:** shared-retrieval Team will use fewer paired
+- **EP3a—context compaction:** shared-retrieval Team will use fewer paired
   provider-total tokens and lower estimated cost than raw-context Team.
-- **H3b—grounding:** shared-retrieval Team will have equal or higher numeric
+- **EP3b—grounding:** shared-retrieval Team will have equal or higher numeric
   grounding accuracy and fewer violation values than raw-context Team.
-- **H3c—load interaction:** the token and grounding differences between shared
+- **EP3c—load interaction:** the token and grounding differences between shared
   retrieval and raw context will be larger at medium and large loads than at
   small load.
 
-These are directional mechanism hypotheses. The initial four-company matrix is
+These are prespecified directional evaluation propositions, not population-level hypotheses. The initial four-company matrix is
 not powered for a population-level superiority or non-inferiority claim.
 
 ## 5. Experimental stages
@@ -92,7 +92,7 @@ Use the existing source-locked matrix:
 - task families: point-in-time and longitudinal;
 - corpus loads: small, medium, and large;
 - configurations: `4 × 2 × 3 = 24`;
-- independent company–task clusters: `4 × 2 = 8`.
+- analysis clusters: `4 × 2 = 8`.
 
 The load levels are repeated treatments over related source material. They must
 not be reported as 24 independent issuers or 24 independent financial events.
@@ -103,7 +103,8 @@ Primary modes run for three repetitions:
 2. `team_shared_retrieval`;
 3. `team_raw_context`.
 
-This produces `24 × 3 × 3 = 216` primary mode observations.
+This produces 72 case–repetition blocks and `24 × 3 × 3 = 216` primary
+observations.
 
 Diagnostic modes run once per configuration:
 
@@ -111,7 +112,7 @@ Diagnostic modes run once per configuration:
 2. `oracle_evidence`.
 
 This adds `24 × 2 = 48` diagnostic observations. The complete Stage 2A target
-is therefore 264 mode observations. Diagnostic modes are excluded from the
+is therefore 264 observations before the ablation. Diagnostic modes are excluded from the
 primary repeated-treatment confidence intervals.
 
 ### 5.2 Stage 2A capacity-matched ablation
@@ -128,6 +129,10 @@ Each selected configuration runs three repetitions. The comparison is all-Pro
 shared-retrieval Team versus the existing Pro staged Solo. This ablation is
 reported separately from the heterogeneous deployment result and requires a
 distinct mode label and pricing bucket.
+
+This adds `8 × 3 = 24` capacity-matched ablation observations. Stage 2A therefore
+contains 288 observations in total: 216 primary, 48 diagnostic, and 24 ablation.
+Diagnostics and ablation observations do not enter the primary analysis.
 
 ### 5.3 Stage 2B: issuer-panel expansion
 
@@ -171,6 +176,15 @@ Every generated record must retain a stable record ID and source ID. A source
 lock is immutable within a formal run. A hash mismatch, unavailable source, or
 manual correction stops the run and creates a new protocol version rather than
 silently replacing evidence.
+
+Every point-in-time case records an `as_of_timestamp`. The acceptance-time lock
+contains the SEC submissions API timestamp for all twelve source accessions, and
+the draft generator removes and records candidate corpus sources accepted after
+the target gold-record timestamp. It enforces `accepted_at <= as_of_timestamp`;
+filing date is not used as a substitute. Machine validation now passes for all
+twelve point-in-time configurations. The suite remains draft until two human
+reviewers independently verify these metadata together with the remaining
+source and oracle audit items.
 
 ### 6.1 Human audit
 
@@ -324,9 +338,14 @@ by the majority outcome.
 
 ### 12.1 Pairing
 
-The canonical pair key is:
+The observation ID is the five-field tuple:
 
-`company | task_family | corpus_load | repetition | mode`.
+`(company, task_family, corpus_load, repetition, mode)`.
+
+The canonical pair key is the corresponding four-field tuple and must not
+contain mode:
+
+`(company, task_family, corpus_load, repetition)`.
 
 All mode differences are computed within the same company, task, load, and
 repetition. Errored attempts are not converted into model failures. A dependent
@@ -334,7 +353,7 @@ effect is unavailable when either paired mode is unevaluated.
 
 ### 12.2 Dependence
 
-The primary resampling cluster is `company | task_family`. Loads and repetitions
+The primary analysis cluster is `(company, task_family)`. Loads and repetitions
 remain nested within that cluster. Report:
 
 - raw paired configuration tables;
@@ -446,7 +465,8 @@ labels and must never be pooled automatically.
 - [x] All 24 Stage 2A configurations regenerate without diff.
 - [x] Every local source hash matches the source lock.
 - [ ] Two-pass source and oracle audits are complete.
-- [x] Stage 2 suite uses the preregistered 90% final evidence-recall threshold.
+- [x] Stage 2 suite uses the prespecified 90% final evidence-recall threshold.
+- [ ] Every point-in-time source has an independently audited `accepted_at` no later than its case `as_of_timestamp`.
 - [ ] Primary and diagnostic modes are final.
 - [x] Model names, thinking mode, output limits, and pricing are recorded.
 - [x] Seeded mode randomization is implemented and tested.

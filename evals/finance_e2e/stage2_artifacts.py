@@ -18,6 +18,7 @@ from typing import Any, Iterable
 
 
 PRIMARY_MODES = ("solo_staged", "team_shared_retrieval", "team_raw_context")
+ABLATION_MODES = ("team_shared_retrieval_all_pro",)
 FORBIDDEN_FORMAL_LABELS = ("calibration", "pilot", "diagnostic", "superseded")
 SECRET_KEY_PARTS = ("api_key", "apikey", "authorization", "access_token", "secret")
 
@@ -80,11 +81,20 @@ def create_manifest(
     executable_path: Path,
     report_path: Path | None,
     status: str,
+    freeze_audit_summary_path: Path | None = None,
 ) -> dict[str, Any]:
     suite = read_json(suite_path)
     report = read_json(report_path) if report_path is not None else None
     if status == "confirmatory" and suite.get("status") != "frozen":
         raise ValueError("confirmatory manifest requires a frozen suite")
+    if status == "confirmatory" and suite.get("formal_freeze_blockers"):
+        raise ValueError("confirmatory manifest cannot be created while formal freeze blockers remain")
+    if status == "confirmatory":
+        if freeze_audit_summary_path is None or not freeze_audit_summary_path.is_file():
+            raise ValueError("confirmatory manifest requires a completed freeze-audit summary")
+        audit_summary = read_json(freeze_audit_summary_path)
+        if audit_summary.get("freeze_audit_passed") is not True or audit_summary.get("tasks") != 98:
+            raise ValueError("confirmatory manifest requires all 98 freeze-audit items to pass")
     if status == "confirmatory" and report is not None and report.get("status") != "frozen":
         raise ValueError("confirmatory manifest requires a frozen report")
     if report is not None and report.get("study") != suite.get("study"):
@@ -117,6 +127,10 @@ def create_manifest(
             "expected_primary_observations": len(suite.get("cases", []))
             * int(suite.get("defaults", {}).get("repetitions", 0))
             * len(suite.get("primary_modes", PRIMARY_MODES)),
+            "expected_diagnostic_observations": len(suite.get("cases", []))
+            * len(suite.get("diagnostic_modes", [])),
+            "expected_ablation_observations": len(suite.get("ablation_case_ids", []))
+            * int(suite.get("defaults", {}).get("repetitions", 0)),
         },
         "versions": {
             "prompt": suite.get("prompt_version"),
@@ -151,6 +165,8 @@ def create_manifest(
             "git_worktree_clean": command_output(["git", "status", "--porcelain"], repo_root) == "",
         },
     }
+    if freeze_audit_summary_path is not None:
+        manifest["files"]["freeze_audit_summary"] = file_record(freeze_audit_summary_path)
     if report_path is not None:
         manifest["files"]["report"] = file_record(report_path)
     assert_secret_free(manifest)
@@ -222,25 +238,40 @@ def grounding_accuracy(stages: dict[str, Any]) -> float:
     return 1.0 if assertions == 0 else max(0.0, (assertions - violations) / assertions)
 
 
-def flatten_reports(reports: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
+def flatten_reports(reports: Iterable[dict[str, Any]], included_modes: tuple[str, ...] = PRIMARY_MODES) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     seen: set[str] = set()
     for report in reports:
         for case in report.get("cases", []):
             for attempt in case.get("attempts", []):
                 for mode in attempt.get("modes", []):
-                    if mode.get("mode") not in PRIMARY_MODES:
+                    if mode.get("mode") not in included_modes:
                         continue
                     observation_id = mode.get("observation_id")
                     if not observation_id or observation_id in seen:
                         raise ValueError(f"missing or duplicate observation ID: {observation_id}")
                     seen.add(observation_id)
+                    pair_id = str(attempt.get("pair_id", ""))
+                    if not pair_id or "|mode=" in pair_id:
+                        raise ValueError(f"pair ID must exclude mode: {pair_id}")
+                    expected_pair_id = "|".join(
+                        (
+                            "company=" + str(case.get("company", "")),
+                            "task_family=" + str(case.get("task_family", "")),
+                            "corpus_load=" + str(case.get("corpus_load", "")),
+                            "repetition=" + str(attempt.get("attempt", "")),
+                        )
+                    )
+                    if pair_id != expected_pair_id:
+                        raise ValueError(f"pair ID does not match the four-field pair key: {pair_id}")
+                    if observation_id != pair_id + "|mode=" + str(mode.get("mode")):
+                        raise ValueError(f"observation ID is not the pair key plus mode: {observation_id}")
                     stages = mode.get("stages", {})
                     usage = mode.get("usage", {})
                     error = str(mode.get("error", "") or "")
                     rows.append(
                         {
-                            "pair_id": attempt.get("pair_id"),
+                            "pair_id": pair_id,
                             "observation_id": observation_id,
                             "case_id": case.get("id"),
                             "company": case.get("company"),
@@ -250,10 +281,12 @@ def flatten_reports(reports: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
                             "attempt": attempt.get("attempt"),
                             "mode": mode.get("mode"),
                             "order_index": mode.get("order_index"),
+                            "assigned": 1,
                             "evaluated": int(not error),
                             "errored": int(bool(error)),
                             "error": error,
                             "passed": int(bool(mode.get("passed"))) if not error else "",
+                            "assigned_system_success": int(not error and bool(mode.get("passed"))),
                             "final_evidence_recall": stages.get("final_evidence_recall", "") if not error else "",
                             "grounding_accuracy": grounding_accuracy(stages) if not error else "",
                             "grounding_violations": stages.get("grounding_violations", "") if not error else "",
@@ -269,6 +302,7 @@ def flatten_reports(reports: Iterable[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 METRICS = (
+    "assigned_system_success",
     "passed",
     "final_evidence_recall",
     "grounding_accuracy",
@@ -310,7 +344,20 @@ def summarize(rows: list[dict[str, Any]], group_keys: tuple[str, ...]) -> list[d
     for key, members in sorted(groups.items(), key=lambda item: tuple(str(value) for value in item[0])):
         evaluated = [row for row in members if row["evaluated"]]
         summary = dict(zip(group_keys, key))
-        summary.update({"attempted": len(members), "evaluated": len(evaluated), "errored": len(members) - len(evaluated)})
+        system_successes = sum(int(row["assigned_system_success"]) for row in members)
+        completed_successes = sum(int(row["passed"]) for row in evaluated)
+        summary.update(
+            {
+                "assigned_attempts": len(members),
+                "evaluated": len(evaluated),
+                "errored": len(members) - len(evaluated),
+                "unavailable": len(members) - len(evaluated),
+                "system_successes": system_successes,
+                "assigned_attempt_system_success_rate": system_successes / len(members) if members else "",
+                "completed_output_successes": completed_successes,
+                "completed_output_conditional_task_success_rate": completed_successes / len(evaluated) if evaluated else "",
+            }
+        )
         for metric in METRICS:
             values = [float(row[metric]) for row in evaluated if row[metric] != ""]
             summary[f"mean_{metric}"] = statistics.fmean(values) if values else ""
@@ -448,6 +495,7 @@ def analyze(
     if len(expected_pairs) != 1 or len(expected_observations) != 1 or len(repetitions) != 1:
         raise ValueError("confirmatory manifests disagree on the frozen design")
     rows = flatten_reports(report for _, report in manifests_and_reports)
+    ablation_rows = flatten_reports((report for _, report in manifests_and_reports), ABLATION_MODES)
     pair_rows = make_pair_rows(rows)
     if not allow_incomplete:
         if len(rows) != next(iter(expected_observations)) or len(pair_rows) != next(iter(expected_pairs)):
@@ -479,6 +527,14 @@ def analyze(
     write_csv(output_dir / "load-summary.csv", load_summary)
     write_csv(output_dir / "configuration-outcomes.csv", configurations)
     write_csv(output_dir / "failure-classification.csv", failures)
+    outputs = [
+        "pair-table.csv", "mode-summary.csv", "load-summary.csv", "configuration-outcomes.csv",
+        "failure-classification.csv", "cluster-bootstrap.json",
+    ]
+    if ablation_rows:
+        write_csv(output_dir / "ablation-observations.csv", ablation_rows)
+        write_csv(output_dir / "ablation-summary.csv", summarize(ablation_rows, ("mode",)))
+        outputs.extend(["ablation-observations.csv", "ablation-summary.csv"])
     write_json(output_dir / "cluster-bootstrap.json", comparisons)
     result = {
         "study": next(iter(studies)),
@@ -486,16 +542,10 @@ def analyze(
         "manifest_count": len(manifest_paths),
         "primary_observations": len(rows),
         "pair_blocks": len(pair_rows),
-        "excluded_modes": "all modes outside the frozen primary_modes set",
+        "ablation_observations": len(ablation_rows),
+        "excluded_modes": "diagnostic and superseded modes; capacity-matched ablation is reported separately",
         "complete": len(rows) == next(iter(expected_observations)) and len(pair_rows) == next(iter(expected_pairs)),
-        "outputs": [
-            "pair-table.csv",
-            "mode-summary.csv",
-            "load-summary.csv",
-            "configuration-outcomes.csv",
-            "failure-classification.csv",
-            "cluster-bootstrap.json",
-        ],
+        "outputs": outputs,
     }
     write_json(output_dir / "analysis.json", result)
     return result
@@ -512,6 +562,7 @@ def main() -> int:
     manifest_parser.add_argument("--agent-source", type=Path, required=True)
     manifest_parser.add_argument("--executable", type=Path, required=True)
     manifest_parser.add_argument("--report", type=Path, help="retained report to seal after execution; omit for the pre-run freeze manifest")
+    manifest_parser.add_argument("--freeze-audit-summary", type=Path, help="completed 98-item human freeze-audit summary")
     manifest_parser.add_argument("--status", choices=("confirmatory", "calibration", "pilot", "diagnostic", "superseded"), required=True)
     manifest_parser.add_argument("--output", type=Path, required=True)
     analyze_parser = subparsers.add_parser("analyze", help="analyze retained confirmatory JSON only")
@@ -530,6 +581,7 @@ def main() -> int:
             args.executable,
             args.report,
             args.status,
+            args.freeze_audit_summary,
         )
         write_json(args.output, manifest)
         print(json.dumps({"output": str(args.output), "artifact_status": args.status}, sort_keys=True))

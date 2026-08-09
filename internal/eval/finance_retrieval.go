@@ -31,29 +31,30 @@ const (
 )
 
 type FinanceRetrievalSuite struct {
-	Version           int                      `json:"version" yaml:"version"`
-	Study             string                   `json:"study,omitempty" yaml:"study,omitempty"`
-	Status            string                   `json:"status,omitempty" yaml:"status,omitempty"`
-	Name              string                   `json:"name" yaml:"name"`
-	Description       string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	Dataset           string                   `json:"dataset" yaml:"dataset"`
-	SourceLockSHA256  string                   `json:"source_lock_sha256" yaml:"source_lock_sha256"`
-	Defaults          FinanceRetrievalDefaults `json:"defaults" yaml:"defaults"`
-	Modes             []string                 `json:"modes" yaml:"modes"`
-	PrimaryModes      []string                 `json:"primary_modes,omitempty" yaml:"primary_modes,omitempty"`
-	DiagnosticModes   []string                 `json:"diagnostic_modes,omitempty" yaml:"diagnostic_modes,omitempty"`
-	AblationModes     []string                 `json:"ablation_modes,omitempty" yaml:"ablation_modes,omitempty"`
-	AblationCaseIDs   []string                 `json:"ablation_case_ids,omitempty" yaml:"ablation_case_ids,omitempty"`
-	RandomizationSeed int64                    `json:"randomization_seed,omitempty" yaml:"randomization_seed,omitempty"`
-	PromptVersion     string                   `json:"prompt_version,omitempty" yaml:"prompt_version,omitempty"`
-	GraderVersion     string                   `json:"grader_version,omitempty" yaml:"grader_version,omitempty"`
-	PricingDate       string                   `json:"pricing_date,omitempty" yaml:"pricing_date,omitempty"`
-	ModelAllocation   map[string]string        `json:"model_allocation,omitempty" yaml:"model_allocation,omitempty"`
-	ExecutionControls map[string]any           `json:"execution_controls,omitempty" yaml:"execution_controls,omitempty"`
-	Pricing           map[string]ModelPricing  `json:"pricing,omitempty" yaml:"pricing,omitempty"`
-	Cases             []FinanceRetrievalCase   `json:"cases" yaml:"cases"`
-	Source            string                   `json:"-" yaml:"-"`
-	SourceSHA256      string                   `json:"-" yaml:"-"`
+	Version              int                      `json:"version" yaml:"version"`
+	Study                string                   `json:"study,omitempty" yaml:"study,omitempty"`
+	Status               string                   `json:"status,omitempty" yaml:"status,omitempty"`
+	Name                 string                   `json:"name" yaml:"name"`
+	Description          string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Dataset              string                   `json:"dataset" yaml:"dataset"`
+	SourceLockSHA256     string                   `json:"source_lock_sha256" yaml:"source_lock_sha256"`
+	Defaults             FinanceRetrievalDefaults `json:"defaults" yaml:"defaults"`
+	Modes                []string                 `json:"modes" yaml:"modes"`
+	PrimaryModes         []string                 `json:"primary_modes,omitempty" yaml:"primary_modes,omitempty"`
+	DiagnosticModes      []string                 `json:"diagnostic_modes,omitempty" yaml:"diagnostic_modes,omitempty"`
+	AblationModes        []string                 `json:"ablation_modes,omitempty" yaml:"ablation_modes,omitempty"`
+	AblationCaseIDs      []string                 `json:"ablation_case_ids,omitempty" yaml:"ablation_case_ids,omitempty"`
+	RandomizationSeed    int64                    `json:"randomization_seed,omitempty" yaml:"randomization_seed,omitempty"`
+	PromptVersion        string                   `json:"prompt_version,omitempty" yaml:"prompt_version,omitempty"`
+	GraderVersion        string                   `json:"grader_version,omitempty" yaml:"grader_version,omitempty"`
+	PricingDate          string                   `json:"pricing_date,omitempty" yaml:"pricing_date,omitempty"`
+	ModelAllocation      map[string]string        `json:"model_allocation,omitempty" yaml:"model_allocation,omitempty"`
+	ExecutionControls    map[string]any           `json:"execution_controls,omitempty" yaml:"execution_controls,omitempty"`
+	FormalFreezeBlockers []string                 `json:"formal_freeze_blockers,omitempty" yaml:"formal_freeze_blockers,omitempty"`
+	Pricing              map[string]ModelPricing  `json:"pricing,omitempty" yaml:"pricing,omitempty"`
+	Cases                []FinanceRetrievalCase   `json:"cases" yaml:"cases"`
+	Source               string                   `json:"-" yaml:"-"`
+	SourceSHA256         string                   `json:"-" yaml:"-"`
 }
 
 type FinanceRetrievalDefaults struct {
@@ -77,28 +78,32 @@ type FinanceRetrievalAnalyst struct {
 }
 
 type FinanceRetrievalCase struct {
-	ID                      string                   `json:"id" yaml:"id"`
-	Company                 string                   `json:"company,omitempty" yaml:"company,omitempty"`
-	TaskFamily              string                   `json:"task_family,omitempty" yaml:"task_family,omitempty"`
-	ClusterID               string                   `json:"cluster_id,omitempty" yaml:"cluster_id,omitempty"`
-	Description             string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	Question                string                   `json:"question" yaml:"question"`
-	AnalysisProtocol        string                   `json:"analysis_protocol" yaml:"analysis_protocol"`
-	CorpusLoad              string                   `json:"corpus_load" yaml:"corpus_load"`
-	Tags                    []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Records                 []FinanceRetrievalRecord `json:"records" yaml:"records"`
-	GoldRecordIDs           []string                 `json:"gold_record_ids" yaml:"gold_record_ids"`
-	GoldRecordGroups        [][]string               `json:"gold_record_groups,omitempty" yaml:"gold_record_groups,omitempty"`
-	OracleEvidence          string                   `json:"oracle_evidence" yaml:"oracle_evidence"`
-	Milestones              []MultiAgentMilestone    `json:"milestones" yaml:"milestones"`
-	ForbiddenOutputValues   []string                 `json:"forbidden_output_values,omitempty" yaml:"forbidden_output_values,omitempty"`
-	AuthorizedNumericValues []string                 `json:"authorized_numeric_values,omitempty" yaml:"authorized_numeric_values,omitempty"`
-	Repetitions             int                      `json:"repetitions,omitempty" yaml:"repetitions,omitempty"`
-	Timeout                 Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty"`
-	MinRetrievalRecall      float64                  `json:"min_retrieval_recall,omitempty" yaml:"min_retrieval_recall,omitempty"`
-	MinSummaryRetention     float64                  `json:"min_summary_retention,omitempty" yaml:"min_summary_retention,omitempty"`
-	MinFinalEvidenceRecall  float64                  `json:"min_final_evidence_recall,omitempty" yaml:"min_final_evidence_recall,omitempty"`
-	MinGroundingAccuracy    float64                  `json:"min_grounding_accuracy,omitempty" yaml:"min_grounding_accuracy,omitempty"`
+	ID                       string                   `json:"id" yaml:"id"`
+	Company                  string                   `json:"company,omitempty" yaml:"company,omitempty"`
+	TaskFamily               string                   `json:"task_family,omitempty" yaml:"task_family,omitempty"`
+	ClusterID                string                   `json:"cluster_id,omitempty" yaml:"cluster_id,omitempty"`
+	AsOfTimestamp            string                   `json:"as_of_timestamp,omitempty" yaml:"as_of_timestamp,omitempty"`
+	AcceptedAtVerified       bool                     `json:"accepted_at_verified,omitempty" yaml:"accepted_at_verified,omitempty"`
+	TemporalVerificationNote string                   `json:"temporal_verification_note,omitempty" yaml:"temporal_verification_note,omitempty"`
+	ExcludedFutureSourceIDs  []string                 `json:"excluded_future_source_ids,omitempty" yaml:"excluded_future_source_ids,omitempty"`
+	Description              string                   `json:"description,omitempty" yaml:"description,omitempty"`
+	Question                 string                   `json:"question" yaml:"question"`
+	AnalysisProtocol         string                   `json:"analysis_protocol" yaml:"analysis_protocol"`
+	CorpusLoad               string                   `json:"corpus_load" yaml:"corpus_load"`
+	Tags                     []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Records                  []FinanceRetrievalRecord `json:"records" yaml:"records"`
+	GoldRecordIDs            []string                 `json:"gold_record_ids" yaml:"gold_record_ids"`
+	GoldRecordGroups         [][]string               `json:"gold_record_groups,omitempty" yaml:"gold_record_groups,omitempty"`
+	OracleEvidence           string                   `json:"oracle_evidence" yaml:"oracle_evidence"`
+	Milestones               []MultiAgentMilestone    `json:"milestones" yaml:"milestones"`
+	ForbiddenOutputValues    []string                 `json:"forbidden_output_values,omitempty" yaml:"forbidden_output_values,omitempty"`
+	AuthorizedNumericValues  []string                 `json:"authorized_numeric_values,omitempty" yaml:"authorized_numeric_values,omitempty"`
+	Repetitions              int                      `json:"repetitions,omitempty" yaml:"repetitions,omitempty"`
+	Timeout                  Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	MinRetrievalRecall       float64                  `json:"min_retrieval_recall,omitempty" yaml:"min_retrieval_recall,omitempty"`
+	MinSummaryRetention      float64                  `json:"min_summary_retention,omitempty" yaml:"min_summary_retention,omitempty"`
+	MinFinalEvidenceRecall   float64                  `json:"min_final_evidence_recall,omitempty" yaml:"min_final_evidence_recall,omitempty"`
+	MinGroundingAccuracy     float64                  `json:"min_grounding_accuracy,omitempty" yaml:"min_grounding_accuracy,omitempty"`
 }
 
 type FinanceRetrievalRecord struct {
@@ -108,6 +113,7 @@ type FinanceRetrievalRecord struct {
 	Company      string `json:"company" yaml:"company"`
 	Symbol       string `json:"symbol" yaml:"symbol"`
 	FiledAt      string `json:"filed_at" yaml:"filed_at"`
+	AcceptedAt   string `json:"accepted_at,omitempty" yaml:"accepted_at,omitempty"`
 	Accession    string `json:"accession" yaml:"accession"`
 	Locator      string `json:"locator" yaml:"locator"`
 	Text         string `json:"text" yaml:"text"`
@@ -320,6 +326,9 @@ func (s FinanceRetrievalSuite) Validate() error {
 		if s.Status != "draft" && s.Status != "frozen" {
 			return errors.New("finance retrieval formal study status must be draft or frozen")
 		}
+		if s.Status == "frozen" && len(s.FormalFreezeBlockers) > 0 {
+			return errors.New("finance retrieval frozen study cannot retain formal_freeze_blockers")
+		}
 		if s.PromptVersion == "" || s.GraderVersion == "" || s.PricingDate == "" || len(s.ModelAllocation) == 0 {
 			return errors.New("finance retrieval formal study requires prompt, grader, pricing, and model metadata")
 		}
@@ -368,6 +377,9 @@ func (s FinanceRetrievalSuite) Validate() error {
 		if err := validateFinanceRetrievalCase(s.Cases[index], seenCases); err != nil {
 			return err
 		}
+		if s.Status == "frozen" && s.Cases[index].TaskFamily == "point_in_time" && !s.Cases[index].AcceptedAtVerified {
+			return fmt.Errorf("finance retrieval frozen point-in-time case %q requires accepted_at verification", s.Cases[index].ID)
+		}
 	}
 	for model, pricing := range s.Pricing {
 		if strings.TrimSpace(model) == "" || pricing.InputPerMillion < 0 || pricing.OutputPerMillion < 0 || pricing.CacheReadPerMillion < 0 || pricing.CacheWritePerMillion < 0 {
@@ -387,6 +399,20 @@ func validateFinanceRetrievalCase(evalCase FinanceRetrievalCase, seenCases map[s
 	seenCases[evalCase.ID] = struct{}{}
 	if evalCase.ClusterID != "" && (strings.TrimSpace(evalCase.Company) == "" || strings.TrimSpace(evalCase.TaskFamily) == "") {
 		return fmt.Errorf("finance retrieval case %q cluster_id requires company and task_family", evalCase.ID)
+	}
+	if evalCase.TaskFamily == "point_in_time" && evalCase.AsOfTimestamp != "" {
+		asOf, err := time.Parse(time.RFC3339, evalCase.AsOfTimestamp)
+		if err != nil {
+			return fmt.Errorf("finance retrieval case %q has invalid as_of_timestamp", evalCase.ID)
+		}
+		if evalCase.AcceptedAtVerified {
+			for _, record := range evalCase.Records {
+				acceptedAt, parseErr := time.Parse(time.RFC3339, record.AcceptedAt)
+				if parseErr != nil || acceptedAt.After(asOf) {
+					return fmt.Errorf("finance retrieval case %q has unverified or future accepted_at", evalCase.ID)
+				}
+			}
+		}
 	}
 	switch evalCase.CorpusLoad {
 	case "small", "medium", "large":
@@ -520,7 +546,7 @@ func (r FinanceRetrievalRunner) Run(ctx context.Context, suite FinanceRetrievalS
 			if len(order) == 0 {
 				continue
 			}
-			pairID := evalCase.ID + "|rep=" + strconv.Itoa(attempt)
+			pairID := financeRetrievalPairID(evalCase, attempt)
 			attemptResult := FinanceRetrievalAttemptResult{
 				Attempt:       attempt,
 				PairID:        pairID,
@@ -537,6 +563,18 @@ func (r FinanceRetrievalRunner) Run(ctx context.Context, suite FinanceRetrievalS
 	report.DurationMS = milliseconds(report.FinishedAt.Sub(startedAt))
 	report.Metrics = calculateFinanceRetrievalMetrics(report.Cases)
 	return report, nil
+}
+
+func financeRetrievalPairID(evalCase FinanceRetrievalCase, repetition int) string {
+	if evalCase.Company != "" && evalCase.TaskFamily != "" && evalCase.CorpusLoad != "" {
+		return strings.Join([]string{
+			"company=" + evalCase.Company,
+			"task_family=" + evalCase.TaskFamily,
+			"corpus_load=" + evalCase.CorpusLoad,
+			"repetition=" + strconv.Itoa(repetition),
+		}, "|")
+	}
+	return evalCase.ID + "|rep=" + strconv.Itoa(repetition)
 }
 
 func selectFinanceRetrievalModes(suite FinanceRetrievalSuite, requestedModes []string) ([]string, error) {

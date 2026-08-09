@@ -11,6 +11,7 @@ from typing import Any
 
 
 VERDICTS = {"PASS", "FAIL", "NOT_ASSESSABLE"}
+DEFAULT_PROVENANCE = Path(__file__).resolve().parent / "gold-fact-provenance.json"
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -23,17 +24,23 @@ def read_json(path: Path) -> dict[str, Any]:
 def write_csv(path: Path, rows: list[dict[str, Any]], fieldnames: list[str]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", newline="", encoding="utf-8") as handle:
-        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer = csv.DictWriter(handle, fieldnames=fieldnames, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
 
-def audit_material(evidence: dict[str, Any], suite: dict[str, Any]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+def audit_material(
+    evidence: dict[str, Any], suite: dict[str, Any], provenance: dict[str, Any]
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     tasks: list[dict[str, Any]] = []
     machine: list[dict[str, Any]] = []
+    provenance_by_fact = {row["fact_id"]: row for row in provenance.get("facts", [])}
     for episode in evidence.get("episodes", []):
         for fact in episode.get("facts", []):
             audit_id = "SOURCE|" + fact["id"]
+            provenance_row = provenance_by_fact.get(fact["id"])
+            if provenance_row is None:
+                raise ValueError(f"fact is missing from provenance: {fact['id']}")
             tasks.append(
                 {
                     "audit_id": audit_id,
@@ -41,6 +48,11 @@ def audit_material(evidence: dict[str, Any], suite: dict[str, Any]) -> tuple[lis
                     "item_id": fact["id"],
                     "source_id": episode["source_id"],
                     "locator": fact.get("locator", ""),
+                    "filing_date": provenance_row["filing_date"],
+                    "accepted_at": provenance_row["accepted_at"],
+                    "accession": provenance_row["accession"],
+                    "url": provenance_row["url"],
+                    "source_sha256": provenance_row["source_sha256"],
                     "review_task": (
                         f"Verify value={fact.get('value')} unit={fact.get('unit')} basis={fact.get('basis')} "
                         f"period={episode.get('period_label')} and the claimed excerpt in the locked primary source."
@@ -81,9 +93,17 @@ def audit_material(evidence: dict[str, Any], suite: dict[str, Any]) -> tuple[lis
     return tasks, machine
 
 
-def prepare(evidence_path: Path, suite_path: Path, output_dir: Path) -> dict[str, int]:
-    tasks, machine = audit_material(read_json(evidence_path), read_json(suite_path))
-    task_fields = ["audit_id", "audit_type", "item_id", "source_id", "locator", "review_task"]
+def prepare(
+    evidence_path: Path, suite_path: Path, output_dir: Path, provenance_path: Path = DEFAULT_PROVENANCE
+) -> dict[str, int]:
+    tasks, machine = audit_material(read_json(evidence_path), read_json(suite_path), read_json(provenance_path))
+    task_fields = [
+        "audit_id", "audit_type", "item_id", "source_id", "locator", "filing_date",
+        "accepted_at", "accession", "url", "source_sha256", "review_task",
+    ]
+    for task in tasks:
+        for field in task_fields:
+            task.setdefault(field, "")
     write_csv(output_dir / "audit-tasks.csv", tasks, task_fields)
     write_csv(output_dir / "machine-reference.csv", machine, ["audit_id", "expected"])
     reviewer_rows = [{"audit_id": row["audit_id"], "verdict": "", "notes": ""} for row in tasks]
@@ -169,6 +189,7 @@ def main() -> int:
     prepare_parser.add_argument("--evidence", type=Path, required=True)
     prepare_parser.add_argument("--suite", type=Path, required=True)
     prepare_parser.add_argument("--output-dir", type=Path, required=True)
+    prepare_parser.add_argument("--provenance", type=Path, default=DEFAULT_PROVENANCE)
     analyze_parser = commands.add_parser("analyze")
     analyze_parser.add_argument("--tasks", type=Path, required=True)
     analyze_parser.add_argument("--reviewer-a", type=Path, required=True)
@@ -176,7 +197,7 @@ def main() -> int:
     analyze_parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "prepare":
-        result = prepare(args.evidence, args.suite, args.output_dir)
+        result = prepare(args.evidence, args.suite, args.output_dir, args.provenance)
     else:
         result = analyze(args.tasks, args.reviewer_a, args.reviewer_b, args.output_dir)
     print(json.dumps(result, sort_keys=True))
