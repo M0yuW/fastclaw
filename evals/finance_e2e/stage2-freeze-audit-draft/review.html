@@ -102,7 +102,9 @@
       .topbar { position: static; padding: 14px; flex-wrap: wrap; }
       .local-badge { display: none; }
       .shell { display: block; }
-      aside { position: static; width: 100%; height: auto; max-height: 340px; border-right: 0; border-bottom: 1px solid var(--line); }
+      aside { position: static; width: 100%; height: auto; max-height: none; overflow: visible; border-right: 0; border-bottom: 1px solid var(--line); }
+      .task-list { display: flex; gap: 7px; overflow-x: auto; padding: 9px 14px 13px; border-top: 1px solid var(--line); scrollbar-width: thin; }
+      .task { flex: 0 0 238px; border-color: var(--line); background: rgba(255,255,255,.38); }
       main { padding: 24px 15px 50px; }
       .meta, .verdicts, .definition-list { grid-template-columns: 1fr; }
       .definition-list dt { padding-bottom: 2px; }
@@ -301,7 +303,13 @@
     function importCsv(file) {
       const reader = new FileReader(); reader.onload = () => { try { const rows = parseCsv(reader.result); const ids = new Set(TASKS.map(t => t.audit_id)); if (rows.length !== TASKS.length || rows.some(r => !ids.has(r.audit_id))) throw new Error("该 CSV 未完整覆盖冻结的 98 项任务。"); responses = Object.fromEntries(rows.map(r => [r.audit_id, {verdict:r.verdict || "", independent_result:r.independent_result || "", notes:r.notes || ""}])); saveResponses(); render(); alert(`已为审阅者 ${reviewer.toUpperCase()} 导入 ${rows.length} 行。`); } catch (error) { alert(`导入失败：${error.message}`); } }; reader.readAsText(file); }
     function resetReviewer() { if (confirm(`确定清空审阅者 ${reviewer.toUpperCase()} 保存在本机的全部答案吗？`)) { responses = {}; localStorage.removeItem(key(reviewer)); render(); } }
-    function render() { renderStats(); renderList(); renderDetail(); }
+    function render() {
+      try { renderStats(); renderList(); renderDetail(); }
+      catch (error) {
+        console.error("Stage 2 review render failed", error);
+        $("content").innerHTML = `<section class="card"><h2>页面渲染失败</h2><p>审阅数据仍保存在本机，请刷新页面。如果问题持续，请记录以下信息：</p><pre>${escapeHtml(error && error.message ? error.message : String(error))}</pre></section>`;
+      }
+    }
     $("reviewer").value = reviewer;
     $("reviewer").addEventListener("change", event => { reviewer = event.target.value; localStorage.setItem("fastclaw-stage2-reviewer", reviewer); responses = loadResponses(reviewer); render(); });
     $("search").addEventListener("input", event => { query = event.target.value; renderList(); });
