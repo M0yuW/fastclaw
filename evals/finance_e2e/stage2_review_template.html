@@ -62,6 +62,13 @@
     .eyebrow { color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
     h2 { margin: 7px 0 4px; font: 700 clamp(25px, 3vw, 34px)/1.2 Georgia, "Times New Roman", serif; overflow-wrap: anywhere; }
     .notice { display: flex; gap: 10px; margin: 22px 0; padding: 13px 15px; border: 1px solid #e3c9b9; border-radius: 10px; color: #713a20; background: var(--orange-soft); }
+    .target-card { margin: 22px 0 14px; padding: 20px; border: 2px solid var(--green); border-radius: 13px; background: #f8fcf9; box-shadow: 0 10px 28px rgba(23,92,69,.09); }
+    .target-card h3 { display: flex; align-items: center; gap: 9px; margin: 0 0 10px; color: var(--green); font-size: 17px; }
+    .target-number { display: inline-grid; place-items: center; width: 25px; height: 25px; border-radius: 50%; color: #fff; background: var(--green); font-size: 13px; }
+    .target-card > p { margin: 0 0 12px; font-weight: 650; }
+    .target-list { margin: 0; padding-left: 22px; }
+    .target-list li { margin: 7px 0; }
+    .target-warning { margin-top: 13px; padding: 10px 12px; border-radius: 8px; color: #713a20; background: var(--orange-soft); font-size: 13px; }
     .glossary { margin: 16px 0; border: 1px solid #bfd0c6; border-radius: 13px; background: #f0f6f2; }
     .glossary summary { padding: 15px 18px; color: var(--green); font-weight: 800; cursor: pointer; user-select: none; }
     .glossary[open] summary { border-bottom: 1px solid #ceddd5; }
@@ -180,6 +187,38 @@
     function definitions(items) {
       return `<dl class="definition-list">${items.map(([term, description]) => `<dt>${escapeHtml(term)}</dt><dd>${escapeHtml(description)}</dd>`).join("")}</dl>`;
     }
+    function reviewTarget(task) {
+      let summary; let items; let warning;
+      if (task.audit_type === "source") {
+        summary = "以链接中的 SEC 一手资料为准，独立核验页面给出的事实主张。";
+        items = [
+          "确认“待核对的原文摘录”确实出现在对应文件和定位位置，且没有改变原意。",
+          "确认任务描述中的 value、unit、basis 和 period 都得到该原文支持。",
+          "在 independent_result 中写下你从 SEC 原文独立读到的数值、单位、统计口径和报告期间。",
+          "最后再选择 PASS、FAIL 或 NOT_ASSESSABLE。"
+        ];
+        warning = "原文摘录是待验证的主张，不是已经确认的正确答案；只看到相似数字也不足以判定 PASS。";
+      } else if (task.audit_type === "oracle_calculation") {
+        summary = "只使用给出的 input_facts 和 calculation_spec，独立完成一次计算。";
+        items = [
+          "核对输入事实的数值、单位和统计口径是否适合该计算。",
+          "按照 operation 指定的运算和事实顺序写出未舍入过程。",
+          "按照 rounding 规则给出最终结果，并把完整过程写入 independent_result。",
+          "不要查阅 machine-reference.csv；完成计算后再选择审阅结论。"
+        ];
+        warning = "本题审阅目标是计算规则和独立结果，不是猜测隐藏的 expected 值。";
+      } else {
+        summary = "判断组内每一条记录能否独立满足同一个必需证据要求。";
+        items = [
+          "逐条比较 record_id 对应的定位信息和文本内容。",
+          "判断每条记录是否支持同一事实命题，而不只是公司相同或主题相近。",
+          "全部等价时在 independent_result 填写 VALID；否则列出有问题的 record_id 和原因。",
+          "文本预览不足时，应查看 suite 中的完整记录后再判断。"
+        ];
+        warning = "等价表示可作为同一证据要求的替代项，不要求文字完全相同。";
+      }
+      return `<section class="target-card"><h3><span class="target-number">1</span>本题审阅目标</h3><p>${escapeHtml(summary)}</p><ol class="target-list">${items.map(item => `<li>${escapeHtml(item)}</li>`).join("")}</ol><div class="target-warning">${escapeHtml(warning)}</div></section>`;
+    }
     function fieldHelp(task) {
       const common = [
         ["audit_id", "本次审计任务的唯一编号；导入、导出和后续一致性分析都依赖它，请勿修改。"],
@@ -258,7 +297,7 @@
     function taskMaterial(task) {
       if (task.audit_type === "source") {
         const link = /^https:\/\/www\.sec\.gov\//.test(task.url) ? `<p><a href="${escapeHtml(task.url)}" target="_blank" rel="noopener noreferrer">打开已锁定的 SEC 一手资料 ↗</a></p>` : "";
-        return `<section class="card"><h3>已锁定资料的元数据</h3>${meta(task)}${link}</section><section class="card"><h3>待核对的原文摘录</h3><blockquote>${escapeHtml(task.claimed_excerpt)}</blockquote></section>`;
+        return `<section class="card"><h3>已锁定资料的元数据</h3>${meta(task)}${link}</section><section class="card"><h3>审阅对象之一：待验证的原文摘录</h3><blockquote>${escapeHtml(task.claimed_excerpt)}</blockquote><p class="subtitle" style="margin-top:10px">请回到 SEC 原文确认这段摘录的位置、文字和上下文，不要把页面显示内容直接当作正确答案。</p></section>`;
       }
       if (task.audit_type === "oracle_calculation") {
         const facts = parseJson(task.input_facts, []);
@@ -269,7 +308,7 @@
     }
     function renderDetail() {
       const task = TASKS[selected]; const r = response(task);
-      $("content").innerHTML = `<div class="eyebrow">${escapeHtml(prettyType(task.audit_type))} · 第 ${selected + 1} 项，共 ${TASKS.length} 项</div><h2>${escapeHtml(task.audit_id)}</h2><div class="subtitle">${escapeHtml(task.review_task)}</div><div class="notice"><strong>盲审要求</strong><span>预期答案继续隐藏。请先填写独立核验结果，再给出审阅结论。</span></div>${fieldHelp(task)}${taskMaterial(task)}<section class="card"><h3>审阅指引</h3><p>${escapeHtml(task.review_guidance)}</p></section><section class="card"><div class="form-title"><h3>你的审阅结果</h3><span class="saved" id="saved">仅保存在当前浏览器</span></div><div class="verdicts">${["PASS","FAIL","NOT_ASSESSABLE"].map(v => `<button class="verdict ${r.verdict === v ? "selected" : ""}" data-value="${v}">${verdictLabel(v)}</button>`).join("")}</div><label for="independent-result">独立核验结果 <small>必填，填写后才计为完成</small></label><textarea id="independent-result" placeholder="填写核验后的事实、完整计算过程，或填写 VALID / 有问题的记录编号……">${escapeHtml(r.independent_result)}</textarea><label for="notes">备注 <small>选择不通过或无法判断时，请说明原因</small></label><textarea id="notes" placeholder="简要说明问题、歧义或需要后续处理的事项……">${escapeHtml(r.notes)}</textarea></section><div class="nav"><div class="nav-group"><button class="secondary" id="previous" ${selected === 0 ? "disabled" : ""}>← 上一项</button><button class="secondary" id="next" ${selected === TASKS.length - 1 ? "disabled" : ""}>下一项 →</button></div><button class="secondary" id="next-pending">跳到下一项待审任务</button></div><div class="footer-tools"><span>审阅者 ${reviewer.toUpperCase()} · ${TASKS.length} 项冻结任务</span><div><button class="secondary" id="import">导入 CSV</button> <button class="secondary danger" id="reset">清空当前审阅</button></div></div>`;
+      $("content").innerHTML = `<div class="eyebrow">${escapeHtml(prettyType(task.audit_type))} · 第 ${selected + 1} 项，共 ${TASKS.length} 项</div><h2>${escapeHtml(task.audit_id)}</h2><div class="subtitle">${escapeHtml(task.review_task)}</div>${reviewTarget(task)}<div class="notice"><strong>盲审要求</strong><span>预期答案继续隐藏。请先填写独立核验结果，再给出审阅结论。</span></div>${fieldHelp(task)}${taskMaterial(task)}<section class="card"><h3>审阅指引</h3><p>${escapeHtml(task.review_guidance)}</p></section><section class="card"><div class="form-title"><h3>你的审阅结果</h3><span class="saved" id="saved">仅保存在当前浏览器</span></div><div class="verdicts">${["PASS","FAIL","NOT_ASSESSABLE"].map(v => `<button class="verdict ${r.verdict === v ? "selected" : ""}" data-value="${v}">${verdictLabel(v)}</button>`).join("")}</div><label for="independent-result">独立核验结果 <small>必填，填写后才计为完成</small></label><textarea id="independent-result" placeholder="填写核验后的事实、完整计算过程，或填写 VALID / 有问题的记录编号……">${escapeHtml(r.independent_result)}</textarea><label for="notes">备注 <small>选择不通过或无法判断时，请说明原因</small></label><textarea id="notes" placeholder="简要说明问题、歧义或需要后续处理的事项……">${escapeHtml(r.notes)}</textarea></section><div class="nav"><div class="nav-group"><button class="secondary" id="previous" ${selected === 0 ? "disabled" : ""}>← 上一项</button><button class="secondary" id="next" ${selected === TASKS.length - 1 ? "disabled" : ""}>下一项 →</button></div><button class="secondary" id="next-pending">跳到下一项待审任务</button></div><div class="footer-tools"><span>审阅者 ${reviewer.toUpperCase()} · ${TASKS.length} 项冻结任务</span><div><button class="secondary" id="import">导入 CSV</button> <button class="secondary danger" id="reset">清空当前审阅</button></div></div>`;
       document.querySelectorAll(".verdict").forEach(button => button.addEventListener("click", () => update({verdict: button.dataset.value})));
       $("independent-result").addEventListener("input", event => update({independent_result: event.target.value}, false));
       $("notes").addEventListener("input", event => update({notes: event.target.value}, false));

@@ -39,6 +39,8 @@ class Stage2FreezeAuditTest(unittest.TestCase):
             self.assertIn("SHA-256 摘要", review_html)
             self.assertIn("overflow-x: auto", review_html)
             self.assertIn("页面渲染失败", review_html)
+            self.assertIn("本题审阅目标", review_html)
+            self.assertIn("待验证的原文摘录", review_html)
 
     def test_analysis_requires_complete_independent_passes(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
