@@ -277,4 +277,5 @@ func (r *Registry) registerBuiltins() {
 	registerExec(r)
 	registerFile(r)
 	registerMessage(r)
+	RegisterLedger(r)
 }

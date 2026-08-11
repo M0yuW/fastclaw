@@ -31,10 +31,15 @@ func TestLoadPresetUnknownFallsBackToPermissive(t *testing.T) {
 	}
 }
 
-func TestDelegateOnlyAllowsOnlySpawnSubagent(t *testing.T) {
+// The delegate-only face is delegation plus its own bookkeeping: spawn to get
+// facts, ledger tools to record them. Anything that would let the orchestrator
+// gather evidence itself stays denied.
+func TestDelegateOnlyAllowsDelegationAndLedger(t *testing.T) {
 	e := NewEngine(DelegateOnlyPolicy())
-	if err := e.CheckTool("spawn_subagent"); err != nil {
-		t.Fatalf("spawn_subagent must be allowed: %v", err)
+	for _, name := range []string{"spawn_subagent", "ledger_append", "ledger_report"} {
+		if err := e.CheckTool(name); err != nil {
+			t.Fatalf("%s must be allowed: %v", name, err)
+		}
 	}
 	for _, name := range []string{"exec", "web_fetch", "write_file", "read_file", "list_dir", "send_message"} {
 		if err := e.CheckTool(name); err == nil {
@@ -45,7 +50,7 @@ func TestDelegateOnlyAllowsOnlySpawnSubagent(t *testing.T) {
 
 func TestNoToolsDeniesEverything(t *testing.T) {
 	e := NewEngine(NoToolsPolicy())
-	for _, name := range []string{"spawn_subagent", "exec", "read_file"} {
+	for _, name := range []string{"spawn_subagent", "exec", "read_file", "ledger_append"} {
 		if err := e.CheckTool(name); err == nil {
 			t.Fatalf("tool %q must be denied under no-tools", name)
 		}

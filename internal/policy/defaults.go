@@ -78,15 +78,21 @@ func NoToolsPolicy() *Policy {
 // DelegateOnlyPolicy limits an orchestrator to sub-agent delegation. The
 // coordinator may fan work out to specialists but cannot gather evidence
 // itself, so every fact in its answer has to come back through a sub-agent.
+//
+// The ledger tools are allowed alongside spawn_subagent because bookkeeping is
+// orchestration, not evidence gathering: they only read and write the
+// coordinator's own structured record. Leaving them out would force the
+// coordinator back to write_file or exec to keep its ledger, which reopens the
+// general-purpose tool face this preset exists to close.
 func DelegateOnlyPolicy() *Policy {
 	return &Policy{
 		Name:        "delegate-only",
-		Description: "Allows only spawn_subagent",
+		Description: "Allows only spawn_subagent and the ledger tools",
 		Network: NetPolicy{
 			Mode: "none",
 		},
 		Tools: ToolsPolicy{
-			Allow: []string{"spawn_subagent"},
+			Allow: []string{"spawn_subagent", "ledger_append", "ledger_report"},
 		},
 	}
 }

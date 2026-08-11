@@ -43,9 +43,10 @@ func toolNameSet(names []string) map[string]bool {
 	return set
 }
 
-// A delegate-only coordinator must be offered spawn_subagent and nothing that
-// lets it gather evidence itself. This is the contract that turns the SOUL
-// instruction "always call the specialists" from advice into an invariant.
+// A delegate-only coordinator must be offered spawn_subagent plus its own
+// ledger, and nothing that lets it gather evidence itself. This is the
+// contract that turns the SOUL instruction "always call the specialists" from
+// advice into an invariant.
 func TestDelegateOnlyCoordinatorAdvertisesOnlySpawnSubagent(t *testing.T) {
 	ag, _ := newPolicyTestAgent(t, "delegate-only")
 
@@ -53,16 +54,18 @@ func TestDelegateOnlyCoordinatorAdvertisesOnlySpawnSubagent(t *testing.T) {
 		t.Fatalf("policy name = %q, want delegate-only", got)
 	}
 	allowed := toolNameSet(ag.AllowedToolNames())
-	if !allowed["spawn_subagent"] {
-		t.Fatal("coordinator was not offered spawn_subagent")
+	for _, needed := range []string{"spawn_subagent", "ledger_append", "ledger_report"} {
+		if !allowed[needed] {
+			t.Fatalf("coordinator was not offered %q; allowed=%v", needed, ag.AllowedToolNames())
+		}
 	}
 	for _, banned := range []string{"exec", "web_fetch", "write_file", "read_file", "list_dir"} {
 		if allowed[banned] {
 			t.Fatalf("delegate-only coordinator was offered %q", banned)
 		}
 	}
-	if len(allowed) != 1 {
-		t.Fatalf("delegate-only tool face = %v, want only spawn_subagent", ag.AllowedToolNames())
+	if len(allowed) != 3 {
+		t.Fatalf("delegate-only tool face = %v, want spawn_subagent + ledger tools only", ag.AllowedToolNames())
 	}
 }
 
@@ -142,5 +145,28 @@ func TestDelegateOnlySpawnSubagentStillExecutes(t *testing.T) {
 	}
 	if spawner.calls != 1 {
 		t.Fatalf("spawner called %d times, want 1", spawner.calls)
+	}
+}
+
+// The coordinator's bookkeeping has to survive the lockdown too: without a
+// working ledger under delegate-only it would need write_file or exec back.
+func TestDelegateOnlyLedgerRoundTrips(t *testing.T) {
+	ag, _ := newPolicyTestAgent(t, "delegate-only")
+	registry := ag.allowedRegistry()
+
+	if _, err := registry.Execute(context.Background(), "ledger_append",
+		`{"path":"football/ledger.json","key":["competition","season","date","match"],
+		  "record":{"competition":"UCL","season":"2026","date":"2026-08-12","match":"A vs B","lean":"draw"}}`,
+	); err != nil {
+		t.Fatalf("ledger_append failed under delegate-only: %v", err)
+	}
+
+	out, err := registry.Execute(context.Background(), "ledger_report",
+		`{"path":"football/ledger.json","filter":{"competition":"UCL"}}`)
+	if err != nil {
+		t.Fatalf("ledger_report failed under delegate-only: %v", err)
+	}
+	if !strings.Contains(out, "A vs B") {
+		t.Fatalf("report lost the appended entry: %s", out)
 	}
 }
