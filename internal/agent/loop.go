@@ -243,6 +243,17 @@ func NewAgentWithSkillsCfg(rc config.ResolvedAgent, prov provider.Provider, mb *
 			"preset", policyEngine.Policy().Name,
 		)
 	}
+	contextBuilder := newContextBuilderWithSandbox(
+		rc.Home,
+		workspace,
+		memory,
+		skillsSummary,
+		rc.Thinking,
+		rc.Sandbox.Enabled,
+		rc.Sandbox.Backend,
+	)
+	contextBuilder.SetRequiredIdentityFiles(rc.RequiredIdentity)
+	contextBuilder.SetToolGuidance(policyEngine.CheckTool("read_file") == nil)
 
 	ag := &Agent{
 		name:              rc.ID,
@@ -250,7 +261,7 @@ func NewAgentWithSkillsCfg(rc config.ResolvedAgent, prov provider.Provider, mb *
 		registry:          registry,
 		sessions:          session.NewManager(rc.Home + "/sessions"),
 		memory:            memory,
-		ctxBuilder:        newContextBuilderWithSandbox(rc.Home, workspace, memory, skillsSummary, rc.Thinking, rc.Sandbox.Enabled, rc.Sandbox.Backend),
+		ctxBuilder:        contextBuilder,
 		hooks:             hooks,
 		model:             rc.Model,
 		maxTokens:         rc.MaxTokens,
@@ -383,16 +394,23 @@ func (a *Agent) ToolRegistry() *tools.Registry {
 	return a.registry
 }
 
-// allowedRegistry returns the policy-filtered view of the tool registry: the
-// set of tools this agent may both see and run. A nil policyEngine means no
-// restriction, which is what every agent without a `policy` config key gets.
-func (a *Agent) allowedRegistry() *tools.Registry {
+// filterByPolicy narrows base to the tools this agent's policy allows. A nil
+// policyEngine means no restriction, which is what every agent without a
+// `policy` config key gets.
+func (a *Agent) filterByPolicy(base *tools.Registry) *tools.Registry {
 	if a.policyEngine == nil {
-		return a.registry
+		return base
 	}
-	return a.registry.Filter(func(name string) bool {
+	return base.Filter(func(name string) bool {
 		return a.policyEngine.CheckTool(name) == nil
 	})
+}
+
+// allowedRegistry returns the policy-filtered view of the agent's own tool
+// registry: the set of tools this agent may both see and run outside of a
+// request that supplied its own registry.
+func (a *Agent) allowedRegistry() *tools.Registry {
+	return a.filterByPolicy(a.registry)
 }
 
 // PolicyName reports the active tool-policy preset name, for diagnostics and
@@ -599,7 +617,20 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	// Hook: BeforeSystemPrompt
 	a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: BeforeSystemPrompt, UserID: a.ownerUserID})
 
-	systemPrompt := a.ctxBuilder.BuildSystemPrompt()
+	identityRevision, err := a.ctxBuilder.ValidateRequiredIdentityFiles()
+	if err != nil {
+		slog.Error("agent identity contract failed", "agent", a.name, "error", err)
+		identityErr := fmt.Errorf("Agent identity configuration is incomplete: %w", err)
+		events.fail(identityErr, events.messageID(), 1)
+		return identityErr.Error()
+	}
+	if identityRevision != "" {
+		slog.Info("agent identity contract verified",
+			"agent", a.name,
+			"revision", identityRevision,
+		)
+	}
+	systemPrompt := a.ctxBuilder.buildSystemPrompt(identityRevision)
 
 	// Hook: AfterSystemPrompt
 	a.hooks.Run(ctx, &HookContext{AgentName: a.name, Point: AfterSystemPrompt, UserID: a.ownerUserID})
@@ -648,11 +679,13 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	messages = append(messages, provider.Message{Role: "system", Content: systemPrompt})
 	messages = append(messages, applyContextIsolation(sessionMsgs)...)
 
-	// turnRegistry is the policy-filtered view of the agent's registry, built
-	// once per turn. Both the tool definitions we advertise to the model and
-	// the registry we execute against come from it, so a forged call to a
-	// denied tool fails with "unknown tool" instead of running.
-	turnRegistry := a.allowedRegistry()
+	// turnRegistry is the policy-filtered view of the tools available for this
+	// turn. The base is request-scoped when a caller supplied one (evaluation
+	// harness) and the agent's shared registry otherwise. Both the definitions
+	// we advertise to the model and the registry we execute against come from
+	// it, so a forged call to a denied tool fails with "unknown tool" instead
+	// of running.
+	turnRegistry := a.filterByPolicy(toolRegistryFromContext(ctx, a.registry))
 	toolDefs := turnRegistry.Definitions()
 
 	// Loop detection: track consecutive identical tool calls
@@ -698,6 +731,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		}
 
 		var resp *provider.Response
+		modelCallStarted := time.Now()
 		stream, err := a.provider.ChatStream(ctx, llmMessages, toolDefs, a.model, a.maxTokens, a.temperature)
 		if err == nil && stream == nil {
 			err = fmt.Errorf("LLM provider returned a nil stream")
@@ -719,6 +753,15 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			} else if resp == nil {
 				err = fmt.Errorf("LLM stream ended without a final response")
 			}
+		}
+		modelCallLatency := time.Since(modelCallStarted)
+		var modelUsage provider.Usage
+		if resp != nil {
+			modelUsage = resp.Usage
+		}
+		RecordModelCall(ctx, a.name, a.model, modelUsage, modelCallLatency, err)
+		if a.costTracker != nil {
+			a.costTracker.AddAPIDuration(modelCallLatency)
 		}
 
 		// Hook: AfterModelCall
@@ -1168,6 +1211,8 @@ func (a *Agent) UpdateConfig(rc config.ResolvedAgent) {
 	a.temperature = rc.Temperature
 	a.maxToolIterations = rc.MaxToolIterations
 	a.policyEngine = policy.NewEngine(policy.LoadPreset(rc.PolicyPreset))
+	a.ctxBuilder.SetRequiredIdentityFiles(rc.RequiredIdentity)
+	a.ctxBuilder.SetToolGuidance(a.policyEngine.CheckTool("read_file") == nil)
 	// Sandbox flags drive the system prompt's "Working Directory" / "home
 	// dir" description and the sandbox-capabilities block. Without this
 	// propagation an agent that existed before sandbox was enabled keeps
@@ -1213,13 +1258,24 @@ func (a *Agent) ReloadWorkspaceFiles() {
 	}
 	skills := loader.LoadSkills()
 	skillsSummary := loader.BuildSkillsSummary(skills)
-	a.ctxBuilder = NewContextBuilder(a.homePath, a.memory, skillsSummary)
-	a.ctxBuilder.SetWorkspace(a.workspacePath)
+	previous := a.ctxBuilder
+	a.ctxBuilder = newContextBuilderWithSandbox(
+		a.homePath,
+		a.workspacePath,
+		a.memory,
+		skillsSummary,
+		a.thinking,
+		previous.sandboxEnabled,
+		previous.sandboxBackend,
+	)
+	a.ctxBuilder.SetRequiredIdentityFiles(previous.requiredIdentity)
+	a.ctxBuilder.SetToolGuidance(previous.toolGuidance)
 	// Preserve Store-backed identity reads across reload; without this,
 	// Postgres-mode pods silently fall back to pod-local filesystem.
 	if a.memoryStore != nil {
 		a.ctxBuilder.store = a.memoryStore
 		a.ctxBuilder.agentID = a.name
+		a.ctxBuilder.userID = a.ownerUserID
 	}
 }
 

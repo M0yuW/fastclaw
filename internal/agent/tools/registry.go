@@ -25,7 +25,7 @@ const (
 // Registry holds all registered tools.
 type Registry struct {
 	tools       map[string]registeredTool
-	sandboxRoot string // if non-empty, file tools reject paths outside this dir
+	sandboxRoot string           // if non-empty, file tools reject paths outside this dir
 	executor    sandbox.Executor // if non-nil, all file+exec tools route through this
 	// File tool roots. systemRoot is the agent metadata dir (SOUL.md etc.);
 	// userRoot is where user-facing artifacts go. A relative path whose base
@@ -162,7 +162,9 @@ func NewRegistry(systemRoot, userRoot string) *Registry {
 }
 
 // NewEmptyRegistry creates a registry with no built-in tools. Intended for
-// tests and for callers that need to assemble a tool face from scratch.
+// tests, for callers that need to assemble a tool face from scratch, and for
+// request-scoped evaluation tools that must not mutate an agent's shared
+// runtime registry.
 func NewEmptyRegistry() *Registry {
 	return &Registry{tools: make(map[string]registeredTool)}
 }

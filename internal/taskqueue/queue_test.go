@@ -9,6 +9,51 @@ import (
 	"github.com/fastclaw-ai/fastclaw/internal/bus"
 )
 
+type integrationContextKey struct{}
+
+func TestSubmitInternalPreservesRequestContextValues(t *testing.T) {
+	observed := make(chan string, 1)
+	queue := NewQueue(1, time.Second, func(ctx context.Context, _ *Task) (string, error) {
+		value, _ := ctx.Value(integrationContextKey{}).(string)
+		observed <- value
+		return "done", nil
+	})
+	t.Cleanup(queue.Stop)
+
+	requestContext := context.WithValue(t.Context(), integrationContextKey{}, "usage-collector")
+	completed := make(chan TaskResult, 1)
+	_, err := queue.SubmitInternal(requestContext, InternalTaskSpec{
+		AgentID:       "worker",
+		OwnerUserID:   "user-1",
+		SourceAgentID: "coordinator",
+		CorrelationID: "correlation-1",
+		ChatKey:       "subagent:user-1:worker",
+		Message:       bus.InboundMessage{Text: "work"},
+		CallPath:      []string{"coordinator", "worker"},
+	}, func(result TaskResult) {
+		completed <- result
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	select {
+	case value := <-observed:
+		if value != "usage-collector" {
+			t.Fatalf("context value = %q", value)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("handler did not observe request context")
+	}
+	select {
+	case result := <-completed:
+		if result.Err != nil || result.Value != "done" {
+			t.Fatalf("completion = %+v", result)
+		}
+	case <-time.After(time.Second):
+		t.Fatal("internal task did not complete")
+	}
+}
+
 func TestSubmitInternalRejectsIncompleteSpec(t *testing.T) {
 	q := NewQueue(1, time.Second, func(context.Context, *Task) (string, error) {
 		return "", nil
@@ -187,5 +232,50 @@ func TestSubmitInternalCompletionExactlyOnceOnStop(t *testing.T) {
 	case extra := <-results:
 		t.Fatalf("completion fired twice: %#v", extra)
 	case <-time.After(50 * time.Millisecond):
+	}
+}
+
+func TestRecentTasksReturnsImmutableSnapshotsNewestFirst(t *testing.T) {
+	q := NewQueue(1, time.Second, func(context.Context, *Task) (string, error) {
+		return "", nil
+	})
+	defer q.Stop()
+
+	older := &Task{
+		ID:        "older",
+		Status:    TaskRunning,
+		CreatedAt: time.Now().Add(-time.Minute),
+		CallPath:  []string{"root", "older"},
+		Message: bus.InboundMessage{
+			Mentions:  []string{"one"},
+			PhotoURLs: []string{"image-one"},
+		},
+	}
+	newer := &Task{
+		ID:        "newer",
+		Status:    TaskDone,
+		CreatedAt: time.Now(),
+		CallPath:  []string{"root", "newer"},
+	}
+	q.mu.Lock()
+	q.tasks[older.ID] = older
+	q.tasks[newer.ID] = newer
+	q.mu.Unlock()
+
+	snapshots := q.RecentTasks(10)
+	if len(snapshots) != 2 || snapshots[0].ID != "newer" || snapshots[1].ID != "older" {
+		t.Fatalf("unexpected task order: %+v", snapshots)
+	}
+	snapshots[1].Status = TaskFailed
+	snapshots[1].CallPath[0] = "mutated"
+	snapshots[1].Message.Mentions[0] = "mutated"
+	snapshots[1].Message.PhotoURLs[0] = "mutated"
+
+	fresh := q.RecentTasks(10)
+	if fresh[1].Status != TaskRunning {
+		t.Fatalf("status mutation leaked into queue: %s", fresh[1].Status)
+	}
+	if fresh[1].CallPath[0] != "root" || fresh[1].Message.Mentions[0] != "one" || fresh[1].Message.PhotoURLs[0] != "image-one" {
+		t.Fatalf("slice mutation leaked into queue: %+v", fresh[1])
 	}
 }

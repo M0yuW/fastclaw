@@ -627,14 +627,31 @@ func runProviderTest(ctx context.Context, req testProviderRequest) map[string]an
 
 // --- /api/tasks ---
 
+const taskListLimit = 50
+
 func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 	if s.taskQueue == nil {
 		jsonResponse(w, http.StatusOK, []any{})
 		return
 	}
-	tasks := s.taskQueue.RecentTasks(50)
-	out := make([]map[string]any, 0, len(tasks))
+	ident, ok := auth.FromContext(r.Context())
+	if !ok {
+		jsonResponse(w, http.StatusUnauthorized, map[string]any{"error": "unauthorized"})
+		return
+	}
+	showAll := ident.Role == users.RoleSuperAdmin && !ident.IsActingAs()
+	effectiveUserID := ident.EffectiveUserID()
+	// Authorization must precede the response limit so newer tasks owned by
+	// other tenants cannot hide this caller's retained tasks.
+	tasks := s.taskQueue.RecentTasks(0)
+	out := make([]map[string]any, 0, taskListLimit)
 	for _, t := range tasks {
+		if !showAll && t.OwnerUserID != effectiveUserID {
+			continue
+		}
+		if !ident.CanAccessAgent(t.AgentID) {
+			continue
+		}
 		entry := map[string]any{
 			"id":        t.ID,
 			"agentId":   t.AgentID,
@@ -658,6 +675,9 @@ func (s *Server) handleListTasks(w http.ResponseWriter, r *http.Request) {
 			entry["error"] = t.Error.Error()
 		}
 		out = append(out, entry)
+		if len(out) == taskListLimit {
+			break
+		}
 	}
 	jsonResponse(w, http.StatusOK, out)
 }

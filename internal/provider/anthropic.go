@@ -266,6 +266,25 @@ type anthropicSSEEvent struct {
 	Type string `json:"type"`
 }
 
+type anthropicUsage struct {
+	InputTokens              int `json:"input_tokens"`
+	OutputTokens             int `json:"output_tokens"`
+	CacheReadInputTokens     int `json:"cache_read_input_tokens"`
+	CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
+}
+
+type anthropicMessageStart struct {
+	Type    string `json:"type"`
+	Message struct {
+		Usage anthropicUsage `json:"usage"`
+	} `json:"message"`
+}
+
+type anthropicMessageDelta struct {
+	Type  string         `json:"type"`
+	Usage anthropicUsage `json:"usage"`
+}
+
 type anthropicContentBlockStart struct {
 	Type         string                     `json:"type"`
 	Index        int                        `json:"index"`
@@ -367,6 +386,7 @@ func parseAnthropicSSE(ctx context.Context, source io.Reader, emit func(StreamCh
 
 	var contentBuilder strings.Builder
 	blocks := make(map[int]*anthropicBlockState)
+	var usage Usage
 	complete := false
 
 	for scanner.Scan() {
@@ -387,6 +407,15 @@ func parseAnthropicSSE(ctx context.Context, source io.Reader, emit func(StreamCh
 		}
 
 		switch event.Type {
+		case "message_start":
+			var start anthropicMessageStart
+			if err := json.Unmarshal([]byte(data), &start); err != nil {
+				continue
+			}
+			usage.PromptTokens = start.Message.Usage.InputTokens
+			usage.CacheReadTokens = start.Message.Usage.CacheReadInputTokens
+			usage.CacheCreationTokens = start.Message.Usage.CacheCreationInputTokens
+
 		case "content_block_start":
 			var cbs anthropicContentBlockStart
 			if err := json.Unmarshal([]byte(data), &cbs); err != nil {
@@ -433,6 +462,13 @@ func parseAnthropicSSE(ctx context.Context, source io.Reader, emit func(StreamCh
 				}
 			}
 
+		case "message_delta":
+			var delta anthropicMessageDelta
+			if err := json.Unmarshal([]byte(data), &delta); err != nil {
+				continue
+			}
+			usage.CompletionTokens = delta.Usage.OutputTokens
+
 		case "message_stop":
 			complete = true
 		}
@@ -451,7 +487,7 @@ func parseAnthropicSSE(ctx context.Context, source io.Reader, emit func(StreamCh
 		return nil, io.ErrUnexpectedEOF
 	}
 
-	result := &Response{Content: contentBuilder.String()}
+	result := &Response{Content: contentBuilder.String(), Usage: usage}
 	var thinkingBuilder strings.Builder
 	var thinkingSig string
 	for i := 0; i < len(blocks); i++ {
