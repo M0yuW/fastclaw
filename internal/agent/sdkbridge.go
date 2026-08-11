@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/codeany-ai/open-agent-sdk-go/costtracker"
@@ -25,12 +26,49 @@ var readOnlyTools = map[string]bool{
 	"load_skill":    true,
 }
 
+// toolCallIDMetadataKey smuggles the provider's tool_call ID through the SDK
+// input map so the adapter can attribute its measured wall time back to the
+// right call. Stripped before the args reach the FastClaw ToolFunc.
+const toolCallIDMetadataKey = "__fastclaw_tool_call_id"
+
+// toolTimingRecorder collects per-tool-call wall time, keyed by tool_call ID.
+// Keying by ID rather than slice index means the AfterToolCall hook reports
+// the duration of the call it names even when the SDK reorders concurrent and
+// sequential groups.
+type toolTimingRecorder struct {
+	mu        sync.Mutex
+	durations map[string]time.Duration
+}
+
+func newToolTimingRecorder() *toolTimingRecorder {
+	return &toolTimingRecorder{durations: make(map[string]time.Duration)}
+}
+
+func (recorder *toolTimingRecorder) record(toolCallID string, duration time.Duration) {
+	if recorder == nil || toolCallID == "" {
+		return
+	}
+	recorder.mu.Lock()
+	recorder.durations[toolCallID] = duration
+	recorder.mu.Unlock()
+}
+
+func (recorder *toolTimingRecorder) duration(toolCallID string) time.Duration {
+	if recorder == nil || toolCallID == "" {
+		return 0
+	}
+	recorder.mu.Lock()
+	defer recorder.mu.Unlock()
+	return recorder.durations[toolCallID]
+}
+
 // toolAdapter wraps a FastClaw tool as an SDK Tool interface.
 type toolAdapter struct {
 	name        string
 	description string
 	params      interface{}
 	fn          tools.ToolFunc
+	timings     *toolTimingRecorder
 }
 
 func (t *toolAdapter) Name() string        { return t.name }
@@ -53,8 +91,23 @@ func (t *toolAdapter) InputSchema() sdktypes.ToolInputSchema {
 }
 
 func (t *toolAdapter) Call(ctx context.Context, input map[string]interface{}, tCtx *sdktypes.ToolUseContext) (*sdktypes.ToolResult, error) {
+	startedAt := time.Now()
+	toolCallID, _ := input[toolCallIDMetadataKey].(string)
+	defer func() { t.timings.record(toolCallID, time.Since(startedAt)) }()
+
+	// Strip the smuggled ID so the tool never sees it as an argument.
+	cleanInput := input
+	if _, present := input[toolCallIDMetadataKey]; present {
+		cleanInput = make(map[string]interface{}, len(input))
+		for key, value := range input {
+			if key != toolCallIDMetadataKey {
+				cleanInput[key] = value
+			}
+		}
+	}
+
 	// Convert input map to JSON for FastClaw's ToolFunc
-	argsJSON, err := json.Marshal(input)
+	argsJSON, err := json.Marshal(cleanInput)
 	if err != nil {
 		return &sdktypes.ToolResult{IsError: true, Error: err.Error()}, nil
 	}
@@ -105,7 +158,7 @@ func newSDKEngine(sessionID string) *sdkEngine {
 }
 
 // buildSDKRegistry converts FastClaw's tool registry into an SDK registry.
-func buildSDKRegistry(fcRegistry *tools.Registry) *sdktools.Registry {
+func buildSDKRegistry(fcRegistry *tools.Registry, timings *toolTimingRecorder) *sdktools.Registry {
 	sdkReg := sdktools.NewRegistry()
 	for _, def := range fcRegistry.Definitions() {
 		fn := fcRegistry.GetFunc(def.Function.Name)
@@ -117,6 +170,7 @@ func buildSDKRegistry(fcRegistry *tools.Registry) *sdktools.Registry {
 			description: def.Function.Description,
 			params:      def.Function.Parameters,
 			fn:          fn,
+			timings:     timings,
 		})
 	}
 	return sdkReg
@@ -128,11 +182,13 @@ type toolCallResult struct {
 	toolName   string
 	result     string
 	err        error
+	duration   time.Duration
 }
 
 // executeToolsConcurrently runs tool calls using the SDK's concurrent executor.
 func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *tools.Registry, toolCalls []provider.ToolCall, workspace string) []toolCallResult {
-	sdkReg := buildSDKRegistry(fcRegistry)
+	timings := newToolTimingRecorder()
+	sdkReg := buildSDKRegistry(fcRegistry, timings)
 	executor := sdktools.NewExecutor(sdkReg, nil, &sdktypes.ToolUseContext{
 		WorkingDir: workspace,
 		AbortCtx:   ctx,
@@ -145,6 +201,10 @@ func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *to
 		if err := json.Unmarshal([]byte(tc.Function.Arguments), &input); err != nil {
 			input = map[string]interface{}{"_raw": tc.Function.Arguments}
 		}
+		if input == nil {
+			input = make(map[string]interface{})
+		}
+		input[toolCallIDMetadataKey] = tc.ID
 		calls[i] = sdktools.ToolCallRequest{
 			ToolUseID: tc.ID,
 			ToolName:  tc.Function.Name,
@@ -218,6 +278,12 @@ func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *to
 				result:     resultText,
 			}
 		}
+	}
+	// Attach measured wall time. Keyed on the provider's tool_call ID, so a
+	// tool that never reached the adapter (executor short-circuit) keeps a
+	// zero duration rather than borrowing a sibling's.
+	for i, tc := range toolCalls {
+		results[i].duration = timings.duration(tc.ID)
 	}
 	return results
 }

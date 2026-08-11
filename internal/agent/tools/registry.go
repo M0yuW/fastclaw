@@ -161,8 +161,9 @@ func NewRegistry(systemRoot, userRoot string) *Registry {
 	return r
 }
 
-// NewEmptyRegistry creates a registry without built-in tools. It is intended
-// for request-scoped evaluation tools that must not mutate an agent's shared
+// NewEmptyRegistry creates a registry with no built-in tools. Intended for
+// tests, for callers that need to assemble a tool face from scratch, and for
+// request-scoped evaluation tools that must not mutate an agent's shared
 // runtime registry.
 func NewEmptyRegistry() *Registry {
 	return &Registry{tools: make(map[string]registeredTool)}
@@ -216,7 +217,10 @@ func (r *Registry) Definitions() []provider.Tool {
 
 // Filter returns a shallow registry copy containing only tools accepted by
 // allow. Runtime wiring and function closures are preserved while the shared
-// registry remains unchanged.
+// registry stays untouched, so a per-turn policy view can be built without
+// mutating the agent's registry. The copy is a snapshot: later setter calls
+// on the original (SetSessionID, SetExecutor, …) do not propagate to it, so
+// build the filtered view after per-turn wiring is done.
 func (r *Registry) Filter(allow func(string) bool) *Registry {
 	if r == nil || allow == nil {
 		return r
@@ -275,4 +279,5 @@ func (r *Registry) registerBuiltins() {
 	registerExec(r)
 	registerFile(r)
 	registerMessage(r)
+	RegisterLedger(r)
 }
