@@ -1,9 +1,14 @@
 # 交接文档：为 Go Runtime 补上后端工具策略（feat/enforce-agent-tool-policy）
 
-日期：2026-08-11
-分支：`feat/enforce-agent-tool-policy`（基于 `m0yuw-project` = `792417b`）
+日期：2026-08-11（2026-08-12 补记合并与 PR）
+分支：`feat/enforce-agent-tool-policy`
 远端：已推到 `origin`（`git@github.com:M0yuW/fastclaw.git`）
-状态：**代码全部完成并推送；唯一未做的是把配置写进线上数据库**（项目已停，见 §5）
+PR：**https://github.com/M0yuW/fastclaw/pull/5 → `m0yuw-project`，OPEN / MERGEABLE / CLEAN，待合入**
+状态：**代码全部完成、已合上游、已推送、PR 已开；唯一未做的是把配置写进线上数据库**（项目已停，见 §5）
+
+原本基于 `m0yuw-project` = `792417b`，但目标分支在开发期间前进了 8 个提交到 `99993bb`
+（一个大的 eval harness）。已把上游合进本分支（`2a76cfa`），三处冲突手工解决，见 §2.5。
+**本文中所有行号均为合并后（`2a76cfa`）的值。**
 
 ---
 
@@ -23,13 +28,15 @@
 
 ---
 
-## 2. 四个提交做了什么
+## 2. 五个提交做了什么
 
 ```
 29c33b9  feat(policy): enforce per-agent tool policy at definition and execution
 52fc862  feat(tools): add structured ledger tools and allow them under delegate-only
 f308a20  fix(skills): bound football HTTP calls to their stated timeout
 5d320ae  feat(scripts): lock the football coordinator to delegate-only
+ccffd2c  docs: hand off the agent tool policy work
+2a76cfa  Merge m0yuw-project into feat/enforce-agent-tool-policy
 ```
 
 ### 2.1 `29c33b9` — 双闸门强制
@@ -42,11 +49,12 @@ f308a20  fix(skills): bound football HTTP calls to their stated timeout
 - 同一个 `turnRegistry` 传给 `executeToolsConcurrently` → 伪造的调用也执行不了，
   报 "unknown tool"
 
-代码位置：`internal/agent/loop.go:655`（`a.allowedRegistry()`）。
+代码位置：`internal/agent/loop.go:688`
+（`a.filterByPolicy(toolRegistryFromContext(ctx, a.registry))`，合并后的形态见 §2.5）。
 
 **时序坑（务必保留）**：`Registry.Filter` 是浅拷贝 + 新 `tools` map，
 保留闭包和运行期接线，但**不会观察后续的 setter 调用**。所以必须在
-per-turn 接线（`bindSession`，`loop.go:587`）**之后**再 filter（`loop.go:655`）。
+per-turn 接线（`bindSession`，`loop.go:605`）**之后**再 filter（`loop.go:688`）。
 顺序颠倒会得到一个没接 session 的 registry。
 
 `CheckTool` 语义：deny 优先（`"*"` 匹配全部）→ 若 `len(Allow) > 0` 则名字必须在里面
@@ -182,6 +190,53 @@ cd skills/football-data-toolkit/scripts && python3 -m unittest common.test_http_
 另加了一节"工具边界"，告诉总控它能碰什么、不能碰什么，以及
 **工具被拒时应该说缺什么，而不是改写请求去绕开**。限制可见时模型的行为明显更好。
 
+### 2.5 `2a76cfa` — 合上游，三处冲突
+
+`m0yuw-project` 在本分支开发期间前进了 8 个提交（`792417b` → `99993bb`），
+加了一个大的 eval harness（`internal/eval/`、`internal/evaltenant/`、
+`internal/taskqueue/`、`internal/setup/` 等）。`merge-base` 仍是 `792417b`，
+三个文件冲突——因为**目标分支独立实现了同一个特性**。
+
+**`internal/policy/defaults.go`（最重要的一处）**：目标分支自己也加了
+`NoToolsPolicy()` 和 `DelegateOnlyPolicy()`，两个 `LoadPreset` 分支一模一样，
+但它的 Allow 列表只有 `spawn_subagent`：
+
+```go
+Description: "Allows only spawn_subagent",
+Tools: ToolsPolicy{Allow: []string{"spawn_subagent"}},
+```
+
+**保留我们三个名字的版本**（`spawn_subagent`、`ledger_append`、`ledger_report`）。
+理由就是 §2.2：delegate-only 的总控没有 `write_file` 和 `exec`，
+没有账本工具它就记不了账，为了记账又得把通用工具面要回去，那预设就白锁了。
+**以后再遇到这个冲突，不要取上游的单工具版本**——没有本文上下文的人很容易
+"顺手解决"成那样，然后总控第一次写账本就挂。
+
+**`internal/agent/loop.go`**：两边都要。上游给 eval harness 加了
+`ContextWithToolRegistry`（`internal/agent/tool_context.go`），让一次请求可以
+带自己的 registry 而不污染 agent 共享的那一份。合并后的形态是**先取 request-scoped
+registry，没有就退回 agent 自己的，然后再按 policy 收窄**：
+
+```go
+turnRegistry := a.filterByPolicy(toolRegistryFromContext(ctx, a.registry))
+```
+
+为此把 filter 逻辑抽成 `filterByPolicy(base *tools.Registry)`（`loop.go:409` 附近），
+`allowedRegistry()` 变成 `a.filterByPolicy(a.registry)` 的薄封装，
+两条路径共用一个 filter。上游的 identity contract 校验、usage trace
+（`RecordModelCall`）、`UpdateConfig` 里的 `SetRequiredIdentityFiles` /
+`SetToolGuidance` 全部保留，我们的 `agent tool policy loaded` 日志也保留。
+
+**`internal/agent/tools/registry.go`**：合并两份 `NewEmptyRegistry` 注释；
+`Filter` 的注释取我们的版本，因为它记着那条迫使 filter 必须在 `bindSession`
+之后构建的 snapshot 语义（§2.1 的时序坑）。`registerBuiltins` 里的
+`RegisterLedger(r)` 未被冲突波及。
+
+**合并带来的一个好消息**：上游的 `internal/evaltenant/tenant.go:106` 已经在给它的
+benchmark coordinator 写 `policy = "delegate-only"`，所以这个预设合并后立刻有了
+第二个消费方。它的 `internal/eval/multiagent_test.go:112` 断言的是 request-scoped
+registry（只有 `spawn_subagent` 一个工具），不受我们放宽 Allow 列表的影响。
+
 ---
 
 ## 3. 必须保留的设计约束
@@ -199,7 +254,7 @@ cd skills/football-data-toolkit/scripts && python3 -m unittest common.test_http_
 
 ## 4. 验证记录
 
-Go 侧（全部干净）：
+Go 侧（合并后重跑，全部干净）：
 
 ```bash
 gofmt -l <改动的文件>          # 无输出
@@ -207,15 +262,19 @@ go build ./cmd/... ./internal/...   # 无输出
 go vet   ./cmd/... ./internal/...   # 无输出
 go test  ./cmd/... ./internal/...   # 全 ok
 go test -race -count=1 ./internal/agent/... ./internal/policy/...
-#   agent 1.979s / tools 2.178s / policy 1.503s  全 ok
+#   agent 1.900s / tools 1.955s / policy 1.320s  全 ok
+go test -count=1 ./internal/eval/... ./internal/evaltenant/... ./internal/api/...
+#   eval 3.473s / evaltenant 0.378s / api 0.692s  全 ok（上游新增的包）
 ```
 
 - 19/19 ledger 测试通过（含并发）
 - 4/4 delegate-only 契约测试通过
 - 2 个新 policy 预设测试通过
 
-**注意构建范围**：`project-report/analysis/main.go` import 了一个不存在的
-`internal/eval` 包，所以只能 `go build ./cmd/... ./internal/...`，不能 `./...`。
+**注意构建范围**：`internal/eval` 现在存在了（上游加的），但
+`project-report/analysis/main.go` 对不上它的 API（`MultiAgentBaselineSoloTwoPass`、
+`SourceSHA256`、`ForbiddenOutputValues` 都不存在），所以**构建范围照旧**限定在
+`./cmd/... ./internal/...`，不能 `./...`。
 
 **`gofmt` 的既存噪声**：`internal/policy/policy.go`、`sdkbridge.go`、
 `registry.go`、`web_fetch.go` 在 baseline 就是未格式化的。已核实过
@@ -300,12 +359,23 @@ data     = {"model":"deepseek/deepseek-v4-pro","maxTokens":8192,
 
 ## 6. 已知遗留 / 下一步
 
-- **线上库未锁**（§5），这是唯一的功能性缺口。
-- **provisioning 脚本只能建团、不能更新**（见 §5 的 A）。给它加一个
-  `--update-existing` 分支是本分支最自然的下一步收尾。
-- **契约测试还不完整**：现有测试覆盖了"delegate-only 下工具面只有三个"
-  和"账本能来回跑"，但没有一个端到端测试证明"总控在真实一轮里确实发出了
-  `spawn_subagent`"。原计划的第 5 步只算部分完成。
+按优先级：
+
+1. **合入 PR #5**（https://github.com/M0yuW/fastclaw/pull/5 → `m0yuw-project`）。
+   状态 OPEN / MERGEABLE / CLEAN，29 文件 / +4962 −27，冲突已在 `2a76cfa` 解决完，
+   剩下的只是点合并。合之前**请核对 §2.5 的第一条**：
+   `DelegateOnlyPolicy` 的 Allow 列表必须是三个名字。
+2. **锁线上库**（§5），这是唯一的功能性缺口。
+3. **provisioning 脚本只能建团、不能更新**（见 §5 的 A）。给它加一个
+   `--update-existing` 分支是本分支最自然的下一步收尾。
+4. **契约测试还不完整**：现有测试覆盖了"delegate-only 下工具面只有三个"
+   和"账本能来回跑"，但没有一个端到端测试证明"总控在真实一轮里确实发出了
+   `spawn_subagent`"。原计划的第 5 步只算部分完成。上游新增的
+   `internal/gateway/subagent_integration_test.go` 和 `internal/eval/` harness
+   现在都在树里了，写这个测试比之前容易。
+
+其他：
+
 - `~/.fastclaw/skills/` 的部署副本是**手工 `cp` 同步**的。以后改仓库里的
   Skill 记得再同步一次，或者干脆做个同步脚本。
 - 未提交、且按之前的约定**不要提交**的东西：
@@ -323,14 +393,18 @@ data     = {"model":"deepseek/deepseek-v4-pro","maxTokens":8192,
 
 | 文件 | 作用 |
 |---|---|
-| `internal/agent/loop.go:655` | per-turn `turnRegistry`，双闸门的源头 |
-| `internal/agent/loop.go:587` | `bindSession`，**必须在 filter 之前** |
+| `internal/agent/loop.go:688` | per-turn `turnRegistry`，双闸门的源头 |
+| `internal/agent/loop.go:409` | `filterByPolicy`，两条路径共用的 filter |
+| `internal/agent/loop.go:605` | `bindSession`，**必须在 filter 之前** |
 | `internal/agent/loop.go:239` | 从 `rc.PolicyPreset` 造 engine + 日志 |
-| `internal/agent/loop.go:1170` | `UpdateConfig` 时重建 engine |
-| `internal/policy/defaults.go` | `DelegateOnlyPolicy()`，含为何放行账本工具的理由 |
-| `internal/agent/tools/ledger.go` | 账本工具，三路存储 + per-path 互斥 |
+| `internal/agent/loop.go:1213` | `UpdateConfig` 时重建 engine |
+| `internal/agent/tool_context.go` | 上游加的 request-scoped registry（eval harness 路径） |
+| `internal/policy/defaults.go:78` | `DelegateOnlyPolicy()`，含为何放行账本工具的理由 |
+| `internal/agent/tools/ledger.go:86` | `RegisterLedger`；账本工具三路存储 + per-path 互斥 |
 | `internal/agent/tools/file.go` | 存储路由的模板（照它写的） |
-| `internal/gateway/userspace.go:400` | agent-scope `agents.defaults` 覆盖 `PolicyPreset` |
+| `internal/agent/policy_contract_test.go` | delegate-only 契约测试（工具面 + 账本往返） |
+| `internal/evaltenant/tenant.go:106` | 上游的第二个 `delegate-only` 消费方 |
+| `internal/gateway/userspace.go:312` | agent-scope `agents.defaults` 覆盖 `PolicyPreset` |
 | `internal/config/config.go:331` | `AgentDefaults.PolicyPreset`，JSON 键是 `"policy"` |
 | `skills/football-data-toolkit/scripts/common/http_fetch.py` | 有界 HTTP，模块 docstring 里记着实测数据 |
 | `skills/football-data-toolkit/scripts/common/test_http_fetch.py` | 13 个标准库测试，含死路用例 |
