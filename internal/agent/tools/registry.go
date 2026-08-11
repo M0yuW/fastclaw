@@ -161,6 +161,12 @@ func NewRegistry(systemRoot, userRoot string) *Registry {
 	return r
 }
 
+// NewEmptyRegistry creates a registry with no built-in tools. Intended for
+// tests and for callers that need to assemble a tool face from scratch.
+func NewEmptyRegistry() *Registry {
+	return &Registry{tools: make(map[string]registeredTool)}
+}
+
 // Register adds a tool to the registry (as a built-in tool).
 func (r *Registry) Register(name, description string, parameters interface{}, fn ToolFunc) {
 	r.RegisterFrom(name, description, parameters, fn, SourceBuiltin)
@@ -205,6 +211,26 @@ func (r *Registry) Definitions() []provider.Tool {
 		defs = append(defs, t.def)
 	}
 	return defs
+}
+
+// Filter returns a shallow registry copy containing only tools accepted by
+// allow. Runtime wiring and function closures are preserved while the shared
+// registry stays untouched, so a per-turn policy view can be built without
+// mutating the agent's registry. The copy is a snapshot: later setter calls
+// on the original (SetSessionID, SetExecutor, …) do not propagate to it, so
+// build the filtered view after per-turn wiring is done.
+func (r *Registry) Filter(allow func(string) bool) *Registry {
+	if r == nil || allow == nil {
+		return r
+	}
+	filtered := *r
+	filtered.tools = make(map[string]registeredTool, len(r.tools))
+	for name, tool := range r.tools {
+		if allow(name) {
+			filtered.tools[name] = tool
+		}
+	}
+	return &filtered
 }
 
 // Execute runs a tool by name with the given arguments.

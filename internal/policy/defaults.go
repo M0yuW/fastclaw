@@ -59,3 +59,34 @@ func StandardPolicy() *Policy {
 		},
 	}
 }
+
+// NoToolsPolicy is for agents that must answer only from their supplied
+// context, without runtime side effects or tool-driven evidence lookup.
+func NoToolsPolicy() *Policy {
+	return &Policy{
+		Name:        "no-tools",
+		Description: "Disables every tool",
+		Network: NetPolicy{
+			Mode: "none",
+		},
+		Tools: ToolsPolicy{
+			Deny: []string{"*"},
+		},
+	}
+}
+
+// DelegateOnlyPolicy limits an orchestrator to sub-agent delegation. The
+// coordinator may fan work out to specialists but cannot gather evidence
+// itself, so every fact in its answer has to come back through a sub-agent.
+func DelegateOnlyPolicy() *Policy {
+	return &Policy{
+		Name:        "delegate-only",
+		Description: "Allows only spawn_subagent",
+		Network: NetPolicy{
+			Mode: "none",
+		},
+		Tools: ToolsPolicy{
+			Allow: []string{"spawn_subagent"},
+		},
+	}
+}
