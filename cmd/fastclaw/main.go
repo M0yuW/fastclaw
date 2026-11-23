@@ -70,6 +70,7 @@ func main() {
 	rootCmd.AddCommand(providerCmd())
 	rootCmd.AddCommand(sandboxCmd())
 	rootCmd.AddCommand(policyCmd())
+	rootCmd.AddCommand(evalCmd())
 	rootCmd.AddCommand(daemonCmd())
 	rootCmd.AddCommand(adminCmd())
 
@@ -118,10 +119,7 @@ func runGateway(port int) error {
 		return fmt.Errorf("create auth resolver: %w", err)
 	}
 
-	gwCfg := &config.GatewayCfg{
-		Port: port,
-		Bind: env.Gateway.Bind,
-	}
+	gwCfg := defaultGatewayConfig(env, port)
 
 	webSrv := setup.NewServer(port)
 	webSrv.SetTaskQueue(gw.TaskQueue())
@@ -157,6 +155,19 @@ func runGateway(port int) error {
 	}
 
 	return gw.Run()
+}
+
+func defaultGatewayConfig(env *config.EnvConfig, port int) *config.GatewayCfg {
+	return &config.GatewayCfg{
+		Port: port,
+		Bind: env.Gateway.Bind,
+		HTTP: config.GatewayHTTP{
+			Endpoints: config.GatewayHTTPEndpoints{
+				ChatCompletions: config.GatewayEndpoint{Enabled: true},
+				Agents:          config.GatewayEndpoint{Enabled: true},
+			},
+		},
+	}
 }
 
 func countUsersSafe(gw *gateway.Gateway) (int, error) {

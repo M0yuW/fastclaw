@@ -27,6 +27,10 @@ class AgentSpec:
     max_tool_iterations: int
     soul: str
     skills: tuple[str, ...] = ()
+    # Backend tool policy preset, written into the agent-scope agents.defaults
+    # row as "policy". The coordinator's SOUL tells it to delegate, but a prompt
+    # is advisory: only this makes the runtime refuse a direct exec or fetch.
+    policy_preset: str = ""
 
 
 COORDINATOR_ID = "agt_3b64820e301b55be2096"
@@ -86,14 +90,22 @@ AGENTS = (
    专家的结论，保持证据独立。
 3. 按比赛逐场融合：胜平负倾向、概率、比分场景、信心、主要证据、反方证据、未知项。
 4. 把融合概率和市场时间戳交给 EV 专家，只输出价格是否已反映证据和敏感性，不给下注金额。
-5. 只有证据链完整时才追加到独立账本：
-   `~/.fastclaw/workspaces/{COORDINATOR_ID}/football/ledger.json`。
-   唯一键为 competition + season + date + match；重复请求更新同一行，不重复追加。
+5. 只有证据链完整时才用 `ledger_append` 写入独立账本。`path` 必须是工作区相对路径
+   `football/ledger.json`（绝对路径和 `..` 会被工具拒绝），`key` 固定为
+   `["competition","season","date","match"]`。同一唯一键的重复请求更新同一行，
+   不重复追加。回看历史用 `ledger_report`，`path` 同样是相对路径。
 6. 回复必须逐场展示结论、五名专家摘要、EV 校准、来源时间和未知项，并注明：
    “仅供研究与娱乐参考，不构成投注建议”。
 
+## 工具边界
+
+你的工具面被后端策略限制为 `spawn_subagent`、`ledger_append`、`ledger_report`。
+你没有 exec、读写文件或联网能力，这是设计如此：每一条事实都必须来自专家的返回，
+账本只记录你自己的结论。工具被拒绝时不要改写请求去绕开，直接说明缺什么。
+
 如果某一场失败，只隔离该场并继续其他已确认比赛；如果全部比赛都无法确认，直接报告数据不足。
 """,
+        policy_preset="delegate-only",
     ),
     AgentSpec(
         DATA_ID,
@@ -230,6 +242,25 @@ def _config(spec: AgentSpec) -> dict[str, object]:
     }
 
 
+def _defaults(spec: AgentSpec) -> dict[str, object]:
+    """The agent-scope `agents.defaults` row the runtime layers over its config.
+
+    `policy` is the key the Go side reads as AgentDefaults.PolicyPreset; it is
+    omitted rather than left empty for the specialists, since an empty preset and
+    an absent one mean the same thing and an empty string invites the reader to
+    think a preset was intended.
+    """
+    defaults: dict[str, object] = {
+        "model": spec.model,
+        "maxTokens": 8192,
+        "temperature": spec.temperature,
+        "maxToolIterations": spec.max_tool_iterations,
+    }
+    if spec.policy_preset:
+        defaults["policy"] = spec.policy_preset
+    return defaults
+
+
 def _identity(spec: AgentSpec) -> str:
     return f"# Identity\n\n- Name: {spec.name}\n- Runtime: FastClaw Go\n- Role: {spec.description}\n"
 
@@ -317,14 +348,7 @@ def provision(args: argparse.Namespace) -> dict[str, object]:
                     "agent",
                     spec.agent_id,
                     "agents.defaults",
-                    json.dumps(
-                        {
-                            "model": spec.model,
-                            "maxTokens": 8192,
-                            "temperature": spec.temperature,
-                            "maxToolIterations": spec.max_tool_iterations,
-                        }
-                    ),
+                    json.dumps(_defaults(spec)),
                     now,
                     now,
                 ),

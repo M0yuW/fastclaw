@@ -408,6 +408,8 @@ type AgentFileConfig struct {
 	MaxTokens         int                        `json:"maxTokens,omitempty"`
 	Temperature       float64                    `json:"temperature,omitempty"`
 	MaxToolIterations int                        `json:"maxToolIterations,omitempty"`
+	PolicyPreset      string                     `json:"policy,omitempty"`
+	RequiredIdentity  []string                   `json:"requiredIdentityFiles,omitempty"`
 	Workspace         string                     `json:"workspace,omitempty"`
 	Skills            SkillsConfig               `json:"skills,omitempty"`
 	MCPServers        map[string]MCPServerConfig `json:"mcpServers,omitempty"`
@@ -458,6 +460,7 @@ type ResolvedAgent struct {
 	MCPServers        map[string]MCPServerConfig
 	Sandbox           SandboxCfg
 	PolicyPreset      string
+	RequiredIdentity  []string
 	ToolProviders     map[string]ToolProviderCfg
 	Tools             map[string]ToolCategoryCfg
 	Providers         map[string]ProviderConfig
@@ -620,6 +623,12 @@ func (cfg *Config) MergedAgentConfig(entry AgentEntry) ResolvedAgent {
 		}
 		if fileCfg.MaxToolIterations > 0 {
 			resolved.MaxToolIterations = fileCfg.MaxToolIterations
+		}
+		if fileCfg.PolicyPreset != "" {
+			resolved.PolicyPreset = fileCfg.PolicyPreset
+		}
+		if len(fileCfg.RequiredIdentity) > 0 {
+			resolved.RequiredIdentity = append([]string(nil), fileCfg.RequiredIdentity...)
 		}
 		resolved.Skills = fileCfg.Skills
 		for k, v := range fileCfg.MCPServers {

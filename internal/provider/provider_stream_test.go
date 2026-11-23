@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"sync"
@@ -30,12 +32,14 @@ func openAIFixture() string {
 		`data: {"choices":[{"delta":{"role":"assistant","content":"hel"},"finish_reason":""}]}`,
 		`data: {"choices":[{"delta":{"content":"lo","tool_calls":[{"index":0,"id":"call_1","type":"function","function":{"name":"get_","arguments":"{\"x\":"}}]},"finish_reason":""}]}`,
 		`data: {"choices":[{"delta":{"tool_calls":[{"index":0,"function":{"name":"weather","arguments":"1}"}}]},"finish_reason":"tool_calls"}]}`,
+		`data: {"choices":[],"usage":{"prompt_tokens":120,"completion_tokens":18,"prompt_tokens_details":{"cached_tokens":40}}}`,
 		`data: [DONE]`, "",
 	}, "\n")
 }
 
 func anthropicFixture() string {
 	return strings.Join([]string{
+		`data: {"type":"message_start","message":{"usage":{"input_tokens":90,"output_tokens":0,"cache_read_input_tokens":30,"cache_creation_input_tokens":10}}}`,
 		`data: {"type":"content_block_start","index":0,"content_block":{"type":"thinking"}}`,
 		`data: {"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"reason"}}`,
 		`data: {"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"sig"}}`,
@@ -44,6 +48,7 @@ func anthropicFixture() string {
 		`data: {"type":"content_block_start","index":2,"content_block":{"type":"tool_use","id":"tool_1","name":"lookup","input":{}}}`,
 		`data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"{\"q\":"}}`,
 		`data: {"type":"content_block_delta","index":2,"delta":{"type":"input_json_delta","partial_json":"1}"}}`,
+		`data: {"type":"message_delta","usage":{"output_tokens":22}}`,
 		`data: {"type":"message_stop"}`, "",
 	}, "\n")
 }
@@ -73,11 +78,96 @@ func TestOpenAISSEStreamingResultEqualsChatResult(t *testing.T) {
 	if stream.Content != "hello" || len(stream.ToolCalls) != 1 || stream.ToolCalls[0].Function.Arguments != `{"x":1}` {
 		t.Fatalf("unexpected result: %+v", stream)
 	}
+	if stream.Usage.PromptTokens != 120 || stream.Usage.CompletionTokens != 18 || stream.Usage.CacheReadTokens != 40 {
+		t.Fatalf("unexpected usage: %+v", stream.Usage)
+	}
 	if len(stream.RawAssistant) == 0 {
 		t.Fatal("missing raw assistant")
 	}
 	if len(chunks) != 3 || !chunks[2].Done {
 		t.Fatalf("unexpected chunks: %+v", chunks)
+	}
+}
+
+func TestOpenAIProviderFallsBackWhenStreamingUsageIsUnsupported(t *testing.T) {
+	for _, status := range []int{http.StatusBadRequest, http.StatusUnprocessableEntity} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			var calls int
+			server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+				calls++
+				var body map[string]any
+				if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+					t.Error(err)
+					http.Error(writer, err.Error(), http.StatusBadRequest)
+					return
+				}
+				if _, included := body["stream_options"]; included {
+					http.Error(writer, `unsupported field "stream_options"`, status)
+					return
+				}
+				writer.Header().Set("Content-Type", "text/event-stream")
+				_, _ = writer.Write([]byte(strings.Join([]string{
+					`data: {"choices":[{"delta":{"content":"fallback"},"finish_reason":"stop"}]}`,
+					`data: [DONE]`,
+					"",
+				}, "\n")))
+			}))
+			defer server.Close()
+
+			openAIProvider := NewOpenAI("test-key", server.URL)
+			stream, err := openAIProvider.ChatStream(
+				t.Context(),
+				[]Message{{Role: "user", Content: "hello"}},
+				nil,
+				"test-model",
+				100,
+				0,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			for {
+				if _, ok := stream.Next(); !ok {
+					break
+				}
+			}
+			result, err := stream.Result()
+			if err != nil {
+				t.Fatal(err)
+			}
+			if calls != 2 || result.Content != "fallback" || result.Usage.TotalTokens() != 0 {
+				t.Fatalf("calls=%d result=%+v", calls, result)
+			}
+		})
+	}
+}
+
+func TestOpenAIProviderDoesNotRetryAmbiguousStreamingUsageError(t *testing.T) {
+	var calls int
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		calls++
+		http.Error(
+			writer,
+			"stream_options requires a provider-specific account setting",
+			http.StatusBadRequest,
+		)
+	}))
+	defer server.Close()
+
+	openAIProvider := NewOpenAI("test-key", server.URL)
+	_, err := openAIProvider.ChatStream(
+		t.Context(),
+		[]Message{{Role: "user", Content: "hello"}},
+		nil,
+		"test-model",
+		100,
+		0,
+	)
+	if err == nil || !strings.Contains(err.Error(), "stream_options requires") {
+		t.Fatalf("ChatStream() error = %v", err)
+	}
+	if calls != 1 {
+		t.Fatalf("calls = %d, want 1", calls)
 	}
 }
 
@@ -95,6 +185,12 @@ func TestAnthropicSSEStreamingResultEqualsChatResult(t *testing.T) {
 	}
 	if stream.Content != "hello" || stream.Thinking != "reason" || len(stream.ToolCalls) != 1 || stream.ToolCalls[0].Function.Arguments != `{"q":1}` {
 		t.Fatalf("unexpected result: %+v", stream)
+	}
+	if stream.Usage.PromptTokens != 90 ||
+		stream.Usage.CompletionTokens != 22 ||
+		stream.Usage.CacheReadTokens != 30 ||
+		stream.Usage.CacheCreationTokens != 10 {
+		t.Fatalf("unexpected usage: %+v", stream.Usage)
 	}
 	var raw map[string]any
 	if err := json.Unmarshal(stream.RawAssistant, &raw); err != nil || raw["signature"] != "sig" {

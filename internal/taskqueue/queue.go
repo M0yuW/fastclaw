@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"sort"
 	"sync"
 	"time"
 
@@ -282,10 +283,12 @@ func (q *Queue) executeTask(task *Task) {
 		"chat_key", task.ChatKey, "concurrent_count", concurrent,
 		"execution_id", inheritedExecution, "internal", task.ResponseMode == ResponseInternal)
 
-	baseCtx, baseCancel := context.WithCancel(q.ctx)
-	stop := context.AfterFunc(requestCtx, baseCancel)
+	baseCtx, baseCancel := context.WithCancel(context.WithoutCancel(requestCtx))
+	stopQueue := context.AfterFunc(q.ctx, baseCancel)
+	stopRequest := context.AfterFunc(requestCtx, baseCancel)
 	defer func() {
-		stop()
+		stopQueue()
+		stopRequest()
 		baseCancel()
 	}()
 	ctx, cancel := context.WithTimeout(baseCtx, q.taskTimeout)
@@ -393,17 +396,12 @@ func (q *Queue) RecentTasks(limit int) []*Task {
 
 	all := make([]*Task, 0, len(q.tasks))
 	for _, t := range q.tasks {
-		all = append(all, t)
+		all = append(all, snapshotTask(t))
 	}
 
-	// Sort newest first
-	for i := 0; i < len(all); i++ {
-		for j := i + 1; j < len(all); j++ {
-			if all[j].CreatedAt.After(all[i].CreatedAt) {
-				all[i], all[j] = all[j], all[i]
-			}
-		}
-	}
+	sort.Slice(all, func(i, j int) bool {
+		return all[i].CreatedAt.After(all[j].CreatedAt)
+	})
 
 	if limit > 0 && len(all) > limit {
 		all = all[:limit]
@@ -415,6 +413,39 @@ func (q *Queue) RecentTasks(limit int) []*Task {
 	}
 
 	return all
+}
+
+func snapshotTask(task *Task) *Task {
+	message := task.Message
+	message.Mentions = append([]string(nil), task.Message.Mentions...)
+	message.PhotoURLs = append([]string(nil), task.Message.PhotoURLs...)
+	return &Task{
+		ID:            task.ID,
+		AgentID:       task.AgentID,
+		OwnerUserID:   task.OwnerUserID,
+		ChatKey:       task.ChatKey,
+		Message:       message,
+		AccountID:     task.AccountID,
+		Status:        task.Status,
+		CreatedAt:     task.CreatedAt,
+		StartedAt:     copyTime(task.StartedAt),
+		DoneAt:        copyTime(task.DoneAt),
+		Result:        task.Result,
+		Error:         task.Error,
+		ResponseMode:  task.ResponseMode,
+		CorrelationID: task.CorrelationID,
+		SourceAgentID: task.SourceAgentID,
+		CallPath:      append([]string(nil), task.CallPath...),
+		ParentChatKey: task.ParentChatKey,
+	}
+}
+
+func copyTime(value *time.Time) *time.Time {
+	if value == nil {
+		return nil
+	}
+	copy := *value
+	return &copy
 }
 
 // pruneOldTasks removes completed tasks beyond the retention limit.
@@ -438,14 +469,9 @@ func (q *Queue) pruneOldTasks() {
 		}
 	}
 
-	// Sort oldest first
-	for i := 0; i < len(completed); i++ {
-		for j := i + 1; j < len(completed); j++ {
-			if completed[j].createdAt.Before(completed[i].createdAt) {
-				completed[i], completed[j] = completed[j], completed[i]
-			}
-		}
-	}
+	sort.Slice(completed, func(i, j int) bool {
+		return completed[i].createdAt.Before(completed[j].createdAt)
+	})
 
 	// Remove oldest completed tasks to get below 200
 	toRemove := len(q.tasks) - 200

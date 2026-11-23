@@ -141,8 +141,10 @@ func (s *Server) requireSuperAdmin(next http.HandlerFunc) http.HandlerFunc {
 	return s.authMiddleware(auth.RequireSuperAdmin(next))
 }
 
-// Run starts the HTTP server and blocks until the context is canceled.
-func (s *Server) Run(ctx context.Context) error {
+// Handler builds the production HTTP route tree. Tests use the same handler
+// through httptest so middleware, path matching, and persistence behavior stay
+// identical to the running server.
+func (s *Server) Handler() (http.Handler, error) {
 	mux := http.NewServeMux()
 
 	// Health probes (unauthenticated).
@@ -257,9 +259,18 @@ func (s *Server) Run(ctx context.Context) error {
 	// Static UI files.
 	webRoot, err := fs.Sub(webFS, "web")
 	if err != nil {
-		return fmt.Errorf("setup: embed sub: %w", err)
+		return nil, fmt.Errorf("setup: embed sub: %w", err)
 	}
 	mux.Handle("/", spaHandler{fs: webRoot})
+	return mux, nil
+}
+
+// Run starts the HTTP server and blocks until the context is canceled.
+func (s *Server) Run(ctx context.Context) error {
+	handler, err := s.Handler()
+	if err != nil {
+		return err
+	}
 
 	var addr string
 	if s.bind == "all" {
@@ -267,7 +278,7 @@ func (s *Server) Run(ctx context.Context) error {
 	} else {
 		addr = fmt.Sprintf("127.0.0.1:%d", s.port)
 	}
-	srv := &http.Server{Addr: addr, Handler: mux}
+	srv := &http.Server{Addr: addr, Handler: handler}
 
 	go func() {
 		<-ctx.Done()

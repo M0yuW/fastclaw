@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -41,6 +42,23 @@ func TestMakeSubAgentToolCreatesUniqueInternalMessages(t *testing.T) {
 		if msg.Source != bus.SourceSubAgent || msg.Channel != "subagent" {
 			t.Fatalf("unexpected source message: %#v", msg)
 		}
+	}
+}
+
+func TestMakeSubAgentToolDeduplicatesTargetWithinTurn(t *testing.T) {
+	spawner := &fakeSubAgentSpawner{result: "fixed evidence"}
+	tool := makeSubAgentTool(spawner, "parent")
+	ctx := ContextWithSubAgentDedup(context.Background())
+
+	for _, task := range []string{"first request", "retry request"} {
+		args := json.RawMessage(`{"agentId":"child","task":` + strconv.Quote(task) + `}`)
+		result, err := tool(ctx, args)
+		if err != nil || result != "fixed evidence" {
+			t.Fatalf("task %q: result=%q err=%v", task, result, err)
+		}
+	}
+	if len(spawner.messages) != 1 {
+		t.Fatalf("spawner received %d messages, want 1", len(spawner.messages))
 	}
 }
 

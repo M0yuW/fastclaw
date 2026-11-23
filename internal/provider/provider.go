@@ -121,6 +121,19 @@ type Response struct {
 	ToolCalls    []ToolCall
 	Thinking     string          // model's reasoning/thinking content (extracted for memory)
 	RawAssistant json.RawMessage // exact API response message JSON (for cache-safe replay)
+	Usage        Usage
+}
+
+type Usage struct {
+	PromptTokens              int
+	CompletionTokens          int
+	CacheReadTokens           int
+	CacheCreationTokens       int
+	CacheReadIncludedInPrompt bool
+}
+
+func (u Usage) TotalTokens() int {
+	return u.PromptTokens + u.CompletionTokens
 }
 
 // HasToolCalls returns true if the response contains tool calls.

@@ -1,0 +1,84 @@
+version: 1
+name: bfcl-v4-simple-subset
+description: Small BFCL V4 simple_python subset for FastClaw tool-trace evaluation.
+defaults:
+  repetitions: 3
+  timeout: 2m
+cases:
+  - id: simple_python_0
+    description: Triangle-area function selection and argument extraction.
+    prompt: Find the area of a triangle with a base of 10 units and height of 5 units.
+    tags: [bfcl-v4, simple-python, tool-calling]
+    tools:
+      - name: calculate_triangle_area
+        description: Calculate the area of a triangle given its base and height.
+        parameters:
+          type: object
+          properties:
+            base:
+              type: integer
+              description: The base of the triangle.
+            height:
+              type: integer
+              description: The height of the triangle.
+            unit:
+              type: string
+              description: The unit of measure.
+          required: [base, height]
+        result: "25"
+    graders:
+      - type: tool_trace
+        calls:
+          - name: calculate_triangle_area
+            arguments:
+              base: [10]
+              height: [5]
+              unit: [units, ""]
+
+  - id: simple_python_1
+    description: Namespaced math function and integer argument.
+    prompt: Calculate the factorial of 5 using math functions.
+    tags: [bfcl-v4, simple-python, tool-calling]
+    tools:
+      - name: math.factorial
+        description: Calculate the factorial of a given number.
+        parameters:
+          type: object
+          properties:
+            number:
+              type: integer
+              description: The number for which factorial needs to be calculated.
+          required: [number]
+        result: "120"
+    graders:
+      - type: tool_trace
+        calls:
+          - name: math.factorial
+            arguments:
+              number: [5]
+
+  - id: simple_python_19
+    description: Two-argument number-theory call.
+    prompt: "Calculate the greatest common divisor of two numbers: 40 and 50"
+    tags: [bfcl-v4, simple-python, tool-calling]
+    tools:
+      - name: math.gcd
+        description: Compute the greatest common divisor of two numbers.
+        parameters:
+          type: object
+          properties:
+            num1:
+              type: integer
+              description: The first number.
+            num2:
+              type: integer
+              description: The second number.
+          required: [num1, num2]
+        result: "10"
+    graders:
+      - type: tool_trace
+        calls:
+          - name: math.gcd
+            arguments:
+              num1: [40]
+              num2: [50]

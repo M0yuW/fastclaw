@@ -1,4 +1,4 @@
-.PHONY: build build-web clean release-local install test dev
+.PHONY: build build-web clean release-local install test test-integration test-race coverage dev
 
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
@@ -18,6 +18,16 @@ install: build
 
 test:
 	go test ./...
+
+test-integration:
+	go test -count=1 ./cmd/fastclaw ./internal/api ./internal/auth ./internal/eval ./internal/evaltenant ./internal/gateway ./internal/setup ./internal/store -run Integration
+
+test-race:
+	go test -race ./cmd/fastclaw ./internal/agent ./internal/api ./internal/auth ./internal/bus ./internal/eval ./internal/evaltenant ./internal/gateway ./internal/setup ./internal/store ./internal/taskqueue
+
+coverage:
+	go test ./... -coverprofile=coverage.out
+	go tool cover -func=coverage.out | tail -n 1
 
 dev: build-web
 	air

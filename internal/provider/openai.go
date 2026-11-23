@@ -46,12 +46,17 @@ type apiMessage struct {
 }
 
 type chatRequest struct {
-	Model       string            `json:"model"`
-	Messages    []json.RawMessage `json:"messages"`
-	Tools       []Tool            `json:"tools,omitempty"`
-	MaxTokens   int               `json:"max_tokens,omitempty"`
-	Temperature float64           `json:"temperature,omitempty"`
-	Stream      bool              `json:"stream"`
+	Model         string            `json:"model"`
+	Messages      []json.RawMessage `json:"messages"`
+	Tools         []Tool            `json:"tools,omitempty"`
+	MaxTokens     int               `json:"max_tokens,omitempty"`
+	Temperature   float64           `json:"temperature,omitempty"`
+	Stream        bool              `json:"stream"`
+	StreamOptions *streamOptions    `json:"stream_options,omitempty"`
+}
+
+type streamOptions struct {
+	IncludeUsage bool `json:"include_usage"`
 }
 
 // toAPIMessages converts provider Messages to wire-format apiMessages,
@@ -103,15 +108,34 @@ type sseChoice struct {
 
 type sseResponse struct {
 	Choices []sseChoice `json:"choices"`
+	Usage   *struct {
+		PromptTokens     int `json:"prompt_tokens"`
+		CompletionTokens int `json:"completion_tokens"`
+		PromptDetails    struct {
+			CachedTokens int `json:"cached_tokens"`
+		} `json:"prompt_tokens_details"`
+	} `json:"usage,omitempty"`
 }
 
-func (p *OpenAIProvider) buildRequest(ctx context.Context, messages []Message, tools []Tool, model string, maxTokens int, temperature float64, stream bool) (*http.Request, error) {
+func (p *OpenAIProvider) buildRequestWithUsage(
+	ctx context.Context,
+	messages []Message,
+	tools []Tool,
+	model string,
+	maxTokens int,
+	temperature float64,
+	stream bool,
+	includeUsage bool,
+) (*http.Request, error) {
 	req := chatRequest{
 		Model:       StripProviderPrefix(model),
 		Messages:    toAPIMessages(messages),
 		MaxTokens:   maxTokens,
 		Temperature: temperature,
 		Stream:      stream,
+	}
+	if stream && includeUsage {
+		req.StreamOptions = &streamOptions{IncludeUsage: true}
 	}
 	if len(tools) > 0 {
 		req.Tools = tools
@@ -134,14 +158,9 @@ func (p *OpenAIProvider) buildRequest(ctx context.Context, messages []Message, t
 }
 
 func (p *OpenAIProvider) Chat(ctx context.Context, messages []Message, tools []Tool, model string, maxTokens int, temperature float64) (*Response, error) {
-	httpReq, err := p.buildRequest(ctx, messages, tools, model, maxTokens, temperature, true)
+	resp, err := p.doChatRequest(ctx, messages, tools, model, maxTokens, temperature)
 	if err != nil {
 		return nil, err
-	}
-
-	resp, err := p.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("send request: %w", err)
 	}
 	defer resp.Body.Close()
 
@@ -155,14 +174,9 @@ func (p *OpenAIProvider) Chat(ctx context.Context, messages []Message, tools []T
 
 // ChatStream returns a StreamReader that yields chunks as they arrive from the LLM.
 func (p *OpenAIProvider) ChatStream(ctx context.Context, messages []Message, tools []Tool, model string, maxTokens int, temperature float64) (*StreamReader, error) {
-	httpReq, err := p.buildRequest(ctx, messages, tools, model, maxTokens, temperature, true)
+	resp, err := p.doChatRequest(ctx, messages, tools, model, maxTokens, temperature)
 	if err != nil {
 		return nil, err
-	}
-
-	resp, err := p.client.Do(httpReq)
-	if err != nil {
-		return nil, fmt.Errorf("send request: %w", err)
 	}
 
 	if resp.StatusCode != http.StatusOK {
@@ -192,12 +206,97 @@ func (p *OpenAIProvider) ChatStream(ctx context.Context, messages []Message, too
 	return reader, nil
 }
 
+func (p *OpenAIProvider) doChatRequest(
+	ctx context.Context,
+	messages []Message,
+	tools []Tool,
+	model string,
+	maxTokens int,
+	temperature float64,
+) (*http.Response, error) {
+	httpReq, err := p.buildRequestWithUsage(
+		ctx,
+		messages,
+		tools,
+		model,
+		maxTokens,
+		temperature,
+		true,
+		true,
+	)
+	if err != nil {
+		return nil, err
+	}
+	response, err := p.client.Do(httpReq)
+	if err != nil {
+		return nil, fmt.Errorf("send request: %w", err)
+	}
+	if response.StatusCode < http.StatusBadRequest || response.StatusCode >= http.StatusInternalServerError {
+		return response, nil
+	}
+	responseBody, readErr := io.ReadAll(response.Body)
+	response.Body.Close()
+	if readErr != nil {
+		return nil, fmt.Errorf("read API error: %w", readErr)
+	}
+	if !isUnsupportedStreamingUsageError(response.StatusCode, responseBody) {
+		response.Body = io.NopCloser(bytes.NewReader(responseBody))
+		return response, nil
+	}
+	fallbackRequest, err := p.buildRequestWithUsage(
+		ctx,
+		messages,
+		tools,
+		model,
+		maxTokens,
+		temperature,
+		true,
+		false,
+	)
+	if err != nil {
+		return nil, err
+	}
+	fallbackResponse, err := p.client.Do(fallbackRequest)
+	if err != nil {
+		return nil, fmt.Errorf("send request without streaming usage: %w", err)
+	}
+	return fallbackResponse, nil
+}
+
+func isUnsupportedStreamingUsageError(status int, responseBody []byte) bool {
+	if status != http.StatusBadRequest && status != http.StatusUnprocessableEntity {
+		return false
+	}
+	lowerBody := strings.ToLower(string(responseBody))
+	hasField := strings.Contains(lowerBody, "stream_options") ||
+		strings.Contains(lowerBody, "include_usage")
+	if !hasField {
+		return false
+	}
+	for _, marker := range []string{
+		"unsupported",
+		"unknown field",
+		"unrecognized",
+		"not allowed",
+		"not permitted",
+		"extra field",
+		"extra_forbidden",
+		"additional properties",
+	} {
+		if strings.Contains(lowerBody, marker) {
+			return true
+		}
+	}
+	return false
+}
+
 func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk) error) (*Response, error) {
 	scanner := bufio.NewScanner(source)
 	scanner.Buffer(make([]byte, 0, 64*1024), 1024*1024)
 
 	var contentBuilder strings.Builder
 	toolCalls := make(map[int]*ToolCall)
+	var usage Usage
 	complete := false
 
 	for scanner.Scan() {
@@ -219,6 +318,12 @@ func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk
 		if err := json.Unmarshal([]byte(data), &chunk); err != nil {
 			slog.Warn("parse SSE chunk", "error", err, "data", data)
 			continue
+		}
+		if chunk.Usage != nil {
+			usage.PromptTokens = chunk.Usage.PromptTokens
+			usage.CompletionTokens = chunk.Usage.CompletionTokens
+			usage.CacheReadTokens = chunk.Usage.PromptDetails.CachedTokens
+			usage.CacheReadIncludedInPrompt = chunk.Usage.PromptDetails.CachedTokens > 0
 		}
 		if len(chunk.Choices) == 0 {
 			continue
@@ -269,7 +374,7 @@ func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk
 		return nil, io.ErrUnexpectedEOF
 	}
 
-	result := &Response{Content: contentBuilder.String()}
+	result := &Response{Content: contentBuilder.String(), Usage: usage}
 	for i := 0; i < len(toolCalls); i++ {
 		if tc, ok := toolCalls[i]; ok {
 			result.ToolCalls = append(result.ToolCalls, *tc)
