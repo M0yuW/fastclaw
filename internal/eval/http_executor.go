@@ -65,6 +65,8 @@ type chatCompletionFastClaw struct {
 	ToolBehaviors             map[string]StateToolBehavior `json:"tool_behaviors,omitempty"`
 	SubAgentMaxCalls          int                          `json:"subagent_max_calls,omitempty"`
 	SubAgentMaxCallsPerTarget int                          `json:"subagent_max_calls_per_target,omitempty"`
+	SubAgentSharedContext     string                       `json:"subagent_shared_context,omitempty"`
+	ServerTimeoutMS           int                          `json:"server_timeout_ms,omitempty"`
 }
 
 func (e *HTTPExecutor) Execute(ctx context.Context, request ExecutionRequest) (ExecutionResponse, error) {
@@ -108,6 +110,8 @@ func (e *HTTPExecutor) Execute(ctx context.Context, request ExecutionRequest) (E
 			ToolBehaviors:             toolBehaviors,
 			SubAgentMaxCalls:          request.SubAgentMaxCalls,
 			SubAgentMaxCallsPerTarget: request.SubAgentMaxCallsPerTarget,
+			SubAgentSharedContext:     request.SubAgentSharedContext,
+			ServerTimeoutMS:           request.ServerTimeoutMS,
 		},
 	})
 	if err != nil {

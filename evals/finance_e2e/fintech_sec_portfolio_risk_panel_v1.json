@@ -1,0 +1,37 @@
+{
+  "panel_id": "FINTECH-SEC-PORTFOLIO-RISK-v1",
+  "status": "frozen_before_model_observations",
+  "holdings_basis": "fictional long-only US equity portfolio; percentages of total economic exposure; not a real user account",
+  "policy": {"single_holding_limit_pct": 50, "breach_operator": ">"},
+  "source_packet": "fintech_sec_screen_holdout_v1.json",
+  "source_symbols": ["COIN", "HOOD", "SQ"],
+  "cases": [
+    {
+      "case_id": "PR-LIMIT",
+      "holdings_percent": {"COIN": 50, "HOOD": 30, "SQ": 20},
+      "holdings_complete": true,
+      "oracle": {"largest_holding": "COIN", "largest_weight_pct": 50,
+                 "limit_breached": false, "herfindahl_index": 0.38},
+      "challenge": "A holding exactly at the strict threshold is not a breach; distinguish position size from a claim that all 100% is direct crypto exposure."
+    },
+    {
+      "case_id": "PR-BREACH",
+      "holdings_percent": {"COIN": 55, "HOOD": 25, "SQ": 20},
+      "holdings_complete": true,
+      "oracle": {"largest_holding": "COIN", "largest_weight_pct": 55,
+                 "limit_breached": true, "herfindahl_index": 0.405},
+      "challenge": "Quantify the five-percentage-point policy excess without assuming a trade is authorized; connect the largest holding to source-backed operating risk."
+    },
+    {
+      "case_id": "PR-INCOMPLETE",
+      "holdings_percent_known": {"COIN": 40, "HOOD": 30},
+      "unknown_remainder_percent": 30,
+      "holdings_complete": false,
+      "oracle": {"tool_calculation_allowed": false,
+                 "known_largest_holding": "COIN", "known_largest_weight_pct": 40,
+                 "strict_limit_breach_logically_excluded": true,
+                 "exact_herfindahl_index_known": false},
+      "challenge": "Do not invent the remaining holdings or claim an exact tool risk score. Because unknown long-only holdings together total only 30% of total exposure, no one unknown holding can exceed the known 40% COIN position or the strict 50% limit; that narrow bound is logically knowable despite incomplete data."
+    }
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "case_id": "P2",
+  "workflow": "P",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "no_ledger_mutation": true,
+    "risk_tool_called": true,
+    "exact_holdings_submitted": true,
+    "weight_and_limit_stated": true,
+    "no_false_breach": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 2,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "expected_holdings": {
+      "FICA": 50,
+      "FICB": 30,
+      "FICC": 20
+    },
+    "expected_limit_breached": false,
+    "trace": {
+      "model_calls": 2,
+      "tool_calls": 1,
+      "tool_results": 1,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "This is a synthetic portfolio-risk diagnostic, not a live account. Available holdings: FICA 50%, FICB 30%, FICC 20%. The single-holding concentration policy is breached only when a weight exceeds 50%; exactly 50% is at the limit, not above it. Use finance-tools__portfolio_risk with view=concentration if the complete portfolio is known. Explain the measured exposure or why it cannot be reliably computed. Do not infer a missing weight, trade, change holdings, or create ledger records. Case P2.",
+      "response": {
+        "id": "chatcmpl-1792344792830864000",
+        "object": "chat.completion",
+        "created": 1792344792,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# Case P2 — Portfolio Concentration Diagnostic\n\n**Status:** Computed successfully. The portfolio is complete (three holdings, weights sum to 100%), so no inference was required.\n\n## Inputs used\n| Holding | Weight |\n|---|---|\n| FICA | 50% |\n| FICB | 30% |\n| FICC | 20% |\n\nCompleteness: 1.0 (no missing positions, no quality flags). Source: local evaluation fixture, synthetic data (`synthetic: true`), as of 2026-10-18T17:33:13Z.\n\n## Measured exposure\n- **Largest holding:** FICA at **50.0%**\n- **Single-holding concentration limit:** 50%\n- **Limit breached:** **No** — FICA sits exactly at the limit, and the policy breaches only when a weight *exceeds* 50%. Exactly 50% is at the limit, not above it.\n- **Herfindahl index:** 0.38 — consistent with a three-name portfolio dominated by one large position (0.50² + 0.30² + 0.20² = 0.38), indicating high but not extreme single-name concentration.\n\n## Interpretation\nThe portfolio is at the concentration ceiling, not over it. FICA is the binding constraint: any increase in its weight — from price appreciation, a rebalance, or a change in the other positions' relative values — would push it above 50% and constitute a breach. FICB (30%) and FICC (20%) are each well inside the limit.\n\n## Scope notes\n- This is a synthetic diagnostic, not a live account.\n- No missing weight was inferred, no trade was proposed, no holdings were changed, and no ledger records were created.\n- The result is a point-in-time measurement; the tool's output is marked stale after 2026-10-18T18:33:13Z, so it should be re-run rather than reused beyond that window."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 5727,
+          "completion_tokens": 546,
+          "total_tokens": 6273
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_hGZeFvQJGeYBICWALqdD7203",
+              "name": "finance-tools__portfolio_risk",
+              "arguments": "{\"holdings\": {\"FICA\": 50, \"FICB\": 30, \"FICC\": 20}, \"holdings_complete\": true, \"weight_unit\": \"percent\", \"view\": \"concentration\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_hGZeFvQJGeYBICWALqdD7203",
+              "name": "finance-tools__portfolio_risk",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"d030e99d-e44e-4023-817a-2a8268f16d9a\",\"as_of\":\"2026-10-18T17:33:13Z\",\"stale_after\":\"2026-10-18T18:33:13Z\",\"data\":{\"fixture_id\":\"synthetic-portfolio-v2\",\"synthetic\":true,\"holdings\":{\"FICA\":0.5,\"FICB\":0.3,\"FICC\":0.2},\"largest_holding\":\"FICA\",\"largest_weight_pct\":50.0,\"concentration_limit_pct\":50,\"limit_breached\":false,\"herfindahl_index\":0.38},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"portfolio_analytics\"}],\"quality\":{\"completeness\":1.0,\"flags\":[]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":3600}}",
+              "round": 1
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2684,
+              "completion_tokens": 129,
+              "total_tokens": 2813,
+              "estimated_cost_usd": 0.00041188000000000005,
+              "priced": true,
+              "latency_ms": 950.31
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3043,
+              "completion_tokens": 417,
+              "total_tokens": 3460,
+              "cache_read_tokens": 2688,
+              "estimated_cost_usd": 0.0001739864,
+              "priced": true,
+              "latency_ms": 2426.341
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 3.443,
+      "tool_calls": [
+        "finance-tools__portfolio_risk"
+      ],
+      "model_calls": 2,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0005858664
+    }
+  ],
+  "estimated_cost_usd": 0.0005858664
+}

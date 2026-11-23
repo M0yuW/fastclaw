@@ -1,0 +1,69 @@
+{
+  "masked_id": "J-5591ae14c8878211",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 0,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "sequentially stronger top line with both profit subtotals and per-share earnings moving in the same direction",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_net_revenues:+205054", "source_packet.rows:gaap_operating_income:+65817", "source_packet.rows:gaap_net_income_attributable:+47382", "source_packet.rows:gaap_diluted_eps:+1.05"]
+    },
+    {
+      "location": "final_answer",
+      "span": "cost growth accompanying the revenue gain rather than a cost-levered result",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_net_revenues:833830_to_1038884", "source_packet.rows:gaap_employee_compensation_benefits:548611_to_680652", "source_packet.rows:gaap_noncompensation_costs:134830_to_142026", "source_packet.rows:gaap_operating_income:150389_to_216206"],
+      "reason": "Revenue rose 205,054 while the two displayed cost lines rose 139,237, and operating income rose 65,817; this is positive sequential accounting operating leverage, not its absence."
+    },
+    {
+      "location": "final_answer",
+      "span": "the extract cannot establish whether profitability improved per unit of revenue or merely scaled with it",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_operating_income:150389_to_216206", "source_packet.rows:gaap_net_revenues:833830_to_1038884"],
+      "reason": "Operating margin is directly calculable at about 18.04% versus 20.81%, an increase of approximately 2.77 percentage points. This does not establish causal drivers or durability."
+    },
+    {
+      "location": "persisted_review",
+      "span": "margin expansion is not established from these rows alone",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_operating_income:150389_to_216206", "source_packet.rows:gaap_net_revenues:833830_to_1038884"],
+      "reason": "The saved rationale repeats denial of directly calculable GAAP operating-margin expansion."
+    },
+    {
+      "location": "persisted_review",
+      "span": "The thesis remains active at unchanged conviction",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:status=active", "ledger:thesis:conviction=3", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "observed_operating_leverage_denied",
+      "evidence_refs": ["source_packet.rows:gaap_net_revenues", "source_packet.rows:gaap_operating_income"]
+    },
+    {
+      "claim_index": 2,
+      "code": "calculable_margin_expansion_denied",
+      "evidence_refs": ["source_packet.rows:gaap_net_revenues", "source_packet.rows:gaap_operating_income"]
+    },
+    {
+      "claim_index": 3,
+      "code": "persisted_review_repeats_margin_denial",
+      "evidence_refs": ["source_packet.rows:gaap_net_revenues", "source_packet.rows:gaap_operating_income"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Source directions and ledger maintain state are correct, but answer and persisted review mistake rising absolute costs for lack of operating leverage and deny a directly calculable 2.77-point GAAP operating-margin improvement. Whether this improvement will persist or which business line caused it remains unknown."
+}

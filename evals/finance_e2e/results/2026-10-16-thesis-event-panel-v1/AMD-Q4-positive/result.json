@@ -1,0 +1,222 @@
+{
+  "case_id": "AMD-Q4-positive",
+  "scenario": "positive_change",
+  "status": "workflow_pass",
+  "error": null,
+  "elapsed_seconds": 18.614,
+  "checks": {
+    "one_review": true,
+    "version_once": true,
+    "source_recorded": true,
+    "alert_acknowledged": true,
+    "priced_usage": true,
+    "decision_in_predeclared_set": true,
+    "status_in_predeclared_set": true
+  },
+  "seed": {
+    "baseline_episode": "FSEC-AMD-02",
+    "event_episode": "FSEC-AMD-03",
+    "baseline_source": {
+      "id": "amd-2024-10-29-q3",
+      "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248824000161/q32024991.htm",
+      "sha256": "288e1c639d72dbc0fa2e0fe1704990cf923defb0e49f8a3c39e9dc4883f7285f"
+    },
+    "event_source": {
+      "id": "amd-2025-02-04-fy2024",
+      "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm",
+      "sha256": "1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95"
+    },
+    "event_packet_metric_ids": [
+      "AMD-Q4-REV",
+      "AMD-Q4-GM",
+      "AMD-Q4-GAME"
+    ],
+    "thesis_version": 1,
+    "thesis_status": "active",
+    "thesis_conviction": 3
+  },
+  "after": {
+    "version": 2,
+    "status": "active",
+    "conviction": 4,
+    "reviews": 1,
+    "alert_statuses": [
+      "acknowledged"
+    ]
+  },
+  "review": {
+    "id": "tr_8c25714d115646c1af3d",
+    "thesis_id": "th_9bf14cd76b324ee8b068",
+    "agent_id": "finance-coordinator",
+    "session_id": "finance-panel-AMD-Q4-positive",
+    "event": {
+      "type": "earnings",
+      "summary": "AMD Q4 2024 SEC event packet: AMD-Q4-REV=7658 USD million; AMD-Q4-GM=51 %; AMD-Q4-GAME=563 USD million.",
+      "as_of": "2025-02-04",
+      "sources": [
+        {
+          "id": "amd-2025-02-04-fy2024",
+          "sha256": "1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95",
+          "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm"
+        }
+      ]
+    },
+    "impact": "positive",
+    "decision": "upgrade",
+    "rationale": "Q4 2024 vs Q3 2024 baseline: revenue +839 USD million (+12.3% sequential) to 7,658 USD million; GAAP gross margin improved +1pp to 51%; Gaming revenue +101 USD million (+21.9%) to 563 USD million. Both thesis conditions are satisfied: revenue growth with non-declining (improving) GAAP gross margin, and the previously weak Gaming segment showed sequential recovery, reducing the segment-mix risk. Conviction raised 3->4. Note: packet is a subset of the source filing; absence of other fields in the packet does not imply absence from the filing.",
+    "matched_terms": [
+      "amd"
+    ],
+    "evidence": [
+      {
+        "id": "amd-2025-02-04-fy2024",
+        "sha256": "1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95",
+        "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm"
+      }
+    ],
+    "created_at": "2026-10-16T15:30:51Z"
+  },
+  "estimated_cost_usd": 0.0037751620000000003,
+  "model_calls": 3,
+  "prompt": "Perform a bounded SEC-event research-thesis review, not investment advice. Use finance-tools__thesis_get and finance-tools__alert_list to read the current thesis and the newly ingested alert. Evaluate the baseline and event figures, compute relevant changes with correct periods and units, identify supporting evidence, risks, and any missing information. The event packet is a subset of a source-locked SEC document; do not claim that a field missing from the packet is absent from the filing itself. Choose the impact, decision, status, and conviction yourself, explaining any change. Call finance-tools__thesis_record_review exactly once with the observed version and event source ID/hash, then acknowledge the alert using finance-tools__alert_update with its observed version. Do not trade or alter a portfolio. Case AMD-Q4-positive; thesis ID th_9bf14cd76b324ee8b068; alert ID fa_38923ff745eb40938780.",
+  "event_packet": {
+    "external_id": "amd-2025-02-04-fy2024",
+    "type": "earnings",
+    "as_of": "2025-02-04",
+    "summary": "AMD Q4 2024 SEC event packet: AMD-Q4-REV=7658 USD million; AMD-Q4-GM=51 %; AMD-Q4-GAME=563 USD million.",
+    "sources": [
+      {
+        "id": "amd-2025-02-04-fy2024",
+        "url": "https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm",
+        "sha256": "1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95"
+      }
+    ]
+  },
+  "gateway_response": {
+    "id": "chatcmpl-1792164641277935000",
+    "object": "chat.completion",
+    "created": 1792164641,
+    "model": "deepseek/deepseek-v4-pro",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Both operations completed successfully. Here is the bounded SEC-event research-thesis review.\n\n## AMD Q4 2024 — Thesis Review\n\n**Thesis under review:** `th_9bf14cd76b324ee8b068` (AMD filing review thesis)\n**Event source:** `amd-2025-02-04-fy2024` (sha256 `1b2f364f…c0fc95`)\n\n### Baseline vs. Event Figures\n\n| Metric | Q3 2024 (baseline) | Q4 2024 (event) | Change | Period |\n|---|---|---|---|---|\n| Revenue | 6,819 USD M | 7,658 USD M | **+839 USD M (+12.3%)** | QoQ sequential |\n| GAAP gross margin | 50% | 51% | **+1 pp** | QoQ sequential |\n| Gaming revenue | 462 USD M | 563 USD M | **+101 USD M (+21.9%)** | QoQ sequential |\n\n### Analysis Against Thesis Conditions\n\n1. **Revenue growth with non-declining GAAP gross margin** — ✅ Satisfied. Revenue grew +12.3% sequentially while GAAP gross margin *improved* by 1 percentage point (50% → 51%), not merely held flat.\n2. **Gaming segment weakness (invalidation risk)** — ✅ Improving. Gaming revenue rose +21.9% sequentially, the first evidence of recovery against the previously flagged segment-mix risk. The thesis notes this risk persists \"until sustained recovery is evidenced,\" so one quarter is supportive but not yet conclusive of a durable trend.\n\n### Supporting Evidence\n- Q4 2024 SEC filing packet (`amd-2025-02-04-fy2024`) reporting revenue, GAAP gross margin, and Gaming revenue figures consistent with both thesis catalysts.\n\n### Risks / Missing Information\n- **Single-quarter observation:** The Gaming recovery is one data point; the thesis requires *sustained* recovery before the segment-mix risk is fully retired.\n- **Packet is a subset of the filing:** Fields not present in the packet (e.g., other segment detail, operating income, cash flow) are not claimed absent from the source document — they are simply outside this packet's scope.\n- **Sequential vs. year-over-year:** Figures here are compared quarter-over-quarter against the Q3 2024 baseline; no YoY comparison is available in the packet.\n\n### Decision\n- **Impact:** positive\n- **Decision:** upgrade\n- **Status:** active\n- **Conviction:** 3 → **4**\n\nThe upgrade reflects that both thesis conditions were met in the same period, including the first sequential improvement in the previously weak Gaming segment. Conviction is raised one notch (not higher) because the Gaming recovery is not yet \"sustained\" per the thesis's own wording.\n\nThe review was recorded (thesis now at version 2) and the alert `fa_38923ff745eb40938780` was acknowledged. No trading or portfolio action was taken."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 10170,
+      "completion_tokens": 1666,
+      "total_tokens": 11836
+    },
+    "fastclaw": {
+      "trace": [
+        {
+          "type": "tool_call",
+          "id": "call_00_vLUUJYMV3gFoATknMDh07064",
+          "name": "finance-tools__thesis_get",
+          "arguments": "{\"thesis_id\": \"th_9bf14cd76b324ee8b068\"}",
+          "round": 1
+        },
+        {
+          "type": "tool_call",
+          "id": "call_01_h7N4IckUEjbTxLvUSblK4408",
+          "name": "finance-tools__alert_list",
+          "arguments": "{\"symbol\": \"AMD\", \"market\": \"US\"}",
+          "round": 1
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_vLUUJYMV3gFoATknMDh07064",
+          "name": "finance-tools__thesis_get",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"0b43257e-c598-4f8b-b2e7-31f70670cae7\",\"as_of\":\"2026-10-16T15:30:43Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_9bf14cd76b324ee8b068\",\"market\":\"US\",\"symbol\":\"AMD\",\"title\":\"AMD filing review thesis\",\"thesis\":\"Q3 2024 SEC baseline: AMD-Q3-REV=6819 USD million; AMD-Q3-GM=50 %; AMD-Q3-GAME=462 USD million. Revenue growth with stable or improving GAAP gross margin supports the growth thesis. Gaming revenue has been weak and remains a segment-mix risk until sustained recovery is evidenced. Assess each new filing against both conditions.\",\"status\":\"active\",\"conviction\":3,\"assumptions\":[],\"catalysts\":[\"revenue growth with non-declining GAAP gross margin\"],\"invalidations\":[\"sustained revenue or margin deterioration\",\"unresolved Gaming segment weakness\"],\"evidence\":[{\"id\":\"amd-2024-10-29-q3\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248824000161/q32024991.htm\",\"sha256\":\"288e1c639d72dbc0fa2e0fe1704990cf923defb0e49f8a3c39e9dc4883f7285f\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-16T15:30:39Z\",\"updated_at\":\"2026-10-16T15:30:39Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8182,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 1
+        },
+        {
+          "type": "tool_result",
+          "id": "call_01_h7N4IckUEjbTxLvUSblK4408",
+          "name": "finance-tools__alert_list",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"06712cd3-d0fe-4b83-877d-266735f03b21\",\"as_of\":\"2026-10-16T15:30:43Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_38923ff745eb40938780\",\"watchlist_id\":\"wl_9f18158a802d4391b10b\",\"thesis_id\":\"th_9bf14cd76b324ee8b068\",\"market\":\"US\",\"symbol\":\"AMD\",\"event_fingerprint\":\"c0ca35a225d45872e7dec2888bb0604c3a62ee71b6decebd09b40af99d7edd61\",\"event\":{\"external_id\":\"amd-2025-02-04-fy2024\",\"type\":\"earnings\",\"summary\":\"AMD Q4 2024 SEC event packet: AMD-Q4-REV=7658 USD million; AMD-Q4-GM=51 %; AMD-Q4-GAME=563 USD million.\",\"as_of\":\"2025-02-04\",\"sources\":[{\"id\":\"amd-2025-02-04-fy2024\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm\",\"sha256\":\"1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95\"}]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"amd\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-16T15:30:39Z\",\"last_seen_at\":\"2026-10-16T15:30:39Z\",\"created_at\":\"2026-10-16T15:30:39Z\",\"updated_at\":\"2026-10-16T15:30:39Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"}],\"count\":1,\"filters\":{\"limit\":50,\"market\":\"US\",\"symbol\":\"AMD\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 1
+        },
+        {
+          "type": "tool_call",
+          "id": "call_00_afaHlv95D6eNCWtlXP5T8970",
+          "name": "finance-tools__thesis_record_review",
+          "arguments": "{\"thesis_id\": \"th_9bf14cd76b324ee8b068\", \"expected_version\": 1, \"event\": {\"type\": \"earnings\", \"summary\": \"AMD Q4 2024 SEC event packet: AMD-Q4-REV=7658 USD million; AMD-Q4-GM=51 %; AMD-Q4-GAME=563 USD million.\", \"as_of\": \"2025-02-04\", \"sources\": [{\"id\": \"amd-2025-02-04-fy2024\", \"url\": \"https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm\", \"sha256\": \"1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95\"}]}, \"impact\": \"positive\", \"decision\": \"upgrade\", \"new_conviction\": 4, \"new_status\": \"active\", \"rationale\": \"Q4 2024 vs Q3 2024 baseline: revenue +839 USD million (+12.3% sequential) to 7,658 USD million; GAAP gross margin improved +1pp to 51%; Gaming revenue +101 USD million (+21.9%) to 563 USD million. Both thesis conditions are satisfied: revenue growth with non-declining (improving) GAAP gross margin, and the previously weak Gaming segment showed sequential recovery, reducing the segment-mix risk. Conviction raised 3->4. Note: packet is a subset of the source filing; absence of other fields in the packet does not imply absence from the filing.\", \"evidence\": [{\"id\": \"amd-2025-02-04-fy2024\", \"url\": \"https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm\", \"sha256\": \"1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95\"}], \"matched_terms\": [\"amd\"]}",
+          "round": 2
+        },
+        {
+          "type": "tool_call",
+          "id": "call_01_3JFnPDJMXzrONvmGcJbB1888",
+          "name": "finance-tools__alert_update",
+          "arguments": "{\"alert_id\": \"fa_38923ff745eb40938780\", \"status\": \"acknowledged\", \"expected_version\": 1}",
+          "round": 2
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_afaHlv95D6eNCWtlXP5T8970",
+          "name": "finance-tools__thesis_record_review",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"b3b550a9-f8f2-499d-8f1b-e644e8b7ad5c\",\"as_of\":\"2026-10-16T15:30:51Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_9bf14cd76b324ee8b068\",\"market\":\"US\",\"symbol\":\"AMD\",\"title\":\"AMD filing review thesis\",\"thesis\":\"Q3 2024 SEC baseline: AMD-Q3-REV=6819 USD million; AMD-Q3-GM=50 %; AMD-Q3-GAME=462 USD million. Revenue growth with stable or improving GAAP gross margin supports the growth thesis. Gaming revenue has been weak and remains a segment-mix risk until sustained recovery is evidenced. Assess each new filing against both conditions.\",\"status\":\"active\",\"conviction\":4,\"assumptions\":[],\"catalysts\":[\"revenue growth with non-declining GAAP gross margin\"],\"invalidations\":[\"sustained revenue or margin deterioration\",\"unresolved Gaming segment weakness\"],\"evidence\":[{\"id\":\"amd-2024-10-29-q3\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248824000161/q32024991.htm\",\"sha256\":\"288e1c639d72dbc0fa2e0fe1704990cf923defb0e49f8a3c39e9dc4883f7285f\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-16T15:30:51Z\",\"created_at\":\"2026-10-16T15:30:39Z\",\"updated_at\":\"2026-10-16T15:30:51Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"},\"review\":{\"id\":\"tr_8c25714d115646c1af3d\",\"thesis_id\":\"th_9bf14cd76b324ee8b068\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-panel-AMD-Q4-positive\",\"event\":{\"type\":\"earnings\",\"summary\":\"AMD Q4 2024 SEC event packet: AMD-Q4-REV=7658 USD million; AMD-Q4-GM=51 %; AMD-Q4-GAME=563 USD million.\",\"as_of\":\"2025-02-04\",\"sources\":[{\"id\":\"amd-2025-02-04-fy2024\",\"sha256\":\"1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm\"}]},\"impact\":\"positive\",\"decision\":\"upgrade\",\"rationale\":\"Q4 2024 vs Q3 2024 baseline: revenue +839 USD million (+12.3% sequential) to 7,658 USD million; GAAP gross margin improved +1pp to 51%; Gaming revenue +101 USD million (+21.9%) to 563 USD million. Both thesis conditions are satisfied: revenue growth with non-declining (improving) GAAP gross margin, and the previously weak Gaming segment showed sequential recovery, reducing the segment-mix risk. Conviction raised 3->4. Note: packet is a subset of the source filing; absence of other fields in the packet does not imply absence from the filing.\",\"matched_terms\":[\"amd\"],\"evidence\":[{\"id\":\"amd-2025-02-04-fy2024\",\"sha256\":\"1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm\"}],\"created_at\":\"2026-10-16T15:30:51Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9487,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 2
+        },
+        {
+          "type": "tool_result",
+          "id": "call_01_3JFnPDJMXzrONvmGcJbB1888",
+          "name": "finance-tools__alert_update",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"2f013d61-5fe4-4915-ba02-a81daa5583e2\",\"as_of\":\"2026-10-16T15:30:51Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_38923ff745eb40938780\",\"watchlist_id\":\"wl_9f18158a802d4391b10b\",\"thesis_id\":\"th_9bf14cd76b324ee8b068\",\"market\":\"US\",\"symbol\":\"AMD\",\"event_fingerprint\":\"c0ca35a225d45872e7dec2888bb0604c3a62ee71b6decebd09b40af99d7edd61\",\"event\":{\"external_id\":\"amd-2025-02-04-fy2024\",\"type\":\"earnings\",\"summary\":\"AMD Q4 2024 SEC event packet: AMD-Q4-REV=7658 USD million; AMD-Q4-GM=51 %; AMD-Q4-GAME=563 USD million.\",\"as_of\":\"2025-02-04\",\"sources\":[{\"id\":\"amd-2025-02-04-fy2024\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248825000009/q42024991.htm\",\"sha256\":\"1b2f364fea5d5c5247a3a79b0fdfec3b8b85da6fe5e332aadd287514b1c0fc95\"}]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"amd\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-16T15:30:39Z\",\"last_seen_at\":\"2026-10-16T15:30:39Z\",\"created_at\":\"2026-10-16T15:30:39Z\",\"updated_at\":\"2026-10-16T15:30:51Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 2
+        }
+      ],
+      "model_calls": [
+        {
+          "sequence": 1,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 1793,
+          "completion_tokens": 132,
+          "total_tokens": 1925,
+          "estimated_cost_usd": 0.0008947950000000001,
+          "priced": true,
+          "latency_ms": 2321.684
+        },
+        {
+          "sequence": 2,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 2968,
+          "completion_tokens": 897,
+          "total_tokens": 3865,
+          "cache_read_tokens": 1920,
+          "estimated_cost_usd": 0.00124323,
+          "priced": true,
+          "latency_ms": 8280.523
+        },
+        {
+          "sequence": 3,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 5409,
+          "completion_tokens": 637,
+          "total_tokens": 6046,
+          "cache_read_tokens": 2944,
+          "estimated_cost_usd": 0.001637137,
+          "priced": true,
+          "latency_ms": 7970.925
+        }
+      ]
+    }
+  },
+  "manual_rubric_pending": [
+    "source facts",
+    "arithmetic",
+    "risk recognition",
+    "decision coherence"
+  ]
+}

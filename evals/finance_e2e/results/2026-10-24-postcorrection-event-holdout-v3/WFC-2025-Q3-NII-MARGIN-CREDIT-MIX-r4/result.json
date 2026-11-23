@@ -1,0 +1,523 @@
+{
+  "observation_id": "WFC-2025-Q3-NII-MARGIN-CREDIT-MIX-r4",
+  "case_id": "WFC-2025-Q3-NII-MARGIN-CREDIT-MIX",
+  "repetition": 4,
+  "workflow": "sec_event_to_thesis_review",
+  "coordinator_max_tokens": 5000,
+  "status": "mechanical_pass",
+  "quality_score": null,
+  "error": null,
+  "checks": {
+    "one_thesis_and_alert": true,
+    "source_packet_exact": true,
+    "one_linked_review": true,
+    "alert_acknowledged": true,
+    "state_actionability_consistent": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 6,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_088a5593e37040b9ae86",
+          "market": "US",
+          "symbol": "WFC",
+          "title": "WFC source-bounded earnings thesis",
+          "thesis": "Baseline CY2025 Q2 ended 2025-06-30: WFC-Q2-NII=11708 USD_million; WFC-Q2-NONINT=9114 USD_million; WFC-Q2-REV=20822 USD_million; WFC-Q2-NCO=997 USD_million; WFC-Q2-PROV=1005 USD_million; WFC-Q2-OPEX=13379 USD_million; WFC-Q2-TAX=916 USD_million; WFC-Q2-NET=5494 USD_million; WFC-Q2-NIM=2.68 percent. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": true,
+          "actionability": "blocked",
+          "decision_hold_alert_id": "fa_cad904db8bb84e74b823",
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "fte_net_interest_margin",
+            "gaap_income_tax_expense",
+            "gaap_net_interest_income",
+            "gaap_noninterest_expense",
+            "gaap_noninterest_income",
+            "gaap_provision_for_credit_losses",
+            "gaap_total_revenue",
+            "gaap_wells_fargo_net_income",
+            "reported_net_charge_offs"
+          ],
+          "evidence": [
+            {
+              "id": "HOLDOUT-V2-WFC-BASELINE",
+              "url": "https://www.sec.gov/Archives/edgar/data/72971/000007297125000170/wfc2qer07-15x25ex991xrelea.htm",
+              "sha256": "e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb"
+            }
+          ],
+          "next_review_at": "2026-11-24",
+          "last_review_at": "2026-10-24T14:37:33Z",
+          "created_at": "2026-10-24T14:37:21Z",
+          "updated_at": "2026-10-24T14:37:33Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_f0ffc91d813548a59fc3",
+            "thesis_id": "th_088a5593e37040b9ae86",
+            "alert_id": "fa_cad904db8bb84e74b823",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-WFC-2025-Q3-NII-MARGIN-CREDIT-MIX-r4",
+            "event": {
+              "type": "earnings",
+              "summary": "WFC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WFC-Q3-NII=11950 USD_million; WFC-Q3-NONINT=9486 USD_million; WFC-Q3-REV=21436 USD_million; WFC-Q3-NCO=954 USD_million; WFC-Q3-PROV=681 USD_million; WFC-Q3-OPEX=13846 USD_million; WFC-Q3-TAX=1300 USD_million; WFC-Q3-NET=5589 USD_million; WFC-Q3-NIM=2.61 percent.",
+              "as_of": "2025-10-14",
+              "sources": [
+                {
+                  "id": "HOLDOUT-V2-WFC-EVENT",
+                  "url": "https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm",
+                  "sha256": "b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "needs_review",
+            "rationale": "Sequential (Q2 CY2025 to Q3 CY2025) comparison of source-selected displayed values only; no year-over-year figures were supplied. Reported GAAP basis throughout except fte_net_interest_margin, which is an FTE (taxable-equivalent) margin and therefore not on the same basis as the GAAP income lines. Margin moved -0.07 percentage points (2.68 to 2.61 percent), which is a -2.61% relative change, not a 2.61-point move; the two units are not interchangeable. GAAP NII rose 242 USD_million (+2.07%) while the FTE margin fell, so the margin decline is not evidence of lower net interest income and the packet does not reconcile the two. Total revenue rose 614 USD_million (+2.95%), fully attributable to the two listed components (NII +242, noninterest income +372) with a 0 USD_million unlisted residual, so no residual is being misattributed; this arithmetic is not a causal explanation. Provision for credit losses fell 324 USD_million (-32.24%) while reported net charge-offs fell only 43 USD_million (-4.31%), leaving a large unexplained gap between the provision change and the charge-off change that the selected rows do not bridge. Noninterest expense rose 467 USD_million (+3.49%), faster than revenue in relative terms, and income tax expense rose 384 USD_million (+41.92%) on a 95 USD_million (+1.73%) net income increase; the packet contains no effective tax rate, pre-tax income, or tax-item detail, so the tax move cannot be decomposed and no absolute loss dollars are inferred from any rate. Net income rose 95 USD_million sequentially. Missing evidence: year-over-year comparatives, average earning assets and NIM drivers, adjusted/non-GAAP reconciliations, allowance and reserve build/release detail, charge-off composition, and any management attribution. Because the required event metrics are present but the drivers of the margin, provision, and tax moves are unreconciled and no source-backed causal driver is stored, the research state is held at needs_review rather than upgraded or invalidated. No valuation or trading conclusion is established.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [
+              "wfc",
+              "earnings",
+              "net_interest_margin",
+              "provision_for_credit_losses",
+              "net_charge_offs"
+            ],
+            "evidence": [
+              {
+                "id": "HOLDOUT-V2-WFC-EVENT",
+                "note": "Event packet, CY2025 Q3 period ended 2025-09-30, filed 2025-10-14.",
+                "sha256": "b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015",
+                "url": "https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm"
+              },
+              {
+                "id": "HOLDOUT-V2-WFC-BASELINE",
+                "note": "Baseline packet, CY2025 Q2 period ended 2025-06-30.",
+                "sha256": "e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb",
+                "url": "https://www.sec.gov/Archives/edgar/data/72971/000007297125000170/wfc2qer07-15x25ex991xrelea.htm"
+              },
+              {
+                "basis": "FTE",
+                "change_vs_baseline": "-0.07 percentage_points",
+                "fact_id": "WFC-Q3-NIM",
+                "metric": "fte_net_interest_margin",
+                "period": "CY2025Q3",
+                "relative_change": "-2.61% of baseline",
+                "unit": "percent",
+                "value": "2.61"
+              },
+              {
+                "basis": "GAAP",
+                "change_vs_baseline": "242 USD_million",
+                "fact_id": "WFC-Q3-NII",
+                "metric": "gaap_net_interest_income",
+                "period": "CY2025Q3",
+                "relative_change": "2.07% of baseline",
+                "unit": "USD_million",
+                "value": "11950"
+              },
+              {
+                "basis": "GAAP",
+                "change_vs_baseline": "372 USD_million",
+                "fact_id": "WFC-Q3-NONINT",
+                "metric": "gaap_noninterest_income",
+                "period": "CY2025Q3",
+                "relative_change": "4.08% of baseline",
+                "unit": "USD_million",
+                "value": "9486"
+              },
+              {
+                "basis": "GAAP",
+                "change_vs_baseline": "614 USD_million",
+                "fact_id": "WFC-Q3-REV",
+                "metric": "gaap_total_revenue",
+                "mix_note": "Listed components NII 242 + noninterest income 372 = 614; unlisted residual 0 USD_million. Arithmetic only, not causal.",
+                "period": "CY2025Q3",
+                "relative_change": "2.95% of baseline",
+                "unit": "USD_million",
+                "value": "21436"
+              },
+              {
+                "basis": "GAAP",
+                "change_vs_baseline": "-324 USD_million",
+                "fact_id": "WFC-Q3-PROV",
+                "metric": "gaap_provision_for_credit_losses",
+                "period": "CY2025Q3",
+                "relative_change": "-32.24% of baseline",
+                "unit": "USD_million",
+                "value": "681"
+              },
+              {
+                "basis": "reported",
+                "change_vs_baseline": "-43 USD_million",
+                "fact_id": "WFC-Q3-NCO",
+                "metric": "reported_net_charge_offs",
+                "period": "CY2025Q3",
+                "relative_change": "-4.31% of baseline",
+                "unit": "USD_million",
+                "value": "954"
+              },
+              {
+                "basis": "GAAP",
+                "change_vs_baseline": "467 USD_million",
+                "fact_id": "WFC-Q3-OPEX",
+                "metric": "gaap_noninterest_expense",
+                "period": "CY2025Q3",
+                "relative_change": "3.49% of baseline",
+                "unit": "USD_million",
+                "value": "13846"
+              },
+              {
+                "basis": "GAAP",
+                "change_vs_baseline": "384 USD_million",
+                "fact_id": "WFC-Q3-TAX",
+                "metric": "gaap_income_tax_expense",
+                "period": "CY2025Q3",
+                "relative_change": "41.92% of baseline",
+                "unit": "USD_million",
+                "value": "1300"
+              },
+              {
+                "basis": "GAAP",
+                "change_vs_baseline": "95 USD_million",
+                "fact_id": "WFC-Q3-NET",
+                "metric": "gaap_wells_fargo_net_income",
+                "period": "CY2025Q3",
+                "relative_change": "1.73% of baseline",
+                "unit": "USD_million",
+                "value": "5589"
+              },
+              {
+                "missing": [
+                  "year-over-year comparatives",
+                  "average earning assets and NIM driver detail",
+                  "adjusted/non-GAAP reconciliations",
+                  "allowance and reserve build/release detail",
+                  "charge-off composition",
+                  "pre-tax income and effective tax rate",
+                  "management attribution of margin, provision, and tax changes"
+                ]
+              }
+            ],
+            "created_at": "2026-10-24T14:37:33Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_cad904db8bb84e74b823",
+        "watchlist_id": "wl_978a6fd80bd844a2add5",
+        "thesis_id": "th_088a5593e37040b9ae86",
+        "market": "US",
+        "symbol": "WFC",
+        "event_fingerprint": "cb1e1474b3782de24aa629c163719fce50862ec0d13f4f0ddbe44b459d5e15e6",
+        "event": {
+          "external_id": "HOLDOUT-V2-WFC-EVENT",
+          "type": "earnings",
+          "summary": "WFC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WFC-Q3-NII=11950 USD_million; WFC-Q3-NONINT=9486 USD_million; WFC-Q3-REV=21436 USD_million; WFC-Q3-NCO=954 USD_million; WFC-Q3-PROV=681 USD_million; WFC-Q3-OPEX=13846 USD_million; WFC-Q3-TAX=1300 USD_million; WFC-Q3-NET=5589 USD_million; WFC-Q3-NIM=2.61 percent.",
+          "as_of": "2025-10-14",
+          "sources": [
+            {
+              "id": "HOLDOUT-V2-WFC-EVENT",
+              "url": "https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm",
+              "sha256": "b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_net_interest_income": {
+              "value": "11950",
+              "unit": "USD_million",
+              "fact_id": "WFC-Q3-NII"
+            },
+            "gaap_noninterest_income": {
+              "value": "9486",
+              "unit": "USD_million",
+              "fact_id": "WFC-Q3-NONINT"
+            },
+            "gaap_total_revenue": {
+              "value": "21436",
+              "unit": "USD_million",
+              "fact_id": "WFC-Q3-REV"
+            },
+            "reported_net_charge_offs": {
+              "value": "954",
+              "unit": "USD_million",
+              "fact_id": "WFC-Q3-NCO"
+            },
+            "gaap_provision_for_credit_losses": {
+              "value": "681",
+              "unit": "USD_million",
+              "fact_id": "WFC-Q3-PROV"
+            },
+            "gaap_noninterest_expense": {
+              "value": "13846",
+              "unit": "USD_million",
+              "fact_id": "WFC-Q3-OPEX"
+            },
+            "gaap_income_tax_expense": {
+              "value": "1300",
+              "unit": "USD_million",
+              "fact_id": "WFC-Q3-TAX"
+            },
+            "gaap_wells_fargo_net_income": {
+              "value": "5589",
+              "unit": "USD_million",
+              "fact_id": "WFC-Q3-NET"
+            },
+            "fte_net_interest_margin": {
+              "value": "2.61",
+              "unit": "percent",
+              "fact_id": "WFC-Q3-NIM"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "wfc",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-24T14:37:21Z",
+        "last_seen_at": "2026-10-24T14:37:21Z",
+        "created_at": "2026-10-24T14:37:21Z",
+        "updated_at": "2026-10-24T14:37:35Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "prompt": "Historical source-bounded SEC research-state replay, not a trade request. Read the stored thesis and earnings alert using finance tools. The host-checked numeric context below is arithmetic on selected source rows, not a causal explanation or complete filing. Distinguish sequential from year-over-year figures, reported from adjusted measures, and percentage points from relative percent. Independently explain a supported implication, a material counterpoint, missing evidence, and your own research-state decision. Do not infer absolute loss dollars from a rate or attribute a total to listed components when a residual remains. Persist one source-linked version-protected review, acknowledge the alert, and verify that any needs_review decision leaves the thesis blocked. Do not trade.\n\nCase: WFC-2025-Q3-NII-MARGIN-CREDIT-MIX\nBaseline SEC SHA-256: e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb\nEvent SEC SHA-256: b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015\nDisplayed-value comparisons (same metric and basis):\nmetric | baseline fact/value | event fact/value | change | relative change\nfte_net_interest_margin | WFC-Q2-NIM=2.68 percent | WFC-Q3-NIM=2.61 percent | -0.07 percentage_points | -2.61% of baseline\ngaap_income_tax_expense | WFC-Q2-TAX=916 USD_million_rounded | WFC-Q3-TAX=1300 USD_million_rounded | 384 USD_million | 41.92% of baseline\ngaap_net_interest_income | WFC-Q2-NII=11708 USD_million_rounded | WFC-Q3-NII=11950 USD_million_rounded | 242 USD_million | 2.07% of baseline\ngaap_noninterest_expense | WFC-Q2-OPEX=13379 USD_million_rounded | WFC-Q3-OPEX=13846 USD_million_rounded | 467 USD_million | 3.49% of baseline\ngaap_noninterest_income | WFC-Q2-NONINT=9114 USD_million_rounded | WFC-Q3-NONINT=9486 USD_million_rounded | 372 USD_million | 4.08% of baseline\ngaap_provision_for_credit_losses | WFC-Q2-PROV=1005 USD_million_rounded | WFC-Q3-PROV=681 USD_million_rounded | -324 USD_million | -32.24% of baseline\ngaap_total_revenue | WFC-Q2-REV=20822 USD_million_rounded | WFC-Q3-REV=21436 USD_million_rounded | 614 USD_million | 2.95% of baseline\ngaap_wells_fargo_net_income | WFC-Q2-NET=5494 USD_million_rounded | WFC-Q3-NET=5589 USD_million_rounded | 95 USD_million | 1.73% of baseline\nreported_net_charge_offs | WFC-Q2-NCO=997 USD_million_rounded | WFC-Q3-NCO=954 USD_million_rounded | -43 USD_million | -4.31% of baseline\nArithmetic mix for gaap_total_revenue: total 614 USD_million; listed components gaap_net_interest_income=242 USD_million, gaap_noninterest_income=372 USD_million; unlisted residual 0 USD_million. This is not a causal explanation.\nBoundary: source-selected displayed values only; no causal driver, durability, valuation, or trading conclusion is established by this table.\n\nCase WFC-2025-Q3-NII-MARGIN-CREDIT-MIX; thesis ID th_088a5593e37040b9ae86; alert ID fa_cad904db8bb84e74b823.",
+      "response": {
+        "id": "chatcmpl-1792852642004735000",
+        "object": "chat.completion",
+        "created": 1792852642,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# WFC-2025-Q3-NII-MARGIN-CREDIT-MIX — Source-Bounded Research-State Replay\n\n**Scope note:** This is a historical research-state replay over source-selected displayed values, not a trade request and not a trade. No valuation, durability, or trading conclusion is established. All comparisons below are **sequential** (CY2025 Q2, period ended 2025-06-30 → CY2025 Q3, period ended 2025-09-30). **No year-over-year figures were supplied**, so nothing here speaks to YoY trends.\n\n**Sources:** baseline `HOLDOUT-V2-WFC-BASELINE` (SHA-256 `e8822469…15fcb`); event `HOLDOUT-V2-WFC-EVENT` (SHA-256 `b3cd9017…b3015`, filed 2025-10-14).\n\n---\n\n## 1. Basis and unit discipline (applied before interpretation)\n\n- **Reported vs. adjusted:** every income/expense line used is **reported GAAP** (`gaap_*` fact IDs). `reported_net_charge_offs` is a reported credit metric. No adjusted/non-GAAP reconciliation was supplied, so no adjusted measure is cited or compared.\n- **Percentage points vs. relative percent:** `fte_net_interest_margin` moved **−0.07 percentage points** (2.68 → 2.61 percent). That is a **−2.61% relative change of the baseline**, *not* a 2.61-point decline. The two units are not interchangeable and are kept separate throughout.\n- **Basis mismatch flagged:** `fte_net_interest_margin` is an **FTE (taxable-equivalent)** margin, while `gaap_net_interest_income` is a **GAAP** dollar line. They are not on the same basis and the packet does not reconcile them.\n- **No rate-to-dollar inference:** no absolute loss or dollar figure is derived from any rate or percentage.\n\n## 2. Supported implication\n\nThe one implication the selected rows support without a causal claim is that **sequential revenue growth was broad-based across both revenue lines and was not driven by a residual bucket**. Total revenue rose 614 USD_million (+2.95% of baseline), and the arithmetic mix is fully accounted for by the two listed components — NII +242 USD_million and noninterest income +372 USD_million — with an **unlisted residual of 0 USD_million**. Because the residual is zero, no unexplained revenue is being attributed to the listed components. This is arithmetic decomposition only; it is **not** a causal explanation of why either line moved.\n\nA second, narrower observation: **the FTE margin decline did not coincide with a decline in GAAP net interest income.** NII rose 242 USD_million (+2.07%) while the FTE margin fell 0.07 percentage points. The packet contains no average earning assets or NIM driver detail, so the margin decline cannot be read as evidence of weaker net interest income, and the two facts are left unreconciled rather than forced into a story.\n\n## 3. Material counterpoint\n\nThe credit picture is **not uniformly favorable**, and the two credit rows diverge sharply:\n\n- Provision for credit losses fell **324 USD_million (−32.24% of baseline)** to 681 USD_million.\n- Reported net charge-offs fell only **43 USD_million (−4.31% of baseline)** to 954 USD_million.\n\nThe provision change is roughly an order of magnitude larger, in relative terms, than the charge-off change. The selected rows contain **no allowance, reserve build/release, or charge-off composition detail**, so the gap between the provision decline and the modest charge-off decline is **unbridged**. A large provision decline against nearly flat charge-offs is a genuine counterpoint to any reading of the quarter as straightforwardly improving credit quality — it may reflect reserve dynamics rather than realized loss experience, but the packet does not establish that, and I do not assert it.\n\nA secondary counterpoint on the expense side: noninterest expense rose **467 USD_million (+3.49%)**, a faster relative increase than revenue's +2.95%, and income tax expense rose **384 USD_million (+41.92%)** against a net income increase of only **95 USD_million (+1.73%)**. The tax move is large relative to the earnings change and is **not decomposable** from the supplied rows.\n\n## 4. Missing evidence\n\nThe following are absent and each materially limits what can be concluded:\n\n1. **Year-over-year comparatives** — only sequential data was supplied; no YoY trend can be assessed.\n2. **Average earning assets and NIM driver detail** — the −0.07 pp FTE margin move cannot be attributed to volume, rate, or mix.\n3. **Adjusted / non-GAAP reconciliations** — no adjusted measure can be compared to reported GAAP.\n4. **Allowance and reserve build/release detail** — the provision-vs-charge-off gap cannot be bridged.\n5. **Charge-off composition** (by portfolio/segment) — the −4.31% charge-off change cannot be located.\n6. **Pre-tax income and effective tax rate** — the +41.92% tax expense move cannot be decomposed; no rate is converted into dollars.\n7. **Management attribution** of the margin, provision, and tax changes — no source-backed causal driver exists in the stored packet.\n\n## 5. Research-state decision\n\n**Decision: `needs_review`. Impact: `mixed`.**\n\nAll nine required event metrics are present (`missing_metrics: []`) and there are no stored unresolved conflicts, so this is not a data-completeness failure. The hold is driven by **unreconciled drivers**: the FTE margin decline versus rising GAAP NII, the provision decline versus near-flat charge-offs, and the outsized tax expense increase all lack source-backed explanation in the packet. With no stored driver facts, no causal claim is recorded — the attribution is explicitly left unresolved rather than inferred. The thesis is therefore neither upgraded nor invalidated; status and conviction are preserved.\n\n**Persistence and verification:**\n- Review `tr_f0ffc91d813548a59fc3` persisted against thesis `th_088a5593e37040b9ae86` at **version 2** (optimistic check on expected version 1 succeeded), linked to alert `fa_cad904db8bb84e74b823` and both source SHA-256 hashes.\n- Alert `fa_cad904db8bb84e74b823` acknowledged at **version 2** (from version 1); `duplicate_count: 1` retained.\n- **Block verified by re-read:** the thesis now shows `decision_hold: true`, `actionability: \"blocked\"`, `decision_hold_alert_id: \"fa_cad904db8bb84e74b823\"`, status still `active`, conviction still `3`. The `needs_review` decision correctly leaves the thesis blocked for downstream decisions.\n- `next_review_at` set to 2026-11-24 (operational review date; historical source dates are held in evidence).\n\n**No trade was placed, and no investment recommendation is made.**"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 54724,
+          "completion_tokens": 4317,
+          "total_tokens": 59041
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_rWTO2h1ug9KywrcpYDVt1717",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_088a5593e37040b9ae86\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_81i7E2QtekhmyH0ALjmH0916",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_rWTO2h1ug9KywrcpYDVt1717",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"435d1577-dbbc-4d16-82f9-cfd38835b574\",\"as_of\":\"2026-10-24T14:37:23Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_088a5593e37040b9ae86\",\"market\":\"US\",\"symbol\":\"WFC\",\"title\":\"WFC source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: WFC-Q2-NII=11708 USD_million; WFC-Q2-NONINT=9114 USD_million; WFC-Q2-REV=20822 USD_million; WFC-Q2-NCO=997 USD_million; WFC-Q2-PROV=1005 USD_million; WFC-Q2-OPEX=13379 USD_million; WFC-Q2-TAX=916 USD_million; WFC-Q2-NET=5494 USD_million; WFC-Q2-NIM=2.68 percent. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"fte_net_interest_margin\",\"gaap_income_tax_expense\",\"gaap_net_interest_income\",\"gaap_noninterest_expense\",\"gaap_noninterest_income\",\"gaap_provision_for_credit_losses\",\"gaap_total_revenue\",\"gaap_wells_fargo_net_income\",\"reported_net_charge_offs\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-WFC-BASELINE\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000170/wfc2qer07-15x25ex991xrelea.htm\",\"sha256\":\"e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-24T14:37:21Z\",\"updated_at\":\"2026-10-24T14:37:21Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.7879,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_81i7E2QtekhmyH0ALjmH0916",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"89274089-eaff-4617-874d-fa2128cf767e\",\"as_of\":\"2026-10-24T14:37:23Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_cad904db8bb84e74b823\",\"watchlist_id\":\"wl_978a6fd80bd844a2add5\",\"thesis_id\":\"th_088a5593e37040b9ae86\",\"market\":\"US\",\"symbol\":\"WFC\",\"event_fingerprint\":\"cb1e1474b3782de24aa629c163719fce50862ec0d13f4f0ddbe44b459d5e15e6\",\"event\":{\"external_id\":\"HOLDOUT-V2-WFC-EVENT\",\"type\":\"earnings\",\"summary\":\"WFC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WFC-Q3-NII=11950 USD_million; WFC-Q3-NONINT=9486 USD_million; WFC-Q3-REV=21436 USD_million; WFC-Q3-NCO=954 USD_million; WFC-Q3-PROV=681 USD_million; WFC-Q3-OPEX=13846 USD_million; WFC-Q3-TAX=1300 USD_million; WFC-Q3-NET=5589 USD_million; WFC-Q3-NIM=2.61 percent.\",\"as_of\":\"2025-10-14\",\"sources\":[{\"id\":\"HOLDOUT-V2-WFC-EVENT\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm\",\"sha256\":\"b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015\"}],\"observed_metrics\":{\"gaap_net_interest_income\":{\"value\":\"11950\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-NII\"},\"gaap_noninterest_income\":{\"value\":\"9486\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-NONINT\"},\"gaap_total_revenue\":{\"value\":\"21436\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-REV\"},\"reported_net_charge_offs\":{\"value\":\"954\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-NCO\"},\"gaap_provision_for_credit_losses\":{\"value\":\"681\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-PROV\"},\"gaap_noninterest_expense\":{\"value\":\"13846\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-OPEX\"},\"gaap_income_tax_expense\":{\"value\":\"1300\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-TAX\"},\"gaap_wells_fargo_net_income\":{\"value\":\"5589\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-NET\"},\"fte_net_interest_margin\":{\"value\":\"2.61\",\"unit\":\"percent\",\"fact_id\":\"WFC-Q3-NIM\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"wfc\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T14:37:21Z\",\"last_seen_at\":\"2026-10-24T14:37:21Z\",\"created_at\":\"2026-10-24T14:37:21Z\",\"updated_at\":\"2026-10-24T14:37:21Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9649,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_7ymIckZshVXHEDd1OyZP4708",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"WFC\", \"event_summary\": \"WFC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WFC-Q3-NII=11950 USD_million; WFC-Q3-NONINT=9486 USD_million; WFC-Q3-REV=21436 USD_million; WFC-Q3-NCO=954 USD_million; WFC-Q3-PROV=681 USD_million; WFC-Q3-OPEX=13846 USD_million; WFC-Q3-TAX=1300 USD_million; WFC-Q3-NET=5589 USD_million; WFC-Q3-NIM=2.61 percent.\"}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_7ymIckZshVXHEDd1OyZP4708",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"ff6de0fb-b3b6-4449-8a59-36187c327f21\",\"as_of\":\"2026-10-24T14:37:24Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"WFC\",\"event_summary\":\"WFC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WFC-Q3-NII=11950 USD_million; WFC-Q3-NONINT=9486 USD_million; WFC-Q3-REV=21436 USD_million; WFC-Q3-NCO=954 USD_million; WFC-Q3-PROV=681 USD_million; WFC-Q3-OPEX=13846 USD_million; WFC-Q3-TAX=1300 USD_million; WFC-Q3-NET=5589 USD_million; WFC-Q3-NIM=2.61 percent.\",\"matches\":[{\"thesis_id\":\"th_088a5593e37040b9ae86\",\"title\":\"WFC source-bounded earnings thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_A4NFGeIEpGTG7qPPb7S17439",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_088a5593e37040b9ae86\", \"expected_version\": 1, \"alert_id\": \"fa_cad904db8bb84e74b823\", \"event\": {\"type\": \"earnings\", \"as_of\": \"2025-09-30\", \"summary\": \"WFC CY2025 Q3 (period ended 2025-09-30) SEC selected-fact packet, filed 2025-10-14: WFC-Q3-NII=11950 USD_million; WFC-Q3-NONINT=9486 USD_million; WFC-Q3-REV=21436 USD_million; WFC-Q3-NCO=954 USD_million; WFC-Q3-PROV=681 USD_million; WFC-Q3-OPEX=13846 USD_million; WFC-Q3-TAX=1300 USD_million; WFC-Q3-NET=5589 USD_million; WFC-Q3-NIM=2.61 percent. Compared against CY2025 Q2 baseline (period ended 2025-06-30).\", \"sources\": [{\"id\": \"HOLDOUT-V2-WFC-EVENT\", \"url\": \"https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm\", \"sha256\": \"b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015\"}, {\"id\": \"HOLDOUT-V2-WFC-BASELINE\", \"url\": \"https://www.sec.gov/Archives/edgar/data/72971/000007297125000170/wfc2qer07-15x25ex991xrelea.htm\", \"sha256\": \"e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb\"}]}, \"impact\": \"mixed\", \"decision\": \"needs_review\", \"rationale\": \"Sequential (Q2 CY2025 to Q3 CY2025) comparison of source-selected displayed values only; no year-over-year figures were supplied. Reported GAAP basis throughout except fte_net_interest_margin, which is an FTE (taxable-equivalent) margin and therefore not on the same basis as the GAAP income lines. Margin moved -0.07 percentage points (2.68 to 2.61 percent), which is a -2.61% relative change, not a 2.61-point move; the two units are not interchangeable. GAAP NII rose 242 USD_million (+2.07%) while the FTE margin fell, so the margin decline is not evidence of lower net interest income and the packet does not reconcile the two. Total revenue rose 614 USD_million (+2.95%), fully attributable to the two listed components (NII +242, noninterest income +372) with a 0 USD_million unlisted residual, so no residual is being misattributed; this arithmetic is not a causal explanation. Provision for credit losses fell 324 USD_million (-32.24%) while reported net charge-offs fell only 43 USD_million (-4.31%), leaving a large unexplained gap between the provision change and the charge-off change that the selected rows do not bridge. Noninterest expense rose 467 USD_million (+3.49%), faster than revenue in relative terms, and income tax expense rose 384 USD_million (+41.92%) on a 95 USD_million (+1.73%) net income increase; the packet contains no effective tax rate, pre-tax income, or tax-item detail, so the tax move cannot be decomposed and no absolute loss dollars are inferred from any rate. Net income rose 95 USD_million sequentially. Missing evidence: year-over-year comparatives, average earning assets and NIM drivers, adjusted/non-GAAP reconciliations, allowance and reserve build/release detail, charge-off composition, and any management attribution. Because the required event metrics are present but the drivers of the margin, provision, and tax moves are unreconciled and no source-backed causal driver is stored, the research state is held at needs_review rather than upgraded or invalidated. No valuation or trading conclusion is established.\", \"evidence\": [{\"id\": \"HOLDOUT-V2-WFC-EVENT\", \"url\": \"https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm\", \"sha256\": \"b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015\", \"note\": \"Event packet, CY2025 Q3 period ended 2025-09-30, filed 2025-10-14.\"}, {\"id\": \"HOLDOUT-V2-WFC-BASELINE\", \"url\": \"https://www.sec.gov/Archives/edgar/data/72971/000007297125000170/wfc2qer07-15x25ex991xrelea.htm\", \"sha256\": \"e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb\", \"note\": \"Baseline packet, CY2025 Q2 period ended 2025-06-30.\"}, {\"fact_id\": \"WFC-Q3-NIM\", \"metric\": \"fte_net_interest_margin\", \"value\": \"2.61\", \"unit\": \"percent\", \"basis\": \"FTE\", \"period\": \"CY2025Q3\", \"change_vs_baseline\": \"-0.07 percentage_points\", \"relative_change\": \"-2.61% of baseline\"}, {\"fact_id\": \"WFC-Q3-NII\", \"metric\": \"gaap_net_interest_income\", \"value\": \"11950\", \"unit\": \"USD_million\", \"basis\": \"GAAP\", \"period\": \"CY2025Q3\", \"change_vs_baseline\": \"242 USD_million\", \"relative_change\": \"2.07% of baseline\"}, {\"fact_id\": \"WFC-Q3-NONINT\", \"metric\": \"gaap_noninterest_income\", \"value\": \"9486\", \"unit\": \"USD_million\", \"basis\": \"GAAP\", \"period\": \"CY2025Q3\", \"change_vs_baseline\": \"372 USD_million\", \"relative_change\": \"4.08% of baseline\"}, {\"fact_id\": \"WFC-Q3-REV\", \"metric\": \"gaap_total_revenue\", \"value\": \"21436\", \"unit\": \"USD_million\", \"basis\": \"GAAP\", \"period\": \"CY2025Q3\", \"change_vs_baseline\": \"614 USD_million\", \"relative_change\": \"2.95% of baseline\", \"mix_note\": \"Listed components NII 242 + noninterest income 372 = 614; unlisted residual 0 USD_million. Arithmetic only, not causal.\"}, {\"fact_id\": \"WFC-Q3-PROV\", \"metric\": \"gaap_provision_for_credit_losses\", \"value\": \"681\", \"unit\": \"USD_million\", \"basis\": \"GAAP\", \"period\": \"CY2025Q3\", \"change_vs_baseline\": \"-324 USD_million\", \"relative_change\": \"-32.24% of baseline\"}, {\"fact_id\": \"WFC-Q3-NCO\", \"metric\": \"reported_net_charge_offs\", \"value\": \"954\", \"unit\": \"USD_million\", \"basis\": \"reported\", \"period\": \"CY2025Q3\", \"change_vs_baseline\": \"-43 USD_million\", \"relative_change\": \"-4.31% of baseline\"}, {\"fact_id\": \"WFC-Q3-OPEX\", \"metric\": \"gaap_noninterest_expense\", \"value\": \"13846\", \"unit\": \"USD_million\", \"basis\": \"GAAP\", \"period\": \"CY2025Q3\", \"change_vs_baseline\": \"467 USD_million\", \"relative_change\": \"3.49% of baseline\"}, {\"fact_id\": \"WFC-Q3-TAX\", \"metric\": \"gaap_income_tax_expense\", \"value\": \"1300\", \"unit\": \"USD_million\", \"basis\": \"GAAP\", \"period\": \"CY2025Q3\", \"change_vs_baseline\": \"384 USD_million\", \"relative_change\": \"41.92% of baseline\"}, {\"fact_id\": \"WFC-Q3-NET\", \"metric\": \"gaap_wells_fargo_net_income\", \"value\": \"5589\", \"unit\": \"USD_million\", \"basis\": \"GAAP\", \"period\": \"CY2025Q3\", \"change_vs_baseline\": \"95 USD_million\", \"relative_change\": \"1.73% of baseline\"}, {\"missing\": [\"year-over-year comparatives\", \"average earning assets and NIM driver detail\", \"adjusted/non-GAAP reconciliations\", \"allowance and reserve build/release detail\", \"charge-off composition\", \"pre-tax income and effective tax rate\", \"management attribution of margin, provision, and tax changes\"]}], \"matched_terms\": [\"wfc\", \"earnings\", \"net_interest_margin\", \"provision_for_credit_losses\", \"net_charge_offs\"], \"next_review_at\": \"2026-11-24\"}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_A4NFGeIEpGTG7qPPb7S17439",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"73a79630-19bb-4e2b-81f3-ad57b99e2e4f\",\"as_of\":\"2026-10-24T14:37:33Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_088a5593e37040b9ae86\",\"market\":\"US\",\"symbol\":\"WFC\",\"title\":\"WFC source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: WFC-Q2-NII=11708 USD_million; WFC-Q2-NONINT=9114 USD_million; WFC-Q2-REV=20822 USD_million; WFC-Q2-NCO=997 USD_million; WFC-Q2-PROV=1005 USD_million; WFC-Q2-OPEX=13379 USD_million; WFC-Q2-TAX=916 USD_million; WFC-Q2-NET=5494 USD_million; WFC-Q2-NIM=2.68 percent. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_cad904db8bb84e74b823\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"fte_net_interest_margin\",\"gaap_income_tax_expense\",\"gaap_net_interest_income\",\"gaap_noninterest_expense\",\"gaap_noninterest_income\",\"gaap_provision_for_credit_losses\",\"gaap_total_revenue\",\"gaap_wells_fargo_net_income\",\"reported_net_charge_offs\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-WFC-BASELINE\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000170/wfc2qer07-15x25ex991xrelea.htm\",\"sha256\":\"e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb\"}],\"next_review_at\":\"2026-11-24\",\"last_review_at\":\"2026-10-24T14:37:33Z\",\"created_at\":\"2026-10-24T14:37:21Z\",\"updated_at\":\"2026-10-24T14:37:33Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_f0ffc91d813548a59fc3\",\"thesis_id\":\"th_088a5593e37040b9ae86\",\"alert_id\":\"fa_cad904db8bb84e74b823\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-WFC-2025-Q3-NII-MARGIN-CREDIT-MIX-r4\",\"event\":{\"type\":\"earnings\",\"summary\":\"WFC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WFC-Q3-NII=11950 USD_million; WFC-Q3-NONINT=9486 USD_million; WFC-Q3-REV=21436 USD_million; WFC-Q3-NCO=954 USD_million; WFC-Q3-PROV=681 USD_million; WFC-Q3-OPEX=13846 USD_million; WFC-Q3-TAX=1300 USD_million; WFC-Q3-NET=5589 USD_million; WFC-Q3-NIM=2.61 percent.\",\"as_of\":\"2025-10-14\",\"sources\":[{\"id\":\"HOLDOUT-V2-WFC-EVENT\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm\",\"sha256\":\"b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Sequential (Q2 CY2025 to Q3 CY2025) comparison of source-selected displayed values only; no year-over-year figures were supplied. Reported GAAP basis throughout except fte_net_interest_margin, which is an FTE (taxable-equivalent) margin and therefore not on the same basis as the GAAP income lines. Margin moved -0.07 percentage points (2.68 to 2.61 percent), which is a -2.61% relative change, not a 2.61-point move; the two units are not interchangeable. GAAP NII rose 242 USD_million (+2.07%) while the FTE margin fell, so the margin decline is not evidence of lower net interest income and the packet does not reconcile the two. Total revenue rose 614 USD_million (+2.95%), fully attributable to the two listed components (NII +242, noninterest income +372) with a 0 USD_million unlisted residual, so no residual is being misattributed; this arithmetic is not a causal explanation. Provision for credit losses fell 324 USD_million (-32.24%) while reported net charge-offs fell only 43 USD_million (-4.31%), leaving a large unexplained gap between the provision change and the charge-off change that the selected rows do not bridge. Noninterest expense rose 467 USD_million (+3.49%), faster than revenue in relative terms, and income tax expense rose 384 USD_million (+41.92%) on a 95 USD_million (+1.73%) net income increase; the packet contains no effective tax rate, pre-tax income, or tax-item detail, so the tax move cannot be decomposed and no absolute loss dollars are inferred from any rate. Net income rose 95 USD_million sequentially. Missing evidence: year-over-year comparatives, average earning assets and NIM drivers, adjusted/non-GAAP reconciliations, allowance and reserve build/release detail, charge-off composition, and any management attribution. Because the required event metrics are present but the drivers of the margin, provision, and tax moves are unreconciled and no source-backed causal driver is stored, the research state is held at needs_review rather than upgraded or invalidated. No valuation or trading conclusion is established.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"wfc\",\"earnings\",\"net_interest_margin\",\"provision_for_credit_losses\",\"net_charge_offs\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-WFC-EVENT\",\"note\":\"Event packet, CY2025 Q3 period ended 2025-09-30, filed 2025-10-14.\",\"sha256\":\"b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm\"},{\"id\":\"HOLDOUT-V2-WFC-BASELINE\",\"note\":\"Baseline packet, CY2025 Q2 period ended 2025-06-30.\",\"sha256\":\"e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000170/wfc2qer07-15x25ex991xrelea.htm\"},{\"basis\":\"FTE\",\"change_vs_baseline\":\"-0.07 percentage_points\",\"fact_id\":\"WFC-Q3-NIM\",\"metric\":\"fte_net_interest_margin\",\"period\":\"CY2025Q3\",\"relative_change\":\"-2.61% of baseline\",\"unit\":\"percent\",\"value\":\"2.61\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"242 USD_million\",\"fact_id\":\"WFC-Q3-NII\",\"metric\":\"gaap_net_interest_income\",\"period\":\"CY2025Q3\",\"relative_change\":\"2.07% of baseline\",\"unit\":\"USD_million\",\"value\":\"11950\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"372 USD_million\",\"fact_id\":\"WFC-Q3-NONINT\",\"metric\":\"gaap_noninterest_income\",\"period\":\"CY2025Q3\",\"relative_change\":\"4.08% of baseline\",\"unit\":\"USD_million\",\"value\":\"9486\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"614 USD_million\",\"fact_id\":\"WFC-Q3-REV\",\"metric\":\"gaap_total_revenue\",\"mix_note\":\"Listed components NII 242 + noninterest income 372 = 614; unlisted residual 0 USD_million. Arithmetic only, not causal.\",\"period\":\"CY2025Q3\",\"relative_change\":\"2.95% of baseline\",\"unit\":\"USD_million\",\"value\":\"21436\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"-324 USD_million\",\"fact_id\":\"WFC-Q3-PROV\",\"metric\":\"gaap_provision_for_credit_losses\",\"period\":\"CY2025Q3\",\"relative_change\":\"-32.24% of baseline\",\"unit\":\"USD_million\",\"value\":\"681\"},{\"basis\":\"reported\",\"change_vs_baseline\":\"-43 USD_million\",\"fact_id\":\"WFC-Q3-NCO\",\"metric\":\"reported_net_charge_offs\",\"period\":\"CY2025Q3\",\"relative_change\":\"-4.31% of baseline\",\"unit\":\"USD_million\",\"value\":\"954\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"467 USD_million\",\"fact_id\":\"WFC-Q3-OPEX\",\"metric\":\"gaap_noninterest_expense\",\"period\":\"CY2025Q3\",\"relative_change\":\"3.49% of baseline\",\"unit\":\"USD_million\",\"value\":\"13846\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"384 USD_million\",\"fact_id\":\"WFC-Q3-TAX\",\"metric\":\"gaap_income_tax_expense\",\"period\":\"CY2025Q3\",\"relative_change\":\"41.92% of baseline\",\"unit\":\"USD_million\",\"value\":\"1300\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"95 USD_million\",\"fact_id\":\"WFC-Q3-NET\",\"metric\":\"gaap_wells_fargo_net_income\",\"period\":\"CY2025Q3\",\"relative_change\":\"1.73% of baseline\",\"unit\":\"USD_million\",\"value\":\"5589\"},{\"missing\":[\"year-over-year comparatives\",\"average earning assets and NIM driver detail\",\"adjusted/non-GAAP reconciliations\",\"allowance and reserve build/release detail\",\"charge-off composition\",\"pre-tax income and effective tax rate\",\"management attribution of margin, provision, and tax changes\"]}],\"created_at\":\"2026-10-24T14:37:33Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9648,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_j2lx7VkDzc7j2r65AiyK2419",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_cad904db8bb84e74b823\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_j2lx7VkDzc7j2r65AiyK2419",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"cfed2dc3-f332-413d-9615-18f19a985ff8\",\"as_of\":\"2026-10-24T14:37:35Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_cad904db8bb84e74b823\",\"watchlist_id\":\"wl_978a6fd80bd844a2add5\",\"thesis_id\":\"th_088a5593e37040b9ae86\",\"market\":\"US\",\"symbol\":\"WFC\",\"event_fingerprint\":\"cb1e1474b3782de24aa629c163719fce50862ec0d13f4f0ddbe44b459d5e15e6\",\"event\":{\"external_id\":\"HOLDOUT-V2-WFC-EVENT\",\"type\":\"earnings\",\"summary\":\"WFC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WFC-Q3-NII=11950 USD_million; WFC-Q3-NONINT=9486 USD_million; WFC-Q3-REV=21436 USD_million; WFC-Q3-NCO=954 USD_million; WFC-Q3-PROV=681 USD_million; WFC-Q3-OPEX=13846 USD_million; WFC-Q3-TAX=1300 USD_million; WFC-Q3-NET=5589 USD_million; WFC-Q3-NIM=2.61 percent.\",\"as_of\":\"2025-10-14\",\"sources\":[{\"id\":\"HOLDOUT-V2-WFC-EVENT\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm\",\"sha256\":\"b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015\"}],\"observed_metrics\":{\"gaap_net_interest_income\":{\"value\":\"11950\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-NII\"},\"gaap_noninterest_income\":{\"value\":\"9486\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-NONINT\"},\"gaap_total_revenue\":{\"value\":\"21436\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-REV\"},\"reported_net_charge_offs\":{\"value\":\"954\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-NCO\"},\"gaap_provision_for_credit_losses\":{\"value\":\"681\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-PROV\"},\"gaap_noninterest_expense\":{\"value\":\"13846\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-OPEX\"},\"gaap_income_tax_expense\":{\"value\":\"1300\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-TAX\"},\"gaap_wells_fargo_net_income\":{\"value\":\"5589\",\"unit\":\"USD_million\",\"fact_id\":\"WFC-Q3-NET\"},\"fte_net_interest_margin\":{\"value\":\"2.61\",\"unit\":\"percent\",\"fact_id\":\"WFC-Q3-NIM\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"wfc\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T14:37:21Z\",\"last_seen_at\":\"2026-10-24T14:37:21Z\",\"created_at\":\"2026-10-24T14:37:21Z\",\"updated_at\":\"2026-10-24T14:37:35Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9643,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_UpUrfhLv3D6VSjXrFOwX2355",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_088a5593e37040b9ae86\", \"review_limit\": 5}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_UpUrfhLv3D6VSjXrFOwX2355",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"43cd33e0-057f-4cd4-96ab-290cee4a92c7\",\"as_of\":\"2026-10-24T14:37:36Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_088a5593e37040b9ae86\",\"market\":\"US\",\"symbol\":\"WFC\",\"title\":\"WFC source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: WFC-Q2-NII=11708 USD_million; WFC-Q2-NONINT=9114 USD_million; WFC-Q2-REV=20822 USD_million; WFC-Q2-NCO=997 USD_million; WFC-Q2-PROV=1005 USD_million; WFC-Q2-OPEX=13379 USD_million; WFC-Q2-TAX=916 USD_million; WFC-Q2-NET=5494 USD_million; WFC-Q2-NIM=2.68 percent. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_cad904db8bb84e74b823\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"fte_net_interest_margin\",\"gaap_income_tax_expense\",\"gaap_net_interest_income\",\"gaap_noninterest_expense\",\"gaap_noninterest_income\",\"gaap_provision_for_credit_losses\",\"gaap_total_revenue\",\"gaap_wells_fargo_net_income\",\"reported_net_charge_offs\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-WFC-BASELINE\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000170/wfc2qer07-15x25ex991xrelea.htm\",\"sha256\":\"e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb\"}],\"next_review_at\":\"2026-11-24\",\"last_review_at\":\"2026-10-24T14:37:33Z\",\"created_at\":\"2026-10-24T14:37:21Z\",\"updated_at\":\"2026-10-24T14:37:33Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[{\"id\":\"tr_f0ffc91d813548a59fc3\",\"thesis_id\":\"th_088a5593e37040b9ae86\",\"alert_id\":\"fa_cad904db8bb84e74b823\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-WFC-2025-Q3-NII-MARGIN-CREDIT-MIX-r4\",\"event\":{\"type\":\"earnings\",\"summary\":\"WFC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WFC-Q3-NII=11950 USD_million; WFC-Q3-NONINT=9486 USD_million; WFC-Q3-REV=21436 USD_million; WFC-Q3-NCO=954 USD_million; WFC-Q3-PROV=681 USD_million; WFC-Q3-OPEX=13846 USD_million; WFC-Q3-TAX=1300 USD_million; WFC-Q3-NET=5589 USD_million; WFC-Q3-NIM=2.61 percent.\",\"as_of\":\"2025-10-14\",\"sources\":[{\"id\":\"HOLDOUT-V2-WFC-EVENT\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm\",\"sha256\":\"b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Sequential (Q2 CY2025 to Q3 CY2025) comparison of source-selected displayed values only; no year-over-year figures were supplied. Reported GAAP basis throughout except fte_net_interest_margin, which is an FTE (taxable-equivalent) margin and therefore not on the same basis as the GAAP income lines. Margin moved -0.07 percentage points (2.68 to 2.61 percent), which is a -2.61% relative change, not a 2.61-point move; the two units are not interchangeable. GAAP NII rose 242 USD_million (+2.07%) while the FTE margin fell, so the margin decline is not evidence of lower net interest income and the packet does not reconcile the two. Total revenue rose 614 USD_million (+2.95%), fully attributable to the two listed components (NII +242, noninterest income +372) with a 0 USD_million unlisted residual, so no residual is being misattributed; this arithmetic is not a causal explanation. Provision for credit losses fell 324 USD_million (-32.24%) while reported net charge-offs fell only 43 USD_million (-4.31%), leaving a large unexplained gap between the provision change and the charge-off change that the selected rows do not bridge. Noninterest expense rose 467 USD_million (+3.49%), faster than revenue in relative terms, and income tax expense rose 384 USD_million (+41.92%) on a 95 USD_million (+1.73%) net income increase; the packet contains no effective tax rate, pre-tax income, or tax-item detail, so the tax move cannot be decomposed and no absolute loss dollars are inferred from any rate. Net income rose 95 USD_million sequentially. Missing evidence: year-over-year comparatives, average earning assets and NIM drivers, adjusted/non-GAAP reconciliations, allowance and reserve build/release detail, charge-off composition, and any management attribution. Because the required event metrics are present but the drivers of the margin, provision, and tax moves are unreconciled and no source-backed causal driver is stored, the research state is held at needs_review rather than upgraded or invalidated. No valuation or trading conclusion is established.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"wfc\",\"earnings\",\"net_interest_margin\",\"provision_for_credit_losses\",\"net_charge_offs\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-WFC-EVENT\",\"note\":\"Event packet, CY2025 Q3 period ended 2025-09-30, filed 2025-10-14.\",\"sha256\":\"b3cd90170635d8604ea3259201de683cddd2345a89915a3ed8ae986eb50b3015\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000239/wfc3qer10-14x25ex991xrelea.htm\"},{\"id\":\"HOLDOUT-V2-WFC-BASELINE\",\"note\":\"Baseline packet, CY2025 Q2 period ended 2025-06-30.\",\"sha256\":\"e88224697c643c3d9b710884c7a0c9ea07200cae0038010d12bd7b7893415fcb\",\"url\":\"https://www.sec.gov/Archives/edgar/data/72971/000007297125000170/wfc2qer07-15x25ex991xrelea.htm\"},{\"basis\":\"FTE\",\"change_vs_baseline\":\"-0.07 percentage_points\",\"fact_id\":\"WFC-Q3-NIM\",\"metric\":\"fte_net_interest_margin\",\"period\":\"CY2025Q3\",\"relative_change\":\"-2.61% of baseline\",\"unit\":\"percent\",\"value\":\"2.61\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"242 USD_million\",\"fact_id\":\"WFC-Q3-NII\",\"metric\":\"gaap_net_interest_income\",\"period\":\"CY2025Q3\",\"relative_change\":\"2.07% of baseline\",\"unit\":\"USD_million\",\"value\":\"11950\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"372 USD_million\",\"fact_id\":\"WFC-Q3-NONINT\",\"metric\":\"gaap_noninterest_income\",\"period\":\"CY2025Q3\",\"relative_change\":\"4.08% of baseline\",\"unit\":\"USD_million\",\"value\":\"9486\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"614 USD_million\",\"fact_id\":\"WFC-Q3-REV\",\"metric\":\"gaap_total_revenue\",\"mix_note\":\"Listed components NII 242 + noninterest income 372 = 614; unlisted residual 0 USD_million. Arithmetic only, not causal.\",\"period\":\"CY2025Q3\",\"relative_change\":\"2.95% of baseline\",\"unit\":\"USD_million\",\"value\":\"21436\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"-324 USD_million\",\"fact_id\":\"WFC-Q3-PROV\",\"metric\":\"gaap_provision_for_credit_losses\",\"period\":\"CY2025Q3\",\"relative_change\":\"-32.24% of baseline\",\"unit\":\"USD_million\",\"value\":\"681\"},{\"basis\":\"reported\",\"change_vs_baseline\":\"-43 USD_million\",\"fact_id\":\"WFC-Q3-NCO\",\"metric\":\"reported_net_charge_offs\",\"period\":\"CY2025Q3\",\"relative_change\":\"-4.31% of baseline\",\"unit\":\"USD_million\",\"value\":\"954\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"467 USD_million\",\"fact_id\":\"WFC-Q3-OPEX\",\"metric\":\"gaap_noninterest_expense\",\"period\":\"CY2025Q3\",\"relative_change\":\"3.49% of baseline\",\"unit\":\"USD_million\",\"value\":\"13846\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"384 USD_million\",\"fact_id\":\"WFC-Q3-TAX\",\"metric\":\"gaap_income_tax_expense\",\"period\":\"CY2025Q3\",\"relative_change\":\"41.92% of baseline\",\"unit\":\"USD_million\",\"value\":\"1300\"},{\"basis\":\"GAAP\",\"change_vs_baseline\":\"95 USD_million\",\"fact_id\":\"WFC-Q3-NET\",\"metric\":\"gaap_wells_fargo_net_income\",\"period\":\"CY2025Q3\",\"relative_change\":\"1.73% of baseline\",\"unit\":\"USD_million\",\"value\":\"5589\"},{\"missing\":[\"year-over-year comparatives\",\"average earning assets and NIM driver detail\",\"adjusted/non-GAAP reconciliations\",\"allowance and reserve build/release detail\",\"charge-off composition\",\"pre-tax income and effective tax rate\",\"management attribution of margin, provision, and tax changes\"]}],\"created_at\":\"2026-10-24T14:37:33Z\"}]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9648,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4139,
+              "completion_tokens": 117,
+              "total_tokens": 4256,
+              "estimated_cost_usd": 0.0013821,
+              "priced": true,
+              "latency_ms": 1336.726
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5842,
+              "completion_tokens": 215,
+              "total_tokens": 6057,
+              "cache_read_tokens": 4224,
+              "estimated_cost_usd": 0.0007687439999999999,
+              "priced": true,
+              "latency_ms": 1296.508
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6421,
+              "completion_tokens": 2238,
+              "total_tokens": 8659,
+              "cache_read_tokens": 6016,
+              "estimated_cost_usd": 0.002843196,
+              "priced": true,
+              "latency_ms": 9250.028
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 11196,
+              "completion_tokens": 118,
+              "total_tokens": 11314,
+              "cache_read_tokens": 8576,
+              "estimated_cost_usd": 0.000979056,
+              "priced": true,
+              "latency_ms": 1208.516
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 12263,
+              "completion_tokens": 73,
+              "total_tokens": 12336,
+              "cache_read_tokens": 11264,
+              "estimated_cost_usd": 0.0004548839999999999,
+              "priced": true,
+              "latency_ms": 1235.717
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 14863,
+              "completion_tokens": 1556,
+              "total_tokens": 16419,
+              "cache_read_tokens": 12288,
+              "estimated_cost_usd": 0.002713428,
+              "priced": true,
+              "latency_ms": 9452.287
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 23.831,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update",
+        "finance-tools__thesis_get"
+      ],
+      "model_calls": 6,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.009141408
+    }
+  ],
+  "estimated_cost_usd": 0.009141408
+}

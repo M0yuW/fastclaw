@@ -1,0 +1,421 @@
+{
+  "observation_id": "NDAQ-2025-Q3-GROSS-NET-REVENUE-DIVERGENCE-r3",
+  "case_id": "NDAQ-2025-Q3-GROSS-NET-REVENUE-DIVERGENCE",
+  "repetition": 3,
+  "workflow": "sec_event_to_thesis_review",
+  "coordinator_max_tokens": 5000,
+  "status": "mechanical_pass",
+  "quality_score": null,
+  "error": null,
+  "checks": {
+    "one_thesis_and_alert": true,
+    "source_packet_exact": true,
+    "one_linked_review": true,
+    "alert_acknowledged": true,
+    "state_actionability_consistent": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 6,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_a794db3575354cbaa350",
+          "market": "US",
+          "symbol": "NDAQ",
+          "title": "NDAQ source-bounded earnings thesis",
+          "thesis": "Baseline CY2025 Q2 ended 2025-06-30: NDAQ-Q2-CAP=527 USD_million; NDAQ-Q2-FINTECH=464 USD_million; NDAQ-Q2-MARKET=1090 USD_million; NDAQ-Q2-OTHER=9 USD_million; NDAQ-Q2-GROSS=2090 USD_million; NDAQ-Q2-NETREV=1306 USD_million; NDAQ-Q2-OPEX=738 USD_million; NDAQ-Q2-OPINC=568 USD_million; NDAQ-Q2-NETATTR=452 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": true,
+          "actionability": "blocked",
+          "decision_hold_alert_id": "fa_5cb33e9f39074661b8d6",
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "gaap_capital_access_gross_revenue",
+            "gaap_financial_technology_gross_revenue",
+            "gaap_market_services_gross_revenue",
+            "gaap_net_income_attributable_to_nasdaq",
+            "gaap_operating_income",
+            "gaap_other_gross_revenue",
+            "gaap_revenue_less_transaction_expenses",
+            "gaap_total_gross_revenue",
+            "gaap_total_operating_expenses"
+          ],
+          "evidence": [
+            {
+              "id": "HOLDOUT-NDAQ-BASELINE-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1120193/000119312525163817/d56011dex991.htm",
+              "sha256": "afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e"
+            }
+          ],
+          "next_review_at": null,
+          "last_review_at": "2026-10-24T15:08:26Z",
+          "created_at": "2026-10-24T15:08:18Z",
+          "updated_at": "2026-10-24T15:08:26Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_4d252fc1ddf641c1925e",
+            "thesis_id": "th_a794db3575354cbaa350",
+            "alert_id": "fa_5cb33e9f39074661b8d6",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-NDAQ-2025-Q3-GROSS-NET-REVENUE-DIVERGENCE-r3",
+            "event": {
+              "type": "earnings",
+              "summary": "NDAQ CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: NDAQ-Q3-CAP=546 USD_million; NDAQ-Q3-FINTECH=457 USD_million; NDAQ-Q3-MARKET=946 USD_million; NDAQ-Q3-OTHER=9 USD_million; NDAQ-Q3-GROSS=1958 USD_million; NDAQ-Q3-NETREV=1315 USD_million; NDAQ-Q3-OPEX=729 USD_million; NDAQ-Q3-OPINC=586 USD_million; NDAQ-Q3-NETATTR=423 USD_million.",
+              "as_of": "2025-10-21",
+              "sources": [
+                {
+                  "id": "HOLDOUT-NDAQ-EVENT-v1",
+                  "url": "https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm",
+                  "sha256": "e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "needs_review",
+            "rationale": "Sequential (Q2->Q3 CY2025) comparison of displayed GAAP rounded values only; no year-over-year, adjusted, or causal claim is supported by the packet. Gross revenue fell 132 USD_million (-6.32% of baseline) to 1958, while revenue less transaction expenses rose 9 USD_million (+0.69%) to 1315 — a divergence that implies transaction expenses fell by roughly 141 USD_million on the displayed rows, but the packet contains no transaction-expense fact, so that bridge is arithmetic on selected rows, not a sourced driver. Listed segment mix: market services -144, financial technology -7, capital access +19, other 0, unlisted residual 0; the total is not attributed to any single segment. Operating income rose 18 (+3.17%) to 586 and total operating expenses fell 9 (-1.22%) to 729, yet net income attributable to Nasdaq fell 29 (-6.42%) to 423 — a gap the packet does not explain (no tax, interest, or non-operating lines). Material counterpoint: the gross-revenue decline is concentrated in market services and is largely offset at the net-revenue line, so a gross-revenue-only read would overstate deterioration. Missing evidence: transaction expenses, segment-level drivers, tax/non-operating items, prior-year (Q3 CY2024) comparatives, adjusted vs GAAP reconciliation, and any causal or durability evidence. Decision is needs_review to hold the thesis blocked pending those items; no valuation or trading conclusion.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [
+              "ndaq",
+              "earnings",
+              "gaap_total_gross_revenue",
+              "gaap_revenue_less_transaction_expenses",
+              "gaap_market_services_gross_revenue"
+            ],
+            "evidence": [
+              {
+                "id": "HOLDOUT-NDAQ-EVENT-v1",
+                "note": "Event packet, CY2025 Q3 period ended 2025-09-30, as_of 2025-10-21",
+                "sha256": "e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10",
+                "url": "https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm"
+              },
+              {
+                "id": "HOLDOUT-NDAQ-BASELINE-v1",
+                "note": "Baseline packet, CY2025 Q2 period ended 2025-06-30",
+                "sha256": "afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e",
+                "url": "https://www.sec.gov/Archives/edgar/data/1120193/000119312525163817/d56011dex991.htm"
+              }
+            ],
+            "created_at": "2026-10-24T15:08:26Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_5cb33e9f39074661b8d6",
+        "watchlist_id": "wl_e713fe6e95bc41cabd67",
+        "thesis_id": "th_a794db3575354cbaa350",
+        "market": "US",
+        "symbol": "NDAQ",
+        "event_fingerprint": "f88665d07f9b920d900cc5f935396adcd92768f0553588d3650291fd4f941c27",
+        "event": {
+          "external_id": "HOLDOUT-V2-NDAQ-EVENT",
+          "type": "earnings",
+          "summary": "NDAQ CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: NDAQ-Q3-CAP=546 USD_million; NDAQ-Q3-FINTECH=457 USD_million; NDAQ-Q3-MARKET=946 USD_million; NDAQ-Q3-OTHER=9 USD_million; NDAQ-Q3-GROSS=1958 USD_million; NDAQ-Q3-NETREV=1315 USD_million; NDAQ-Q3-OPEX=729 USD_million; NDAQ-Q3-OPINC=586 USD_million; NDAQ-Q3-NETATTR=423 USD_million.",
+          "as_of": "2025-10-21",
+          "sources": [
+            {
+              "id": "HOLDOUT-NDAQ-EVENT-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm",
+              "sha256": "e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_capital_access_gross_revenue": {
+              "value": "546",
+              "unit": "USD_million",
+              "fact_id": "NDAQ-Q3-CAP"
+            },
+            "gaap_financial_technology_gross_revenue": {
+              "value": "457",
+              "unit": "USD_million",
+              "fact_id": "NDAQ-Q3-FINTECH"
+            },
+            "gaap_market_services_gross_revenue": {
+              "value": "946",
+              "unit": "USD_million",
+              "fact_id": "NDAQ-Q3-MARKET"
+            },
+            "gaap_other_gross_revenue": {
+              "value": "9",
+              "unit": "USD_million",
+              "fact_id": "NDAQ-Q3-OTHER"
+            },
+            "gaap_total_gross_revenue": {
+              "value": "1958",
+              "unit": "USD_million",
+              "fact_id": "NDAQ-Q3-GROSS"
+            },
+            "gaap_revenue_less_transaction_expenses": {
+              "value": "1315",
+              "unit": "USD_million",
+              "fact_id": "NDAQ-Q3-NETREV"
+            },
+            "gaap_total_operating_expenses": {
+              "value": "729",
+              "unit": "USD_million",
+              "fact_id": "NDAQ-Q3-OPEX"
+            },
+            "gaap_operating_income": {
+              "value": "586",
+              "unit": "USD_million",
+              "fact_id": "NDAQ-Q3-OPINC"
+            },
+            "gaap_net_income_attributable_to_nasdaq": {
+              "value": "423",
+              "unit": "USD_million",
+              "fact_id": "NDAQ-Q3-NETATTR"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "ndaq",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-24T15:08:18Z",
+        "last_seen_at": "2026-10-24T15:08:18Z",
+        "created_at": "2026-10-24T15:08:18Z",
+        "updated_at": "2026-10-24T15:08:27Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "prompt": "Historical source-bounded SEC research-state replay, not a trade request. Read the stored thesis and earnings alert using finance tools. The host-checked numeric context below is arithmetic on selected source rows, not a causal explanation or complete filing. Distinguish sequential from year-over-year figures, reported from adjusted measures, and percentage points from relative percent. Independently explain a supported implication, a material counterpoint, missing evidence, and your own research-state decision. Do not infer absolute loss dollars from a rate or attribute a total to listed components when a residual remains. Persist one source-linked version-protected review, acknowledge the alert, and verify that any needs_review decision leaves the thesis blocked. Do not trade.\n\nCase: NDAQ-2025-Q3-GROSS-NET-REVENUE-DIVERGENCE\nBaseline SEC SHA-256: afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e\nEvent SEC SHA-256: e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10\nDisplayed-value comparisons (same metric and basis):\nmetric | baseline fact/value | event fact/value | change | relative change\ngaap_capital_access_gross_revenue | NDAQ-Q2-CAP=527 USD_million_rounded | NDAQ-Q3-CAP=546 USD_million_rounded | 19 USD_million | 3.61% of baseline\ngaap_financial_technology_gross_revenue | NDAQ-Q2-FINTECH=464 USD_million_rounded | NDAQ-Q3-FINTECH=457 USD_million_rounded | -7 USD_million | -1.51% of baseline\ngaap_market_services_gross_revenue | NDAQ-Q2-MARKET=1090 USD_million_rounded | NDAQ-Q3-MARKET=946 USD_million_rounded | -144 USD_million | -13.21% of baseline\ngaap_net_income_attributable_to_nasdaq | NDAQ-Q2-NETATTR=452 USD_million_rounded | NDAQ-Q3-NETATTR=423 USD_million_rounded | -29 USD_million | -6.42% of baseline\ngaap_operating_income | NDAQ-Q2-OPINC=568 USD_million_rounded | NDAQ-Q3-OPINC=586 USD_million_rounded | 18 USD_million | 3.17% of baseline\ngaap_other_gross_revenue | NDAQ-Q2-OTHER=9 USD_million_rounded | NDAQ-Q3-OTHER=9 USD_million_rounded | 0 USD_million | 0% of baseline\ngaap_revenue_less_transaction_expenses | NDAQ-Q2-NETREV=1306 USD_million_rounded | NDAQ-Q3-NETREV=1315 USD_million_rounded | 9 USD_million | 0.69% of baseline\ngaap_total_gross_revenue | NDAQ-Q2-GROSS=2090 USD_million_rounded | NDAQ-Q3-GROSS=1958 USD_million_rounded | -132 USD_million | -6.32% of baseline\ngaap_total_operating_expenses | NDAQ-Q2-OPEX=738 USD_million_rounded | NDAQ-Q3-OPEX=729 USD_million_rounded | -9 USD_million | -1.22% of baseline\nArithmetic mix for gaap_total_gross_revenue: total -132 USD_million; listed components gaap_capital_access_gross_revenue=19 USD_million, gaap_financial_technology_gross_revenue=-7 USD_million, gaap_market_services_gross_revenue=-144 USD_million, gaap_other_gross_revenue=0 USD_million; unlisted residual 0 USD_million. This is not a causal explanation.\nBoundary: source-selected displayed values only; no causal driver, durability, valuation, or trading conclusion is established by this table.\n\nCase NDAQ-2025-Q3-GROSS-NET-REVENUE-DIVERGENCE; thesis ID th_a794db3575354cbaa350; alert ID fa_5cb33e9f39074661b8d6.",
+      "response": {
+        "id": "chatcmpl-1792854498795347000",
+        "object": "chat.completion",
+        "created": 1792854498,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# NDAQ-2025-Q3-GROSS-NET-REVENUE-DIVERGENCE — Research-State Replay\n\n**Scope note.** This is a historical, source-bounded replay of stored research state. All figures below are displayed GAAP values in USD millions, rounded, from two SEC exhibit packets: baseline `HOLDOUT-NDAQ-BASELINE-v1` (SHA-256 `afe73b13…06c85e`, CY2025 Q2, period ended 2025-06-30) and event `HOLDOUT-NDAQ-EVENT-v1` (SHA-256 `e1d3ceab…ca4f10`, CY2025 Q3, period ended 2025-09-30, as_of 2025-10-21). Comparisons are **sequential Q2→Q3**, not year-over-year; no prior-year comparative exists in either packet. No adjusted/non-GAAP measure is present in either packet, so nothing here is a reported-vs-adjusted comparison. No trade was made or recommended.\n\n## 1. Supported implication\n\nThe packet supports one narrow, well-evidenced observation: **gross revenue and net revenue moved in opposite directions sequentially.**\n\n- `gaap_total_gross_revenue` (NDAQ-Q3-GROSS): 2090 → 1958, **−132 (−6.32% of baseline)**.\n- `gaap_revenue_less_transaction_expenses` (NDAQ-Q3-NETREV): 1306 → 1315, **+9 (+0.69%)**.\n\nBecause net revenue is gross revenue less transaction expenses, the two displayed rows jointly imply that transaction expenses fell by roughly 141 on the displayed arithmetic. That is a **derived residual from two selected rows, not a sourced fact** — the packet contains no transaction-expense line, so I do not treat it as a driver, and I do not convert it into any absolute loss or gain claim beyond the arithmetic itself.\n\nThe mix arithmetic is consistent and fully accounted for: market services −144, financial technology −7, capital access +19, other 0, **unlisted residual 0**. The −132 total is therefore not attributable to any single segment, and I do not assign it to one.\n\n## 2. Material counterpoint\n\nA gross-revenue-only reading would overstate deterioration. The −6.32% gross decline is concentrated in `gaap_market_services_gross_revenue` (1090 → 946, −144, −13.21%) and is **largely offset at the net-revenue line**, which rose slightly. Meanwhile `gaap_operating_income` rose 568 → 586 (+18, +3.17%) and `gaap_total_operating_expenses` fell 738 → 729 (−9, −1.22%). On the displayed rows, the operating picture improved even as gross revenue fell.\n\nThe counterpoint cuts both ways, however: `gaap_net_income_attributable_to_nasdaq` fell 452 → 423 (**−29, −6.42%**) despite higher operating income and lower operating expenses. The packet contains no tax, interest, or non-operating lines, so this gap is **unexplained by the supplied evidence** and I will not speculate about its cause.\n\n## 3. Missing evidence\n\n- **Transaction expenses** — the exact line needed to source the gross/net divergence; only inferable as a residual.\n- **Segment-level drivers** — no explanation of the market-services decline or the capital-access increase; no durability evidence.\n- **Tax, interest, non-operating items** — required to bridge operating income (+18) to net income attributable (−29).\n- **Prior-year (Q3 CY2024) comparatives** — no year-over-year basis exists in either packet; all changes here are sequential and may reflect seasonality.\n- **Adjusted vs GAAP reconciliation** — no non-GAAP measures supplied, so no adjusted comparison is possible.\n- **Causal attribution** — the mix table is explicitly arithmetic, not causal; no driver facts are stored on the alert (`source_claims` empty, `unresolved_conflicts` empty).\n\n## 4. Research-state decision\n\n**Decision: `needs_review`; impact: `mixed`.** Persisted as review `tr_4d252fc1ddf641c1925e` against thesis `th_a794db3575354cbaa350` at expected_version 1 → thesis now at **version 2**.\n\n- Thesis status remains `active`, conviction unchanged at **3** (needs_review preserves both).\n- `decision_hold: true`, `actionability: blocked`, `decision_hold_alert_id: fa_5cb33e9f39074661b8d6` — **verified by re-reading the thesis after the review**.\n- Alert `fa_5cb33e9f39074661b8d6` acknowledged (version 1 → 2); duplicate_count 1, no duplicate alerts created.\n- All nine `required_event_metrics` were present in the event packet (`missing_metrics: []`), so the hold is driven by unresolved interpretation and missing source lines, not by absent metrics.\n\n**Blocking condition:** the hold can only be resolved by a sourced, complete, conflict-free alert for the same event period with source continuity — specifically one that supplies transaction expenses, the operating-income-to-net-income bridge, and prior-year comparatives. No valuation, durability, or trading conclusion is established."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 48495,
+          "completion_tokens": 2785,
+          "total_tokens": 51280
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_xmOqoVtAwr6QcJ0omXn66272",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_a794db3575354cbaa350\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_pdGzdb0RrtvcHwY1w9Cc8782",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"symbol\": \"NDAQ\", \"limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_xmOqoVtAwr6QcJ0omXn66272",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"d2689fc7-60d2-4827-ba0f-fc6716599b52\",\"as_of\":\"2026-10-24T15:08:19Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_a794db3575354cbaa350\",\"market\":\"US\",\"symbol\":\"NDAQ\",\"title\":\"NDAQ source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: NDAQ-Q2-CAP=527 USD_million; NDAQ-Q2-FINTECH=464 USD_million; NDAQ-Q2-MARKET=1090 USD_million; NDAQ-Q2-OTHER=9 USD_million; NDAQ-Q2-GROSS=2090 USD_million; NDAQ-Q2-NETREV=1306 USD_million; NDAQ-Q2-OPEX=738 USD_million; NDAQ-Q2-OPINC=568 USD_million; NDAQ-Q2-NETATTR=452 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_capital_access_gross_revenue\",\"gaap_financial_technology_gross_revenue\",\"gaap_market_services_gross_revenue\",\"gaap_net_income_attributable_to_nasdaq\",\"gaap_operating_income\",\"gaap_other_gross_revenue\",\"gaap_revenue_less_transaction_expenses\",\"gaap_total_gross_revenue\",\"gaap_total_operating_expenses\"],\"evidence\":[{\"id\":\"HOLDOUT-NDAQ-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525163817/d56011dex991.htm\",\"sha256\":\"afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-24T15:08:18Z\",\"updated_at\":\"2026-10-24T15:08:18Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.7879,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_pdGzdb0RrtvcHwY1w9Cc8782",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"f21c59b3-1249-4ad4-bb5e-09398b0151f0\",\"as_of\":\"2026-10-24T15:08:19Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_5cb33e9f39074661b8d6\",\"watchlist_id\":\"wl_e713fe6e95bc41cabd67\",\"thesis_id\":\"th_a794db3575354cbaa350\",\"market\":\"US\",\"symbol\":\"NDAQ\",\"event_fingerprint\":\"f88665d07f9b920d900cc5f935396adcd92768f0553588d3650291fd4f941c27\",\"event\":{\"external_id\":\"HOLDOUT-V2-NDAQ-EVENT\",\"type\":\"earnings\",\"summary\":\"NDAQ CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: NDAQ-Q3-CAP=546 USD_million; NDAQ-Q3-FINTECH=457 USD_million; NDAQ-Q3-MARKET=946 USD_million; NDAQ-Q3-OTHER=9 USD_million; NDAQ-Q3-GROSS=1958 USD_million; NDAQ-Q3-NETREV=1315 USD_million; NDAQ-Q3-OPEX=729 USD_million; NDAQ-Q3-OPINC=586 USD_million; NDAQ-Q3-NETATTR=423 USD_million.\",\"as_of\":\"2025-10-21\",\"sources\":[{\"id\":\"HOLDOUT-NDAQ-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm\",\"sha256\":\"e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10\"}],\"observed_metrics\":{\"gaap_capital_access_gross_revenue\":{\"value\":\"546\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-CAP\"},\"gaap_financial_technology_gross_revenue\":{\"value\":\"457\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-FINTECH\"},\"gaap_market_services_gross_revenue\":{\"value\":\"946\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-MARKET\"},\"gaap_other_gross_revenue\":{\"value\":\"9\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-OTHER\"},\"gaap_total_gross_revenue\":{\"value\":\"1958\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-GROSS\"},\"gaap_revenue_less_transaction_expenses\":{\"value\":\"1315\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-NETREV\"},\"gaap_total_operating_expenses\":{\"value\":\"729\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-OPEX\"},\"gaap_operating_income\":{\"value\":\"586\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-OPINC\"},\"gaap_net_income_attributable_to_nasdaq\":{\"value\":\"423\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-NETATTR\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"ndaq\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T15:08:18Z\",\"last_seen_at\":\"2026-10-24T15:08:18Z\",\"created_at\":\"2026-10-24T15:08:18Z\",\"updated_at\":\"2026-10-24T15:08:18Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":20,\"symbol\":\"NDAQ\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9655,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_iHmW5pNlkEIQVfOFyTqj7358",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"NDAQ\", \"event_summary\": \"NDAQ CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: NDAQ-Q3-CAP=546 USD_million; NDAQ-Q3-FINTECH=457 USD_million; NDAQ-Q3-MARKET=946 USD_million; NDAQ-Q3-OTHER=9 USD_million; NDAQ-Q3-GROSS=1958 USD_million; NDAQ-Q3-NETREV=1315 USD_million; NDAQ-Q3-OPEX=729 USD_million; NDAQ-Q3-OPINC=586 USD_million; NDAQ-Q3-NETATTR=423 USD_million.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_iHmW5pNlkEIQVfOFyTqj7358",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"de20ade1-ee64-4d67-b22c-73a948fb0332\",\"as_of\":\"2026-10-24T15:08:21Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"NDAQ\",\"event_summary\":\"NDAQ CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: NDAQ-Q3-CAP=546 USD_million; NDAQ-Q3-FINTECH=457 USD_million; NDAQ-Q3-MARKET=946 USD_million; NDAQ-Q3-OTHER=9 USD_million; NDAQ-Q3-GROSS=1958 USD_million; NDAQ-Q3-NETREV=1315 USD_million; NDAQ-Q3-OPEX=729 USD_million; NDAQ-Q3-OPINC=586 USD_million; NDAQ-Q3-NETATTR=423 USD_million.\",\"matches\":[{\"thesis_id\":\"th_a794db3575354cbaa350\",\"title\":\"NDAQ source-bounded earnings thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_FRJs3Ydb0UEfIqjGvzg33709",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_a794db3575354cbaa350\", \"expected_version\": 1, \"alert_id\": \"fa_5cb33e9f39074661b8d6\", \"event\": {\"type\": \"earnings\", \"as_of\": \"2025-10-21\", \"summary\": \"NDAQ CY2025 Q3 (period ended 2025-09-30) SEC selected-fact packet: NDAQ-Q3-CAP=546; NDAQ-Q3-FINTECH=457; NDAQ-Q3-MARKET=946; NDAQ-Q3-OTHER=9; NDAQ-Q3-GROSS=1958; NDAQ-Q3-NETREV=1315; NDAQ-Q3-OPEX=729; NDAQ-Q3-OPINC=586; NDAQ-Q3-NETATTR=423 (USD_million, rounded). Compared against stored CY2025 Q2 baseline (period ended 2025-06-30).\", \"sources\": [{\"id\": \"HOLDOUT-NDAQ-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm\", \"sha256\": \"e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10\"}]}, \"impact\": \"mixed\", \"decision\": \"needs_review\", \"matched_terms\": [\"ndaq\", \"earnings\", \"gaap_total_gross_revenue\", \"gaap_revenue_less_transaction_expenses\", \"gaap_market_services_gross_revenue\"], \"rationale\": \"Sequential (Q2->Q3 CY2025) comparison of displayed GAAP rounded values only; no year-over-year, adjusted, or causal claim is supported by the packet. Gross revenue fell 132 USD_million (-6.32% of baseline) to 1958, while revenue less transaction expenses rose 9 USD_million (+0.69%) to 1315 — a divergence that implies transaction expenses fell by roughly 141 USD_million on the displayed rows, but the packet contains no transaction-expense fact, so that bridge is arithmetic on selected rows, not a sourced driver. Listed segment mix: market services -144, financial technology -7, capital access +19, other 0, unlisted residual 0; the total is not attributed to any single segment. Operating income rose 18 (+3.17%) to 586 and total operating expenses fell 9 (-1.22%) to 729, yet net income attributable to Nasdaq fell 29 (-6.42%) to 423 — a gap the packet does not explain (no tax, interest, or non-operating lines). Material counterpoint: the gross-revenue decline is concentrated in market services and is largely offset at the net-revenue line, so a gross-revenue-only read would overstate deterioration. Missing evidence: transaction expenses, segment-level drivers, tax/non-operating items, prior-year (Q3 CY2024) comparatives, adjusted vs GAAP reconciliation, and any causal or durability evidence. Decision is needs_review to hold the thesis blocked pending those items; no valuation or trading conclusion.\", \"evidence\": [{\"id\": \"HOLDOUT-NDAQ-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm\", \"sha256\": \"e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10\", \"note\": \"Event packet, CY2025 Q3 period ended 2025-09-30, as_of 2025-10-21\"}, {\"id\": \"HOLDOUT-NDAQ-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1120193/000119312525163817/d56011dex991.htm\", \"sha256\": \"afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e\", \"note\": \"Baseline packet, CY2025 Q2 period ended 2025-06-30\"}]}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_FRJs3Ydb0UEfIqjGvzg33709",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"80c9d6e3-0f4b-464f-b568-b9cce7863da1\",\"as_of\":\"2026-10-24T15:08:26Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_a794db3575354cbaa350\",\"market\":\"US\",\"symbol\":\"NDAQ\",\"title\":\"NDAQ source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: NDAQ-Q2-CAP=527 USD_million; NDAQ-Q2-FINTECH=464 USD_million; NDAQ-Q2-MARKET=1090 USD_million; NDAQ-Q2-OTHER=9 USD_million; NDAQ-Q2-GROSS=2090 USD_million; NDAQ-Q2-NETREV=1306 USD_million; NDAQ-Q2-OPEX=738 USD_million; NDAQ-Q2-OPINC=568 USD_million; NDAQ-Q2-NETATTR=452 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_5cb33e9f39074661b8d6\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_capital_access_gross_revenue\",\"gaap_financial_technology_gross_revenue\",\"gaap_market_services_gross_revenue\",\"gaap_net_income_attributable_to_nasdaq\",\"gaap_operating_income\",\"gaap_other_gross_revenue\",\"gaap_revenue_less_transaction_expenses\",\"gaap_total_gross_revenue\",\"gaap_total_operating_expenses\"],\"evidence\":[{\"id\":\"HOLDOUT-NDAQ-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525163817/d56011dex991.htm\",\"sha256\":\"afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-24T15:08:26Z\",\"created_at\":\"2026-10-24T15:08:18Z\",\"updated_at\":\"2026-10-24T15:08:26Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_4d252fc1ddf641c1925e\",\"thesis_id\":\"th_a794db3575354cbaa350\",\"alert_id\":\"fa_5cb33e9f39074661b8d6\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-NDAQ-2025-Q3-GROSS-NET-REVENUE-DIVERGENCE-r3\",\"event\":{\"type\":\"earnings\",\"summary\":\"NDAQ CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: NDAQ-Q3-CAP=546 USD_million; NDAQ-Q3-FINTECH=457 USD_million; NDAQ-Q3-MARKET=946 USD_million; NDAQ-Q3-OTHER=9 USD_million; NDAQ-Q3-GROSS=1958 USD_million; NDAQ-Q3-NETREV=1315 USD_million; NDAQ-Q3-OPEX=729 USD_million; NDAQ-Q3-OPINC=586 USD_million; NDAQ-Q3-NETATTR=423 USD_million.\",\"as_of\":\"2025-10-21\",\"sources\":[{\"id\":\"HOLDOUT-NDAQ-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm\",\"sha256\":\"e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Sequential (Q2->Q3 CY2025) comparison of displayed GAAP rounded values only; no year-over-year, adjusted, or causal claim is supported by the packet. Gross revenue fell 132 USD_million (-6.32% of baseline) to 1958, while revenue less transaction expenses rose 9 USD_million (+0.69%) to 1315 — a divergence that implies transaction expenses fell by roughly 141 USD_million on the displayed rows, but the packet contains no transaction-expense fact, so that bridge is arithmetic on selected rows, not a sourced driver. Listed segment mix: market services -144, financial technology -7, capital access +19, other 0, unlisted residual 0; the total is not attributed to any single segment. Operating income rose 18 (+3.17%) to 586 and total operating expenses fell 9 (-1.22%) to 729, yet net income attributable to Nasdaq fell 29 (-6.42%) to 423 — a gap the packet does not explain (no tax, interest, or non-operating lines). Material counterpoint: the gross-revenue decline is concentrated in market services and is largely offset at the net-revenue line, so a gross-revenue-only read would overstate deterioration. Missing evidence: transaction expenses, segment-level drivers, tax/non-operating items, prior-year (Q3 CY2024) comparatives, adjusted vs GAAP reconciliation, and any causal or durability evidence. Decision is needs_review to hold the thesis blocked pending those items; no valuation or trading conclusion.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"ndaq\",\"earnings\",\"gaap_total_gross_revenue\",\"gaap_revenue_less_transaction_expenses\",\"gaap_market_services_gross_revenue\"],\"evidence\":[{\"id\":\"HOLDOUT-NDAQ-EVENT-v1\",\"note\":\"Event packet, CY2025 Q3 period ended 2025-09-30, as_of 2025-10-21\",\"sha256\":\"e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm\"},{\"id\":\"HOLDOUT-NDAQ-BASELINE-v1\",\"note\":\"Baseline packet, CY2025 Q2 period ended 2025-06-30\",\"sha256\":\"afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525163817/d56011dex991.htm\"}],\"created_at\":\"2026-10-24T15:08:26Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9032,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_e7eAjjFcZJUQ52HnxxCo8018",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_5cb33e9f39074661b8d6\", \"status\": \"acknowledged\", \"expected_version\": 1}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_e7eAjjFcZJUQ52HnxxCo8018",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"0b8ca18e-d324-4ad9-8fde-8eea165ed34b\",\"as_of\":\"2026-10-24T15:08:27Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_5cb33e9f39074661b8d6\",\"watchlist_id\":\"wl_e713fe6e95bc41cabd67\",\"thesis_id\":\"th_a794db3575354cbaa350\",\"market\":\"US\",\"symbol\":\"NDAQ\",\"event_fingerprint\":\"f88665d07f9b920d900cc5f935396adcd92768f0553588d3650291fd4f941c27\",\"event\":{\"external_id\":\"HOLDOUT-V2-NDAQ-EVENT\",\"type\":\"earnings\",\"summary\":\"NDAQ CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: NDAQ-Q3-CAP=546 USD_million; NDAQ-Q3-FINTECH=457 USD_million; NDAQ-Q3-MARKET=946 USD_million; NDAQ-Q3-OTHER=9 USD_million; NDAQ-Q3-GROSS=1958 USD_million; NDAQ-Q3-NETREV=1315 USD_million; NDAQ-Q3-OPEX=729 USD_million; NDAQ-Q3-OPINC=586 USD_million; NDAQ-Q3-NETATTR=423 USD_million.\",\"as_of\":\"2025-10-21\",\"sources\":[{\"id\":\"HOLDOUT-NDAQ-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm\",\"sha256\":\"e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10\"}],\"observed_metrics\":{\"gaap_capital_access_gross_revenue\":{\"value\":\"546\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-CAP\"},\"gaap_financial_technology_gross_revenue\":{\"value\":\"457\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-FINTECH\"},\"gaap_market_services_gross_revenue\":{\"value\":\"946\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-MARKET\"},\"gaap_other_gross_revenue\":{\"value\":\"9\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-OTHER\"},\"gaap_total_gross_revenue\":{\"value\":\"1958\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-GROSS\"},\"gaap_revenue_less_transaction_expenses\":{\"value\":\"1315\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-NETREV\"},\"gaap_total_operating_expenses\":{\"value\":\"729\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-OPEX\"},\"gaap_operating_income\":{\"value\":\"586\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-OPINC\"},\"gaap_net_income_attributable_to_nasdaq\":{\"value\":\"423\",\"unit\":\"USD_million\",\"fact_id\":\"NDAQ-Q3-NETATTR\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"ndaq\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T15:08:18Z\",\"last_seen_at\":\"2026-10-24T15:08:18Z\",\"created_at\":\"2026-10-24T15:08:18Z\",\"updated_at\":\"2026-10-24T15:08:27Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9643,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_WtxLmmkm4MHvE7oRcciA7893",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"review_limit\": 5, \"thesis_id\": \"th_a794db3575354cbaa350\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_WtxLmmkm4MHvE7oRcciA7893",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"7a647a7e-9833-49a1-8f86-949343d4fb1a\",\"as_of\":\"2026-10-24T15:08:28Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_a794db3575354cbaa350\",\"market\":\"US\",\"symbol\":\"NDAQ\",\"title\":\"NDAQ source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: NDAQ-Q2-CAP=527 USD_million; NDAQ-Q2-FINTECH=464 USD_million; NDAQ-Q2-MARKET=1090 USD_million; NDAQ-Q2-OTHER=9 USD_million; NDAQ-Q2-GROSS=2090 USD_million; NDAQ-Q2-NETREV=1306 USD_million; NDAQ-Q2-OPEX=738 USD_million; NDAQ-Q2-OPINC=568 USD_million; NDAQ-Q2-NETATTR=452 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_5cb33e9f39074661b8d6\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_capital_access_gross_revenue\",\"gaap_financial_technology_gross_revenue\",\"gaap_market_services_gross_revenue\",\"gaap_net_income_attributable_to_nasdaq\",\"gaap_operating_income\",\"gaap_other_gross_revenue\",\"gaap_revenue_less_transaction_expenses\",\"gaap_total_gross_revenue\",\"gaap_total_operating_expenses\"],\"evidence\":[{\"id\":\"HOLDOUT-NDAQ-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525163817/d56011dex991.htm\",\"sha256\":\"afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-24T15:08:26Z\",\"created_at\":\"2026-10-24T15:08:18Z\",\"updated_at\":\"2026-10-24T15:08:26Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[{\"id\":\"tr_4d252fc1ddf641c1925e\",\"thesis_id\":\"th_a794db3575354cbaa350\",\"alert_id\":\"fa_5cb33e9f39074661b8d6\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-NDAQ-2025-Q3-GROSS-NET-REVENUE-DIVERGENCE-r3\",\"event\":{\"type\":\"earnings\",\"summary\":\"NDAQ CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: NDAQ-Q3-CAP=546 USD_million; NDAQ-Q3-FINTECH=457 USD_million; NDAQ-Q3-MARKET=946 USD_million; NDAQ-Q3-OTHER=9 USD_million; NDAQ-Q3-GROSS=1958 USD_million; NDAQ-Q3-NETREV=1315 USD_million; NDAQ-Q3-OPEX=729 USD_million; NDAQ-Q3-OPINC=586 USD_million; NDAQ-Q3-NETATTR=423 USD_million.\",\"as_of\":\"2025-10-21\",\"sources\":[{\"id\":\"HOLDOUT-NDAQ-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm\",\"sha256\":\"e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Sequential (Q2->Q3 CY2025) comparison of displayed GAAP rounded values only; no year-over-year, adjusted, or causal claim is supported by the packet. Gross revenue fell 132 USD_million (-6.32% of baseline) to 1958, while revenue less transaction expenses rose 9 USD_million (+0.69%) to 1315 — a divergence that implies transaction expenses fell by roughly 141 USD_million on the displayed rows, but the packet contains no transaction-expense fact, so that bridge is arithmetic on selected rows, not a sourced driver. Listed segment mix: market services -144, financial technology -7, capital access +19, other 0, unlisted residual 0; the total is not attributed to any single segment. Operating income rose 18 (+3.17%) to 586 and total operating expenses fell 9 (-1.22%) to 729, yet net income attributable to Nasdaq fell 29 (-6.42%) to 423 — a gap the packet does not explain (no tax, interest, or non-operating lines). Material counterpoint: the gross-revenue decline is concentrated in market services and is largely offset at the net-revenue line, so a gross-revenue-only read would overstate deterioration. Missing evidence: transaction expenses, segment-level drivers, tax/non-operating items, prior-year (Q3 CY2024) comparatives, adjusted vs GAAP reconciliation, and any causal or durability evidence. Decision is needs_review to hold the thesis blocked pending those items; no valuation or trading conclusion.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"ndaq\",\"earnings\",\"gaap_total_gross_revenue\",\"gaap_revenue_less_transaction_expenses\",\"gaap_market_services_gross_revenue\"],\"evidence\":[{\"id\":\"HOLDOUT-NDAQ-EVENT-v1\",\"note\":\"Event packet, CY2025 Q3 period ended 2025-09-30, as_of 2025-10-21\",\"sha256\":\"e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm\"},{\"id\":\"HOLDOUT-NDAQ-BASELINE-v1\",\"note\":\"Baseline packet, CY2025 Q2 period ended 2025-06-30\",\"sha256\":\"afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1120193/000119312525163817/d56011dex991.htm\"}],\"created_at\":\"2026-10-24T15:08:26Z\"}]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9032,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4204,
+              "completion_tokens": 131,
+              "total_tokens": 4335,
+              "estimated_cost_usd": 0.0014184,
+              "priced": true,
+              "latency_ms": 868.51
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5953,
+              "completion_tokens": 231,
+              "total_tokens": 6184,
+              "cache_read_tokens": 4224,
+              "estimated_cost_usd": 0.0008212439999999999,
+              "priced": true,
+              "latency_ms": 1381.765
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6544,
+              "completion_tokens": 1082,
+              "total_tokens": 7626,
+              "cache_read_tokens": 6144,
+              "estimated_cost_usd": 0.001455264,
+              "priced": true,
+              "latency_ms": 5770.26
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 9307,
+              "completion_tokens": 102,
+              "total_tokens": 9409,
+              "cache_read_tokens": 7552,
+              "estimated_cost_usd": 0.000694212,
+              "priced": true,
+              "latency_ms": 992.433
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 10372,
+              "completion_tokens": 71,
+              "total_tokens": 10443,
+              "cache_read_tokens": 9344,
+              "estimated_cost_usd": 0.00044966399999999996,
+              "priced": true,
+              "latency_ms": 1156.654
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 12115,
+              "completion_tokens": 1168,
+              "total_tokens": 13283,
+              "cache_read_tokens": 10368,
+              "estimated_cost_usd": 0.0019879079999999996,
+              "priced": true,
+              "latency_ms": 6898.626
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 17.116,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update",
+        "finance-tools__thesis_get"
+      ],
+      "model_calls": 6,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.006826691999999999
+    }
+  ],
+  "estimated_cost_usd": 0.006826691999999999
+}

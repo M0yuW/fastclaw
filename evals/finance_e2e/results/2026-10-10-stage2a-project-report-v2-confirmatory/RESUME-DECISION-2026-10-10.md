@@ -1,0 +1,7 @@
+# Stage 2A v2 resume decision
+
+The run stopped after 13/24 case reports (143 observations) because `FRET-INTC-POINT-SMALL`, repetition 1, `solo_staged`, failed in retrieval with `context deadline exceeded`. The server returned one model-call record with zero reported tokens, `cost_uncertain: true`, and approximately 570 seconds latency. Other observations in the same case and its two remaining repetitions completed. The case report and its manifest remain unchanged; the failed observation is not replaced or excluded.
+
+The frozen study's provider-error rate at the checkpoint is 1/143 overall and 1/117 for primary observations, below the 5% pause threshold. This appears to be a single provider/transport timeout, not recurrence of the v1 malformed delegation failure. The exact provider bill for that call is unavailable. The project owner requested continuation, so resumption acknowledges **only** observation `company=INTC|task_family=point_in_time|corpus_load=small|repetition=1|mode=solo_staged` and reserves USD 1.00 against the estimated-cost guard. This reserve is budget accounting, not an imputed observation cost or a model outcome. Any other unmetered call still stops the runner.
+
+The combined conservative stop setting remains USD 9.00, including v1's USD 0.184311 completed-call estimate, this USD 1.00 reserve, and all v2 completed-call estimates. Actual billed cost remains unverified, including v1's two timed-out calls. The v2 executable, frozen suite, scoring, and result files are unchanged; already completed cases are skipped, not rerun.

@@ -27,13 +27,8 @@ from docx.shared import Inches, Pt, RGBColor
 ROOT = Path(__file__).resolve().parents[1]
 REPORT_DIR = ROOT / "project-report"
 SOURCE_PATH = REPORT_DIR / "fastclaw_project_report.md"
-TEMPLATE_PATH = Path(
-    os.environ.get(
-        "FASTCLAW_REPORT_TEMPLATE",
-        "/Users/wangzheyu/Downloads/ieee_financial_analysis_assistant_verified.docx",
-    )
-)
 OUTPUT_PATH = REPORT_DIR / "FastClaw_Project_Report_Zheyu_Wang.docx"
+TEMPLATE_PATH = Path(os.environ.get("FASTCLAW_REPORT_TEMPLATE", str(OUTPUT_PATH)))
 ASSET_DIR = REPORT_DIR / "assets"
 PAGE_MAP_PATH = REPORT_DIR / "page_map.json"
 
@@ -155,7 +150,7 @@ def _arrow(
 def create_architecture_figure(path: Path) -> None:
     image = Image.new("RGB", (2400, 1580), WHITE)
     draw = ImageDraw.Draw(image)
-    draw.text((85, 58), "FastClaw Layered Runtime Architecture", font=_font(48, bold=True), fill=NAVY)
+    draw.text((85, 58), "Auditable Agent Runtime Architecture", font=_font(48, bold=True), fill=NAVY)
     draw.text(
         (85, 122),
         "Authenticated ingress, bounded orchestration, policy-controlled execution, and tenant-scoped state",
@@ -505,7 +500,7 @@ def _add_bottom_border(paragraph, color: str = MID_GRAY, size: int = 8) -> None:
 
 def _add_page_number(paragraph) -> None:
     paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    prefix = paragraph.add_run("FastClaw Undergraduate Thesis · Zheyu Wang  |  ")
+    prefix = paragraph.add_run("Agent Runtime Project Report · Zheyu Wang  |  ")
     _set_run_font(prefix, size=8)
     prefix.font.color.rgb = RGBColor.from_string(MUTED.lstrip("#"))
     begin = OxmlElement("w:fldChar")
@@ -538,7 +533,7 @@ def configure_document(document: Document) -> None:
     _remove_header_footer(section)
     header_p = section.header.paragraphs[0] if section.header.paragraphs else section.header.add_paragraph()
     header_p.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    header_run = header_p.add_run("UNDERGRADUATE THESIS  ·  AGENT RUNTIME AND FINANCIAL RESEARCH")
+    header_run = header_p.add_run("PROJECT REPORT  ·  AGENT RUNTIME")
     _set_run_font(header_run, size=7.5)
     header_run.font.bold = True
     header_run.font.color.rgb = RGBColor.from_string(MUTED.lstrip("#"))
@@ -604,12 +599,13 @@ def configure_document(document: Document) -> None:
     styles["Report Caption"].paragraph_format.keep_with_next = True
     styles["Report Reference"].paragraph_format.left_indent = Inches(0.25)
     styles["Report Reference"].paragraph_format.first_line_indent = Inches(-0.25)
+    styles["Report Reference"].paragraph_format.space_after = Pt(1.5)
     styles["Report Code"].paragraph_format.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
-    document.core_properties.title = "FastClaw: Design and Evaluation of an Agent Runtime for Evidence-Grounded Financial Research"
+    document.core_properties.title = "Design and Evaluation of an Agent Runtime with Financial Research Applications"
     document.core_properties.author = "Zheyu Wang"
-    document.core_properties.subject = "Undergraduate thesis on FastClaw agent runtime, financial application, and evaluation"
-    document.core_properties.keywords = "agent runtime, multi-agent, tool calling, financial research, evaluation"
+    document.core_properties.subject = "Project report on auditable agent runtime design and evaluation"
+    document.core_properties.keywords = "agent runtime, multi-agent, tool calling, evaluation"
     update_fields = document.settings._element.find(qn("w:updateFields"))
     if update_fields is None:
         update_fields = OxmlElement("w:updateFields")
@@ -644,7 +640,7 @@ def add_title_block(document: Document, metadata: dict[str, str]) -> None:
     kicker = document.add_paragraph()
     kicker.alignment = WD_ALIGN_PARAGRAPH.CENTER
     kicker.paragraph_format.space_after = Pt(3)
-    kicker_run = kicker.add_run("UNDERGRADUATE THESIS")
+    kicker_run = kicker.add_run("PROJECT REPORT")
     _set_run_font(kicker_run, size=8)
     kicker_run.bold = True
     kicker_run.font.color.rgb = RGBColor.from_string(BLUE.lstrip("#"))
@@ -811,9 +807,9 @@ def add_figure(document: Document, image_path: Path, caption: str) -> None:
     caption_run.italic = True
 
 
-def add_algorithm(document: Document, caption_text: str, steps: list[str]) -> None:
+def add_algorithm(document: Document, number: int, caption_text: str, steps: list[str]) -> None:
     caption = document.add_paragraph(style="Report Caption")
-    caption_run = caption.add_run(f"Algorithm 1. {caption_text}")
+    caption_run = caption.add_run(f"Algorithm {number}. {caption_text}")
     _set_run_font(caption_run, size=8.5)
     caption_run.bold = True
     table = document.add_table(rows=1, cols=1)
@@ -981,12 +977,13 @@ def parse_source() -> tuple[dict[str, str], list[tuple[str, str]], list[str]]:
 
 
 def build_document() -> None:
-    if not TEMPLATE_PATH.exists():
-        raise FileNotFoundError(f"Reference draft not found: {TEMPLATE_PATH}")
     figures = create_figures()
     working_copy = REPORT_DIR / ".working-template.docx"
-    shutil.copyfile(TEMPLATE_PATH, working_copy)
-    document = Document(working_copy)
+    if TEMPLATE_PATH.exists():
+        shutil.copyfile(TEMPLATE_PATH, working_copy)
+        document = Document(working_copy)
+    else:
+        document = Document()
     _remove_all_body_content(document)
     configure_document(document)
 
@@ -994,16 +991,22 @@ def build_document() -> None:
     add_title_block(document, metadata)
 
     figure_captions = {
-        "FIGURE_1": "Fig. 1. FastClaw layered architecture and the principal control boundaries.",
+        "FIGURE_1": "Fig. 1. Layered agent runtime architecture and the principal control boundaries.",
         "FIGURE_2": "Fig. 2. One coordinator turn through TaskQueue and MessageBus with parallel specialist delegation.",
         "FIGURE_3": "Fig. 3. Financial research workflow separating evidence, model judgment, and human action.",
         "FIGURE_4": "Fig. 4. Pass-rate sensitivity to six lexical grader design choices over retained r1–r5 outputs.",
     }
+    included_figure_captions = {
+        key: caption
+        for key, caption in figure_captions.items()
+        if f"[[{key}]]" in lines
+    }
     page_map = json.loads(PAGE_MAP_PATH.read_text(encoding="utf-8")) if PAGE_MAP_PATH.exists() else {}
-    add_front_matter(document, abbreviations, lines, figure_captions, page_map)
+    add_front_matter(document, abbreviations, lines, included_figure_captions, page_map)
 
     index = 0
     table_number = 1
+    algorithm_number = 1
     chapter_number = 0
     while index < len(lines):
         line = lines[index].strip()
@@ -1022,6 +1025,8 @@ def build_document() -> None:
             continue
         if line.startswith("## "):
             paragraph = document.add_paragraph(style="Heading 2")
+            if line == "## D. Future Work":
+                paragraph.paragraph_format.page_break_before = True
             run = paragraph.add_run(line[3:])
             _set_run_font(run, size=11.2)
             run.bold = True
@@ -1066,7 +1071,8 @@ def build_document() -> None:
                     break
                 steps.append(candidate.split(":", 1)[1].strip())
                 index += 1
-            add_algorithm(document, caption, steps)
+            add_algorithm(document, algorithm_number, caption, steps)
+            algorithm_number += 1
             continue
         if line.startswith("|"):
             table_rows: list[list[str]] = []

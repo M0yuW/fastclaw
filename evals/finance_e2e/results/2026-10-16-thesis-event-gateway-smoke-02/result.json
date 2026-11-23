@@ -1,0 +1,164 @@
+{
+  "case_id": "FSEC-AMD-02-thesis-event-gateway-smoke",
+  "status": "pass",
+  "error": null,
+  "elapsed_seconds": 15.071,
+  "checks": {
+    "one_review": true,
+    "version_once": true,
+    "status_preserved": true,
+    "conviction_preserved": true,
+    "source_recorded": true,
+    "alert_acknowledged": true
+  },
+  "before": {
+    "thesis_version": 1,
+    "alert_version": 1
+  },
+  "after": {
+    "thesis_version": 2,
+    "status": "active",
+    "conviction": 3,
+    "reviews": 1,
+    "alerts": [
+      {
+        "status": "acknowledged",
+        "version": 2
+      }
+    ]
+  },
+  "gateway_response": {
+    "id": "chatcmpl-1792163728240022000",
+    "object": "chat.completion",
+    "created": 1792163728,
+    "model": "deepseek/deepseek-v4-pro",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Research-state review complete. Summary of what I found and did:\n\n## Q2 → Q3 Comparison\n\n| Metric | Q2 2024 (baseline) | Q3 2024 (alert) | Change |\n|---|---|---|---|\n| GAAP Revenue | $5,835M | $6,819M | ▲ ~$984M |\n| GAAP Gross Margin | 49% | 50% | ▲ +1pt |\n| Gaming Revenue | $648M | $462M | ▼ ~$186M |\n\n**Improvement:** Revenue grew materially and gross margin ticked up, supporting the thesis's \"revenue growth\" catalyst.\n\n**Continuing Gaming risk:** Gaming revenue declined further, confirming the \"Gaming weakness\" invalidation term remains active — a persistent segment-mix risk.\n\n## Actions Taken\n\n1. **`thesis_record_review`** — recorded a `maintain` decision with `mixed` impact, preserving `active` status and `conviction 3`. Evidence captured the Q3 source ID (`amd-2024-10-29-q3`) and its SHA-256 hash. Thesis advanced to version 2.\n2. **`alert_update`** — acknowledged alert `fa_e481d2f28c144143baa6` (version 1 → 2).\n\nNo trade or portfolio action was taken. The evidence is mixed (revenue/margin improvement offset by deepening Gaming weakness), so neither status nor conviction warranted a change."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 14242,
+      "completion_tokens": 1214,
+      "total_tokens": 15456
+    },
+    "fastclaw": {
+      "trace": [
+        {
+          "type": "tool_call",
+          "id": "call_00_nWo7rOogtAV0h2hHpl8r1703",
+          "name": "finance-tools__thesis_get",
+          "arguments": "{\"thesis_id\": \"th_878a476cef624286908a\"}",
+          "round": 1
+        },
+        {
+          "type": "tool_call",
+          "id": "call_01_QYYdx7XRRpyVEP6C5US20973",
+          "name": "finance-tools__alert_list",
+          "arguments": "{\"symbol\": \"AMD\", \"market\": \"US\"}",
+          "round": 1
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_nWo7rOogtAV0h2hHpl8r1703",
+          "name": "finance-tools__thesis_get",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"e57bf023-5df8-4b22-9e6a-ec9d03e36e2d\",\"as_of\":\"2026-10-16T15:15:30Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_878a476cef624286908a\",\"market\":\"US\",\"symbol\":\"AMD\",\"title\":\"AMD segment-mix research thesis\",\"thesis\":\"Q2 2024 GAAP revenue USD 5835 million, GAAP gross margin 49%, and Gaming revenue USD 648 million. Revenue growth is a positive signal, while persistent Gaming weakness is a segment-mix risk.\",\"status\":\"active\",\"conviction\":3,\"assumptions\":[],\"catalysts\":[\"revenue growth\"],\"invalidations\":[\"Gaming weakness\"],\"evidence\":[{\"id\":\"amd-2024-07-30-q2\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248824000121/q22024991.htm\",\"sha256\":\"c3d6af1851ae405ac81e07a630e98dc8d61354f2ba02ccc4a8eeb212d48ff5ce\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-16T15:15:28Z\",\"updated_at\":\"2026-10-16T15:15:28Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"event-fixture-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8095,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 1
+        },
+        {
+          "type": "tool_result",
+          "id": "call_01_QYYdx7XRRpyVEP6C5US20973",
+          "name": "finance-tools__alert_list",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"ecee09b1-9590-489f-9121-1df7895d01f5\",\"as_of\":\"2026-10-16T15:15:30Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_e481d2f28c144143baa6\",\"watchlist_id\":\"wl_9b2ea97ef0054ad09183\",\"thesis_id\":\"th_878a476cef624286908a\",\"market\":\"US\",\"symbol\":\"AMD\",\"event_fingerprint\":\"e3146a6d92ec88d2ea5859e26ea29930487b0e6e6de5aaedf79fb3bfadbdca6a\",\"event\":{\"external_id\":\"amd-2024-10-29-q3\",\"type\":\"earnings\",\"summary\":\"AMD Q3 2024 GAAP revenue was USD 6819 million, GAAP gross margin was 50%, and Gaming revenue was USD 462 million.\",\"as_of\":\"2024-10-29\",\"sources\":[{\"id\":\"amd-2024-10-29-q3\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248824000161/q32024991.htm\",\"sha256\":\"288e1c639d72dbc0fa2e0fe1704990cf923defb0e49f8a3c39e9dc4883f7285f\"}]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"revenue\",\"weight\":1},{\"bucket\":\"watchlist\",\"term\":\"gaming\",\"weight\":1},{\"bucket\":\"watchlist\",\"term\":\"gaming revenue\",\"weight\":1},{\"bucket\":\"invalidations\",\"term\":\"gaming\",\"weight\":3},{\"bucket\":\"catalysts\",\"term\":\"revenue\",\"weight\":2}],\"match_score\":8,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-16T15:15:28Z\",\"last_seen_at\":\"2026-10-16T15:15:28Z\",\"created_at\":\"2026-10-16T15:15:28Z\",\"updated_at\":\"2026-10-16T15:15:28Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"event-fixture-seed\"}],\"count\":1,\"filters\":{\"limit\":50,\"market\":\"US\",\"symbol\":\"AMD\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 1
+        },
+        {
+          "type": "tool_call",
+          "id": "call_00_kUJtcj6oYgJI21AmbHYw8199",
+          "name": "finance-tools__thesis_record_review",
+          "arguments": "{\"thesis_id\": \"th_878a476cef624286908a\", \"expected_version\": 1, \"event\": {\"type\": \"earnings\", \"summary\": \"AMD Q3 2024 GAAP revenue USD 6819 million, GAAP gross margin 50%, Gaming revenue USD 462 million.\", \"as_of\": \"2024-10-29\", \"sources\": [{\"id\": \"amd-2024-10-29-q3\", \"url\": \"https://www.sec.gov/Archives/edgar/data/2488/000000248824000161/q32024991.htm\", \"sha256\": \"288e1c639d72dbc0fa2e0fe1704990cf923defb0e49f8a3c39e9dc4883f7285f\"}]}, \"evidence\": [{\"id\": \"amd-2024-10-29-q3\", \"sha256\": \"288e1c639d72dbc0fa2e0fe1704990cf923defb0e49f8a3c39e9dc4883f7285f\"}], \"impact\": \"mixed\", \"decision\": \"maintain\", \"rationale\": \"Q3 revenue rose to USD 6819M (from Q2 USD 5835M) and gross margin improved to 50% (from 49%), supporting the revenue-growth catalyst. However, Gaming revenue declined to USD 462M (from USD 648M), confirming the persistent Gaming weakness invalidation term. Net effect is mixed; no basis to change active status or conviction 3.\", \"matched_terms\": [\"revenue\", \"gaming\", \"gaming revenue\"]}",
+          "round": 2
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_kUJtcj6oYgJI21AmbHYw8199",
+          "name": "finance-tools__thesis_record_review",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"308f13f6-3225-4d68-ae96-477739a7885e\",\"as_of\":\"2026-10-16T15:15:36Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_878a476cef624286908a\",\"market\":\"US\",\"symbol\":\"AMD\",\"title\":\"AMD segment-mix research thesis\",\"thesis\":\"Q2 2024 GAAP revenue USD 5835 million, GAAP gross margin 49%, and Gaming revenue USD 648 million. Revenue growth is a positive signal, while persistent Gaming weakness is a segment-mix risk.\",\"status\":\"active\",\"conviction\":3,\"assumptions\":[],\"catalysts\":[\"revenue growth\"],\"invalidations\":[\"Gaming weakness\"],\"evidence\":[{\"id\":\"amd-2024-07-30-q2\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248824000121/q22024991.htm\",\"sha256\":\"c3d6af1851ae405ac81e07a630e98dc8d61354f2ba02ccc4a8eeb212d48ff5ce\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-16T15:15:36Z\",\"created_at\":\"2026-10-16T15:15:28Z\",\"updated_at\":\"2026-10-16T15:15:36Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"event-fixture-seed\"},\"review\":{\"id\":\"tr_64951693acca45a3acea\",\"thesis_id\":\"th_878a476cef624286908a\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-event-1e32c8c7e76778d8\",\"event\":{\"type\":\"earnings\",\"summary\":\"AMD Q3 2024 GAAP revenue USD 6819 million, GAAP gross margin 50%, Gaming revenue USD 462 million.\",\"as_of\":\"2024-10-29\",\"sources\":[{\"id\":\"amd-2024-10-29-q3\",\"sha256\":\"288e1c639d72dbc0fa2e0fe1704990cf923defb0e49f8a3c39e9dc4883f7285f\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248824000161/q32024991.htm\"}]},\"impact\":\"mixed\",\"decision\":\"maintain\",\"rationale\":\"Q3 revenue rose to USD 6819M (from Q2 USD 5835M) and gross margin improved to 50% (from 49%), supporting the revenue-growth catalyst. However, Gaming revenue declined to USD 462M (from USD 648M), confirming the persistent Gaming weakness invalidation term. Net effect is mixed; no basis to change active status or conviction 3.\",\"matched_terms\":[\"revenue\",\"gaming\",\"gaming revenue\"],\"evidence\":[{\"id\":\"amd-2024-10-29-q3\",\"sha256\":\"288e1c639d72dbc0fa2e0fe1704990cf923defb0e49f8a3c39e9dc4883f7285f\"}],\"created_at\":\"2026-10-16T15:15:36Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9487,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 2
+        },
+        {
+          "type": "tool_call",
+          "id": "call_00_OOwhTW3aVBkbXhTwaFbR3525",
+          "name": "finance-tools__alert_update",
+          "arguments": "{\"alert_id\": \"fa_e481d2f28c144143baa6\", \"status\": \"acknowledged\", \"expected_version\": 1}",
+          "round": 3
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_OOwhTW3aVBkbXhTwaFbR3525",
+          "name": "finance-tools__alert_update",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"624d58c7-0abc-406c-88ea-d96efe67124e\",\"as_of\":\"2026-10-16T15:15:38Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_e481d2f28c144143baa6\",\"watchlist_id\":\"wl_9b2ea97ef0054ad09183\",\"thesis_id\":\"th_878a476cef624286908a\",\"market\":\"US\",\"symbol\":\"AMD\",\"event_fingerprint\":\"e3146a6d92ec88d2ea5859e26ea29930487b0e6e6de5aaedf79fb3bfadbdca6a\",\"event\":{\"external_id\":\"amd-2024-10-29-q3\",\"type\":\"earnings\",\"summary\":\"AMD Q3 2024 GAAP revenue was USD 6819 million, GAAP gross margin was 50%, and Gaming revenue was USD 462 million.\",\"as_of\":\"2024-10-29\",\"sources\":[{\"id\":\"amd-2024-10-29-q3\",\"url\":\"https://www.sec.gov/Archives/edgar/data/2488/000000248824000161/q32024991.htm\",\"sha256\":\"288e1c639d72dbc0fa2e0fe1704990cf923defb0e49f8a3c39e9dc4883f7285f\"}]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"revenue\",\"weight\":1},{\"bucket\":\"watchlist\",\"term\":\"gaming\",\"weight\":1},{\"bucket\":\"watchlist\",\"term\":\"gaming revenue\",\"weight\":1},{\"bucket\":\"invalidations\",\"term\":\"gaming\",\"weight\":3},{\"bucket\":\"catalysts\",\"term\":\"revenue\",\"weight\":2}],\"match_score\":8,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-16T15:15:28Z\",\"last_seen_at\":\"2026-10-16T15:15:28Z\",\"created_at\":\"2026-10-16T15:15:28Z\",\"updated_at\":\"2026-10-16T15:15:38Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"event-fixture-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 3
+        }
+      ],
+      "model_calls": [
+        {
+          "sequence": 1,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 1758,
+          "completion_tokens": 122,
+          "total_tokens": 1880,
+          "estimated_cost_usd": 0,
+          "priced": false,
+          "latency_ms": 1825.978
+        },
+        {
+          "sequence": 2,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 2922,
+          "completion_tokens": 664,
+          "total_tokens": 3586,
+          "cache_read_tokens": 1664,
+          "estimated_cost_usd": 0,
+          "priced": false,
+          "latency_ms": 6226.411
+        },
+        {
+          "sequence": 3,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 4419,
+          "completion_tokens": 122,
+          "total_tokens": 4541,
+          "cache_read_tokens": 2816,
+          "estimated_cost_usd": 0,
+          "priced": false,
+          "latency_ms": 2127.479
+        },
+        {
+          "sequence": 4,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 5143,
+          "completion_tokens": 306,
+          "total_tokens": 5449,
+          "cache_read_tokens": 4352,
+          "estimated_cost_usd": 0,
+          "priced": false,
+          "latency_ms": 4847.665
+        }
+      ]
+    }
+  }
+}

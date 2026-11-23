@@ -1,0 +1,58 @@
+{
+  "masked_id": "J-90783d4a3575680d",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 1,
+    "I": 1,
+    "R": 2,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "higher total revenue, lower total operating expenses and higher operating, pretax and net income",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue:+81101", "source_packet.rows:gaap_total_operating_expenses:-11747", "source_packet.rows:gaap_operating_income:+92848", "source_packet.rows:gaap_income_before_income_taxes:+100250", "source_packet.rows:gaap_net_income:+79048"]
+    },
+    {
+      "location": "final_answer",
+      "span": "license revenue rises sharply while SaaS/PaaS revenue falls, so the revenue increase is not attributable to the recurring base",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_license_revenue:+105246", "source_packet.rows:gaap_saas_paas_revenue:-24342", "source_packet.rows:gaap_total_revenue:+81101"]
+    },
+    {
+      "location": "final_answer",
+      "span": "income tax expense rises in absolute terms, meaning a larger tax charge rather than a reduced tax drag, so the after-tax result is not flattered by tax",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_expense:5670_to_26872", "source_packet.rows:gaap_income_before_income_taxes:17872_to_118122", "calculation:effective_tax_rate:31.73pct_to_22.75pct"],
+      "reason": "Absolute tax expense rose, but the effective rate fell materially. At the Q2 rate, Q3 tax would be about USD 37.5m rather than 26.9m, so the lower relative tax burden does flatter Q3 net income by roughly USD 10.6m."
+    },
+    {
+      "location": "persisted_review",
+      "span": "The tax expense increase is a larger absolute tax charge, not a smaller tax drag",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_expense:5670_to_26872", "source_packet.rows:gaap_income_before_income_taxes:17872_to_118122", "calculation:effective_tax_rate:31.73pct_to_22.75pct"],
+      "reason": "The first clause is true, but it rules out the economically relevant lower effective tax burden without computing it."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review pending fuller filing evidence",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 2,
+      "code": "tax_rate_bridge_error",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_expense:5670_to_26872", "source_packet.rows:gaap_income_before_income_taxes:17872_to_118122"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Revenue-mix concern and blocked decision are sensible, but the tax discussion confuses an absolute expense increase with the relative tax burden. Q2 effective tax rate is about 31.73% versus Q3 22.75%; the lower rate contributes materially to reported net-income improvement. The explicit assertion that net income is not flattered by tax is wrong."
+}

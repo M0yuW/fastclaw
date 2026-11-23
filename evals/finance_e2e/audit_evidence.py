@@ -50,16 +50,20 @@ def value_candidates(fact: dict[str, Any]) -> set[str]:
 
 
 def matching_windows(text: str, candidates: set[str], radius: int = 96) -> list[str]:
-    lowered = text.lower()
-    windows = []
+    windows: list[str] = []
     for candidate in sorted(candidates, key=len, reverse=True):
-        start = 0
-        while True:
-            index = lowered.find(candidate.lower(), start)
-            if index < 0:
-                break
-            windows.append(text[max(0, index - radius):index + len(candidate) + radius])
-            start = index + len(candidate)
+        # Numeric candidates must match complete numeric forms. Plain substring
+        # search makes common values unsafe: ``10`` matches ``110`` and ``2.8``
+        # matches ``12.8``, which previously contaminated retrieval gold labels.
+        if any(character.isdigit() for character in candidate):
+            pattern = re.compile(
+                rf"(?<![\d.,]){re.escape(candidate)}(?![\d.,])",
+                re.IGNORECASE,
+            )
+        else:
+            pattern = re.compile(re.escape(candidate), re.IGNORECASE)
+        for match in pattern.finditer(text):
+            windows.append(text[max(0, match.start() - radius):match.end() + radius])
     return windows
 
 

@@ -1,0 +1,31 @@
+{
+  "masked_id": "J-38dc130fdd9f9681",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 2,
+    "I": 1,
+    "R": 1,
+    "S": 0,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {"location":"final_answer","span":"net interest income subtotal and total fees and commissions both moved higher while total interest expense moved lower","verdict":"supported","evidence_refs":["source_packet.rows:reported_net_interest_income:+9480","source_packet.rows:reported_total_fees_commissions:+7100","source_packet.rows:reported_total_interest_expense:-7454"]},
+    {"location":"final_answer","span":"consistent with a cheaper funding base and a larger fee contribution rather than with a growing balance sheet","verdict":"bounded_hypothesis","evidence_refs":["source_packet.rows:reported_total_interest_expense:-7454","source_packet.rows:reported_total_fees_commissions:+7100","source_packet.rows:reported_average_earning_assets:-554831","source_packet.limitations:no_rate_mix_or_deposit_cost_decomposition"]},
+    {"location":"final_answer","span":"Average earning assets contracted sequentially, which cuts against reading the revenue-side improvement as volume-driven","verdict":"supported","evidence_refs":["source_packet.rows:reported_average_earning_assets:-554831","source_packet.rows:reported_net_interest_income:+9480"]},
+    {"location":"final_answer","span":"a smaller earning-asset base alongside higher net interest income implies the improvement came from pricing or mix rather than growth, and that is not demonstrated by these rows","verdict":"bounded_hypothesis","evidence_refs":["source_packet.rows:reported_average_earning_assets:-554831","source_packet.rows:reported_net_interest_income:+9480","source_packet.limitations:no_rate_mix_decomposition"]},
+    {"location":"final_answer","span":"Total interest revenue rose only modestly relative to the expense decline, so the net interest income movement is dominated by the liability side","verdict":"supported","evidence_refs":["source_packet.rows:reported_total_interest_revenue:+2017","source_packet.rows:reported_total_interest_expense:-7454","source_packet.rows:reported_tax_equivalent_adjustment:-9","source_packet.rows:reported_net_interest_income:+9480"]},
+    {"location":"final_answer","span":"the liability side, which is the more reversible and rate-sensitive component","verdict":"unsupported","evidence_refs":["source_packet.rows:reported_total_interest_expense:-7454","source_packet.limitations:no_funding_or_yield_decomposition"]},
+    {"location":"final_answer","span":"The tax-equivalent adjustment is a bridge item, so the revenue and expense lines are not on the same basis as the net interest income subtotal","verdict":"supported","evidence_refs":["source_packet.rows:reported_tax_equivalent_adjustment:2574_to_2565","source_packet.rows:reported_total_interest_revenue","source_packet.rows:reported_total_interest_expense","source_packet.rows:reported_net_interest_income"]},
+    {"location":"final_answer","span":"asserted_state","verdict":"supported","evidence_refs":["persisted_theses_and_reviews[0].reviews[0].id","persisted_theses_and_reviews[0].thesis.actionability:available","persisted_alerts[0].status:acknowledged"]},
+    {"location":"persisted_review","span":"net interest income after the tax-equivalent adjustment and total fees and commissions both higher, while total interest expense is lower and average earning assets are lower","verdict":"supported","evidence_refs":["source_packet.rows:reported_net_interest_income:+9480","source_packet.rows:reported_total_fees_commissions:+7100","source_packet.rows:reported_total_interest_expense:-7454","source_packet.rows:reported_average_earning_assets:-554831"]},
+    {"location":"persisted_review","span":"the selected rows do not decompose the expense decline into rate, mix or deposit-pricing effects","verdict":"supported","evidence_refs":["source_packet.limitations:no_rate_mix_or_deposit_pricing_decomposition"]},
+    {"location":"persisted_review","span":"Research state maintained with the hold released only for this event","verdict":"contradicted","evidence_refs":["tool_evidence.finance-tools__thesis_get.initial:decision_hold_false_actionability_available_version1","persisted_theses_and_reviews[0].thesis.decision_hold:false","persisted_theses_and_reviews[0].reviews[0].decision:maintain"]}
+  ],
+  "critical_errors": [{"claim_index":10,"code":"invented_research_hold_release","evidence_refs":["tool_evidence.finance-tools__thesis_get.initial:decision_hold_false_actionability_available_version1","persisted_theses_and_reviews[0].thesis.decision_hold:false","persisted_theses_and_reviews[0].reviews[0].decision:maintain"]}],
+  "assessable_implication": true,
+  "notes": "Diagnostic problematic, not independent finance-expert validation. Main source arithmetic and available final state are correct, but the persisted review claims a research hold was released 'only for this event'. The first thesis_get result in this masked trace already has decision_hold=false and actionability=available (version 1), and the saved final thesis remains so; no hold-release transition occurred. This is an invented state-change assertion in the persisted research record even though final asserted_state copies the current state accurately. The answer also presents lower interest expense as a 'cheaper funding base' and more reversible liability component without rate, mix or funding-balance decomposition; these are bounded inferences, not verified mechanisms."
+}

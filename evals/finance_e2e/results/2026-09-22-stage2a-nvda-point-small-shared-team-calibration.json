@@ -1,0 +1,256 @@
+{
+  "version": 1,
+  "study": "finance-sec-retrieval-stage2a-v1",
+  "status": "draft",
+  "randomization_seed": 20260802,
+  "suite": "finance-sec-retrieval-context-v2",
+  "description": "Draft Stage 2A paired retrieval/context study. Formal execution is prohibited until the protocol and suite status are frozen.",
+  "dataset": "fastclaw-finance-e2e-v1",
+  "source": "evals/finance-retrieval-stage2a-v2.json",
+  "source_sha256": "fe13826db9d95327ce363e74b59112d71d737867af8cc6c12fda2118885f59c2",
+  "source_lock_sha256": "a4d4b4dc3be440238e3d428d60d04fb4a4a9d21d8c0b4eec4cb313e2e181fe22",
+  "started_at": "2026-09-22T16:12:47.2872+08:00",
+  "finished_at": "2026-09-22T16:13:40.124867+08:00",
+  "duration_ms": 52836.791,
+  "metrics": {
+    "total_cases": 1,
+    "modes": {
+      "team_shared_retrieval": {
+        "attempts": 1,
+        "evaluated": 1,
+        "errored": 0,
+        "passed": 0,
+        "success_rate": 0,
+        "average_retrieval_recall": 1,
+        "average_retrieval_precision": 0.75,
+        "average_summary_retention": 1,
+        "average_final_evidence_recall": 1,
+        "average_synthesis_retention": 1,
+        "average_compression_ratio": 3.1594449853943525,
+        "milestone_accuracy": 1,
+        "delegation_precision": 1,
+        "delegation_recall": 1,
+        "grounding_accuracy": 0.9358974358974359,
+        "prompt_tokens": 24369,
+        "completion_tokens": 8627,
+        "total_tokens": 32996,
+        "estimated_cost_usd": 0.007742756599999999,
+        "pricing_coverage": 1,
+        "latency_p50_ms": 52818.159,
+        "latency_p95_ms": 52818.159,
+        "average_retrieval_latency_ms": 6080.339,
+        "average_collaboration_latency_ms": 46737.601,
+        "average_coordination_latency_ms": 20260.606,
+        "average_analysis_latency_ms": 12252.749,
+        "average_synthesis_latency_ms": 21554.993
+      }
+    }
+  },
+  "cases": [
+    {
+      "id": "FRET-NVDA-POINT-SMALL",
+      "company": "NVDA",
+      "task_family": "point_in_time",
+      "cluster_id": "NVDA|point_in_time",
+      "description": "NVDA point financial retrieval and synthesis task with small locked-corpus load.",
+      "corpus_load": "small",
+      "tags": [
+        "finance",
+        "sec",
+        "retrieval",
+        "point",
+        "small",
+        "nvda"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "pair_id": "company=NVDA|task_family=point_in_time|corpus_load=small|repetition=1",
+          "realized_order": [
+            "team_shared_retrieval"
+          ],
+          "modes": [
+            {
+              "mode": "team_shared_retrieval",
+              "observation_id": "company=NVDA|task_family=point_in_time|corpus_load=small|repetition=1|mode=team_shared_retrieval",
+              "order_index": 1,
+              "passed": false,
+              "latency_ms": 52818.159,
+              "usage": {
+                "prompt_tokens": 24369,
+                "completion_tokens": 8627,
+                "total_tokens": 32996
+              },
+              "model_calls": [
+                {
+                  "sequence": 1,
+                  "phase": "team_shared_retrieval/retrieval",
+                  "agent_id": "finance-retriever",
+                  "role": "coordinator",
+                  "model": "deepseek/deepseek-v4-flash",
+                  "prompt_tokens": 5529,
+                  "completion_tokens": 1568,
+                  "total_tokens": 7097,
+                  "cache_read_tokens": 5376,
+                  "estimated_cost_usd": 0.00047551280000000004,
+                  "priced": true,
+                  "latency_ms": 6072.842
+                },
+                {
+                  "sequence": 1,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-coordinator",
+                  "role": "coordinator",
+                  "model": "deepseek/deepseek-v4-pro",
+                  "prompt_tokens": 3120,
+                  "completion_tokens": 2116,
+                  "total_tokens": 5236,
+                  "cache_read_tokens": 1536,
+                  "estimated_cost_usd": 0.002535528,
+                  "priced": true,
+                  "latency_ms": 20260.606
+                },
+                {
+                  "sequence": 2,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-accounting",
+                  "role": "subagent",
+                  "model": "deepseek/deepseek-v4-flash",
+                  "call_path": [
+                    "finance-coordinator",
+                    "finance-accounting"
+                  ],
+                  "prompt_tokens": 2311,
+                  "completion_tokens": 1146,
+                  "total_tokens": 3457,
+                  "cache_read_tokens": 512,
+                  "estimated_cost_usd": 0.0005741736000000001,
+                  "priced": true,
+                  "latency_ms": 4108.583
+                },
+                {
+                  "sequence": 3,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-trend",
+                  "role": "subagent",
+                  "model": "deepseek/deepseek-v4-flash",
+                  "call_path": [
+                    "finance-coordinator",
+                    "finance-trend"
+                  ],
+                  "prompt_tokens": 2302,
+                  "completion_tokens": 1128,
+                  "total_tokens": 3430,
+                  "cache_read_tokens": 512,
+                  "estimated_cost_usd": 0.0005678736000000001,
+                  "priced": true,
+                  "latency_ms": 4899.76
+                },
+                {
+                  "sequence": 4,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-risk",
+                  "role": "subagent",
+                  "model": "deepseek/deepseek-v4-flash",
+                  "call_path": [
+                    "finance-coordinator",
+                    "finance-risk"
+                  ],
+                  "prompt_tokens": 2306,
+                  "completion_tokens": 1025,
+                  "total_tokens": 3331,
+                  "cache_read_tokens": 512,
+                  "estimated_cost_usd": 0.0005395936,
+                  "priced": true,
+                  "latency_ms": 3244.406
+                },
+                {
+                  "sequence": 5,
+                  "phase": "team_shared_retrieval/collaboration",
+                  "agent_id": "finance-coordinator",
+                  "role": "coordinator",
+                  "model": "deepseek/deepseek-v4-pro",
+                  "prompt_tokens": 8801,
+                  "completion_tokens": 1644,
+                  "total_tokens": 10445,
+                  "cache_read_tokens": 5120,
+                  "estimated_cost_usd": 0.0030500749999999997,
+                  "priced": true,
+                  "latency_ms": 21554.993
+                }
+              ],
+              "trace": [
+                {
+                  "type": "tool_call",
+                  "id": "call_00_PGMgFuj7Ehz2QKCd5iAx0152",
+                  "name": "spawn_subagent",
+                  "arguments": "{\"sharedContext\":\"[omitted 5815 bytes from trace]\",\"delegations\":[{\"agentId\":\"finance-trend\",\"task\":\"Assigned perspective: trend and chronology. Reconstruct the observation sequence and assess growth, segment, and channel direction without changing period labels.\"},{\"agentId\":\"finance-accounting\",\"task\":\"Assigned perspective: accounting and period audit. Separate GAAP, segment, channel, quarterly, and annual measures and show only calculations justified by cited records.\"},{\"agentId\":\"finance-risk\",\"task\":\"Assigned perspective: risk and governance. Identify downside evidence and contradictions, then apply only supplied bounded research-state rules without authorizing a trade.\"}]}",
+                  "round": 1
+                },
+                {
+                  "type": "tool_result",
+                  "id": "call_00_PGMgFuj7Ehz2QKCd5iAx0152",
+                  "name": "spawn_subagent",
+                  "result": "{\"results\":[{\"agentId\":\"finance-trend\",\"result\":\"# Specialist Report — Trend \\u0026 Chronology (NVDA, FSEC-NVDA-03)\\n\\n## 1. Observation Sequence (period labels preserved)\\n\\n| Order | Record | Period | Filed | Basis | Role |\\n|---|---|---|---|---|---|\\n| 1 | [REC-NVDA-02-02] | Q2 FY25 | 2024-08-28 | GAAP | earlier comparison anchor |\\n| 2 | [REC-NVDA-03-01] / [REC-NVDA-03-02] | Q4 FY25 | 2025-02-26 | GAAP | final locked observation |\\n\\nSequence is monotonic in fiscal period (Q2 FY25 → Q4 FY25). No Q3 FY25 standalone record exists in the bundle; Q3 FY25 appears only as a comparison column inside the Q4 filing [REC-NVDA-03-01]/[REC-NVDA-03-02]. The Q2 record is used only because the declared FSEC-NVDA-03 comparisons require it.\\n\\n## 2. Source Facts (verbatim, cited)\\n\\n- [REC-NVDA-02-02] Q2 FY25, GAAP: \\\"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\\\"\\n- [REC-NVDA-03-02] Q4 FY25, GAAP: \\\"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\\\"\\n- [REC-NVDA-03-03] Q4 FY25: \\\"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\\\"\\n- [REC-NVDA-02-02] Q2 FY25, GAAP: \\\"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\\\"\\n- [REC-NVDA-03-02] Q4 FY25, GAAP: \\\"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\\\"\\n- [REC-NVDA-03-02] FY25, GAAP: \\\"Revenue $130,497 $60,922 Up 114% Gross margin 75.0 % 72.7 % Up 2.3 pts\\\"\\n- [REC-NVDA-03-03]: \\\"Record full-year revenue of $130.5 billion, up 114%\\\"\\n\\n## 3. Derived Calculations (protocol-required, rounded)\\n\\n- Comparison 1 — percent_change NVDA-Q2-REV → NVDA-Q4-REV: **30.9 percent**\\n- Comparison 2 — difference NVDA-Q2-GM → NVDA-Q4-GM: **-2.1 percentage_point**\\n\\n## 4. Direction Assessment\\n\\n- **Growth:** Strong and still expanding. Revenue rose 30.9 percent from Q2 FY25 to Q4 FY25 on a GAAP basis, with the Q4 level described as a record [REC-NVDA-03-02][REC-NVDA-03-03]. Y/Y growth decelerated across the sequence (Q2 FY25 \\\"Up 122%\\\" → Q4 FY25 \\\"Up 78%\\\" [REC-NVDA-02-02][REC-NVDA-03-02]), but the level trend remains upward.\\n- **Margin:** Deteriorating. GAAP gross margin fell 2.1 percentage points Q2 FY25 → Q4 FY25, with sequential declines of 3.3 pts in Q2 and 1.6 pts in Q4 [REC-NVDA-02-02][REC-NVDA-03-02]. The margin-risk flag is preserved.\\n- **Segment/channel:** No segment- or channel-level revenue or margin detail is present in the bundle; direction cannot be assessed at that granularity.\\n\\n## 5. Policy-Driven State Judgment\\n\\n- Required source metrics verified (NVDA-Q2-REV, NVDA-Q4-REV, NVDA-Q2-GM, NVDA-Q4-GM), all GAAP and cited.\\n- Required calculations completed (Section 3).\\n- FSEC-NVDA-03 transition applied: expected_version 2 → next_version 3; decision **confirm_growth_retain_margin_risk**; status **active**; trade action **none**.\\n\\n## 6. Unresolved Risks / Missing Evidence\\n\\n- **Basis divergence:** GAAP vs Non-GAAP gross margins differ (Q4 FY25: 73.0% GAAP vs 73.5% Non-GAAP; Q2 FY25: 75.1% GAAP vs 75.7% Non-GAAP) [REC-NVDA-02-02][REC-NVDA-03-02]. Both retained; not reconciled.\\n- **Margin trajectory conflict:** FY25 full-year GAAP gross margin \\\"Up 2.3 pts\\\" Y/Y [REC-NVDA-03-02] versus Q4 FY25 quarterly GAAP gross margin \\\"Down 3.0 pts\\\" Y/Y — annual vs quarterly direction conflict retained, not resolved.\\n- **Missing:** No Q3 FY25 standalone record; no forward guidance; no segment or channel detail.\\n- **No trade authorized.**\"},{\"agentId\":\"finance-accounting\",\"result\":\"# Finance Accounting Analyst — Specialist Report\\n\\n**Observation:** FSEC-NVDA-03 (final locked observation)\\n**Perspective:** Accounting and period audit\\n**Trade action:** None authorized\\n\\n---\\n\\n## Section 1 — Source Facts (verbatim, cited)\\n\\n**Revenue (GAAP):**\\n- [REC-NVDA-02-02] Q2 FY25, filed 2024-08-28, accession 0001045810-24-000262: \\\"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\\\"\\n- [REC-NVDA-03-02] Q4 FY25, filed 2025-02-26, accession 0001045810-25-000021: \\\"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\\\"\\n- [REC-NVDA-03-03] Q4 FY25, Data Center highlights: \\\"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\\\"\\n\\n**Gross margin (GAAP):**\\n- [REC-NVDA-02-02] Q2 FY25: \\\"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\\\"\\n- [REC-NVDA-03-02] Q4 FY25: \\\"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\\\"\\n- [REC-NVDA-03-01] Q4 FY25: \\\"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\\\"\\n\\n**Gross margin (Non-GAAP, conflicting basis retained):**\\n- [REC-NVDA-02-02] Q2 FY25: \\\"Gross margin 75.7 % 78.9 % 71.2 % Down 3.2 pts Up 4.5 pts\\\"\\n- [REC-NVDA-03-02] Q4 FY25: \\\"Gross margin 73.5 % 75.0 % 76.7 % Down 1.5 pts Down 3.2 pts\\\"\\n\\n**Fiscal-year context (GAAP, Q4 FY25 filing):**\\n- [REC-NVDA-03-02]: \\\"Revenue $130,497 $60,922 Up 114% Gross margin 75.0 % 72.7 % Up 2.3 pts\\\"\\n- [REC-NVDA-03-03]: \\\"Record full-year revenue of $130.5 billion, up 114%\\\"\\n\\n---\\n\\n## Section 2 — Derived Calculations (protocol-required, rounded)\\n\\n- **FSEC-NVDA-03 comparison 1** — percent_change from NVDA-Q2-REV ($30,040M, [REC-NVDA-02-02]) to NVDA-Q4-REV ($39,331M, [REC-NVDA-03-02]): **30.9 percent**\\n- **FSEC-NVDA-03 comparison 2** — difference from NVDA-Q2-GM (75.1%, [REC-NVDA-02-02]) to NVDA-Q4-GM (73.0%, [REC-NVDA-03-02]): **-2.1 percentage_point**\\n\\nBoth inputs are GAAP-basis, quarterly, and drawn from the two cited records; no unit conversion or cross-basis mixing was applied.\\n\\n---\\n\\n## Section 3 — Policy-Driven State Judgment\\n\\n- Required source metrics verified: NVDA-Q2-REV, NVDA-Q4-REV, NVDA-Q2-GM, NVDA-Q4-GM — all present, GAAP basis, cited record IDs matched.\\n- Required calculations completed (Section 2).\\n- **FSEC-NVDA-03 transition applied:** expected_version 2 → next_version 3; decision **confirm_growth_retain_margin_risk**; status **active**; trade action **none**.\\n- Growth remains strong (revenue up 30.9% Q2→Q4 FY25); margin-risk flag preserved (gross margin down 2.1 pts Q2→Q4 FY25, with sequential Q/Q declines of 3.3 pts in Q2 and 1.6 pts in Q4).\\n\\n---\\n\\n## Section 4 — Unresolved Risks / Missing Evidence\\n\\n- **Basis divergence:** GAAP and Non-GAAP gross margins differ (Q4 FY25: 73.0% GAAP vs 73.5% Non-GAAP; Q2 FY25: 75.1% GAAP vs 75.7% Non-GAAP). Both retained; not reconciled.\\n- **Margin trajectory conflict:** FY25 full-year GAAP gross margin reported \\\"Up 2.3 pts\\\" Y/Y ([REC-NVDA-03-02]) while quarterly Q4 FY25 GAAP gross margin is \\\"Down 3.0 pts\\\" Y/Y — annual vs quarterly direction conflict retained, not resolved.\\n- **Missing:** No Q3 FY25 standalone press-release record in corpus; Q3 FY25 figures appear only as comparison columns within [REC-NVDA-03-01]/[REC-NVDA-03-02]. No forward guidance or segment margin detail present.\\n- **No trade authorized.**\"},{\"agentId\":\"finance-risk\",\"result\":\"# Finance Risk \\u0026 Governance — Specialist Report\\n**Observation:** FSEC-NVDA-03 (final locked) | **Perspective:** risk \\u0026 governance | **Trade action:** none\\n\\n---\\n\\n## Section 1 — Source Facts (verbatim, cited)\\n\\n**Revenue (growth):**\\n- [REC-NVDA-02-02] (Q2 FY25, GAAP): \\\"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\\\"\\n- [REC-NVDA-03-02] (Q4 FY25, GAAP): \\\"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\\\"\\n- [REC-NVDA-03-03] (Q4 FY25): \\\"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\\\"\\n\\n**Gross margin (margin risk):**\\n- [REC-NVDA-02-02] (Q2 FY25, GAAP): \\\"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\\\"\\n- [REC-NVDA-03-02] (Q4 FY25, GAAP): \\\"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\\\"\\n- [REC-NVDA-03-01] (Q4 FY25, GAAP): \\\"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\\\"\\n\\n**Non-GAAP margin (conflicting basis, retained):**\\n- [REC-NVDA-02-02] (Q2 FY25, Non-GAAP): \\\"Gross margin 75.7 % 78.9 % 71.2 % Down 3.2 pts Up 4.5 pts\\\"\\n- [REC-NVDA-03-02] (Q4 FY25, Non-GAAP): \\\"Gross margin 73.5 % 75.0 % 76.7 % Down 1.5 pts Down 3.2 pts\\\"\\n\\n**Fiscal-year context:**\\n- [REC-NVDA-03-02] (GAAP, FY25): \\\"Revenue $130,497 $60,922 Up 114% Gross margin 75.0 % 72.7 % Up 2.3 pts\\\"\\n- [REC-NVDA-03-03]: \\\"Record full-year revenue of $130.5 billion, up 114%\\\"\\n\\n---\\n\\n## Section 2 — Derived Calculations (protocol-required, rounded)\\n\\n- **Comparison 1** — percent_change NVDA-Q2-REV → NVDA-Q4-REV: **30.9 percent**\\n- **Comparison 2** — difference NVDA-Q2-GM → NVDA-Q4-GM: **-2.1 percentage_point**\\n\\n---\\n\\n## Section 3 — Policy-Driven State Judgment\\n\\nRequired source metrics (NVDA-Q2-REV, NVDA-Q4-REV, NVDA-Q2-GM, NVDA-Q4-GM) are verified with matching GAAP basis and cited record IDs; both required calculations are complete. The FSEC-NVDA-03 transition conditions are therefore met:\\n\\n- expected_version 2 → next_version 3\\n- decision: **confirm_growth_retain_margin_risk**\\n- status: **active**\\n- trade action: **none**\\n\\nGrowth remains strong (revenue up 30.9% Q2→Q4 FY25) while the margin-risk flag is explicitly preserved (gross margin down 2.1 pts Q2→Q4 FY25, corroborated by sequential Q/Q declines of 3.3 pts in Q2 and 1.6 pts in Q4).\\n\\n---\\n\\n## Section 4 — Unresolved Risks / Missing Evidence\\n\\n- **Basis divergence:** GAAP vs Non-GAAP gross margins differ (Q4 FY25: 73.0% GAAP vs 73.5% Non-GAAP; Q2 FY25: 75.1% GAAP vs 75.7% Non-GAAP). Both retained; not reconciled.\\n- **Margin trajectory conflict:** FY25 full-year GAAP gross margin \\\"Up 2.3 pts\\\" Y/Y [REC-NVDA-03-02] conflicts in direction with quarterly Q4 FY25 GAAP gross margin \\\"Down 3.0 pts\\\" Y/Y. Annual vs quarterly conflict retained, not resolved.\\n- **Missing evidence:** No standalone Q3 FY25 press-release record; Q3 FY25 figures appear only as comparison columns within [REC-NVDA-03-01]/[REC-NVDA-03-02]. No forward guidance or segment margin detail present.\\n- **No trade authorized.**\"}]}",
+                  "round": 1
+                }
+              ],
+              "retrieval_output": "# Evidence Bundle — NVDA Final Locked Observation (FSEC-NVDA-03)\n\n## Section 1 — Source Facts (verbatim, cited)\n\n**Growth metrics (revenue):**\n- [REC-NVDA-02-02] source_id: nvda-2024-08-28-q2-fy2025, filed_at: 2024-08-28, accession: 0001045810-24-000262, locator: Q2 Fiscal 2025 Summary, basis: GAAP, period: Q2 FY25 — \"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\"\n- [REC-NVDA-03-02] source_id: nvda-2025-02-26-q4-fy2025, filed_at: 2025-02-26, accession: 0001045810-25-000021, locator: Q4 Fiscal 2025 Summary, basis: GAAP, period: Q4 FY25 — \"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\"\n- [REC-NVDA-03-03] source_id: nvda-2025-02-26-q4-fy2025, filed_at: 2025-02-26, accession: 0001045810-25-000021, locator: Data Center highlights, period: Q4 FY25 — \"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\"\n\n**Margin metrics (gross margin):**\n- [REC-NVDA-02-02] source_id: nvda-2024-08-28-q2-fy2025, filed_at: 2024-08-28, accession: 0001045810-24-000262, locator: Q2 Fiscal 2025 Summary, basis: GAAP, period: Q2 FY25 — \"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\"\n- [REC-NVDA-03-02] source_id: nvda-2025-02-26-q4-fy2025, filed_at: 2025-02-26, accession: 0001045810-25-000021, locator: Q4 Fiscal 2025 Summary, basis: GAAP, period: Q4 FY25 — \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n- [REC-NVDA-03-01] source_id: nvda-2025-02-26-q4-fy2025, filed_at: 2025-02-26, accession: 0001045810-25-000021, locator: Q4 Fiscal 2025 Summary, basis: GAAP, period: Q4 FY25 — \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n\n**Margin-risk corroboration (sequential declines):**\n- [REC-NVDA-02-02] (Q2 FY25, GAAP): \"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\" — Q/Q decline of 3.3 pts.\n- [REC-NVDA-03-02] (Q4 FY25, GAAP): \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\" — Q/Q decline of 1.6 pts; Y/Y decline of 3.0 pts.\n\n**Non-GAAP margin (conflicting-basis record, retained):**\n- [REC-NVDA-02-02] (Q2 FY25, Non-GAAP): \"Gross margin 75.7 % 78.9 % 71.2 % Down 3.2 pts Up 4.5 pts\"\n- [REC-NVDA-03-02] (Q4 FY25, Non-GAAP): \"Gross margin 73.5 % 75.0 % 76.7 % Down 1.5 pts Down 3.2 pts\"\n\n**Fiscal-year context (Q4 FY25 filing):**\n- [REC-NVDA-03-02] (GAAP, FY25): \"Revenue $130,497 $60,922 Up 114% Gross margin 75.0 % 72.7 % Up 2.3 pts\"\n- [REC-NVDA-03-03]: \"Record full-year revenue of $130.5 billion, up 114%\"\n\n## Section 2 — Derived Calculations (protocol-required, rounded)\n\n- FSEC-NVDA-03 comparison 1 — percent_change from NVDA-Q2-REV ($30,040M, [REC-NVDA-02-02]) to NVDA-Q4-REV ($39,331M, [REC-NVDA-03-02]): **30.9 percent**\n- FSEC-NVDA-03 comparison 2 — difference from NVDA-Q2-GM (75.1%, [REC-NVDA-02-02]) to NVDA-Q4-GM (73.0%, [REC-NVDA-03-02]): **-2.1 percentage_point**\n\n## Section 3 — Policy-Driven State Judgment\n\n- Required source metrics verified: NVDA-Q2-REV, NVDA-Q4-REV, NVDA-Q2-GM, NVDA-Q4-GM — all present with matching GAAP basis and cited record IDs.\n- Required calculations completed (Section 2).\n- FSEC-NVDA-03 transition applied: expected_version 2 → next_version 3; decision **confirm_growth_retain_margin_risk**; status **active**; trade action **none**.\n- Growth remains strong (revenue up 30.9% Q2→Q4 FY25); margin-risk flag preserved (gross margin down 2.1 pts Q2→Q4 FY25, with sequential Q/Q declines of 3.3 pts in Q2 and 1.6 pts in Q4).\n\n## Section 4 — Unresolved Risks / Missing Evidence\n\n- **Basis divergence:** GAAP and Non-GAAP gross margins differ (Q4 FY25: 73.0% GAAP vs 73.5% Non-GAAP; Q2 FY25: 75.1% GAAP vs 75.7% Non-GAAP). Both retained; not reconciled.\n- **Margin trajectory conflict:** FY25 full-year GAAP gross margin is reported \"Up 2.3 pts\" Y/Y ([REC-NVDA-03-02]) while quarterly Q4 FY25 GAAP gross margin is \"Down 3.0 pts\" Y/Y — annual vs quarterly direction conflict retained, not resolved.\n- **Missing:** No Q3 FY25 standalone press-release record in corpus; Q3 FY25 figures appear only as comparison columns within [REC-NVDA-03-01]/[REC-NVDA-03-02]. No forward guidance or segment margin detail present.\n- **No trade authorized.**",
+              "analyst_outputs": {
+                "accounting and period audit": "# Finance Accounting Analyst — Specialist Report\n\n**Observation:** FSEC-NVDA-03 (final locked observation)\n**Perspective:** Accounting and period audit\n**Trade action:** None authorized\n\n---\n\n## Section 1 — Source Facts (verbatim, cited)\n\n**Revenue (GAAP):**\n- [REC-NVDA-02-02] Q2 FY25, filed 2024-08-28, accession 0001045810-24-000262: \"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\"\n- [REC-NVDA-03-02] Q4 FY25, filed 2025-02-26, accession 0001045810-25-000021: \"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\"\n- [REC-NVDA-03-03] Q4 FY25, Data Center highlights: \"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\"\n\n**Gross margin (GAAP):**\n- [REC-NVDA-02-02] Q2 FY25: \"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\"\n- [REC-NVDA-03-02] Q4 FY25: \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n- [REC-NVDA-03-01] Q4 FY25: \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n\n**Gross margin (Non-GAAP, conflicting basis retained):**\n- [REC-NVDA-02-02] Q2 FY25: \"Gross margin 75.7 % 78.9 % 71.2 % Down 3.2 pts Up 4.5 pts\"\n- [REC-NVDA-03-02] Q4 FY25: \"Gross margin 73.5 % 75.0 % 76.7 % Down 1.5 pts Down 3.2 pts\"\n\n**Fiscal-year context (GAAP, Q4 FY25 filing):**\n- [REC-NVDA-03-02]: \"Revenue $130,497 $60,922 Up 114% Gross margin 75.0 % 72.7 % Up 2.3 pts\"\n- [REC-NVDA-03-03]: \"Record full-year revenue of $130.5 billion, up 114%\"\n\n---\n\n## Section 2 — Derived Calculations (protocol-required, rounded)\n\n- **FSEC-NVDA-03 comparison 1** — percent_change from NVDA-Q2-REV ($30,040M, [REC-NVDA-02-02]) to NVDA-Q4-REV ($39,331M, [REC-NVDA-03-02]): **30.9 percent**\n- **FSEC-NVDA-03 comparison 2** — difference from NVDA-Q2-GM (75.1%, [REC-NVDA-02-02]) to NVDA-Q4-GM (73.0%, [REC-NVDA-03-02]): **-2.1 percentage_point**\n\nBoth inputs are GAAP-basis, quarterly, and drawn from the two cited records; no unit conversion or cross-basis mixing was applied.\n\n---\n\n## Section 3 — Policy-Driven State Judgment\n\n- Required source metrics verified: NVDA-Q2-REV, NVDA-Q4-REV, NVDA-Q2-GM, NVDA-Q4-GM — all present, GAAP basis, cited record IDs matched.\n- Required calculations completed (Section 2).\n- **FSEC-NVDA-03 transition applied:** expected_version 2 → next_version 3; decision **confirm_growth_retain_margin_risk**; status **active**; trade action **none**.\n- Growth remains strong (revenue up 30.9% Q2→Q4 FY25); margin-risk flag preserved (gross margin down 2.1 pts Q2→Q4 FY25, with sequential Q/Q declines of 3.3 pts in Q2 and 1.6 pts in Q4).\n\n---\n\n## Section 4 — Unresolved Risks / Missing Evidence\n\n- **Basis divergence:** GAAP and Non-GAAP gross margins differ (Q4 FY25: 73.0% GAAP vs 73.5% Non-GAAP; Q2 FY25: 75.1% GAAP vs 75.7% Non-GAAP). Both retained; not reconciled.\n- **Margin trajectory conflict:** FY25 full-year GAAP gross margin reported \"Up 2.3 pts\" Y/Y ([REC-NVDA-03-02]) while quarterly Q4 FY25 GAAP gross margin is \"Down 3.0 pts\" Y/Y — annual vs quarterly direction conflict retained, not resolved.\n- **Missing:** No Q3 FY25 standalone press-release record in corpus; Q3 FY25 figures appear only as comparison columns within [REC-NVDA-03-01]/[REC-NVDA-03-02]. No forward guidance or segment margin detail present.\n- **No trade authorized.**",
+                "risk and governance": "# Finance Risk \u0026 Governance — Specialist Report\n**Observation:** FSEC-NVDA-03 (final locked) | **Perspective:** risk \u0026 governance | **Trade action:** none\n\n---\n\n## Section 1 — Source Facts (verbatim, cited)\n\n**Revenue (growth):**\n- [REC-NVDA-02-02] (Q2 FY25, GAAP): \"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\"\n- [REC-NVDA-03-02] (Q4 FY25, GAAP): \"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\"\n- [REC-NVDA-03-03] (Q4 FY25): \"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\"\n\n**Gross margin (margin risk):**\n- [REC-NVDA-02-02] (Q2 FY25, GAAP): \"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\"\n- [REC-NVDA-03-02] (Q4 FY25, GAAP): \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n- [REC-NVDA-03-01] (Q4 FY25, GAAP): \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n\n**Non-GAAP margin (conflicting basis, retained):**\n- [REC-NVDA-02-02] (Q2 FY25, Non-GAAP): \"Gross margin 75.7 % 78.9 % 71.2 % Down 3.2 pts Up 4.5 pts\"\n- [REC-NVDA-03-02] (Q4 FY25, Non-GAAP): \"Gross margin 73.5 % 75.0 % 76.7 % Down 1.5 pts Down 3.2 pts\"\n\n**Fiscal-year context:**\n- [REC-NVDA-03-02] (GAAP, FY25): \"Revenue $130,497 $60,922 Up 114% Gross margin 75.0 % 72.7 % Up 2.3 pts\"\n- [REC-NVDA-03-03]: \"Record full-year revenue of $130.5 billion, up 114%\"\n\n---\n\n## Section 2 — Derived Calculations (protocol-required, rounded)\n\n- **Comparison 1** — percent_change NVDA-Q2-REV → NVDA-Q4-REV: **30.9 percent**\n- **Comparison 2** — difference NVDA-Q2-GM → NVDA-Q4-GM: **-2.1 percentage_point**\n\n---\n\n## Section 3 — Policy-Driven State Judgment\n\nRequired source metrics (NVDA-Q2-REV, NVDA-Q4-REV, NVDA-Q2-GM, NVDA-Q4-GM) are verified with matching GAAP basis and cited record IDs; both required calculations are complete. The FSEC-NVDA-03 transition conditions are therefore met:\n\n- expected_version 2 → next_version 3\n- decision: **confirm_growth_retain_margin_risk**\n- status: **active**\n- trade action: **none**\n\nGrowth remains strong (revenue up 30.9% Q2→Q4 FY25) while the margin-risk flag is explicitly preserved (gross margin down 2.1 pts Q2→Q4 FY25, corroborated by sequential Q/Q declines of 3.3 pts in Q2 and 1.6 pts in Q4).\n\n---\n\n## Section 4 — Unresolved Risks / Missing Evidence\n\n- **Basis divergence:** GAAP vs Non-GAAP gross margins differ (Q4 FY25: 73.0% GAAP vs 73.5% Non-GAAP; Q2 FY25: 75.1% GAAP vs 75.7% Non-GAAP). Both retained; not reconciled.\n- **Margin trajectory conflict:** FY25 full-year GAAP gross margin \"Up 2.3 pts\" Y/Y [REC-NVDA-03-02] conflicts in direction with quarterly Q4 FY25 GAAP gross margin \"Down 3.0 pts\" Y/Y. Annual vs quarterly conflict retained, not resolved.\n- **Missing evidence:** No standalone Q3 FY25 press-release record; Q3 FY25 figures appear only as comparison columns within [REC-NVDA-03-01]/[REC-NVDA-03-02]. No forward guidance or segment margin detail present.\n- **No trade authorized.**",
+                "trend and chronology": "# Specialist Report — Trend \u0026 Chronology (NVDA, FSEC-NVDA-03)\n\n## 1. Observation Sequence (period labels preserved)\n\n| Order | Record | Period | Filed | Basis | Role |\n|---|---|---|---|---|---|\n| 1 | [REC-NVDA-02-02] | Q2 FY25 | 2024-08-28 | GAAP | earlier comparison anchor |\n| 2 | [REC-NVDA-03-01] / [REC-NVDA-03-02] | Q4 FY25 | 2025-02-26 | GAAP | final locked observation |\n\nSequence is monotonic in fiscal period (Q2 FY25 → Q4 FY25). No Q3 FY25 standalone record exists in the bundle; Q3 FY25 appears only as a comparison column inside the Q4 filing [REC-NVDA-03-01]/[REC-NVDA-03-02]. The Q2 record is used only because the declared FSEC-NVDA-03 comparisons require it.\n\n## 2. Source Facts (verbatim, cited)\n\n- [REC-NVDA-02-02] Q2 FY25, GAAP: \"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\"\n- [REC-NVDA-03-02] Q4 FY25, GAAP: \"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\"\n- [REC-NVDA-03-03] Q4 FY25: \"Record quarterly revenue of $39.3 billion, up 12% from Q3 and up 78% from a year ago\"\n- [REC-NVDA-02-02] Q2 FY25, GAAP: \"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\"\n- [REC-NVDA-03-02] Q4 FY25, GAAP: \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n- [REC-NVDA-03-02] FY25, GAAP: \"Revenue $130,497 $60,922 Up 114% Gross margin 75.0 % 72.7 % Up 2.3 pts\"\n- [REC-NVDA-03-03]: \"Record full-year revenue of $130.5 billion, up 114%\"\n\n## 3. Derived Calculations (protocol-required, rounded)\n\n- Comparison 1 — percent_change NVDA-Q2-REV → NVDA-Q4-REV: **30.9 percent**\n- Comparison 2 — difference NVDA-Q2-GM → NVDA-Q4-GM: **-2.1 percentage_point**\n\n## 4. Direction Assessment\n\n- **Growth:** Strong and still expanding. Revenue rose 30.9 percent from Q2 FY25 to Q4 FY25 on a GAAP basis, with the Q4 level described as a record [REC-NVDA-03-02][REC-NVDA-03-03]. Y/Y growth decelerated across the sequence (Q2 FY25 \"Up 122%\" → Q4 FY25 \"Up 78%\" [REC-NVDA-02-02][REC-NVDA-03-02]), but the level trend remains upward.\n- **Margin:** Deteriorating. GAAP gross margin fell 2.1 percentage points Q2 FY25 → Q4 FY25, with sequential declines of 3.3 pts in Q2 and 1.6 pts in Q4 [REC-NVDA-02-02][REC-NVDA-03-02]. The margin-risk flag is preserved.\n- **Segment/channel:** No segment- or channel-level revenue or margin detail is present in the bundle; direction cannot be assessed at that granularity.\n\n## 5. Policy-Driven State Judgment\n\n- Required source metrics verified (NVDA-Q2-REV, NVDA-Q4-REV, NVDA-Q2-GM, NVDA-Q4-GM), all GAAP and cited.\n- Required calculations completed (Section 3).\n- FSEC-NVDA-03 transition applied: expected_version 2 → next_version 3; decision **confirm_growth_retain_margin_risk**; status **active**; trade action **none**.\n\n## 6. Unresolved Risks / Missing Evidence\n\n- **Basis divergence:** GAAP vs Non-GAAP gross margins differ (Q4 FY25: 73.0% GAAP vs 73.5% Non-GAAP; Q2 FY25: 75.1% GAAP vs 75.7% Non-GAAP) [REC-NVDA-02-02][REC-NVDA-03-02]. Both retained; not reconciled.\n- **Margin trajectory conflict:** FY25 full-year GAAP gross margin \"Up 2.3 pts\" Y/Y [REC-NVDA-03-02] versus Q4 FY25 quarterly GAAP gross margin \"Down 3.0 pts\" Y/Y — annual vs quarterly direction conflict retained, not resolved.\n- **Missing:** No Q3 FY25 standalone record; no forward guidance; no segment or channel detail.\n- **No trade authorized.**"
+              },
+              "final_output": "# NVDA — FSEC-NVDA-03 Final Locked Observation: Coordinated Synthesis\n\n## Chronology\n\nThe observation sequence is monotonic in fiscal period and uses the earlier record only where the declared comparisons require it:\n\n| Order | Record | Period | Filed | Basis | Role |\n|---|---|---|---|---|---|\n| 1 | [REC-NVDA-02-02] | Q2 FY25 | 2024-08-28 | GAAP | comparison anchor |\n| 2 | [REC-NVDA-03-01] / [REC-NVDA-03-02] | Q4 FY25 | 2025-02-26 | GAAP | final locked observation |\n\nNo Q3 FY25 standalone record exists in the bundle; Q3 FY25 figures appear only as comparison columns inside the Q4 filing [REC-NVDA-03-01]/[REC-NVDA-03-02]. Period labels are preserved unchanged.\n\n**Direction assessment (facts, not decisions):**\n- **Growth:** Strong and still expanding. GAAP revenue rose from Q2 FY25 to Q4 FY25, with the Q4 level described as a record (\"Record quarterly revenue of $39.3 billion\" [REC-NVDA-03-03]). Year-over-year growth decelerated across the sequence (Q2 FY25 \"Up 122%\" [REC-NVDA-02-02] → Q4 FY25 \"Up 78%\" [REC-NVDA-03-02]), but the level trend remains upward.\n- **Margin:** Deteriorating. GAAP gross margin fell Q2→Q4 FY25, with sequential Q/Q declines of 3.3 pts in Q2 and 1.6 pts in Q4 [REC-NVDA-02-02][REC-NVDA-03-02]. The margin-risk flag is preserved.\n- **Segment/channel:** No segment- or channel-level revenue or margin detail is present in the bundle; direction cannot be assessed at that granularity.\n\n## Evidence Reconciliation\n\nAll three specialists independently cited the same source facts with matching record IDs, filing dates, accessions, and accounting bases. No specialist introduced a conflicting figure.\n\n**Verbatim source facts (GAAP, quarterly):**\n- [REC-NVDA-02-02] Q2 FY25: \"Revenue $30,040 $26,044 $13,507 Up 15% Up 122%\"\n- [REC-NVDA-03-02] Q4 FY25: \"Revenue $39,331 $35,082 $22,103 Up 12% Up 78%\"\n- [REC-NVDA-02-02] Q2 FY25: \"Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts\"\n- [REC-NVDA-03-02] Q4 FY25: \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n- [REC-NVDA-03-01] Q4 FY25: \"Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts\"\n\n**Conflicting-basis records (retained, not reconciled):**\n- [REC-NVDA-02-02] Q2 FY25 Non-GAAP: \"Gross margin 75.7 % 78.9 % 71.2 % Down 3.2 pts Up 4.5 pts\"\n- [REC-NVDA-03-02] Q4 FY25 Non-GAAP: \"Gross margin 73.5 % 75.0 % 76.7 % Down 1.5 pts Down 3.2 pts\"\n\n**Fiscal-year context (GAAP, Q4 FY25 filing):**\n- [REC-NVDA-03-02] FY25: \"Revenue $130,497 $60,922 Up 114% Gross margin 75.0 % 72.7 % Up 2.3 pts\"\n- [REC-NVDA-03-03]: \"Record full-year revenue of $130.5 billion, up 114%\"\n\n## Calculation Audit\n\nBoth required deterministic calculations were reproduced by all three specialists with identical results. Inputs are GAAP-basis, quarterly, and drawn from the two cited records; no unit conversion or cross-basis mixing was applied.\n\n- **FSEC-NVDA-03 comparison 1** — percent_change from NVDA-Q2-REV ($30,040M, [REC-NVDA-02-02]) to NVDA-Q4-REV ($39,331M, [REC-NVDA-03-02]): **30.9 percent**\n- **FSEC-NVDA-03 comparison 2** — difference from NVDA-Q2-GM (75.1%, [REC-NVDA-02-02]) to NVDA-Q4-GM (73.0%, [REC-NVDA-03-02]): **-2.1 percentage_point**\n\nNo intermediate arithmetic, unrounded values, unit-converted duplicates, or additional derived metrics are reported, per protocol.\n\n## Risk and Governance\n\n**Downside evidence and contradictions (retained, unresolved):**\n- **Basis divergence:** GAAP and Non-GAAP gross margins differ (Q4 FY25: 73.0% GAAP vs 73.5% Non-GAAP; Q2 FY25: 75.1% GAAP vs 75.7% Non-GAAP). Both retained; not reconciled.\n- **Margin trajectory conflict:** FY25 full-year GAAP gross margin is reported \"Up 2.3 pts\" Y/Y [REC-NVDA-03-02], while quarterly Q4 FY25 GAAP gross margin is \"Down 3.0 pts\" Y/Y — an annual-vs-quarterly direction conflict retained, not resolved.\n- **Missing evidence:** No standalone Q3 FY25 press-release record; Q3 FY25 figures appear only as comparison columns within [REC-NVDA-03-01]/[REC-NVDA-03-02]. No forward guidance or segment margin detail present.\n\n**Policy application (governance):** The bounded research-state transition policy was applied only after verifying the required source metrics and completing the required calculations. The policy is treated as a rule, not as source evidence.\n\n## Final Decision\n\nRequired source metrics (NVDA-Q2-REV, NVDA-Q4-REV, NVDA-Q2-GM, NVDA-Q4-GM) are verified with matching GAAP basis and cited record IDs; both required calculations are complete. The FSEC-NVDA-03 transition conditions are therefore met:\n\n- expected_version 2 → next_version 3\n- decision: **confirm_growth_retain_margin_risk**\n- status: **active**\n- trade action: **none**\n\nGrowth remains strong (revenue up 30.9% Q2→Q4 FY25), while the margin-risk flag is explicitly preserved (gross margin down 2.1 pts Q2→Q4 FY25, corroborated by sequential Q/Q declines of 3.3 pts in Q2 and 1.6 pts in Q4). **No trade is authorized.**\n\n## Limitations\n\n- The bundle contains no segment- or channel-level detail, so growth direction cannot be assessed below the consolidated level.\n- The GAAP/Non-GAAP basis divergence and the annual-vs-quarterly margin direction conflict remain unresolved and are carried forward as open risks.\n- No Q3 FY25 standalone record, forward guidance, or segment margin detail is available in the corpus.\n- All conclusions are bounded to the supplied evidence; no outside knowledge was used, and no investment recommendation or trade authorization is made.",
+              "stages": {
+                "gold_records": 4,
+                "retrieved_relevant": 4,
+                "retrieved_total": 4,
+                "retrieval_evaluated": true,
+                "retrieval_recall": 1,
+                "retrieval_precision": 0.75,
+                "summary_relevant": 4,
+                "summary_retention": 1,
+                "final_relevant": 4,
+                "final_evidence_recall": 1,
+                "synthesis_retention": 1,
+                "corpus_characters": 12979,
+                "retrieval_characters": 4108,
+                "evidence_compression_ratio": 3.1594449853943525,
+                "milestones": 3,
+                "passed_milestones": 3,
+                "milestone_results": {
+                  "bounded-research-state": true,
+                  "declared-calculations": true,
+                  "evidence-separation": true
+                },
+                "unsupported_claims": 0,
+                "grounding_assertions": 78,
+                "grounding_violations": 5,
+                "grounding_violation_values": [
+                  "70.1",
+                  "76.0",
+                  "76.0",
+                  "71.2",
+                  "76.7"
+                ],
+                "expected_delegations": 3,
+                "valid_delegations": 3,
+                "total_delegations": 3,
+                "delegation_precision": 1,
+                "delegation_recall": 1,
+                "first_attempt_successes": 0,
+                "recovery_successes": 0,
+                "retrieval_latency_ms": 6080.339,
+                "collaboration_latency_ms": 46737.601,
+                "coordination_latency_ms": 20260.606,
+                "analysis_latency_ms": 12252.749,
+                "synthesis_latency_ms": 21554.993
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

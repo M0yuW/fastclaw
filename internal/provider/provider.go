@@ -119,6 +119,7 @@ type ToolFunction struct {
 type Response struct {
 	Content      string
 	ToolCalls    []ToolCall
+	FinishReason string          // provider finish reason, including output-length truncation
 	Thinking     string          // model's reasoning/thinking content (extracted for memory)
 	RawAssistant json.RawMessage // exact API response message JSON (for cache-safe replay)
 	Usage        Usage

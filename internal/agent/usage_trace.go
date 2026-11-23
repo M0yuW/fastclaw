@@ -31,6 +31,7 @@ type ModelCallUsage struct {
 	CacheCreationTokens int      `json:"cache_creation_tokens,omitempty"`
 	EstimatedCostUSD    float64  `json:"estimated_cost_usd"`
 	Priced              bool     `json:"priced"`
+	CostUncertain       bool     `json:"cost_uncertain,omitempty"`
 	LatencyMS           float64  `json:"latency_ms"`
 	Error               string   `json:"error,omitempty"`
 }
@@ -135,6 +136,9 @@ func RecordModelCallWithSequence(
 	}
 	if callErr != nil {
 		call.Error = callErr.Error()
+		// A provider error may have incurred charges without returning final
+		// usage. Keep the reported estimate as a lower bound, not a bill.
+		call.CostUncertain = true
 	}
 	collector.mu.Lock()
 	collector.calls = append(collector.calls, call)

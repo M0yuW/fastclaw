@@ -5,14 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"regexp"
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent/tools"
 )
 
+var providerToolName = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
+
 // RegisterPluginTools queries a tool plugin for its tools and registers them
 // in the given tool registry. If a plugin tool has the same name as a built-in
 // tool, the plugin version overrides the built-in. Otherwise, the tool is
-// registered with a qualified name (e.g. "echo.echo_tool").
+// registered with a provider-safe qualified name (e.g. "echo__echo_tool").
 func RegisterPluginTools(ctx context.Context, mgr *Manager, pluginID string, registry *tools.Registry) error {
 	toolDefs, err := mgr.ListTools(ctx, pluginID)
 	if err != nil {
@@ -23,6 +26,9 @@ func RegisterPluginTools(ctx context.Context, mgr *Manager, pluginID string, reg
 		desc := td.Description
 		params := td.Parameters
 		toolName := td.Name
+		if !providerToolName.MatchString(pluginID) || !providerToolName.MatchString(toolName) {
+			return fmt.Errorf("plugin %q tool %q cannot be exposed as a provider function name", pluginID, toolName)
+		}
 
 		fn := func(ctx context.Context, args json.RawMessage) (string, error) {
 			var argsMap map[string]interface{}
@@ -48,7 +54,10 @@ func RegisterPluginTools(ctx context.Context, mgr *Manager, pluginID string, reg
 			registry.RegisterFrom(toolName, desc, params, fn, tools.SourcePlugin)
 			slog.Info("plugin: overriding built-in tool", "plugin", pluginID, "tool", toolName)
 		} else {
-			qualifiedName := pluginID + "." + toolName
+			qualifiedName := pluginID + "__" + toolName
+			if registry.GetFunc(qualifiedName) != nil {
+				return fmt.Errorf("plugin tool name collision: %s", qualifiedName)
+			}
 			registry.RegisterFrom(qualifiedName, desc, params, fn, tools.SourcePlugin)
 			slog.Info("plugin: registered tool", "plugin", pluginID, "tool", qualifiedName)
 		}

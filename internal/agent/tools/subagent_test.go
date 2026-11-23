@@ -69,6 +69,31 @@ func TestMakeSubAgentToolCreatesUniqueInternalMessages(t *testing.T) {
 	}
 }
 
+func TestMakeSubAgentToolAppendsRuntimeBoundEvidence(t *testing.T) {
+	spawner := &fakeSubAgentSpawner{result: "ok"}
+	tool := makeSubAgentTool(spawner, "parent")
+	ctx := ContextWithSubAgentSharedContext(context.Background(), "[REC-A] locked SEC evidence")
+	_, err := tool(ctx, json.RawMessage(`{"sharedContext":"common protocol","delegations":[{"agentId":"trend","task":"analyze trend"},{"agentId":"risk","task":"analyze risk"}]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(spawner.messages) != 2 {
+		t.Fatalf("messages = %d, want 2", len(spawner.messages))
+	}
+	for _, message := range spawner.messages {
+		if !strings.Contains(message.Text, "Shared context:\ncommon protocol") ||
+			!strings.Contains(message.Text, "Runtime-bound evidence:\n[REC-A] locked SEC evidence") ||
+			strings.Count(message.Text, "[REC-A] locked SEC evidence") != 1 {
+			t.Fatalf("runtime evidence not bound exactly once: %q", message.Text)
+		}
+	}
+	spawner.messages = nil
+	_, err = tool(ctx, json.RawMessage(`{"agentId":"trend","task":"analyze trend"}`))
+	if err != nil || len(spawner.messages) != 1 || !strings.Contains(spawner.messages[0].Text, "Runtime-bound evidence:\n[REC-A] locked SEC evidence") {
+		t.Fatalf("single delegation did not receive bound evidence: messages=%v err=%v", spawner.messages, err)
+	}
+}
+
 func TestMakeSubAgentToolDeduplicatesIdenticalDelegationWithinTurn(t *testing.T) {
 	spawner := &fakeSubAgentSpawner{result: "fixed evidence"}
 	tool := makeSubAgentTool(spawner, "parent")

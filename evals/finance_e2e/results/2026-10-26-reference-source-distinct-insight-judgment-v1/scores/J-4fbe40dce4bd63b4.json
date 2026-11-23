@@ -1,0 +1,52 @@
+{
+  "masked_id": "J-4fbe40dce4bd63b4",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 2,
+    "I": 1,
+    "R": 1,
+    "S": 2,
+    "U": 2
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "fee-generating asset base and company-defined operating earnings improved sequentially while GAAP profitability weakened",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:awm_total_client_assets:+54571", "source_packet.rows:advisory_wrap_assets:+34950", "source_packet.rows:adjusted_operating_earnings:+65", "source_packet.rows:gaap_net_income:-148"]
+    },
+    {
+      "location": "final_answer",
+      "span": "GAAP net income and pretax income both fell sequentially even as net revenues rose, because total expenses rose by more than revenues, and the signed fair-value market-risk-benefit line moved from a benefit to a material expense",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_net_income:-148", "source_packet.rows:pretax_income:-177", "source_packet.rows:net_revenues:+416", "source_packet.rows:total_expenses:+593", "source_packet.rows:market_risk_benefit_fair_value_expense:-10_to_302"]
+    },
+    {
+      "location": "final_answer",
+      "span": "Client flows at both the AWM total and wrap levels were lower than in the prior quarter, so asset growth is not being corroborated by flow momentum and may lean on market appreciation, which itself was smaller",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:awm_total_client_flows:4281_to_3442", "source_packet.rows:wrap_net_flows:5378_to_4769", "source_packet.rows:wrap_market_other:37040_to_30344", "source_packet.rows:wrap_ending_assets:615189_to_650302"],
+      "reason": "Flow momentum fell, and the wrap bridge shows market-and-other contributed 30,344 versus flows 4,769 to Q3 wrap asset change. It cannot identify pure market appreciation or fully bridge the differently scoped AWM total-client-assets stock."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the selected rows do not separate market appreciation from net new money as the source of asset growth",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:wrap_beginning_assets:615189", "source_packet.rows:wrap_net_flows:4769", "source_packet.rows:wrap_market_other:30344", "source_packet.rows:wrap_ending_assets:650302", "source_packet.limitations:total_client_assets_different_scope"],
+      "reason": "This is true for pure appreciation and the total-client-assets scope, but imprecise for wrap assets: net flows are separately reported and reconcile with market-and-other to the ending balance."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review pending fuller filing evidence",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [],
+  "assessable_implication": true,
+  "notes": "Correctly separates GAAP from company-adjusted earnings and retains the adverse flow evidence. The persisted review overgeneralizes missing attribution: Q3 wrap assets have an explicit 615,189 + 4,769 + 30,344 = 650,302 flow versus market-and-other bridge, but total AWM client assets are a different scope and pure market return is not isolated. Noncritical precision loss."
+}

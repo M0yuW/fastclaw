@@ -1,0 +1,202 @@
+{
+  "observation_id": "S-NKE-r3",
+  "case_id": "NKE",
+  "repetition": 3,
+  "workflow": "S",
+  "offline_frozen_adapter": true,
+  "synthetic_source_data": false,
+  "status": "needs_review",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "source_locked_tool_result": true,
+    "thesis_count_and_symbol": true,
+    "source_and_period_retained": true,
+    "core_values_reported": false,
+    "historical_preliminary_label": true,
+    "valuation_boundary": true,
+    "review_date_safe": true,
+    "no_unexpected_state_or_trade": true,
+    "rejection_explained": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 2,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "screen_tool_payload": {
+      "schema_version": "finance.tool.v1",
+      "ok": true,
+      "request_id": "92c6bdf1-2f4f-4863-bff3-822eb62e2eb5",
+      "as_of": "2026-10-21T18:56:55Z",
+      "stale_after": "2026-10-22T00:56:55Z",
+      "data": {
+        "fixture_id": "SEC-DISCLOSURE-SINGLETON-PANEL-v1",
+        "synthetic": false,
+        "offline_frozen_adapter": true,
+        "not_live_market_data": true,
+        "scope": "historical disclosure-only single-company candidate research; source dates differ and must not be treated as a contemporaneous ranking",
+        "criteria": {
+          "gaap_gross_margin_min_percent": 40,
+          "revenue_yoy_min_percent": 0
+        },
+        "excluded_dimensions": [
+          "share_price",
+          "valuation",
+          "analyst_target",
+          "forward_return"
+        ],
+        "results": [],
+        "rejected": [
+          {
+            "symbol": "NKE",
+            "company": "NIKE, Inc.",
+            "period": "Q2 FY2025 ended 2024-11-30",
+            "filing_date": "2024-12-19",
+            "source_id": "nike-2024-12-19-q2-fy2025",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/320187/000032018724000069/q2fy25exhibit991er.htm",
+            "source_sha256": "79d1d9055f898a5ce82d52fec9790a8d0d14ff3875b284100487f0d86da8b387",
+            "reported": {
+              "gaap_revenue_usd_million": 12354,
+              "revenue_yoy_percent": -8,
+              "gaap_gross_margin_percent": 43.6,
+              "gaap_gross_margin_yoy_change_basis_points": -100,
+              "nike_brand_digital_yoy_percent": -21
+            },
+            "locators": [
+              "Second Quarter Income Statement Review",
+              "Consolidated Statements of Income"
+            ],
+            "risk_note": "Revenue fell 8% year over year and NIKE Brand Digital fell 21%; a 43.6% gross margin alone does not satisfy both screen rules.",
+            "reason": "disclosure_criteria_not_met",
+            "failed_criteria": [
+              "revenue_yoy_below_threshold"
+            ]
+          }
+        ],
+        "passed": 0,
+        "failed": 1
+      },
+      "sources": [
+        {
+          "name": "local_evaluation_fixture",
+          "kind": "deterministic_screen"
+        }
+      ],
+      "quality": {
+        "completeness": 0.9677,
+        "flags": []
+      },
+      "errors": [],
+      "cache": {
+        "hit": false,
+        "ttl_seconds": 21600
+      }
+    },
+    "tool_calls": [
+      "finance-tools__screen_stocks"
+    ],
+    "trace": {
+      "model_calls": 2,
+      "tool_calls": 1,
+      "tool_results": 1,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "Run a historical disclosure-only candidate-research workflow, not a live investment recommendation. Call finance-tools__screen_stocks for US symbol NKE with require_complete=false. This case's frozen offline adapter uses only the disclosed GAAP gross margin >=40% and reported revenue YoY >=0%; it does not use the seven-factor live market-data completeness gate. Read retained and rejected results, exact failed criteria, source URL and full SHA-256, filing date, reporting period, units and countervailing risks. If retained, save exactly one HISTORICAL PRELIMINARY research thesis with the full SEC URL/hash in structured evidence, material reported numbers, a risk and the missing price/valuation boundary. If rejected, save no thesis and explain why. Do not trade, call live market tools, imply these issuers were ranked on a common date, or turn a narrow screen into an investment recommendation. Omit next_review_at unless it is after the current run date.",
+      "response": {
+        "id": "chatcmpl-1792609014399487000",
+        "object": "chat.completion",
+        "created": 1792609014,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "**Result: REJECTED — no thesis saved.**\n\n## Screen run\n\n- Tool: `finance-tools__screen_stocks`, US market, symbol `NKE`, `require_complete=false`\n- Adapter: frozen offline disclosure-only fixture (`SEC-DISCLOSURE-SINGLETON-PANEL-v1`), `not_live_market_data: true`\n- Run timestamp: 2026-10-21T18:56:55Z\n- Criteria applied: GAAP gross margin ≥ 40%; reported revenue YoY ≥ 0%\n- Excluded dimensions: share price, valuation, analyst target, forward return\n- Outcome: `passed: 0`, `failed: 1`, `results: []`\n\n## Retained results\n\nNone. No candidate was retained, so there is no retained set to read.\n\n## Rejected result — NKE\n\n| Field | Value |\n|---|---|\n| Company | NIKE, Inc. |\n| Reporting period | Q2 FY2025, ended 2024-11-30 |\n| Filing date | 2024-12-19 |\n| Source ID | `nike-2024-12-19-q2-fy2025` |\n| Source URL | https://www.sec.gov/Archives/edgar/data/320187/000032018724000069/q2fy25exhibit991er.htm |\n| Full SHA-256 | `79d1d9055f898a5ce82d52fec9790a8d0d14ff3875b284100487f0d86da8b387` |\n| Locators | \"Second Quarter Income Statement Review\"; \"Consolidated Statements of Income\" |\n\nReported figures (GAAP, USD millions unless noted):\n- Revenue: 12,354\n- Revenue YoY: **−8%**\n- Gross margin: 43.6% (passes the ≥40% rule)\n- Gross margin YoY change: −100 bps\n- NIKE Brand Digital YoY: −21%\n\n**Exact failed criterion:** `revenue_yoy_below_threshold` — reported revenue YoY of −8% is below the required ≥ 0% threshold. Reason code: `disclosure_criteria_not_met`.\n\n**Countervailing risk noted in the source record:** revenue declined 8% year over year and NIKE Brand Digital fell 21%; a 43.6% gross margin alone does not satisfy both screen rules.\n\n## Why no thesis was saved\n\nThe workflow's rule is conditional: save exactly one HISTORICAL PRELIMINARY thesis only if the candidate is retained. NKE failed one of the two required disclosure criteria, so the condition for saving was not met. Writing a thesis here would misrepresent a failed screen as a research candidate, and there is no retained candidate whose SEC URL/hash, reported numbers, risk, and missing price/valuation boundary could be recorded as structured evidence.\n\n## Boundaries observed\n\n- No trade, order, or position action was taken.\n- No live market-data or valuation tool was called; the only tool used was the deterministic screen.\n- This is a single-company historical disclosure check, not a ranking. Source dates differ across cases and must not be treated as a contemporaneous comparison.\n- The 43.6% gross margin is not an investment conclusion. Price, valuation, analyst targets, and forward returns were explicitly excluded, so no view on NKE's attractiveness is expressed or implied.\n- No `next_review_at` was set, since no thesis exists to review."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6298,
+          "completion_tokens": 832,
+          "total_tokens": 7130
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_0QBSvgb922Wn556kWVDe2081",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"NKE\"], \"require_complete\": false}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_0QBSvgb922Wn556kWVDe2081",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"92c6bdf1-2f4f-4863-bff3-822eb62e2eb5\",\"as_of\":\"2026-10-21T18:56:55Z\",\"stale_after\":\"2026-10-22T00:56:55Z\",\"data\":{\"fixture_id\":\"SEC-DISCLOSURE-SINGLETON-PANEL-v1\",\"synthetic\":false,\"offline_frozen_adapter\":true,\"not_live_market_data\":true,\"scope\":\"historical disclosure-only single-company candidate research; source dates differ and must not be treated as a contemporaneous ranking\",\"criteria\":{\"gaap_gross_margin_min_percent\":40,\"revenue_yoy_min_percent\":0},\"excluded_dimensions\":[\"share_price\",\"valuation\",\"analyst_target\",\"forward_return\"],\"results\":[],\"rejected\":[{\"symbol\":\"NKE\",\"company\":\"NIKE, Inc.\",\"period\":\"Q2 FY2025 ended 2024-11-30\",\"filing_date\":\"2024-12-19\",\"source_id\":\"nike-2024-12-19-q2-fy2025\",\"source_url\":\"https://www.sec.gov/Archives/edgar/data/320187/000032018724000069/q2fy25exhibit991er.htm\",\"source_sha256\":\"79d1d9055f898a5ce82d52fec9790a8d0d14ff3875b284100487f0d86da8b387\",\"reported\":{\"gaap_revenue_usd_million\":12354,\"revenue_yoy_percent\":-8,\"gaap_gross_margin_percent\":43.6,\"gaap_gross_margin_yoy_change_basis_points\":-100,\"nike_brand_digital_yoy_percent\":-21},\"locators\":[\"Second Quarter Income Statement Review\",\"Consolidated Statements of Income\"],\"risk_note\":\"Revenue fell 8% year over year and NIKE Brand Digital fell 21%; a 43.6% gross margin alone does not satisfy both screen rules.\",\"reason\":\"disclosure_criteria_not_met\",\"failed_criteria\":[\"revenue_yoy_below_threshold\"]}],\"passed\":0,\"failed\":1},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":0.9677,\"flags\":[]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2819,
+              "completion_tokens": 91,
+              "total_tokens": 2910,
+              "estimated_cost_usd": 0.00042014,
+              "priced": true,
+              "latency_ms": 628.711
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3479,
+              "completion_tokens": 741,
+              "total_tokens": 4220,
+              "cache_read_tokens": 2816,
+              "estimated_cost_usd": 0.00030818480000000003,
+              "priced": true,
+              "latency_ms": 3379.147
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 4.078,
+      "tool_calls": [
+        "finance-tools__screen_stocks"
+      ],
+      "model_calls": 2,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0007283248000000001
+    }
+  ],
+  "estimated_cost_usd": 0.0007283248000000001
+}

@@ -1,0 +1,52 @@
+{
+  "version": 2,
+  "status": "selected_source_fact_rows_frozen_before_v2_model_observations",
+  "case_id": "NDAQ-2025-Q3-GROSS-NET-REVENUE-DIVERGENCE",
+  "symbol": "NDAQ",
+  "cik": "0001120193",
+  "workflow_eligibility": ["sec_event_to_thesis_review"],
+  "source_basis": "SEC 8-K EX-99.1 consolidated statements, Three Months Ended current-year first numeric column. All selected income-statement levels are GAAP, reported USD millions. Total gross revenues include four listed business lines. Revenues less transaction-based expenses is a distinct subtotal; it must not be relabeled as gross revenues or confused with non-GAAP solutions revenue.",
+  "baseline": {
+    "period": "CY2025 Q2 ended 2025-06-30",
+    "as_of": "2025-07-24",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1120193/000119312525163817/d56011dex991.htm",
+    "source_sha256": "afe73b13e31daa249f72e2e263a57216f6992db0ff54fdd25943fc829806c85e",
+    "local_path": ".cache/sources/HOLDOUT-NDAQ-BASELINE-v1.htm",
+    "facts": [
+      {"id":"NDAQ-Q2-CAP","metric":"gaap_capital_access_gross_revenue","value":527,"unit":"USD_million_rounded","source_row":"Capital Access Platforms","locator":"Consolidated statement / Three Months Ended June 30, 2025 current column"},
+      {"id":"NDAQ-Q2-FINTECH","metric":"gaap_financial_technology_gross_revenue","value":464,"unit":"USD_million_rounded","source_row":"Financial Technology","locator":"Consolidated statement / Three Months Ended June 30, 2025 current column"},
+      {"id":"NDAQ-Q2-MARKET","metric":"gaap_market_services_gross_revenue","value":1090,"unit":"USD_million_rounded","source_row":"Market Services","locator":"Consolidated statement / Three Months Ended June 30, 2025 current column"},
+      {"id":"NDAQ-Q2-OTHER","metric":"gaap_other_gross_revenue","value":9,"unit":"USD_million_rounded","source_row":"Other Revenues","locator":"Consolidated statement / Three Months Ended June 30, 2025 current column"},
+      {"id":"NDAQ-Q2-GROSS","metric":"gaap_total_gross_revenue","value":2090,"unit":"USD_million_rounded","source_row":"Total revenues","locator":"Consolidated statement / Three Months Ended June 30, 2025 current column"},
+      {"id":"NDAQ-Q2-NETREV","metric":"gaap_revenue_less_transaction_expenses","value":1306,"unit":"USD_million_rounded","source_row":"Revenues less transaction-based expenses","locator":"Consolidated statement / Three Months Ended June 30, 2025 current column"},
+      {"id":"NDAQ-Q2-OPEX","metric":"gaap_total_operating_expenses","value":738,"unit":"USD_million_rounded","source_row":"Total operating expenses","locator":"Consolidated statement / Three Months Ended June 30, 2025 current column"},
+      {"id":"NDAQ-Q2-OPINC","metric":"gaap_operating_income","value":568,"unit":"USD_million_rounded","source_row":"Operating income","locator":"Consolidated statement / Three Months Ended June 30, 2025 current column"},
+      {"id":"NDAQ-Q2-NETATTR","metric":"gaap_net_income_attributable_to_nasdaq","value":452,"unit":"USD_million_rounded","source_row":"Net income attributable to Nasdaq","locator":"Consolidated statement / Three Months Ended June 30, 2025 current column"}
+    ]
+  },
+  "event": {
+    "period": "CY2025 Q3 ended 2025-09-30",
+    "as_of": "2025-10-21",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1120193/000119312525244271/d46597dex991.htm",
+    "source_sha256": "e1d3ceab0639fe4c9c02c55c7486f6a78dc63285bab7a94712abdffec0ca4f10",
+    "local_path": ".cache/sources/HOLDOUT-NDAQ-EVENT-v1.htm",
+    "facts": [
+      {"id":"NDAQ-Q3-CAP","metric":"gaap_capital_access_gross_revenue","value":546,"unit":"USD_million_rounded","source_row":"Capital Access Platforms","locator":"Consolidated statement / Three Months Ended September 30, 2025 current column"},
+      {"id":"NDAQ-Q3-FINTECH","metric":"gaap_financial_technology_gross_revenue","value":457,"unit":"USD_million_rounded","source_row":"Financial Technology","locator":"Consolidated statement / Three Months Ended September 30, 2025 current column"},
+      {"id":"NDAQ-Q3-MARKET","metric":"gaap_market_services_gross_revenue","value":946,"unit":"USD_million_rounded","source_row":"Market Services","locator":"Consolidated statement / Three Months Ended September 30, 2025 current column"},
+      {"id":"NDAQ-Q3-OTHER","metric":"gaap_other_gross_revenue","value":9,"unit":"USD_million_rounded","source_row":"Other Revenues","locator":"Consolidated statement / Three Months Ended September 30, 2025 current column"},
+      {"id":"NDAQ-Q3-GROSS","metric":"gaap_total_gross_revenue","value":1958,"unit":"USD_million_rounded","source_row":"Total revenues","locator":"Consolidated statement / Three Months Ended September 30, 2025 current column"},
+      {"id":"NDAQ-Q3-NETREV","metric":"gaap_revenue_less_transaction_expenses","value":1315,"unit":"USD_million_rounded","source_row":"Revenues less transaction-based expenses","locator":"Consolidated statement / Three Months Ended September 30, 2025 current column"},
+      {"id":"NDAQ-Q3-OPEX","metric":"gaap_total_operating_expenses","value":729,"unit":"USD_million_rounded","source_row":"Total operating expenses","locator":"Consolidated statement / Three Months Ended September 30, 2025 current column"},
+      {"id":"NDAQ-Q3-OPINC","metric":"gaap_operating_income","value":586,"unit":"USD_million_rounded","source_row":"Operating income","locator":"Consolidated statement / Three Months Ended September 30, 2025 current column"},
+      {"id":"NDAQ-Q3-NETATTR","metric":"gaap_net_income_attributable_to_nasdaq","value":423,"unit":"USD_million_rounded","source_row":"Net income attributable to Nasdaq","locator":"Consolidated statement / Three Months Ended September 30, 2025 current column"}
+    ]
+  },
+  "precommitted_interpretation_checks": [
+    "Gross revenue falls -132 USD million Q3 minus Q2: Capital Access +19, Financial Technology -7, Market Services -144, Other 0. This is a gross segment accounting bridge, not a causal explanation of demand.",
+    "Net revenue after transaction-based expenses rises +9 USD million while gross revenue falls -132. The implied transaction-expense magnitude falls 784 to 643, -141. Do not report net revenue as if it were gross revenue or assert all four segment gross lines explain the net change.",
+    "Operating expenses fall -9, so operating income rises +18: net revenue +9 minus expense change -9. Net income attributable to Nasdaq falls -29; selected operating lines do not explain the below-operating/tax bridge.",
+    "The source also contains non-GAAP solutions and adjusted results; none is substituted for the selected GAAP statement lines.",
+    "Two adjacent quarters do not prove durability, valuation or a trading conclusion."
+  ]
+}

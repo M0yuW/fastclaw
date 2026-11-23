@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "status": "selected_source_fact_rows_frozen_before_v2_model_observations",
+  "case_id": "SYF-2025-Q3-CREDIT-RATE-VOLUME-MIX",
+  "symbol": "SYF",
+  "cik": "0001601712",
+  "workflow_eligibility": ["sec_event_to_thesis_review"],
+  "source_basis": "SEC 8-K EX-99.1 Q2 and Q3 2025 release narratives. Selected current-quarter displayed values only; billions/millions are rounded in the release. Purchase-volume and receivables levels are not the release's year-over-year growth rates. The 30+ delinquency ratio uses period-end receivables, while the net charge-off ratio uses average receivables; these rates cannot establish absolute loss dollars.",
+  "baseline": {
+    "period": "CY2025 Q2 ended 2025-06-30",
+    "as_of": "2025-07-22",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1601712/000160171225000228/earningsrelease2q25.htm",
+    "source_sha256": "d79650ec94ff9bcf61bf9be1efb2ee3b7d72ca2a2a0643396f8194702f7272fa",
+    "local_path": ".cache/sources/HOLDOUT-SYF-BASELINE-v1.htm",
+    "facts": [
+      {"id":"SYF-Q2-PVOL","metric":"reported_purchase_volume","value":46.1,"unit":"USD_billion_reported","source_row":"Purchase volume","locator":"Second-quarter release / current quarter narrative"},
+      {"id":"SYF-Q2-LOANS","metric":"reported_period_end_loan_receivables","value":99.8,"unit":"USD_billion_reported","source_row":"Loan receivables","locator":"Second-quarter release / current quarter narrative"},
+      {"id":"SYF-Q2-ACTIVE","metric":"reported_average_active_accounts","value":68.1,"unit":"million_accounts_reported","source_row":"Average active accounts","locator":"Second-quarter release / current quarter narrative"},
+      {"id":"SYF-Q2-NII","metric":"reported_net_interest_income","value":4.5,"unit":"USD_billion_reported","source_row":"Net interest income","locator":"Second-quarter release / current quarter narrative"},
+      {"id":"SYF-Q2-RELEASE","metric":"reported_reserve_release","value":265,"unit":"USD_million_rounded","source_row":"reserve release","locator":"Second-quarter release / current quarter narrative"},
+      {"id":"SYF-Q2-30DPD","metric":"reported_30_plus_delinquency_period_end_ratio","value":4.18,"unit":"percent","source_row":"Loans 30+ days past due as a percentage of total period-end loan receivables","locator":"Second-quarter release / current quarter narrative"},
+      {"id":"SYF-Q2-NCO","metric":"reported_net_charge_off_average_receivables_ratio","value":5.70,"unit":"percent","source_row":"Net charge-offs as a percentage of total average loan receivables","locator":"Second-quarter release / current quarter narrative"},
+      {"id":"SYF-Q2-EPS","metric":"gaap_diluted_eps","value":2.50,"unit":"USD_per_share_reported","source_row":"per diluted share","locator":"Second-quarter release / current quarter narrative"}
+    ]
+  },
+  "event": {
+    "period": "CY2025 Q3 ended 2025-09-30",
+    "as_of": "2025-10-15",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1601712/000160171225000256/earningsrelease3q25.htm",
+    "source_sha256": "b75ad8d35fbab470c2feeba0f42e1c50668d0d5891c78b0dc82bf197fdc16a49",
+    "local_path": ".cache/sources/HOLDOUT-SYF-EVENT-v1.htm",
+    "facts": [
+      {"id":"SYF-Q3-PVOL","metric":"reported_purchase_volume","value":46.0,"unit":"USD_billion_reported","source_row":"Purchase volume","locator":"Third-quarter release / current quarter narrative"},
+      {"id":"SYF-Q3-LOANS","metric":"reported_period_end_loan_receivables","value":100.2,"unit":"USD_billion_reported","source_row":"Loan receivables","locator":"Third-quarter release / current quarter narrative"},
+      {"id":"SYF-Q3-ACTIVE","metric":"reported_average_active_accounts","value":68.3,"unit":"million_accounts_reported","source_row":"Average active accounts","locator":"Third-quarter release / current quarter narrative"},
+      {"id":"SYF-Q3-NII","metric":"reported_net_interest_income","value":4.7,"unit":"USD_billion_reported","source_row":"Net interest income","locator":"Third-quarter release / current quarter narrative"},
+      {"id":"SYF-Q3-RELEASE","metric":"reported_reserve_release","value":152,"unit":"USD_million_rounded","source_row":"reserve release","locator":"Third-quarter release / current quarter narrative"},
+      {"id":"SYF-Q3-30DPD","metric":"reported_30_plus_delinquency_period_end_ratio","value":4.39,"unit":"percent","source_row":"Loans 30+ days past due as a percentage of total period-end loan receivables","locator":"Third-quarter release / current quarter narrative"},
+      {"id":"SYF-Q3-NCO","metric":"reported_net_charge_off_average_receivables_ratio","value":5.16,"unit":"percent","source_row":"Net charge-offs as a percentage of total average loan receivables","locator":"Third-quarter release / current quarter narrative"},
+      {"id":"SYF-Q3-EPS","metric":"gaap_diluted_eps","value":2.86,"unit":"USD_per_share_reported","source_row":"per diluted share","locator":"Third-quarter release / current quarter narrative"}
+    ]
+  },
+  "precommitted_interpretation_checks": [
+    "The selected displayed purchase-volume level moves from 46.1 to 46.0 USD billion sequentially, a -0.1 change. Q3's reported +2% purchase-volume growth is year-over-year, not sequential; do not call the selected level a sequential increase.",
+    "Period-end loan receivables increase 99.8 to 100.2 USD billion and average active accounts increase 68.1 to 68.3 million. Rounded narrative values limit precision.",
+    "The 30+ delinquency ratio worsens 4.18% to 4.39%, +0.21 percentage points, while net charge-offs as a percentage of average receivables improve 5.70% to 5.16%, -0.54 percentage points. They use different denominators and do not directly yield net charge-off dollar amounts.",
+    "The reserve release declines from 265 to 152 USD million, -113, even though both releases describe lower year-over-year credit costs. Do not confuse quarter-on-quarter with year-over-year or a reserve release with net charge-offs.",
+    "Diluted EPS rises 2.50 to 2.86 USD/share; this alone does not establish recurring credit quality, valuation, or a trade."
+  ]
+}

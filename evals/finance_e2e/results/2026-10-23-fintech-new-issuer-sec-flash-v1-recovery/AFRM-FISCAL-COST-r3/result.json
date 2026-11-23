@@ -1,0 +1,503 @@
+{
+  "observation_id": "AFRM-FISCAL-COST-r3",
+  "case_id": "AFRM-FISCAL-COST",
+  "repeat": 3,
+  "workflow": "guarded_fintech_event_review",
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "policy_tools_only": true,
+    "one_review": true,
+    "source_packet_exact": true,
+    "review_linked": true,
+    "guarded_review": true,
+    "alert_acknowledged": true,
+    "version_incremented": true,
+    "no_trade": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 6,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_557e46f484f44c22a8f9",
+          "market": "US",
+          "symbol": "AFRM",
+          "title": "AFRM SEC event research thesis",
+          "thesis": "FY2024 Q4 ended 2024-06-30 baseline: AFRM-FQ4-REV=659185 USD_thousand; AFRM-FQ4-TC=349787 USD_thousand; AFRM-FQ4-RLTC=309398 USD_thousand; AFRM-FQ4-OPLOSS=-73460 USD_thousand; AFRM-FQ4-ADJOP=149807 USD_thousand; AFRM-FQ4-PROVISION=117609 USD_thousand; AFRM-FQ4-FUNDING=95256 USD_thousand. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": false,
+          "actionability": "available",
+          "decision_hold_alert_id": null,
+          "assumptions": [],
+          "catalysts": [
+            "business growth",
+            "earnings quality"
+          ],
+          "invalidations": [
+            "material operating deterioration",
+            "weakening demand"
+          ],
+          "required_event_metrics": [
+            "gaap_total_revenue_net",
+            "transaction_costs_non_gaap",
+            "revenue_less_transaction_costs_non_gaap",
+            "gaap_operating_income_loss",
+            "adjusted_operating_income_non_gaap",
+            "provision_for_credit_losses",
+            "funding_costs"
+          ],
+          "evidence": [
+            {
+              "id": "AFRM-FISCAL-COST-baseline-sec-exhibit",
+              "url": "https://www.sec.gov/Archives/edgar/data/1820953/000182095324000033/afrm-q424shareholderlett.htm",
+              "sha256": "14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f"
+            }
+          ],
+          "next_review_at": "2026-11-21T00:00:00Z",
+          "last_review_at": "2026-10-22T18:10:12Z",
+          "created_at": "2026-10-22T18:09:50Z",
+          "updated_at": "2026-10-22T18:10:12Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_f86e255a806c4344b954",
+            "thesis_id": "th_557e46f484f44c22a8f9",
+            "alert_id": "fa_f8ff7caee4094caf9765",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-AFRM-FISCAL-COST-r3",
+            "event": {
+              "type": "earnings",
+              "summary": "AFRM FY2025 Q1 ended 2024-09-30 selected SEC exhibit packet: AFRM-FQ1-REV=698479 USD_thousand; AFRM-FQ1-TC=413352 USD_thousand; AFRM-FQ1-RLTC=285127 USD_thousand; AFRM-FQ1-OPLOSS=-132623 USD_thousand; AFRM-FQ1-ADJOP=129589 USD_thousand; AFRM-FQ1-PROVISION=159824 USD_thousand; AFRM-FQ1-FUNDING=104145 USD_thousand. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.",
+              "as_of": "2024-11-07",
+              "sources": [
+                {
+                  "id": "AFRM-FISCAL-COST-event-sec-exhibit",
+                  "url": "https://www.sec.gov/Archives/edgar/data/1820953/000182095324000058/afrm-q125shareholderlett.htm",
+                  "sha256": "0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "maintain",
+            "rationale": "Guarded review recorded decision=maintain, impact=mixed. Stored event facts: adjusted_operating_income_non_gaap=129589 USD_thousand [AFRM-FQ1-ADJOP]; funding_costs=104145 USD_thousand [AFRM-FQ1-FUNDING]; gaap_operating_income_loss=-132623 USD_thousand [AFRM-FQ1-OPLOSS]; gaap_total_revenue_net=698479 USD_thousand [AFRM-FQ1-REV]; provision_for_credit_losses=159824 USD_thousand [AFRM-FQ1-PROVISION]; revenue_less_transaction_costs_non_gaap=285127 USD_thousand [AFRM-FQ1-RLTC]; transaction_costs_non_gaap=413352 USD_thousand [AFRM-FQ1-TC]. Attribution for operating_margin is unresolved; proposed drivers: AFRM-FQ1-TC, AFRM-FQ1-PROVISION, AFRM-FQ1-FUNDING. This guard validates stated causal lineage, not the investment merit of the decision.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [
+              {
+                "bucket": "watchlist",
+                "term": "afrm",
+                "weight": 1
+              }
+            ],
+            "evidence": [
+              {
+                "type": "validated_accounting_lineage",
+                "claims": [
+                  {
+                    "target_metric": "operating_margin",
+                    "strength": "unresolved",
+                    "driver_fact_ids": [
+                      "AFRM-FQ1-TC",
+                      "AFRM-FQ1-PROVISION",
+                      "AFRM-FQ1-FUNDING"
+                    ]
+                  }
+                ],
+                "source_hashes": [
+                  "0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff"
+                ]
+              }
+            ],
+            "created_at": "2026-10-22T18:10:12Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_f8ff7caee4094caf9765",
+        "watchlist_id": "wl_893b20c0836b4860b4e8",
+        "thesis_id": "th_557e46f484f44c22a8f9",
+        "market": "US",
+        "symbol": "AFRM",
+        "event_fingerprint": "a0458189d6bf10cd4ef6b3182e8f2291b554fb09ce74c829bf902bb811465ed2",
+        "event": {
+          "external_id": "AFRM-FISCAL-COST-sec-event-v1",
+          "type": "earnings",
+          "summary": "AFRM FY2025 Q1 ended 2024-09-30 selected SEC exhibit packet: AFRM-FQ1-REV=698479 USD_thousand; AFRM-FQ1-TC=413352 USD_thousand; AFRM-FQ1-RLTC=285127 USD_thousand; AFRM-FQ1-OPLOSS=-132623 USD_thousand; AFRM-FQ1-ADJOP=129589 USD_thousand; AFRM-FQ1-PROVISION=159824 USD_thousand; AFRM-FQ1-FUNDING=104145 USD_thousand. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.",
+          "as_of": "2024-11-07",
+          "sources": [
+            {
+              "id": "AFRM-FISCAL-COST-event-sec-exhibit",
+              "url": "https://www.sec.gov/Archives/edgar/data/1820953/000182095324000058/afrm-q125shareholderlett.htm",
+              "sha256": "0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_total_revenue_net": {
+              "value": "698479",
+              "unit": "USD_thousand",
+              "fact_id": "AFRM-FQ1-REV",
+              "statement_line": "revenue"
+            },
+            "transaction_costs_non_gaap": {
+              "value": "413352",
+              "unit": "USD_thousand",
+              "fact_id": "AFRM-FQ1-TC",
+              "statement_line": "unknown"
+            },
+            "revenue_less_transaction_costs_non_gaap": {
+              "value": "285127",
+              "unit": "USD_thousand",
+              "fact_id": "AFRM-FQ1-RLTC",
+              "statement_line": "unknown"
+            },
+            "gaap_operating_income_loss": {
+              "value": "-132623",
+              "unit": "USD_thousand",
+              "fact_id": "AFRM-FQ1-OPLOSS",
+              "statement_line": "unknown"
+            },
+            "adjusted_operating_income_non_gaap": {
+              "value": "129589",
+              "unit": "USD_thousand",
+              "fact_id": "AFRM-FQ1-ADJOP",
+              "statement_line": "unknown"
+            },
+            "provision_for_credit_losses": {
+              "value": "159824",
+              "unit": "USD_thousand",
+              "fact_id": "AFRM-FQ1-PROVISION",
+              "statement_line": "operating_expense"
+            },
+            "funding_costs": {
+              "value": "104145",
+              "unit": "USD_thousand",
+              "fact_id": "AFRM-FQ1-FUNDING",
+              "statement_line": "operating_expense"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "afrm",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-22T18:09:50Z",
+        "last_seen_at": "2026-10-22T18:09:50Z",
+        "created_at": "2026-10-22T18:09:50Z",
+        "updated_at": "2026-10-22T18:10:13Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "extras": {
+    "expected_event": {
+      "external_id": "AFRM-FISCAL-COST-sec-event-v1",
+      "type": "earnings",
+      "as_of": "2024-11-07",
+      "summary": "AFRM FY2025 Q1 ended 2024-09-30 selected SEC exhibit packet: AFRM-FQ1-REV=698479 USD_thousand; AFRM-FQ1-TC=413352 USD_thousand; AFRM-FQ1-RLTC=285127 USD_thousand; AFRM-FQ1-OPLOSS=-132623 USD_thousand; AFRM-FQ1-ADJOP=129589 USD_thousand; AFRM-FQ1-PROVISION=159824 USD_thousand; AFRM-FQ1-FUNDING=104145 USD_thousand. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.",
+      "sources": [
+        {
+          "id": "AFRM-FISCAL-COST-event-sec-exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/1820953/000182095324000058/afrm-q125shareholderlett.htm",
+          "sha256": "0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff"
+        }
+      ],
+      "observed_metrics": {
+        "gaap_total_revenue_net": {
+          "value": "698479",
+          "unit": "USD_thousand",
+          "fact_id": "AFRM-FQ1-REV",
+          "statement_line": "revenue"
+        },
+        "transaction_costs_non_gaap": {
+          "value": "413352",
+          "unit": "USD_thousand",
+          "fact_id": "AFRM-FQ1-TC",
+          "statement_line": "unknown"
+        },
+        "revenue_less_transaction_costs_non_gaap": {
+          "value": "285127",
+          "unit": "USD_thousand",
+          "fact_id": "AFRM-FQ1-RLTC",
+          "statement_line": "unknown"
+        },
+        "gaap_operating_income_loss": {
+          "value": "-132623",
+          "unit": "USD_thousand",
+          "fact_id": "AFRM-FQ1-OPLOSS",
+          "statement_line": "unknown"
+        },
+        "adjusted_operating_income_non_gaap": {
+          "value": "129589",
+          "unit": "USD_thousand",
+          "fact_id": "AFRM-FQ1-ADJOP",
+          "statement_line": "unknown"
+        },
+        "provision_for_credit_losses": {
+          "value": "159824",
+          "unit": "USD_thousand",
+          "fact_id": "AFRM-FQ1-PROVISION",
+          "statement_line": "operating_expense"
+        },
+        "funding_costs": {
+          "value": "104145",
+          "unit": "USD_thousand",
+          "fact_id": "AFRM-FQ1-FUNDING",
+          "statement_line": "operating_expense"
+        }
+      }
+    },
+    "tool_calls": [
+      "finance-tools__thesis_get",
+      "finance-tools__alert_list",
+      "finance-tools__thesis_match_event",
+      "finance-tools__thesis_record_review",
+      "finance-tools__thesis_record_review",
+      "finance-tools__alert_update"
+    ],
+    "trace": {
+      "model_calls": 6,
+      "tool_calls": 6,
+      "tool_results": 6,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "Complete one research-state review for the newly ingested SEC event. Read the stored thesis and alert via finance tools. Compare only the supplied periods and metrics, identify support, risk, and missing evidence, and choose your own decision. Link the stored alert and source hash when recording the review with the observed thesis version; then acknowledge the alert with its observed version. A missing metric in the packet is not necessarily missing from the SEC filing. Do not trade. Case AFRM-FISCAL-COST; thesis ID th_557e46f484f44c22a8f9; alert ID fa_f8ff7caee4094caf9765. Separate source facts, arithmetic and hypotheses; cite the fact IDs, periods, units and accounting bases for material claims. Identify one source-grounded research implication, its strongest counterpoint or unresolved input, and what evidence would change the assessment. Do not assume a decision, conviction, or that a positive change in one measure resolves contrary evidence in another. For causal_claims, use only a stored source-backed driver and supported target; omit unsupported causal claims. Do not set a past next_review_at date. Read and repair rejected tool inputs before finalizing.",
+      "response": {
+        "id": "chatcmpl-1792692590314450000",
+        "object": "chat.completion",
+        "created": 1792692590,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# AFRM-FISCAL-COST — Research-State Review\n\n**Status:** Review recorded (`tr_f86e255a806c4344b954`) at thesis version 1 → now version 2. Alert `fa_f8ff7caee4094caf9765` acknowledged at version 1 → now version 2. No trade.\n\n## 1. Source facts (as supplied, USD_thousand)\n\n| Metric | FY2025 Q1 (ended 2024-09-30) | FY2024 Q4 (ended 2024-06-30) | Basis |\n|---|---|---|---|\n| Net revenue | 698,479 `[AFRM-FQ1-REV]` | 659,185 `[AFRM-FQ4-REV]` | GAAP |\n| Transaction costs | 413,352 `[AFRM-FQ1-TC]` | 349,787 `[AFRM-FQ4-TC]` | non-GAAP |\n| Revenue less transaction costs | 285,127 `[AFRM-FQ1-RLTC]` | 309,398 `[AFRM-FQ4-RLTC]` | non-GAAP |\n| Operating income (loss) | −132,623 `[AFRM-FQ1-OPLOSS]` | −73,460 `[AFRM-FQ4-OPLOSS]` | GAAP |\n| Adjusted operating income | 129,589 `[AFRM-FQ1-ADJOP]` | 149,807 `[AFRM-FQ4-ADJOP]` | non-GAAP |\n| Provision for credit losses | 159,824 `[AFRM-FQ1-PROVISION]` | 117,609 `[AFRM-FQ4-PROVISION]` | GAAP |\n| Funding costs | 104,145 `[AFRM-FQ1-FUNDING]` | 95,256 `[AFRM-FQ4-FUNDING]` | as supplied |\n\nSources: event exhibit `0d0c1376…af1ff` (as_of 2024-11-07); baseline exhibit `14e5a1df…ed96f`. All seven required event metrics were present in the packet — no missing-metric hold.\n\n## 2. Arithmetic (derived, sequential one quarter, from the two packets only)\n- Revenue **+39,394 (+5.98%)**\n- Transaction costs **+63,565 (+18.17%)** — grew ~3× faster than revenue\n- Revenue less transaction costs **−24,271 (−7.84%)**\n- GAAP operating loss **widened by 59,163**\n- Adjusted operating income **−20,218 (−13.50%)**\n- Provision **+42,215 (+35.89%)**; funding costs **+8,889 (+9.33%)**\n\n## 3. Support, risk, missing evidence\n- **Support:** top-line growth; adjusted operating income remains positive at 129,589.\n- **Risk:** the non-GAAP revenue-less-transaction-costs line *declined* while transaction costs outgrew revenue; GAAP operating loss widened materially; credit provision and funding costs both rose sequentially. The positive revenue change does **not** resolve these contrary signals.\n- **Missing:** no year-over-year comparative, no cash flow statement, no segment/product breakdown, no non-GAAP-to-GAAP reconciliation, no allowance/coverage or delinquency detail, no management commentary. Absence here is a packet limitation, not evidence the filing lacks it.\n\n## 4. Hypotheses (explicitly not source-stated)\nTransaction-cost growth may reflect product mix or growth investment; the provision increase may reflect portfolio seasoning or credit normalization. The packet attributes neither, so the `operating_margin` causal claim was recorded as **unresolved** with drivers `AFRM-FQ1-TC`, `AFRM-FQ1-PROVISION`, `AFRM-FQ1-FUNDING` and **no quantified contribution**.\n\n## 5. Decision\n**Maintain**, impact **mixed**, conviction **3** (unchanged), status active. A single sequential quarter with mixed direction and no source-backed causal bridge neither confirms nor invalidates the thesis. Next review 2026-11-21.\n\n## 6. Research implication and its counterpoint\n- **Implication:** the sequential compression in revenue less transaction costs alongside rising provision and funding costs is the most decision-relevant signal — it bears directly on the \"earnings quality\" catalyst and on the \"material operating deterioration\" invalidation, and it is not offset by revenue growth.\n- **Strongest counterpoint / unresolved input:** this is one quarter, and the non-GAAP adjusted operating income line is still positive; without a year-over-year comparison or a reconciliation, the compression could be seasonal or investment-driven rather than deterioration.\n- **What would change the assessment:** a year-over-year comparative on the same bases, the non-GAAP-to-GAAP reconciliation, allowance/coverage and delinquency detail, and management commentary on transaction-cost and provision drivers. A second consecutive quarter of the same pattern would move this toward the invalidation test; a reversal with reconciliation support would move it toward upgrade."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 43371,
+          "completion_tokens": 7371,
+          "total_tokens": 50742
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_uy2Y1tILZsPoPH4rOtiU0103",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_557e46f484f44c22a8f9\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_hw6KGVwU8TH53SyPCpeX1605",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"symbol\": \"AFRM\", \"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_uy2Y1tILZsPoPH4rOtiU0103",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"5100c98f-e065-4c3b-b980-bf06e8ca1ef5\",\"as_of\":\"2026-10-22T18:09:51Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_557e46f484f44c22a8f9\",\"market\":\"US\",\"symbol\":\"AFRM\",\"title\":\"AFRM SEC event research thesis\",\"thesis\":\"FY2024 Q4 ended 2024-06-30 baseline: AFRM-FQ4-REV=659185 USD_thousand; AFRM-FQ4-TC=349787 USD_thousand; AFRM-FQ4-RLTC=309398 USD_thousand; AFRM-FQ4-OPLOSS=-73460 USD_thousand; AFRM-FQ4-ADJOP=149807 USD_thousand; AFRM-FQ4-PROVISION=117609 USD_thousand; AFRM-FQ4-FUNDING=95256 USD_thousand. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[\"business growth\",\"earnings quality\"],\"invalidations\":[\"material operating deterioration\",\"weakening demand\"],\"required_event_metrics\":[\"gaap_total_revenue_net\",\"transaction_costs_non_gaap\",\"revenue_less_transaction_costs_non_gaap\",\"gaap_operating_income_loss\",\"adjusted_operating_income_non_gaap\",\"provision_for_credit_losses\",\"funding_costs\"],\"evidence\":[{\"id\":\"AFRM-FISCAL-COST-baseline-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1820953/000182095324000033/afrm-q424shareholderlett.htm\",\"sha256\":\"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-22T18:09:50Z\",\"updated_at\":\"2026-10-22T18:09:50Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8485,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_hw6KGVwU8TH53SyPCpeX1605",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"6520465f-294b-487f-9ade-1b528d5b01c6\",\"as_of\":\"2026-10-22T18:09:51Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_f8ff7caee4094caf9765\",\"watchlist_id\":\"wl_893b20c0836b4860b4e8\",\"thesis_id\":\"th_557e46f484f44c22a8f9\",\"market\":\"US\",\"symbol\":\"AFRM\",\"event_fingerprint\":\"a0458189d6bf10cd4ef6b3182e8f2291b554fb09ce74c829bf902bb811465ed2\",\"event\":{\"external_id\":\"AFRM-FISCAL-COST-sec-event-v1\",\"type\":\"earnings\",\"summary\":\"AFRM FY2025 Q1 ended 2024-09-30 selected SEC exhibit packet: AFRM-FQ1-REV=698479 USD_thousand; AFRM-FQ1-TC=413352 USD_thousand; AFRM-FQ1-RLTC=285127 USD_thousand; AFRM-FQ1-OPLOSS=-132623 USD_thousand; AFRM-FQ1-ADJOP=129589 USD_thousand; AFRM-FQ1-PROVISION=159824 USD_thousand; AFRM-FQ1-FUNDING=104145 USD_thousand. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.\",\"as_of\":\"2024-11-07\",\"sources\":[{\"id\":\"AFRM-FISCAL-COST-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1820953/000182095324000058/afrm-q125shareholderlett.htm\",\"sha256\":\"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}],\"observed_metrics\":{\"gaap_total_revenue_net\":{\"value\":\"698479\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-REV\",\"statement_line\":\"revenue\"},\"transaction_costs_non_gaap\":{\"value\":\"413352\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-TC\",\"statement_line\":\"unknown\"},\"revenue_less_transaction_costs_non_gaap\":{\"value\":\"285127\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-RLTC\",\"statement_line\":\"unknown\"},\"gaap_operating_income_loss\":{\"value\":\"-132623\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-OPLOSS\",\"statement_line\":\"unknown\"},\"adjusted_operating_income_non_gaap\":{\"value\":\"129589\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-ADJOP\",\"statement_line\":\"unknown\"},\"provision_for_credit_losses\":{\"value\":\"159824\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-PROVISION\",\"statement_line\":\"operating_expense\"},\"funding_costs\":{\"value\":\"104145\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-FUNDING\",\"statement_line\":\"operating_expense\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"afrm\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-22T18:09:50Z\",\"last_seen_at\":\"2026-10-22T18:09:50Z\",\"created_at\":\"2026-10-22T18:09:50Z\",\"updated_at\":\"2026-10-22T18:09:50Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50,\"symbol\":\"AFRM\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9661,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_RNZTrLxFUGV0onORa8Lu7467",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"AFRM\", \"event_summary\": \"AFRM FY2025 Q1 ended 2024-09-30 selected SEC exhibit packet: AFRM-FQ1-REV=698479 USD_thousand; AFRM-FQ1-TC=413352 USD_thousand; AFRM-FQ1-RLTC=285127 USD_thousand; AFRM-FQ1-OPLOSS=-132623 USD_thousand; AFRM-FQ1-ADJOP=129589 USD_thousand; AFRM-FQ1-PROVISION=159824 USD_thousand; AFRM-FQ1-FUNDING=104145 USD_thousand. Compare with the supplied historical baseline.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_RNZTrLxFUGV0onORa8Lu7467",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"f756cf3f-c730-4fd5-a8e5-98a86498917e\",\"as_of\":\"2026-10-22T18:09:52Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"AFRM\",\"event_summary\":\"AFRM FY2025 Q1 ended 2024-09-30 selected SEC exhibit packet: AFRM-FQ1-REV=698479 USD_thousand; AFRM-FQ1-TC=413352 USD_thousand; AFRM-FQ1-RLTC=285127 USD_thousand; AFRM-FQ1-OPLOSS=-132623 USD_thousand; AFRM-FQ1-ADJOP=129589 USD_thousand; AFRM-FQ1-PROVISION=159824 USD_thousand; AFRM-FQ1-FUNDING=104145 USD_thousand. Compare with the supplied historical baseline.\",\"matches\":[{\"thesis_id\":\"th_557e46f484f44c22a8f9\",\"title\":\"AFRM SEC event research thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_z2nArgaF8uoejy77MEp20447",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_557e46f484f44c22a8f9\", \"expected_version\": 1, \"alert_id\": \"fa_f8ff7caee4094caf9765\", \"event\": {\"type\": \"earnings\", \"as_of\": \"2024-11-07\", \"summary\": \"AFRM FY2025 Q1 (period ended 2024-09-30) selected SEC exhibit packet compared with the FY2024 Q4 (period ended 2024-06-30) baseline stored in the thesis. All figures USD_thousand, as supplied; no restatement or basis change is asserted by the packet.\", \"sources\": [{\"id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1820953/000182095324000058/afrm-q125shareholderlett.htm\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}, {\"id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1820953/000182095324000033/afrm-q424shareholderlett.htm\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}]}, \"impact\": \"mixed\", \"decision\": \"maintain\", \"new_status\": \"active\", \"new_conviction\": 3, \"rationale\": \"Source facts (as supplied, USD_thousand): FY2025 Q1 ended 2024-09-30 — AFRM-FQ1-REV 698479 (GAAP net revenue), AFRM-FQ1-TC 413352 (non-GAAP transaction costs), AFRM-FQ1-RLTC 285127 (non-GAAP revenue less transaction costs), AFRM-FQ1-OPLOSS -132623 (GAAP operating loss), AFRM-FQ1-ADJOP 129589 (non-GAAP adjusted operating income), AFRM-FQ1-PROVISION 159824 (provision for credit losses), AFRM-FQ1-FUNDING 104145 (funding costs). Baseline FY2024 Q4 ended 2024-06-30 — AFRM-FQ4-REV 659185, AFRM-FQ4-TC 349787, AFRM-FQ4-RLTC 309398, AFRM-FQ4-OPLOSS -73460, AFRM-FQ4-ADJOP 149807, AFRM-FQ4-PROVISION 117609, AFRM-FQ4-FUNDING 95256. Arithmetic (sequential, one quarter, derived from the two packets only): revenue +39394 (+5.98%); transaction costs +63565 (+18.17%); revenue less transaction costs -24271 (-7.84%); GAAP operating loss widened by 59163; adjusted operating income -20218 (-13.50%); provision +42215 (+35.89%); funding costs +8889 (+9.33%). Support: top-line growth and a still-positive non-GAAP adjusted operating income of 129589. Risk: the non-GAAP revenue-less-transaction-costs line fell while transaction costs grew faster than revenue, GAAP operating loss widened materially, and credit provision and funding costs rose sequentially — so the positive revenue change does not offset the contrary cost and credit evidence. Hypotheses (not source-stated): the transaction-cost growth may reflect mix or growth investment, and the provision increase may reflect portfolio seasoning or credit normalization; neither is attributed by the packet. Missing evidence: no year-over-year comparative period, no cash flow, no segment or per-product breakdown, no non-GAAP-to-GAAP reconciliation, no allowance/coverage or delinquency detail, and no management commentary in the supplied packet. Decision maintain at conviction 3: the packet is a single sequential quarter with mixed direction and no source-backed causal bridge, so it neither confirms nor invalidates the stated thesis. No trade.\", \"evidence\": [{\"id\": \"AFRM-FQ1-REV\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"value\": \"698479\", \"unit\": \"USD_thousand\", \"basis\": \"GAAP net revenue\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}, {\"id\": \"AFRM-FQ1-TC\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"value\": \"413352\", \"unit\": \"USD_thousand\", \"basis\": \"non-GAAP transaction costs\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}, {\"id\": \"AFRM-FQ1-RLTC\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"value\": \"285127\", \"unit\": \"USD_thousand\", \"basis\": \"non-GAAP revenue less transaction costs\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}, {\"id\": \"AFRM-FQ1-OPLOSS\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"value\": \"-132623\", \"unit\": \"USD_thousand\", \"basis\": \"GAAP operating income (loss)\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}, {\"id\": \"AFRM-FQ1-ADJOP\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"value\": \"129589\", \"unit\": \"USD_thousand\", \"basis\": \"non-GAAP adjusted operating income\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}, {\"id\": \"AFRM-FQ1-PROVISION\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"value\": \"159824\", \"unit\": \"USD_thousand\", \"basis\": \"GAAP provision for credit losses\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}, {\"id\": \"AFRM-FQ1-FUNDING\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"value\": \"104145\", \"unit\": \"USD_thousand\", \"basis\": \"funding costs\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}, {\"id\": \"AFRM-FQ4-REV\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"value\": \"659185\", \"unit\": \"USD_thousand\", \"basis\": \"GAAP net revenue\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}, {\"id\": \"AFRM-FQ4-TC\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"value\": \"349787\", \"unit\": \"USD_thousand\", \"basis\": \"non-GAAP transaction costs\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}, {\"id\": \"AFRM-FQ4-RLTC\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"value\": \"309398\", \"unit\": \"USD_thousand\", \"basis\": \"non-GAAP revenue less transaction costs\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}, {\"id\": \"AFRM-FQ4-OPLOSS\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"value\": \"-73460\", \"unit\": \"USD_thousand\", \"basis\": \"GAAP operating income (loss)\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}, {\"id\": \"AFRM-FQ4-ADJOP\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"value\": \"149807\", \"unit\": \"USD_thousand\", \"basis\": \"non-GAAP adjusted operating income\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}, {\"id\": \"AFRM-FQ4-PROVISION\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"value\": \"117609\", \"unit\": \"USD_thousand\", \"basis\": \"GAAP provision for credit losses\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}, {\"id\": \"AFRM-FQ4-FUNDING\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"value\": \"95256\", \"unit\": \"USD_thousand\", \"basis\": \"funding costs\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}], \"matched_terms\": [\"afrm\", \"earnings\", \"FY2025 Q1\", \"FY2024 Q4\", \"transaction costs\", \"provision for credit losses\", \"funding costs\"], \"next_review_at\": \"2026-11-21T00:00:00Z\"}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_z2nArgaF8uoejy77MEp20447",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"8fb8346d-a2e9-4c7d-9cff-d9efd9e41d33\",\"as_of\":\"2026-10-22T18:10:02Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"causal_claims_required\"]},\"errors\":[{\"code\":\"causal_claims_required\",\"message\":\"this source-classified alert requires structured causal claims\",\"retriable\":true,\"details\":{\"alert_id\":\"fa_f8ff7caee4094caf9765\"}}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_UZV0dxWp19rZJDEGnSkS1680",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_f8ff7caee4094caf9765\", \"causal_claims\": [{\"target_metric\": \"operating_margin\", \"strength\": \"unresolved\", \"driver_fact_ids\": [\"AFRM-FQ1-TC\", \"AFRM-FQ1-PROVISION\", \"AFRM-FQ1-FUNDING\"]}], \"decision\": \"maintain\", \"event\": {\"as_of\": \"2024-11-07\", \"sources\": [{\"id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1820953/000182095324000058/afrm-q125shareholderlett.htm\"}, {\"id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1820953/000182095324000033/afrm-q424shareholderlett.htm\"}], \"summary\": \"AFRM FY2025 Q1 (period ended 2024-09-30) selected SEC exhibit packet compared with the FY2024 Q4 (period ended 2024-06-30) baseline stored in the thesis. All figures USD_thousand, as supplied; no restatement or basis change is asserted by the packet.\", \"type\": \"earnings\"}, \"evidence\": [{\"basis\": \"GAAP net revenue\", \"id\": \"AFRM-FQ1-REV\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"698479\"}, {\"basis\": \"non-GAAP transaction costs\", \"id\": \"AFRM-FQ1-TC\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"413352\"}, {\"basis\": \"non-GAAP revenue less transaction costs\", \"id\": \"AFRM-FQ1-RLTC\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"285127\"}, {\"basis\": \"GAAP operating income (loss)\", \"id\": \"AFRM-FQ1-OPLOSS\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"-132623\"}, {\"basis\": \"non-GAAP adjusted operating income\", \"id\": \"AFRM-FQ1-ADJOP\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"129589\"}, {\"basis\": \"GAAP provision for credit losses\", \"id\": \"AFRM-FQ1-PROVISION\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"159824\"}, {\"basis\": \"funding costs\", \"id\": \"AFRM-FQ1-FUNDING\", \"period\": \"FY2025 Q1 ended 2024-09-30\", \"sha256\": \"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\", \"source_id\": \"AFRM-FISCAL-COST-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"104145\"}, {\"basis\": \"GAAP net revenue\", \"id\": \"AFRM-FQ4-REV\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"659185\"}, {\"basis\": \"non-GAAP transaction costs\", \"id\": \"AFRM-FQ4-TC\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"349787\"}, {\"basis\": \"non-GAAP revenue less transaction costs\", \"id\": \"AFRM-FQ4-RLTC\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"309398\"}, {\"basis\": \"GAAP operating income (loss)\", \"id\": \"AFRM-FQ4-OPLOSS\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"-73460\"}, {\"basis\": \"non-GAAP adjusted operating income\", \"id\": \"AFRM-FQ4-ADJOP\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"149807\"}, {\"basis\": \"GAAP provision for credit losses\", \"id\": \"AFRM-FQ4-PROVISION\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"117609\"}, {\"basis\": \"funding costs\", \"id\": \"AFRM-FQ4-FUNDING\", \"period\": \"FY2024 Q4 ended 2024-06-30\", \"sha256\": \"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\", \"source_id\": \"AFRM-FISCAL-COST-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"95256\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"matched_terms\": [\"afrm\", \"earnings\", \"FY2025 Q1\", \"FY2024 Q4\", \"transaction costs\", \"provision for credit losses\", \"funding costs\"], \"new_conviction\": 3, \"new_status\": \"active\", \"next_review_at\": \"2026-11-21T00:00:00Z\", \"rationale\": \"Source facts (as supplied, USD_thousand): FY2025 Q1 ended 2024-09-30 — AFRM-FQ1-REV 698479 (GAAP net revenue), AFRM-FQ1-TC 413352 (non-GAAP transaction costs), AFRM-FQ1-RLTC 285127 (non-GAAP revenue less transaction costs), AFRM-FQ1-OPLOSS -132623 (GAAP operating loss), AFRM-FQ1-ADJOP 129589 (non-GAAP adjusted operating income), AFRM-FQ1-PROVISION 159824 (provision for credit losses), AFRM-FQ1-FUNDING 104145 (funding costs). Baseline FY2024 Q4 ended 2024-06-30 — AFRM-FQ4-REV 659185, AFRM-FQ4-TC 349787, AFRM-FQ4-RLTC 309398, AFRM-FQ4-OPLOSS -73460, AFRM-FQ4-ADJOP 149807, AFRM-FQ4-PROVISION 117609, AFRM-FQ4-FUNDING 95256. Arithmetic (sequential, one quarter, derived only from the two packets): revenue +39394 (+5.98%); transaction costs +63565 (+18.17%); revenue less transaction costs -24271 (-7.84%); GAAP operating loss widened by 59163; adjusted operating income -20218 (-13.50%); provision +42215 (+35.89%); funding costs +8889 (+9.33%). Support: top-line growth and a still-positive non-GAAP adjusted operating income of 129589. Risk: the non-GAAP revenue-less-transaction-costs line fell while transaction costs grew faster than revenue, GAAP operating loss widened materially, and credit provision and funding costs rose sequentially — the positive revenue change does not offset the contrary cost and credit evidence. Hypotheses (not source-stated): transaction-cost growth may reflect mix or growth investment, and the provision increase may reflect portfolio seasoning or credit normalization; the packet attributes neither, so the operating-margin causal claim is recorded as unresolved with no quantified contribution. Missing evidence: no year-over-year comparative period, no cash flow statement, no segment or product breakdown, no non-GAAP-to-GAAP reconciliation, no allowance/coverage or delinquency detail, and no management commentary in the supplied packet. Decision maintain at conviction 3: a single sequential quarter with mixed direction and no source-backed causal bridge neither confirms nor invalidates the stated thesis. No trade.\", \"thesis_id\": \"th_557e46f484f44c22a8f9\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_UZV0dxWp19rZJDEGnSkS1680",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"ef38e9c2-e130-431b-bc63-c9ad8c1e2322\",\"as_of\":\"2026-10-22T18:10:12Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_557e46f484f44c22a8f9\",\"market\":\"US\",\"symbol\":\"AFRM\",\"title\":\"AFRM SEC event research thesis\",\"thesis\":\"FY2024 Q4 ended 2024-06-30 baseline: AFRM-FQ4-REV=659185 USD_thousand; AFRM-FQ4-TC=349787 USD_thousand; AFRM-FQ4-RLTC=309398 USD_thousand; AFRM-FQ4-OPLOSS=-73460 USD_thousand; AFRM-FQ4-ADJOP=149807 USD_thousand; AFRM-FQ4-PROVISION=117609 USD_thousand; AFRM-FQ4-FUNDING=95256 USD_thousand. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[\"business growth\",\"earnings quality\"],\"invalidations\":[\"material operating deterioration\",\"weakening demand\"],\"required_event_metrics\":[\"gaap_total_revenue_net\",\"transaction_costs_non_gaap\",\"revenue_less_transaction_costs_non_gaap\",\"gaap_operating_income_loss\",\"adjusted_operating_income_non_gaap\",\"provision_for_credit_losses\",\"funding_costs\"],\"evidence\":[{\"id\":\"AFRM-FISCAL-COST-baseline-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1820953/000182095324000033/afrm-q424shareholderlett.htm\",\"sha256\":\"14e5a1dfce2e6f2f4c8a8921dfdc76fef87b57df91469a8804845cce93bed96f\"}],\"next_review_at\":\"2026-11-21T00:00:00Z\",\"last_review_at\":\"2026-10-22T18:10:12Z\",\"created_at\":\"2026-10-22T18:09:50Z\",\"updated_at\":\"2026-10-22T18:10:12Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_f86e255a806c4344b954\",\"thesis_id\":\"th_557e46f484f44c22a8f9\",\"alert_id\":\"fa_f8ff7caee4094caf9765\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-AFRM-FISCAL-COST-r3\",\"event\":{\"type\":\"earnings\",\"summary\":\"AFRM FY2025 Q1 ended 2024-09-30 selected SEC exhibit packet: AFRM-FQ1-REV=698479 USD_thousand; AFRM-FQ1-TC=413352 USD_thousand; AFRM-FQ1-RLTC=285127 USD_thousand; AFRM-FQ1-OPLOSS=-132623 USD_thousand; AFRM-FQ1-ADJOP=129589 USD_thousand; AFRM-FQ1-PROVISION=159824 USD_thousand; AFRM-FQ1-FUNDING=104145 USD_thousand. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.\",\"as_of\":\"2024-11-07\",\"sources\":[{\"id\":\"AFRM-FISCAL-COST-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1820953/000182095324000058/afrm-q125shareholderlett.htm\",\"sha256\":\"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}]},\"impact\":\"mixed\",\"decision\":\"maintain\",\"rationale\":\"Guarded review recorded decision=maintain, impact=mixed. Stored event facts: adjusted_operating_income_non_gaap=129589 USD_thousand [AFRM-FQ1-ADJOP]; funding_costs=104145 USD_thousand [AFRM-FQ1-FUNDING]; gaap_operating_income_loss=-132623 USD_thousand [AFRM-FQ1-OPLOSS]; gaap_total_revenue_net=698479 USD_thousand [AFRM-FQ1-REV]; provision_for_credit_losses=159824 USD_thousand [AFRM-FQ1-PROVISION]; revenue_less_transaction_costs_non_gaap=285127 USD_thousand [AFRM-FQ1-RLTC]; transaction_costs_non_gaap=413352 USD_thousand [AFRM-FQ1-TC]. Attribution for operating_margin is unresolved; proposed drivers: AFRM-FQ1-TC, AFRM-FQ1-PROVISION, AFRM-FQ1-FUNDING. This guard validates stated causal lineage, not the investment merit of the decision.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"afrm\",\"weight\":1}],\"evidence\":[{\"type\":\"validated_accounting_lineage\",\"claims\":[{\"target_metric\":\"operating_margin\",\"strength\":\"unresolved\",\"driver_fact_ids\":[\"AFRM-FQ1-TC\",\"AFRM-FQ1-PROVISION\",\"AFRM-FQ1-FUNDING\"]}],\"source_hashes\":[\"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"]}],\"created_at\":\"2026-10-22T18:10:12Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9322,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_SCQJotxv0W130ldZNE7w4804",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_f8ff7caee4094caf9765\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_SCQJotxv0W130ldZNE7w4804",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"1ce9b135-04c6-4a8c-a532-153cf3f8425e\",\"as_of\":\"2026-10-22T18:10:13Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_f8ff7caee4094caf9765\",\"watchlist_id\":\"wl_893b20c0836b4860b4e8\",\"thesis_id\":\"th_557e46f484f44c22a8f9\",\"market\":\"US\",\"symbol\":\"AFRM\",\"event_fingerprint\":\"a0458189d6bf10cd4ef6b3182e8f2291b554fb09ce74c829bf902bb811465ed2\",\"event\":{\"external_id\":\"AFRM-FISCAL-COST-sec-event-v1\",\"type\":\"earnings\",\"summary\":\"AFRM FY2025 Q1 ended 2024-09-30 selected SEC exhibit packet: AFRM-FQ1-REV=698479 USD_thousand; AFRM-FQ1-TC=413352 USD_thousand; AFRM-FQ1-RLTC=285127 USD_thousand; AFRM-FQ1-OPLOSS=-132623 USD_thousand; AFRM-FQ1-ADJOP=129589 USD_thousand; AFRM-FQ1-PROVISION=159824 USD_thousand; AFRM-FQ1-FUNDING=104145 USD_thousand. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.\",\"as_of\":\"2024-11-07\",\"sources\":[{\"id\":\"AFRM-FISCAL-COST-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1820953/000182095324000058/afrm-q125shareholderlett.htm\",\"sha256\":\"0d0c1376fa9c2ad09f1749c1fc956a63ff18a69ea36314533c39d6d7473af1ff\"}],\"observed_metrics\":{\"gaap_total_revenue_net\":{\"value\":\"698479\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-REV\",\"statement_line\":\"revenue\"},\"transaction_costs_non_gaap\":{\"value\":\"413352\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-TC\",\"statement_line\":\"unknown\"},\"revenue_less_transaction_costs_non_gaap\":{\"value\":\"285127\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-RLTC\",\"statement_line\":\"unknown\"},\"gaap_operating_income_loss\":{\"value\":\"-132623\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-OPLOSS\",\"statement_line\":\"unknown\"},\"adjusted_operating_income_non_gaap\":{\"value\":\"129589\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-ADJOP\",\"statement_line\":\"unknown\"},\"provision_for_credit_losses\":{\"value\":\"159824\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-PROVISION\",\"statement_line\":\"operating_expense\"},\"funding_costs\":{\"value\":\"104145\",\"unit\":\"USD_thousand\",\"fact_id\":\"AFRM-FQ1-FUNDING\",\"statement_line\":\"operating_expense\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"afrm\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-22T18:09:50Z\",\"last_seen_at\":\"2026-10-22T18:09:50Z\",\"created_at\":\"2026-10-22T18:09:50Z\",\"updated_at\":\"2026-10-22T18:10:13Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9649,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2235,
+              "completion_tokens": 134,
+              "total_tokens": 2369,
+              "estimated_cost_usd": 0.00035042,
+              "priced": true,
+              "latency_ms": 999.938
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3978,
+              "completion_tokens": 226,
+              "total_tokens": 4204,
+              "cache_read_tokens": 2304,
+              "estimated_cost_usd": 0.00030409120000000005,
+              "priced": true,
+              "latency_ms": 1148.544
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4563,
+              "completion_tokens": 2837,
+              "total_tokens": 7400,
+              "cache_read_tokens": 4096,
+              "estimated_cost_usd": 0.0008712088000000001,
+              "priced": true,
+              "latency_ms": 10235.79
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 7575,
+              "completion_tokens": 2962,
+              "total_tokens": 10537,
+              "cache_read_tokens": 7296,
+              "estimated_cost_usd": 0.0008888488000000002,
+              "priced": true,
+              "latency_ms": 10113.668
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 11971,
+              "completion_tokens": 107,
+              "total_tokens": 12078,
+              "cache_read_tokens": 10496,
+              "estimated_cost_usd": 0.0002658488,
+              "priced": true,
+              "latency_ms": 828.786
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 13049,
+              "completion_tokens": 1105,
+              "total_tokens": 14154,
+              "cache_read_tokens": 12032,
+              "estimated_cost_usd": 0.0004854696,
+              "priced": true,
+              "latency_ms": 5262.292
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 28.635,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update"
+      ],
+      "model_calls": 6,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0031658872
+    }
+  ],
+  "estimated_cost_usd": 0.0031658872
+}

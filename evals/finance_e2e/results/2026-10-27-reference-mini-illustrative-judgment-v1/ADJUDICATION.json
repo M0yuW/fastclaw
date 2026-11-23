@@ -1,0 +1,108 @@
+{
+  "status": "complete_unblinded_local_claim_review_not_independent_expert_rating",
+  "rubric": "evals/finance_e2e/INSIGHT-QUALITY-HOLDOUT-RUBRIC-v2.md",
+  "raw_results": "evals/finance_e2e/results/2026-10-27-reference-mini-illustrative-flash-v1",
+  "reviewer": "Codex local claim-level diagnostic v1",
+  "model_observations": 6,
+  "estimated_external_cost_usd": "0.046767852",
+  "judgment_boundary": "The reviewer saw issuer identities and outputs before scoring; this is not blinded, independent finance-expert validation. Claim spans below are exact excerpts from the final interpretation or persisted review. The original answer and ledger are unchanged.",
+  "observations": [
+    {
+      "observation_id": "RS-CSGP-CY2025Q2Q3-r1",
+      "raw_result_sha256": "8dbb635944939ed9e3469079889012a46239924a611a1223ccd67081afbb9dca",
+      "scores": {"F": 0, "I": 1, "R": 2, "S": 2, "U": 2},
+      "label": "problematic",
+      "claims": [
+        {"location": "final_answer", "span": "The selected rows support a demand-and-scale reading", "verdict": "bounded_hypothesis", "evidence_refs": ["gaap_revenue", "gaap_gross_profit", "non_gaap_adjusted_ebitda"], "note": "Growth is observed; demand and scale are unproven explanations, so the phrase is only defensible as a tentative reading."},
+        {"location": "final_answer", "span": "GAAP operating loss widened because operating expenses, led by general and administrative cost, grew by more than gross profit did", "verdict": "supported", "evidence_refs": ["gaap_gross_profit", "gaap_selling_marketing_expense", "gaap_software_development_expense", "gaap_general_administrative_expense", "gaap_customer_base_amortization", "gaap_operating_income_loss"], "calculation": "Four selected expense components rise 71.8 USDm versus gross profit +47.9 USDm, matching operating result -23.9 USDm."},
+        {"location": "final_answer", "span": "tax line flipped from an expense to a benefit, which is a change in sign rather than a reduced tax drag and therefore does not offset the operating deterioration", "verdict": "contradicted", "evidence_refs": ["gaap_income_tax_expense_benefit", "gaap_operating_income_loss", "gaap_other_income_expense_net", "gaap_net_income_loss"], "calculation": "Tax expense changes from +15.4 to -14.9 USDm, an after-tax contribution improvement of +30.3 USDm; that more than offsets the operating-result change of -23.9 USDm alone. Other income/expense falls -37.0 USDm, so net income still falls -37.1 USDm."},
+        {"location": "final_answer", "span": "All comparisons are sequential displayed-value arithmetic between two selected quarters", "verdict": "supported", "evidence_refs": ["source_comparison"]},
+        {"location": "persisted_review", "span": "research state is held for review rather than upgraded or invalidated", "verdict": "supported", "evidence_refs": ["ledger.review.decision:needs_review", "ledger.thesis.actionability:blocked", "ledger.alert.status:acknowledged"]}
+      ],
+      "critical_errors": [{"claim_index": 2, "code": "signed_tax_offset_reversed", "evidence_refs": ["gaap_income_tax_expense_benefit", "gaap_operating_income_loss", "gaap_other_income_expense_net"]}],
+      "note": "The workflow and blocked state are correct, but the final financial bridge misstates the offset of operating deterioration. A blocked ledger does not validate the prose."
+    },
+    {
+      "observation_id": "RS-CSGP-CY2025Q2Q3-r2",
+      "raw_result_sha256": "355e31303fcc4f1f13fa98f6d350a9f59f1197c358d0d0fdaf4fe9805a4a68de",
+      "scores": {"F": 1, "I": 2, "R": 2, "S": 2, "U": 2},
+      "label": "adequate",
+      "claims": [
+        {"location": "final_answer", "span": "the top line and gross-profit subtotal expanded sequentially and the company-defined Adjusted EBITDA measure also rose", "verdict": "supported", "evidence_refs": ["gaap_revenue", "gaap_gross_profit", "non_gaap_adjusted_ebitda"]},
+        {"location": "final_answer", "span": "the GAAP operating loss widened as operating expenses grew faster than gross profit", "verdict": "supported", "evidence_refs": ["gaap_gross_profit", "gaap_selling_marketing_expense", "gaap_software_development_expense", "gaap_general_administrative_expense", "gaap_customer_base_amortization", "gaap_operating_income_loss"]},
+        {"location": "final_answer", "span": "other income/expense swung to a net expense, and GAAP net income turned to a loss", "verdict": "supported", "evidence_refs": ["gaap_other_income_expense_net", "gaap_net_income_loss"]},
+        {"location": "final_answer", "span": "the tax line's move from expense to benefit is a change in the sign of the tax contribution, not a smaller tax drag", "verdict": "bounded_hypothesis", "evidence_refs": ["gaap_income_tax_expense_benefit"], "note": "The sign is correct, but 'not a smaller tax drag' is imprecise: a benefit is also a reduction in the tax burden relative to the prior expense. This wording does not reverse the decision in this answer."},
+        {"location": "final_answer", "span": "The defensible implication is therefore that the thesis should remain a research-state item under review rather than be upgraded or invalidated", "verdict": "supported", "evidence_refs": ["ledger.review.decision:needs_review", "ledger.thesis.actionability:blocked"]},
+        {"location": "persisted_review", "span": "The Adjusted EBITDA increase is a company-defined non-GAAP measure", "verdict": "supported", "evidence_refs": ["non_gaap_adjusted_ebitda"]}
+      ],
+      "critical_errors": [],
+      "note": "Balanced GAAP versus non-GAAP analysis and correct blocked state; tax wording is slightly misleading but explicitly states the sign and does not change the implication."
+    },
+    {
+      "observation_id": "RS-MTB-CY2025Q2Q3-r1",
+      "raw_result_sha256": "af62ee4d9e7102da19b98c920037edcd1d444eb4bef66e764e502faebf57e451",
+      "scores": {"F": 2, "I": 1, "R": 2, "S": 2, "U": 2},
+      "label": "adequate",
+      "claims": [
+        {"location": "final_answer", "span": "core spread and fee engines both improved while the credit loss provision was unchanged", "verdict": "bounded_hypothesis", "evidence_refs": ["gaap_net_interest_income", "gaap_noninterest_income", "gaap_credit_loss_provision"], "note": "The source rows support net interest and noninterest income increases; 'engines' is interpretive shorthand, not a demonstrated causal driver."},
+        {"location": "final_answer", "span": "the company-defined efficiency ratio improved even though the underlying expense line rose", "verdict": "supported", "evidence_refs": ["efficiency_ratio", "gaap_noninterest_expense"]},
+        {"location": "final_answer", "span": "Net charge-offs to average loans rose on an annualized flow basis while the allowance coverage ratio and the nonaccrual stock ratio both declined", "verdict": "supported", "evidence_refs": ["net_chargeoffs_to_average_loans", "allowance_to_total_loans", "nonaccrual_to_total_loans"]},
+        {"location": "final_answer", "span": "rising realized credit losses against thinning reserves", "verdict": "unsupported", "evidence_refs": ["net_chargeoffs_to_average_loans", "allowance_to_total_loans"], "note": "The allowance-to-loans ratio is lower, but the selected rows do not show the absolute allowance balance; 'thinning reserves' overstates the available evidence unless explicitly read as coverage."},
+        {"location": "final_answer", "span": "Average deposits fell while average loans grew", "verdict": "supported", "evidence_refs": ["average_deposits", "average_loans"]},
+        {"location": "persisted_review", "span": "the taxable-equivalent bridge is a company-reported adjustment and is not GAAP net interest income", "verdict": "supported", "evidence_refs": ["gaap_net_interest_income", "taxable_equivalent_adjustment", "taxable_equivalent_net_interest_income"]},
+        {"location": "persisted_review", "span": "research state is maintained rather than upgraded", "verdict": "supported", "evidence_refs": ["ledger.review.decision:maintain", "ledger.thesis.conviction:3", "ledger.thesis.actionability:available"]}
+      ],
+      "critical_errors": [],
+      "note": "Risk is disclosed and no upgrade occurs. The inference about absolute reserves is not established by a declining coverage ratio, but the answer otherwise keeps the credit tension conditional."
+    },
+    {
+      "observation_id": "RS-MTB-CY2025Q2Q3-r2",
+      "raw_result_sha256": "96132b7ea18f270c42cee3b4f711e4017871a97c37e100ab6da01e8a14c18a24",
+      "scores": {"F": 1, "I": 2, "R": 2, "S": 2, "U": 2},
+      "label": "adequate",
+      "claims": [
+        {"location": "final_answer", "span": "both GAAP and company-reported taxable-equivalent net interest income rose", "verdict": "supported", "evidence_refs": ["gaap_net_interest_income", "taxable_equivalent_net_interest_income"]},
+        {"location": "final_answer", "span": "the higher charge-off flow was not matched by a higher quarterly provision", "verdict": "supported", "evidence_refs": ["net_chargeoffs_to_average_loans", "gaap_credit_loss_provision"], "note": "Only the direction of the annualized flow ratio is compared with flat provision dollars; this is not an absolute charge-off-dollar comparison."},
+        {"location": "final_answer", "span": "Average deposits declined while average loans grew", "verdict": "supported", "evidence_refs": ["average_deposits", "average_loans"]},
+        {"location": "final_answer", "span": "The taxable-equivalent adjustment also rose, which is a larger tax-equivalent bridge rather than a smaller tax drag", "verdict": "supported", "evidence_refs": ["taxable_equivalent_adjustment", "taxable_equivalent_net_interest_income", "gaap_net_interest_income"]},
+        {"location": "final_answer", "span": "no non-GAAP measures, guidance, or realized-versus-guided framing are in evidence", "verdict": "unsupported", "evidence_refs": ["taxable_equivalent_net_interest_income", "net_interest_margin", "efficiency_ratio"], "note": "The selected rows include company-reported taxable-equivalent and ratio measures; the answer itself distinguishes them from GAAP earlier. The absolute 'no non-GAAP measures' phrase is too broad, but no number or decision is reversed."},
+        {"location": "persisted_review", "span": "supports maintaining the existing research state and conviction without upgrading it", "verdict": "supported", "evidence_refs": ["ledger.review.decision:maintain", "ledger.thesis.conviction:3", "ledger.thesis.actionability:available"]}
+      ],
+      "critical_errors": [],
+      "note": "Strong mixed-credit and funding analysis with an accurate ledger state, but the blanket non-GAAP absence statement is inconsistent with the selected adjusted measures."
+    },
+    {
+      "observation_id": "RS-RPAY-CY2025Q2Q3-r1",
+      "raw_result_sha256": "0913fc94230637e54cc971a7abbe4a6f8a3ac04df2f965d7a3f34dd35bccc7b2",
+      "scores": {"F": 0, "I": 1, "R": 2, "S": 2, "U": 2},
+      "label": "problematic",
+      "claims": [
+        {"location": "final_answer", "span": "revenue rose and the operating, pretax and net results moved toward breakeven", "verdict": "supported", "evidence_refs": ["gaap_revenue", "gaap_operating_loss", "gaap_pretax_loss", "gaap_net_loss"]},
+        {"location": "final_answer", "span": "the drop in total operating expenses is attributable to the absence of the prior-quarter impairment line, not to operating leverage", "verdict": "supported", "evidence_refs": ["gaap_total_operating_expenses", "q2_gaap_non_cash_impairment_loss", "gaap_cost_of_services", "gaap_sga", "gaap_depreciation_amortization"], "calculation": "Q2 impairment is 103781 USD thousand; total operating expenses fall 99796, while the three recurring expense lines together rise 3985."},
+        {"location": "final_answer", "span": "cost of services and selling, general and administrative both increased sequentially and each grew by more than revenue did", "verdict": "contradicted", "evidence_refs": ["gaap_revenue", "gaap_cost_of_services", "gaap_sga"], "calculation": "Revenue rises 2099 USD thousand; cost of services rises only 1531, whereas SG&A rises 2295. Only SG&A individually exceeds the revenue increase."},
+        {"location": "final_answer", "span": "The company-defined Adjusted EBITDA measure, which is constructed to exclude the impairment-type charge, moved slightly lower", "verdict": "supported", "evidence_refs": ["non_gaap_adjusted_ebitda", "q2_gaap_non_cash_impairment_loss", "SEC_Q2_non_GAAP_reconciliation_table_5_row_29"]},
+        {"location": "persisted_review", "span": "cost of services and selling, general and administrative both increasing faster than revenue", "verdict": "contradicted", "evidence_refs": ["gaap_revenue", "gaap_cost_of_services", "gaap_sga"], "calculation": "Same false component comparison is also saved to the ledger."},
+        {"location": "persisted_review", "span": "research state is held for review with status and conviction preserved", "verdict": "supported", "evidence_refs": ["ledger.review.decision:needs_review", "ledger.thesis.actionability:blocked", "ledger.thesis.conviction:3"]}
+      ],
+      "critical_errors": [{"claim_index": 2, "code": "false_cost_of_services_increment_comparison", "evidence_refs": ["gaap_revenue", "gaap_cost_of_services", "gaap_sga"]}],
+      "note": "Correctly holds a mixed case, but a material component-level arithmetic statement is false in both the final answer and the persisted review. The current pre-commit guard did not flag this wording."
+    },
+    {
+      "observation_id": "RS-RPAY-CY2025Q2Q3-r2",
+      "raw_result_sha256": "b9f04285757eb63093e82bd9598e1da37af63972606d7e7171005777e34b5690",
+      "scores": {"F": 2, "I": 2, "R": 2, "S": 2, "U": 2},
+      "label": "high",
+      "claims": [
+        {"location": "final_answer", "span": "the prior quarter's total operating expenses carried a large impairment charge", "verdict": "supported", "evidence_refs": ["gaap_total_operating_expenses", "q2_gaap_non_cash_impairment_loss"]},
+        {"location": "final_answer", "span": "the GAAP improvement is best read as a base-effect normalization rather than demonstrated operating leverage", "verdict": "bounded_hypothesis", "evidence_refs": ["gaap_operating_loss", "gaap_total_operating_expenses", "q2_gaap_non_cash_impairment_loss", "gaap_cost_of_services", "gaap_sga", "gaap_depreciation_amortization"], "calculation": "Operating result improves 101895 USD thousand versus the Q2 impairment of 103781; other selected operating expenses together rise 3985."},
+        {"location": "final_answer", "span": "The company-defined Adjusted EBITDA measure, which already excludes that impairment, did not improve", "verdict": "supported", "evidence_refs": ["non_gaap_adjusted_ebitda", "SEC_Q2_non_GAAP_reconciliation_table_5_row_29"]},
+        {"location": "final_answer", "span": "cost of services and SG&A each rose by amounts comparable to or larger than the revenue increase", "verdict": "supported", "evidence_refs": ["gaap_revenue", "gaap_cost_of_services", "gaap_sga"], "calculation": "Revenue +2099, cost of services +1531, SG&A +2295 USD thousand; 'comparable or larger' is calibrated."},
+        {"location": "final_answer", "span": "the income tax line moved to a larger benefit, which flatters the net result without evidencing operating improvement", "verdict": "supported", "evidence_refs": ["gaap_income_tax_benefit", "gaap_net_loss", "gaap_operating_loss"]},
+        {"location": "final_answer", "span": "Absence of an item from this extract is not evidence of its absence from the filing", "verdict": "supported", "evidence_refs": ["source_scope:selected_rows_not_full_filing"]},
+        {"location": "persisted_review", "span": "Research state is held for review pending fuller filing evidence", "verdict": "supported", "evidence_refs": ["ledger.review.decision:needs_review", "ledger.thesis.actionability:blocked", "ledger.alert.status:acknowledged"]}
+      ],
+      "critical_errors": [],
+      "note": "Source-bounded, two-sided analysis identifies the impairment base effect without mistaking GAAP improvement for recurring recovery. It states what further evidence could change the view and leaves the thesis blocked. High means high within these selected rows, not investment merit or independent expert endorsement."
+    }
+  ]
+}

@@ -1,0 +1,130 @@
+{
+  "observation_id": "P2-r3",
+  "case_id": "P2",
+  "repetition": 3,
+  "workflow": "P",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "no_ledger_mutation": true,
+    "risk_tool_called": true,
+    "exact_holdings_submitted": true,
+    "weight_and_limit_stated": true,
+    "no_false_breach": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 2,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "expected_holdings": {
+      "FICA": 50,
+      "FICB": 30,
+      "FICC": 20
+    },
+    "expected_limit_breached": false,
+    "trace": {
+      "model_calls": 2,
+      "tool_calls": 1,
+      "tool_results": 1,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "This is a synthetic portfolio-risk diagnostic, not a live account. Available holdings: FICA 50%, FICB 30%, FICC 20%. The single-holding concentration policy is breached only when a weight exceeds 50%; exactly 50% is at the limit, not above it. Use finance-tools__portfolio_risk with view=concentration if the complete portfolio is known. Explain the measured exposure or why it cannot be reliably computed. Do not infer a missing weight, trade, change holdings, or create ledger records. Case P2.",
+      "response": {
+        "id": "chatcmpl-1792389018473438000",
+        "object": "chat.completion",
+        "created": 1792389018,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# Portfolio Concentration Diagnostic — Case P2\n\n**Status:** Computed successfully. The portfolio is complete (weights sum to 100%), so no inference was required.\n\n## Inputs\n| Holding | Weight |\n|---|---|\n| FICA | 50% |\n| FICB | 30% |\n| FICC | 20% |\n\nSubmitted as a complete holdings set with `weight_unit=percent`, `view=concentration`. No weights were estimated, no positions were added or removed, and no ledger records were created.\n\n## Measured exposure\n- **Largest holding:** FICA at **50.0%**\n- **Single-holding concentration limit:** 50%\n- **Limit breached:** **No** — FICA sits exactly at the limit, not above it, consistent with the stated policy that only a weight *exceeding* 50% is a breach.\n- **Herfindahl index:** 0.38 (on a 0–1 scale), indicating a highly concentrated three-name book — the top position alone accounts for half of the portfolio, and the top two account for 80%.\n\n## Data quality and provenance\n- Source: `local_evaluation_fixture` (kind: `portfolio_analytics`), fixture `synthetic-portfolio-v2`, flagged `synthetic: true`.\n- Completeness: 1.0, with no quality flags and no errors returned.\n- As-of timestamp: 2026-10-19T05:50:19Z; stale after 2026-10-19T06:50:19Z (1-hour TTL).\n\n## Interpretation notes\n- The concentration test passes on the stated policy, but the margin is zero: any upward drift in FICA's weight above 50% would put the portfolio in breach. This is a boundary observation, not a recommendation.\n- The Herfindahl figure reflects only these three synthetic positions; it is not comparable to a diversified benchmark portfolio.\n- Because the fixture is synthetic and single-sourced, these figures describe the supplied test data only and should not be treated as evidence about any live account."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 5716,
+          "completion_tokens": 560,
+          "total_tokens": 6276
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_4le03aHtCvbm5VVo8rHy0145",
+              "name": "finance-tools__portfolio_risk",
+              "arguments": "{\"holdings\": {\"FICA\": 50, \"FICB\": 30, \"FICC\": 20}, \"holdings_complete\": true, \"weight_unit\": \"percent\", \"view\": \"concentration\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_4le03aHtCvbm5VVo8rHy0145",
+              "name": "finance-tools__portfolio_risk",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"0f00b487-dd02-485c-8a05-f7a8821ab5e7\",\"as_of\":\"2026-10-19T05:50:19Z\",\"stale_after\":\"2026-10-19T06:50:19Z\",\"data\":{\"fixture_id\":\"synthetic-portfolio-v2\",\"synthetic\":true,\"holdings\":{\"FICA\":0.5,\"FICB\":0.3,\"FICC\":0.2},\"largest_holding\":\"FICA\",\"largest_weight_pct\":50.0,\"concentration_limit_pct\":50,\"limit_breached\":false,\"herfindahl_index\":0.38},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"portfolio_analytics\"}],\"quality\":{\"completeness\":1.0,\"flags\":[]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":3600}}",
+              "round": 1
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2680,
+              "completion_tokens": 127,
+              "total_tokens": 2807,
+              "estimated_cost_usd": 0.0004107600000000001,
+              "priced": true,
+              "latency_ms": 1005.172
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3036,
+              "completion_tokens": 433,
+              "total_tokens": 3469,
+              "cache_read_tokens": 2688,
+              "estimated_cost_usd": 0.00017748640000000003,
+              "priced": true,
+              "latency_ms": 2830.659
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 3.901,
+      "tool_calls": [
+        "finance-tools__portfolio_risk"
+      ],
+      "model_calls": 2,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0005882464000000001
+    }
+  ],
+  "estimated_cost_usd": 0.0005882464000000001
+}

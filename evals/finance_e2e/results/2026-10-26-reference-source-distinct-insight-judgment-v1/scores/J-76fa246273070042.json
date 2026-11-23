@@ -1,0 +1,58 @@
+{
+  "masked_id": "J-76fa246273070042",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 2,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "both net interest income and noninterest income rose, total revenue rose by more than total noninterest expense, and the credit loss provision moved from an expense to a net benefit",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_net_interest_income:+33", "source_packet.rows:gaap_total_noninterest_income:+26", "source_packet.rows:gaap_total_revenue:+59", "source_packet.rows:gaap_total_noninterest_expense:+60", "source_packet.rows:gaap_credit_loss_provision:30_to_-5"],
+      "reason": "Revenue rose 59 but total noninterest expense rose 60 in displayed USD millions; the provision improvement of 35, not pre-provision operating leverage, is the principal displayed pretax bridge. The rest of the quoted directions are correct."
+    },
+    {
+      "location": "final_answer",
+      "span": "reported earnings improvement is broad-based across the two revenue lines and is amplified by a credit-cost swing",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:gaap_net_interest_income:+33", "source_packet.rows:gaap_total_noninterest_income:+26", "source_packet.rows:gaap_total_noninterest_expense:+60", "source_packet.rows:gaap_credit_loss_provision:30_to_-5", "source_packet.rows:gaap_pretax_income:+35"],
+      "reason": "Both revenue lines grew, but total noninterest expense absorbed slightly more than the combined revenue gain. The net pretax improvement is essentially the provision benefit, subject to USD 1 million rounding."
+    },
+    {
+      "location": "persisted_review",
+      "span": "total noninterest expense rose, driven by both personnel and other noninterest expense",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_total_noninterest_expense:+60", "source_packet.rows:gaap_personnel_expense:+14", "source_packet.rows:gaap_other_noninterest_expense:+37"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "provision benefit and the NPL increase point in different directions",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_credit_loss_provision:30_to_-5", "source_packet.rows:npl_total:593_to_605", "source_packet.rows:npl_to_loans_ratio:0.94_to_0.96"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review rather than upgraded or downgraded; conviction and status are preserved and downstream decisions remain blocked",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:conviction=3", "ledger:thesis:status=active", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 0,
+      "code": "revenue_vs_expense_delta_reversed",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue:+59", "source_packet.rows:gaap_total_noninterest_expense:+60", "source_packet.rows:gaap_credit_loss_provision:30_to_-5"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Correctly identifies signed provision benefit and adverse NPL evidence, and leaves the thesis blocked. Final answer nonetheless claims revenue rose more than noninterest expense when the rounded selected rows show +59 versus +60; pretax improvement is principally the provision swing, not broad pre-provision operating leverage."
+}

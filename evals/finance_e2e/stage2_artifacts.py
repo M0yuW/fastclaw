@@ -21,6 +21,7 @@ PRIMARY_MODES = ("solo_staged", "team_shared_retrieval", "team_raw_context")
 ABLATION_MODES = ("team_shared_retrieval_all_pro",)
 FORBIDDEN_FORMAL_LABELS = ("calibration", "pilot", "diagnostic", "superseded")
 SECRET_KEY_PARTS = ("api_key", "apikey", "authorization", "access_token", "secret")
+EXPECTED_FREEZE_AUDIT_TASKS = 103
 
 
 def read_json(path: Path) -> dict[str, Any]:
@@ -93,8 +94,13 @@ def create_manifest(
         if freeze_audit_summary_path is None or not freeze_audit_summary_path.is_file():
             raise ValueError("confirmatory manifest requires a completed freeze-audit summary")
         audit_summary = read_json(freeze_audit_summary_path)
-        if audit_summary.get("freeze_audit_passed") is not True or audit_summary.get("tasks") != 98:
-            raise ValueError("confirmatory manifest requires all 98 freeze-audit items to pass")
+        if (
+            audit_summary.get("freeze_audit_passed") is not True
+            or audit_summary.get("tasks") != EXPECTED_FREEZE_AUDIT_TASKS
+        ):
+            raise ValueError(
+                f"confirmatory manifest requires all {EXPECTED_FREEZE_AUDIT_TASKS} freeze-audit items to pass"
+            )
     if status == "confirmatory" and report is not None and report.get("status") != "frozen":
         raise ValueError("confirmatory manifest requires a frozen report")
     if report is not None and report.get("study") != suite.get("study"):
@@ -188,6 +194,11 @@ def validate_model_allocation(report: dict[str, Any], suite: dict[str, Any]) -> 
             for mode in attempt.get("modes", []):
                 calls = mode.get("model_calls", [])
                 if not calls:
+                    # A transport timeout can leave no completed provider call
+                    # telemetry. Preserve that assigned, errored observation in
+                    # the frozen report instead of dropping the entire batch.
+                    if mode.get("error"):
+                        continue
                     raise ValueError(f"observation has no provider model telemetry: {mode.get('observation_id')}")
                 for call in calls:
                     if mode.get("mode") == "team_shared_retrieval_all_pro":
@@ -202,7 +213,9 @@ def validate_model_allocation(report: dict[str, Any], suite: dict[str, Any]) -> 
 
 
 def rejected_formal_filename(path: Path) -> bool:
-    lowered = path.name.lower()
+    # A combined batch includes primary observations plus once-per-case
+    # diagnostics; only a diagnostic-only artifact is excluded from pooling.
+    lowered = path.name.lower().replace("primary-diagnostic", "primary")
     return any(label in lowered for label in FORBIDDEN_FORMAL_LABELS)
 
 
@@ -562,7 +575,7 @@ def main() -> int:
     manifest_parser.add_argument("--agent-source", type=Path, required=True)
     manifest_parser.add_argument("--executable", type=Path, required=True)
     manifest_parser.add_argument("--report", type=Path, help="retained report to seal after execution; omit for the pre-run freeze manifest")
-    manifest_parser.add_argument("--freeze-audit-summary", type=Path, help="completed 98-item human freeze-audit summary")
+    manifest_parser.add_argument("--freeze-audit-summary", type=Path, help="accepted 103-item source/oracle review summary")
     manifest_parser.add_argument("--status", choices=("confirmatory", "calibration", "pilot", "diagnostic", "superseded"), required=True)
     manifest_parser.add_argument("--output", type=Path, required=True)
     analyze_parser = subparsers.add_parser("analyze", help="analyze retained confirmatory JSON only")

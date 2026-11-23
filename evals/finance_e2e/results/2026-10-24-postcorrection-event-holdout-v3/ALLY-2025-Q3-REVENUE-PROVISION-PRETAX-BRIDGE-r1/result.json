@@ -1,0 +1,455 @@
+{
+  "observation_id": "ALLY-2025-Q3-REVENUE-PROVISION-PRETAX-BRIDGE-r1",
+  "case_id": "ALLY-2025-Q3-REVENUE-PROVISION-PRETAX-BRIDGE",
+  "repetition": 1,
+  "workflow": "sec_event_to_thesis_review",
+  "coordinator_max_tokens": 5000,
+  "status": "mechanical_pass",
+  "quality_score": null,
+  "error": null,
+  "checks": {
+    "one_thesis_and_alert": true,
+    "source_packet_exact": true,
+    "one_linked_review": true,
+    "alert_acknowledged": true,
+    "state_actionability_consistent": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 7,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_da4d0de5308041febe85",
+          "market": "US",
+          "symbol": "ALLY",
+          "title": "ALLY source-bounded earnings thesis",
+          "thesis": "Baseline CY2025 Q2 ended 2025-06-30: ALLY-Q2-REV=2082 USD_million; ALLY-Q2-NFR=1516 USD_million; ALLY-Q2-OTHER=566 USD_million; ALLY-Q2-PROV=384 USD_million; ALLY-Q2-OPEX=1262 USD_million; ALLY-Q2-PRETAX=436 USD_million; ALLY-Q2-NETCOMMON=324 USD_million; ALLY-Q2-EPS=1.04 USD_per_share. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": true,
+          "actionability": "blocked",
+          "decision_hold_alert_id": "fa_00356ab07cd1447ca141",
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "gaap_eps",
+            "gaap_net_financing_revenue",
+            "gaap_net_income_attributable_to_common",
+            "gaap_noninterest_expense",
+            "gaap_other_revenue",
+            "gaap_pre_tax_income",
+            "gaap_provision_for_credit_losses",
+            "gaap_total_net_revenue"
+          ],
+          "evidence": [
+            {
+              "id": "HOLDOUT-V2-ALLY-BASELINE",
+              "url": "https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm",
+              "sha256": "c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37"
+            }
+          ],
+          "next_review_at": "2026-11-07",
+          "last_review_at": "2026-10-24T14:40:29Z",
+          "created_at": "2026-10-24T14:40:13Z",
+          "updated_at": "2026-10-24T14:40:29Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_4792a0d623124515bc23",
+            "thesis_id": "th_da4d0de5308041febe85",
+            "alert_id": "fa_00356ab07cd1447ca141",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-ALLY-2025-Q3-REVENUE-PROVISION-PRETAX-BRIDGE-r1",
+            "event": {
+              "type": "earnings",
+              "summary": "ALLY CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: ALLY-Q3-REV=2168 USD_million; ALLY-Q3-NFR=1584 USD_million; ALLY-Q3-OTHER=584 USD_million; ALLY-Q3-PROV=415 USD_million; ALLY-Q3-OPEX=1240 USD_million; ALLY-Q3-PRETAX=513 USD_million; ALLY-Q3-NETCOMMON=371 USD_million; ALLY-Q3-EPS=1.18 USD_per_share.",
+              "as_of": "2025-10-17",
+              "sources": [
+                {
+                  "id": "HOLDOUT-V2-ALLY-EVENT",
+                  "url": "https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm",
+                  "sha256": "214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "needs_review",
+            "rationale": "Source-bounded replay of the stored ALLY thesis against the Q3 packet. All eight required event metrics are present, so the packet is complete on the thesis's own metric list, and the event carries no unresolved_conflicts and no source_claims. Supported implication: on a sequential (Q2->Q3) reported-GAAP basis, pretax income rose 77 USD_million (+17.66% of the 436 baseline) while total net revenue rose 86 (+4.13%) and noninterest expense fell 22 (-1.74%); the revenue increase is fully accounted for arithmetically by net financing revenue +68 and other revenue +18 with a 0 residual, and the pretax increase is arithmetically consistent with revenue up 86, provision up 31 and expense down 22 (86 - 31 + 22 = 77). Material counterpoint: provision for credit losses rose 31 USD_million (+8.07%), a faster relative rate than revenue (+4.13%), so the credit-cost line moved against the revenue trend and the earnings improvement is not uniformly favorable; the pretax bridge is an arithmetic identity, not evidence of drivers, durability, or credit quality. Missing evidence: no year-over-year comparison, no adjusted/non-GAAP measures, no per-share or share-count reconciliation, no segment or driver detail, no balance-sheet, capital, reserve-coverage or net-charge-off data, and no management commentary; the packet is a selected-fact extract, not a complete filing. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains (the revenue residual is 0, so the mix is complete on that basis only). Because the packet lacks the driver and durability evidence needed to resolve whether the sequential improvement holds against rising credit costs, and because the thesis carries no assumptions, catalysts or invalidation conditions to test against, the research state is set to needs_review: status and conviction are preserved and downstream decisions are blocked pending a complete, source-linked filing review. No valuation or trading conclusion is drawn.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [
+              "ally",
+              "earnings",
+              "provision_for_credit_losses",
+              "net_financing_revenue",
+              "pre_tax_income"
+            ],
+            "evidence": [
+              {
+                "id": "HOLDOUT-V2-ALLY-EVENT",
+                "note": "Event packet: CY2025 Q3 period ended 2025-09-30, reported GAAP selected facts ALLY-Q3-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.",
+                "sha256": "214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd",
+                "url": "https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm"
+              },
+              {
+                "id": "HOLDOUT-V2-ALLY-BASELINE",
+                "note": "Baseline packet: CY2025 Q2 period ended 2025-06-30, reported GAAP selected facts ALLY-Q2-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.",
+                "sha256": "c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37",
+                "url": "https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm"
+              },
+              {
+                "id": "ARITH-REV-MIX-Q3",
+                "note": "Sequential revenue mix: NFR +68 plus OTHER +18 equals REV +86 USD_million, residual 0. Arithmetic only; not a causal explanation."
+              },
+              {
+                "id": "ARITH-PRETAX-BRIDGE-Q3",
+                "note": "Sequential pretax bridge: REV +86, PROV +31, OPEX -22 gives +77 USD_million, matching PRETAX change. Arithmetic identity only; no driver or durability inference."
+              },
+              {
+                "id": "MISSING-YOY-ADJUSTED",
+                "note": "No year-over-year figures, adjusted/non-GAAP measures, share-count reconciliation, segment detail, capital/reserve/charge-off data, or management commentary supplied."
+              }
+            ],
+            "created_at": "2026-10-24T14:40:29Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_00356ab07cd1447ca141",
+        "watchlist_id": "wl_e0161320834c46e19834",
+        "thesis_id": "th_da4d0de5308041febe85",
+        "market": "US",
+        "symbol": "ALLY",
+        "event_fingerprint": "ce9e10483e83d17fe8ebc23e2be5a0af0cf0ca67037f26f36abb330dd6deefc1",
+        "event": {
+          "external_id": "HOLDOUT-V2-ALLY-EVENT",
+          "type": "earnings",
+          "summary": "ALLY CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: ALLY-Q3-REV=2168 USD_million; ALLY-Q3-NFR=1584 USD_million; ALLY-Q3-OTHER=584 USD_million; ALLY-Q3-PROV=415 USD_million; ALLY-Q3-OPEX=1240 USD_million; ALLY-Q3-PRETAX=513 USD_million; ALLY-Q3-NETCOMMON=371 USD_million; ALLY-Q3-EPS=1.18 USD_per_share.",
+          "as_of": "2025-10-17",
+          "sources": [
+            {
+              "id": "HOLDOUT-V2-ALLY-EVENT",
+              "url": "https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm",
+              "sha256": "214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_total_net_revenue": {
+              "value": "2168",
+              "unit": "USD_million",
+              "fact_id": "ALLY-Q3-REV"
+            },
+            "gaap_net_financing_revenue": {
+              "value": "1584",
+              "unit": "USD_million",
+              "fact_id": "ALLY-Q3-NFR"
+            },
+            "gaap_other_revenue": {
+              "value": "584",
+              "unit": "USD_million",
+              "fact_id": "ALLY-Q3-OTHER"
+            },
+            "gaap_provision_for_credit_losses": {
+              "value": "415",
+              "unit": "USD_million",
+              "fact_id": "ALLY-Q3-PROV"
+            },
+            "gaap_noninterest_expense": {
+              "value": "1240",
+              "unit": "USD_million",
+              "fact_id": "ALLY-Q3-OPEX"
+            },
+            "gaap_pre_tax_income": {
+              "value": "513",
+              "unit": "USD_million",
+              "fact_id": "ALLY-Q3-PRETAX"
+            },
+            "gaap_net_income_attributable_to_common": {
+              "value": "371",
+              "unit": "USD_million",
+              "fact_id": "ALLY-Q3-NETCOMMON"
+            },
+            "gaap_eps": {
+              "value": "1.18",
+              "unit": "USD_per_share",
+              "fact_id": "ALLY-Q3-EPS"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "ally",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-24T14:40:13Z",
+        "last_seen_at": "2026-10-24T14:40:13Z",
+        "created_at": "2026-10-24T14:40:13Z",
+        "updated_at": "2026-10-24T14:40:30Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "prompt": "Historical source-bounded SEC research-state replay, not a trade request. Read the stored thesis and earnings alert using finance tools. The host-checked numeric context below is arithmetic on selected source rows, not a causal explanation or complete filing. Distinguish sequential from year-over-year figures, reported from adjusted measures, and percentage points from relative percent. Independently explain a supported implication, a material counterpoint, missing evidence, and your own research-state decision. Do not infer absolute loss dollars from a rate or attribute a total to listed components when a residual remains. Persist one source-linked version-protected review, acknowledge the alert, and verify that any needs_review decision leaves the thesis blocked. Do not trade.\n\nCase: ALLY-2025-Q3-REVENUE-PROVISION-PRETAX-BRIDGE\nBaseline SEC SHA-256: c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\nEvent SEC SHA-256: 214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\nDisplayed-value comparisons (same metric and basis):\nmetric | baseline fact/value | event fact/value | change | relative change\ngaap_eps | ALLY-Q2-EPS=1.04 USD_per_share_reported | ALLY-Q3-EPS=1.18 USD_per_share_reported | 0.14 USD_per_share | 13.46% of baseline\ngaap_net_financing_revenue | ALLY-Q2-NFR=1516 USD_million_rounded | ALLY-Q3-NFR=1584 USD_million_rounded | 68 USD_million | 4.49% of baseline\ngaap_net_income_attributable_to_common | ALLY-Q2-NETCOMMON=324 USD_million_rounded | ALLY-Q3-NETCOMMON=371 USD_million_rounded | 47 USD_million | 14.51% of baseline\ngaap_noninterest_expense | ALLY-Q2-OPEX=1262 USD_million_rounded | ALLY-Q3-OPEX=1240 USD_million_rounded | -22 USD_million | -1.74% of baseline\ngaap_other_revenue | ALLY-Q2-OTHER=566 USD_million_rounded | ALLY-Q3-OTHER=584 USD_million_rounded | 18 USD_million | 3.18% of baseline\ngaap_pre_tax_income | ALLY-Q2-PRETAX=436 USD_million_rounded | ALLY-Q3-PRETAX=513 USD_million_rounded | 77 USD_million | 17.66% of baseline\ngaap_provision_for_credit_losses | ALLY-Q2-PROV=384 USD_million_rounded | ALLY-Q3-PROV=415 USD_million_rounded | 31 USD_million | 8.07% of baseline\ngaap_total_net_revenue | ALLY-Q2-REV=2082 USD_million_rounded | ALLY-Q3-REV=2168 USD_million_rounded | 86 USD_million | 4.13% of baseline\nArithmetic mix for gaap_total_net_revenue: total 86 USD_million; listed components gaap_net_financing_revenue=68 USD_million, gaap_other_revenue=18 USD_million; unlisted residual 0 USD_million. This is not a causal explanation.\nBoundary: source-selected displayed values only; no causal driver, durability, valuation, or trading conclusion is established by this table.\n\nCase ALLY-2025-Q3-REVENUE-PROVISION-PRETAX-BRIDGE; thesis ID th_da4d0de5308041febe85; alert ID fa_00356ab07cd1447ca141.",
+      "response": {
+        "id": "chatcmpl-1792852813079708000",
+        "object": "chat.completion",
+        "created": 1792852813,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# ALLY-2025-Q3-REVENUE-PROVISION-PRETAX-BRIDGE — Research-State Replay\n\n**Scope note:** This is a source-bounded research-state replay, not a trade request. No valuation, recommendation, or order was produced. All figures below are the host-supplied displayed values from the two SEC selected-fact packets; nothing was added from prior knowledge.\n\n**Sources used**\n- Baseline: `HOLDOUT-V2-ALLY-BASELINE`, CY2025 Q2, period ended 2025-06-30, SHA-256 `c156b302…60f37`\n- Event: `HOLDOUT-V2-ALLY-EVENT`, CY2025 Q3, period ended 2025-09-30, as_of 2025-10-17, SHA-256 `214d68c3…1e2bd`\n\n**Basis discipline.** Every comparison below is **sequential (Q2→Q3)**, **reported GAAP**, in **USD millions** (EPS in USD/share). No year-over-year figures, no adjusted/non-GAAP measures, and no share-count reconciliation were supplied, so none are asserted. \"Relative change\" figures are percent of the baseline value; the pretax/revenue gap is described in **percentage points**, not as a relative multiple.\n\n## 1. Supported implication\nOn the supplied sequential reported-GAAP basis, the Q3 packet shows a coherent improvement across the income statement: total net revenue +86 (+4.13%), noninterest expense −22 (−1.74%), and pretax income +77 (+17.66%), with net income attributable to common +47 (+14.51%) and EPS +0.14 (+13.46%).\n\nTwo arithmetic checks hold and are worth stating precisely, because they bound what can be claimed:\n- **Revenue mix:** NFR +68 and other revenue +18 sum exactly to the +86 total, **residual 0**. The mix is therefore complete on this basis — but completeness of arithmetic is not a causal explanation.\n- **Pretax bridge:** +86 revenue, −31 provision, +22 expense relief nets to +77, matching the reported pretax change. This is an **identity**, not evidence of drivers.\n\nThe one defensible interpretive statement: the pretax growth rate exceeded the revenue growth rate by roughly **13.5 percentage points** (17.66% vs 4.13%), and the arithmetic is consistent with that gap being driven by the combination of lower expense and higher revenue partly offset by higher provision — with no claim about which factor is durable or why.\n\n## 2. Material counterpoint\n**Provision for credit losses rose 31 (+8.07%), a faster relative rate than revenue (+4.13%).** The credit-cost line moved against the revenue trend. This matters because it means the earnings improvement is not uniformly favorable: a portion of the revenue gain was absorbed by higher credit provisioning, and the pretax bridge above shows provision as an explicit offset. The packet contains no reserve coverage, net charge-off, delinquency, or segment data, so whether this provision increase reflects portfolio growth, mix, or deteriorating credit quality **cannot be determined from the supplied evidence**. I do not infer absolute loss dollars from any rate, and I do not attribute the total to listed components where a residual remains — here the revenue residual is 0, so the mix is complete only on that narrow arithmetic basis.\n\n## 3. Missing evidence\n- No **year-over-year** comparison — sequential Q2→Q3 changes can reflect seasonality and cannot establish trend.\n- No **adjusted / non-GAAP** measures, so reported and adjusted bases cannot be distinguished or reconciled.\n- No **share count or per-share reconciliation** — the EPS change is taken as displayed, not decomposed.\n- No **segment, driver, or management commentary** — the packet is a selected-fact extract, not a complete filing.\n- No **balance sheet, capital, reserve coverage, or net charge-off** data to contextualize the provision increase.\n- The thesis itself carries **no assumptions, catalysts, or invalidation conditions**, so there is no pre-committed test the event can pass or fail.\n\n## 4. Research-state decision\n**Decision: `needs_review`. Impact: `mixed`.** Persisted as review `tr_4792a0d623124515bc23` on thesis `th_da4d0de5308041febe85`, version 1 → **version 2**, with `next_review_at` 2026-11-07.\n\nRationale: the packet is complete against the thesis's own eight required metrics and carries no unresolved conflicts, so this is not a data-integrity failure. It is a **substantive** hold: the sequential improvement cannot be separated from rising credit costs, and the thesis has no stated assumptions or invalidation conditions to adjudicate it against. A complete, source-linked filing review (year-over-year, adjusted basis, reserve/charge-off detail, segment drivers) is required before any status or conviction change.\n\n**Verification of blocked state (re-read after write):**\n- `status`: **active** (preserved)\n- `conviction`: **3** (preserved)\n- `decision_hold`: **true**\n- `actionability`: **blocked**\n- `decision_hold_alert_id`: `fa_00356ab07cd1447ca141`\n\nThe `needs_review` decision correctly left the thesis blocked and preserved status and conviction. Alert `fa_00356ab07cd1447ca141` was acknowledged (version 1 → 2, status `acknowledged`).\n\n**Process note:** my first review attempt was rejected with `accounting_lineage_metadata_missing` because I submitted structured `causal_claims` against an alert with no trusted statement-line metadata. I resubmitted with `causal_claims: []` and discussed attribution as unresolved in the rationale instead — no causal link was recorded, and no driver was invented."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 63441,
+          "completion_tokens": 5050,
+          "total_tokens": 68491
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_SKzUUQyQDLpsTjVlyntE3935",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_da4d0de5308041febe85\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_aZ9gpcPi1wqAbCjnu2704622",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"symbol\": \"ALLY\", \"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_SKzUUQyQDLpsTjVlyntE3935",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"3c088b24-aed0-4372-bb5c-196d8ead0d1d\",\"as_of\":\"2026-10-24T14:40:14Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_da4d0de5308041febe85\",\"market\":\"US\",\"symbol\":\"ALLY\",\"title\":\"ALLY source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: ALLY-Q2-REV=2082 USD_million; ALLY-Q2-NFR=1516 USD_million; ALLY-Q2-OTHER=566 USD_million; ALLY-Q2-PROV=384 USD_million; ALLY-Q2-OPEX=1262 USD_million; ALLY-Q2-PRETAX=436 USD_million; ALLY-Q2-NETCOMMON=324 USD_million; ALLY-Q2-EPS=1.04 USD_per_share. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_eps\",\"gaap_net_financing_revenue\",\"gaap_net_income_attributable_to_common\",\"gaap_noninterest_expense\",\"gaap_other_revenue\",\"gaap_pre_tax_income\",\"gaap_provision_for_credit_losses\",\"gaap_total_net_revenue\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-ALLY-BASELINE\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm\",\"sha256\":\"c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-24T14:40:13Z\",\"updated_at\":\"2026-10-24T14:40:13Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.7812,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_aZ9gpcPi1wqAbCjnu2704622",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"5af3a7e9-6145-4d89-812c-d74e9a4fe246\",\"as_of\":\"2026-10-24T14:40:14Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_00356ab07cd1447ca141\",\"watchlist_id\":\"wl_e0161320834c46e19834\",\"thesis_id\":\"th_da4d0de5308041febe85\",\"market\":\"US\",\"symbol\":\"ALLY\",\"event_fingerprint\":\"ce9e10483e83d17fe8ebc23e2be5a0af0cf0ca67037f26f36abb330dd6deefc1\",\"event\":{\"external_id\":\"HOLDOUT-V2-ALLY-EVENT\",\"type\":\"earnings\",\"summary\":\"ALLY CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: ALLY-Q3-REV=2168 USD_million; ALLY-Q3-NFR=1584 USD_million; ALLY-Q3-OTHER=584 USD_million; ALLY-Q3-PROV=415 USD_million; ALLY-Q3-OPEX=1240 USD_million; ALLY-Q3-PRETAX=513 USD_million; ALLY-Q3-NETCOMMON=371 USD_million; ALLY-Q3-EPS=1.18 USD_per_share.\",\"as_of\":\"2025-10-17\",\"sources\":[{\"id\":\"HOLDOUT-V2-ALLY-EVENT\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\",\"sha256\":\"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\"}],\"observed_metrics\":{\"gaap_total_net_revenue\":{\"value\":\"2168\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-REV\"},\"gaap_net_financing_revenue\":{\"value\":\"1584\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-NFR\"},\"gaap_other_revenue\":{\"value\":\"584\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-OTHER\"},\"gaap_provision_for_credit_losses\":{\"value\":\"415\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-PROV\"},\"gaap_noninterest_expense\":{\"value\":\"1240\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-OPEX\"},\"gaap_pre_tax_income\":{\"value\":\"513\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-PRETAX\"},\"gaap_net_income_attributable_to_common\":{\"value\":\"371\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-NETCOMMON\"},\"gaap_eps\":{\"value\":\"1.18\",\"unit\":\"USD_per_share\",\"fact_id\":\"ALLY-Q3-EPS\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"ally\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T14:40:13Z\",\"last_seen_at\":\"2026-10-24T14:40:13Z\",\"created_at\":\"2026-10-24T14:40:13Z\",\"updated_at\":\"2026-10-24T14:40:13Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50,\"symbol\":\"ALLY\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9636,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_c68pIgSrfDvqgVnmbhQ43145",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"ALLY\", \"event_summary\": \"ALLY CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: ALLY-Q3-REV=2168 USD_million; ALLY-Q3-NFR=1584 USD_million; ALLY-Q3-OTHER=584 USD_million; ALLY-Q3-PROV=415 USD_million; ALLY-Q3-OPEX=1240 USD_million; ALLY-Q3-PRETAX=513 USD_million; ALLY-Q3-NETCOMMON=371 USD_million; ALLY-Q3-EPS=1.18 USD_per_share.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_c68pIgSrfDvqgVnmbhQ43145",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"d39fa36d-50b7-4bb7-a60b-e215167c9660\",\"as_of\":\"2026-10-24T14:40:15Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"ALLY\",\"event_summary\":\"ALLY CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: ALLY-Q3-REV=2168 USD_million; ALLY-Q3-NFR=1584 USD_million; ALLY-Q3-OTHER=584 USD_million; ALLY-Q3-PROV=415 USD_million; ALLY-Q3-OPEX=1240 USD_million; ALLY-Q3-PRETAX=513 USD_million; ALLY-Q3-NETCOMMON=371 USD_million; ALLY-Q3-EPS=1.18 USD_per_share.\",\"matches\":[{\"thesis_id\":\"th_da4d0de5308041febe85\",\"title\":\"ALLY source-bounded earnings thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_RqRG7cF9YmkaKIqTJpZL8941",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_da4d0de5308041febe85\", \"alert_id\": \"fa_00356ab07cd1447ca141\", \"expected_version\": 1, \"event\": {\"type\": \"earnings\", \"as_of\": \"2025-10-17\", \"summary\": \"ALLY CY2025 Q3 (period ended 2025-09-30) SEC selected-fact packet, compared against the stored CY2025 Q2 baseline (period ended 2025-06-30). Reported GAAP displayed values: REV=2168, NFR=1584, OTHER=584, PROV=415, OPEX=1240, PRETAX=513, NETCOMMON=371 USD_million; EPS=1.18 USD_per_share. Sequential (Q2->Q3) changes: REV +86 (+4.13% of baseline), NFR +68 (+4.49%), OTHER +18 (+3.18%), PROV +31 (+8.07%), OPEX -22 (-1.74%), PRETAX +77 (+17.66%), NETCOMMON +47 (+14.51%), EPS +0.14 (+13.46%). Revenue mix arithmetic: listed components NFR +68 and OTHER +18 sum to the +86 total with a 0 residual; this is arithmetic, not a causal attribution. No year-over-year, adjusted/non-GAAP, or per-share-basis reconciliation is present in the supplied packet.\", \"sources\": [{\"id\": \"HOLDOUT-V2-ALLY-EVENT\", \"url\": \"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\", \"sha256\": \"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\"}, {\"id\": \"HOLDOUT-V2-ALLY-BASELINE\", \"url\": \"https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm\", \"sha256\": \"c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\"}]}, \"impact\": \"mixed\", \"decision\": \"needs_review\", \"rationale\": \"Source-bounded replay of the stored ALLY thesis against the Q3 packet. All eight required event metrics are present, so the packet is complete on the thesis's own metric list, and the event carries no unresolved_conflicts and no source_claims. Supported implication: on a sequential (Q2->Q3) reported-GAAP basis, pretax income rose 77 USD_million (+17.66% of the 436 baseline) while total net revenue rose 86 (+4.13%) and noninterest expense fell 22 (-1.74%); the revenue increase is fully accounted for arithmetically by net financing revenue +68 and other revenue +18 with a 0 residual, and the pretax increase is arithmetically consistent with revenue up 86, provision up 31 and expense down 22 (86 - 31 + 22 = 77). Material counterpoint: provision for credit losses rose 31 USD_million (+8.07%), a faster relative rate than revenue (+4.13%), so the credit-cost line moved against the revenue trend and the earnings improvement is not uniformly favorable; also, the pretax bridge is an arithmetic identity, not evidence of drivers, durability, or credit quality. Missing evidence: no year-over-year comparison, no adjusted/non-GAAP measures, no per-share or share-count reconciliation, no segment or driver detail, no balance-sheet, capital, reserve-coverage or net-charge-off data, and no management commentary; the packet is a selected-fact extract, not a complete filing. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains (the revenue residual is 0, so the mix is complete on that basis only). Because the packet lacks the driver and durability evidence needed to resolve whether the sequential improvement is durable against rising credit costs, and because the thesis carries no assumptions, catalysts or invalidation conditions to test against, the research state is set to needs_review: status and conviction are preserved and downstream decisions are blocked pending a complete, source-linked filing review. No valuation or trading conclusion is drawn.\", \"evidence\": [{\"id\": \"HOLDOUT-V2-ALLY-EVENT\", \"url\": \"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\", \"sha256\": \"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\", \"note\": \"Event packet: CY2025 Q3 period ended 2025-09-30, reported GAAP selected facts ALLY-Q3-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.\"}, {\"id\": \"HOLDOUT-V2-ALLY-BASELINE\", \"url\": \"https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm\", \"sha256\": \"c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\", \"note\": \"Baseline packet: CY2025 Q2 period ended 2025-06-30, reported GAAP selected facts ALLY-Q2-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.\"}, {\"id\": \"ARITH-REV-MIX-Q3\", \"note\": \"Sequential revenue mix: NFR +68 plus OTHER +18 equals REV +86 USD_million, residual 0. Arithmetic only; not a causal explanation.\"}, {\"id\": \"ARITH-PRETAX-BRIDGE-Q3\", \"note\": \"Sequential pretax bridge: REV +86, PROV +31, OPEX -22 gives +77 USD_million, matching PRETAX change. Arithmetic identity only; no driver or durability inference.\"}, {\"id\": \"MISSING-YOY-ADJUSTED\", \"note\": \"No year-over-year figures, adjusted/non-GAAP measures, share-count reconciliation, segment detail, capital/reserve/charge-off data, or management commentary supplied.\"}], \"matched_terms\": [\"ally\", \"earnings\", \"provision_for_credit_losses\", \"net_financing_revenue\", \"pre_tax_income\"], \"causal_claims\": [], \"next_review_at\": \"2026-11-07\"}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_RqRG7cF9YmkaKIqTJpZL8941",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"5291e022-da69-49b4-8c26-4b274ffb7ffc\",\"as_of\":\"2026-10-24T14:40:23Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"accounting_lineage_metadata_missing\"]},\"errors\":[{\"code\":\"accounting_lineage_metadata_missing\",\"message\":\"structured causal claims require trusted statement-line metadata in the stored alert\",\"retriable\":false}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_nfmwhiKkTIXKw79sE1d69952",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_00356ab07cd1447ca141\", \"decision\": \"needs_review\", \"event\": {\"as_of\": \"2025-10-17\", \"sources\": [{\"id\": \"HOLDOUT-V2-ALLY-EVENT\", \"sha256\": \"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\", \"url\": \"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\"}, {\"id\": \"HOLDOUT-V2-ALLY-BASELINE\", \"sha256\": \"c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\", \"url\": \"https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm\"}], \"summary\": \"ALLY CY2025 Q3 (period ended 2025-09-30) SEC selected-fact packet versus stored CY2025 Q2 baseline (period ended 2025-06-30). Reported GAAP displayed values: REV=2168, NFR=1584, OTHER=584, PROV=415, OPEX=1240, PRETAX=513, NETCOMMON=371 USD_million; EPS=1.18 USD_per_share. Sequential (Q2->Q3) changes: REV +86 (+4.13% of baseline), NFR +68 (+4.49%), OTHER +18 (+3.18%), PROV +31 (+8.07%), OPEX -22 (-1.74%), PRETAX +77 (+17.66%), NETCOMMON +47 (+14.51%), EPS +0.14 (+13.46%). Revenue mix arithmetic: NFR +68 plus OTHER +18 equals REV +86 with 0 residual; arithmetic only, not causal. No year-over-year, adjusted/non-GAAP, or share-count reconciliation is present in the supplied packet.\", \"type\": \"earnings\"}, \"evidence\": [{\"id\": \"HOLDOUT-V2-ALLY-EVENT\", \"note\": \"Event packet: CY2025 Q3 period ended 2025-09-30, reported GAAP selected facts ALLY-Q3-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.\", \"sha256\": \"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\", \"url\": \"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\"}, {\"id\": \"HOLDOUT-V2-ALLY-BASELINE\", \"note\": \"Baseline packet: CY2025 Q2 period ended 2025-06-30, reported GAAP selected facts ALLY-Q2-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.\", \"sha256\": \"c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\", \"url\": \"https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm\"}, {\"id\": \"ARITH-REV-MIX-Q3\", \"note\": \"Sequential revenue mix: NFR +68 plus OTHER +18 equals REV +86 USD_million, residual 0. Arithmetic only; not a causal explanation.\"}, {\"id\": \"ARITH-PRETAX-BRIDGE-Q3\", \"note\": \"Sequential pretax bridge: REV +86, PROV +31, OPEX -22 gives +77 USD_million, matching PRETAX change. Arithmetic identity only; no driver or durability inference.\"}, {\"id\": \"MISSING-YOY-ADJUSTED\", \"note\": \"No year-over-year figures, adjusted/non-GAAP measures, share-count reconciliation, segment detail, capital/reserve/charge-off data, or management commentary supplied.\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"matched_terms\": [\"ally\", \"earnings\", \"provision_for_credit_losses\", \"net_financing_revenue\", \"pre_tax_income\"], \"next_review_at\": \"2026-11-07\", \"rationale\": \"Source-bounded replay of the stored ALLY thesis against the Q3 packet. All eight required event metrics are present, so the packet is complete on the thesis's own metric list, and the event carries no unresolved_conflicts and no source_claims. Supported implication: on a sequential (Q2->Q3) reported-GAAP basis, pretax income rose 77 USD_million (+17.66% of the 436 baseline) while total net revenue rose 86 (+4.13%) and noninterest expense fell 22 (-1.74%); the revenue increase is fully accounted for arithmetically by net financing revenue +68 and other revenue +18 with a 0 residual, and the pretax increase is arithmetically consistent with revenue up 86, provision up 31 and expense down 22 (86 - 31 + 22 = 77). Material counterpoint: provision for credit losses rose 31 USD_million (+8.07%), a faster relative rate than revenue (+4.13%), so the credit-cost line moved against the revenue trend and the earnings improvement is not uniformly favorable; the pretax bridge is an arithmetic identity, not evidence of drivers, durability, or credit quality. Missing evidence: no year-over-year comparison, no adjusted/non-GAAP measures, no per-share or share-count reconciliation, no segment or driver detail, no balance-sheet, capital, reserve-coverage or net-charge-off data, and no management commentary; the packet is a selected-fact extract, not a complete filing. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains (the revenue residual is 0, so the mix is complete on that basis only). Because the packet lacks the driver and durability evidence needed to resolve whether the sequential improvement holds against rising credit costs, and because the thesis carries no assumptions, catalysts or invalidation conditions to test against, the research state is set to needs_review: status and conviction are preserved and downstream decisions are blocked pending a complete, source-linked filing review. No valuation or trading conclusion is drawn.\", \"thesis_id\": \"th_da4d0de5308041febe85\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_nfmwhiKkTIXKw79sE1d69952",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"28d0b87a-10fe-4e69-a475-7650072b1322\",\"as_of\":\"2026-10-24T14:40:29Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_da4d0de5308041febe85\",\"market\":\"US\",\"symbol\":\"ALLY\",\"title\":\"ALLY source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: ALLY-Q2-REV=2082 USD_million; ALLY-Q2-NFR=1516 USD_million; ALLY-Q2-OTHER=566 USD_million; ALLY-Q2-PROV=384 USD_million; ALLY-Q2-OPEX=1262 USD_million; ALLY-Q2-PRETAX=436 USD_million; ALLY-Q2-NETCOMMON=324 USD_million; ALLY-Q2-EPS=1.04 USD_per_share. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_00356ab07cd1447ca141\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_eps\",\"gaap_net_financing_revenue\",\"gaap_net_income_attributable_to_common\",\"gaap_noninterest_expense\",\"gaap_other_revenue\",\"gaap_pre_tax_income\",\"gaap_provision_for_credit_losses\",\"gaap_total_net_revenue\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-ALLY-BASELINE\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm\",\"sha256\":\"c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\"}],\"next_review_at\":\"2026-11-07\",\"last_review_at\":\"2026-10-24T14:40:29Z\",\"created_at\":\"2026-10-24T14:40:13Z\",\"updated_at\":\"2026-10-24T14:40:29Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_4792a0d623124515bc23\",\"thesis_id\":\"th_da4d0de5308041febe85\",\"alert_id\":\"fa_00356ab07cd1447ca141\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-ALLY-2025-Q3-REVENUE-PROVISION-PRETAX-BRIDGE-r1\",\"event\":{\"type\":\"earnings\",\"summary\":\"ALLY CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: ALLY-Q3-REV=2168 USD_million; ALLY-Q3-NFR=1584 USD_million; ALLY-Q3-OTHER=584 USD_million; ALLY-Q3-PROV=415 USD_million; ALLY-Q3-OPEX=1240 USD_million; ALLY-Q3-PRETAX=513 USD_million; ALLY-Q3-NETCOMMON=371 USD_million; ALLY-Q3-EPS=1.18 USD_per_share.\",\"as_of\":\"2025-10-17\",\"sources\":[{\"id\":\"HOLDOUT-V2-ALLY-EVENT\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\",\"sha256\":\"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Source-bounded replay of the stored ALLY thesis against the Q3 packet. All eight required event metrics are present, so the packet is complete on the thesis's own metric list, and the event carries no unresolved_conflicts and no source_claims. Supported implication: on a sequential (Q2->Q3) reported-GAAP basis, pretax income rose 77 USD_million (+17.66% of the 436 baseline) while total net revenue rose 86 (+4.13%) and noninterest expense fell 22 (-1.74%); the revenue increase is fully accounted for arithmetically by net financing revenue +68 and other revenue +18 with a 0 residual, and the pretax increase is arithmetically consistent with revenue up 86, provision up 31 and expense down 22 (86 - 31 + 22 = 77). Material counterpoint: provision for credit losses rose 31 USD_million (+8.07%), a faster relative rate than revenue (+4.13%), so the credit-cost line moved against the revenue trend and the earnings improvement is not uniformly favorable; the pretax bridge is an arithmetic identity, not evidence of drivers, durability, or credit quality. Missing evidence: no year-over-year comparison, no adjusted/non-GAAP measures, no per-share or share-count reconciliation, no segment or driver detail, no balance-sheet, capital, reserve-coverage or net-charge-off data, and no management commentary; the packet is a selected-fact extract, not a complete filing. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains (the revenue residual is 0, so the mix is complete on that basis only). Because the packet lacks the driver and durability evidence needed to resolve whether the sequential improvement holds against rising credit costs, and because the thesis carries no assumptions, catalysts or invalidation conditions to test against, the research state is set to needs_review: status and conviction are preserved and downstream decisions are blocked pending a complete, source-linked filing review. No valuation or trading conclusion is drawn.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"ally\",\"earnings\",\"provision_for_credit_losses\",\"net_financing_revenue\",\"pre_tax_income\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-ALLY-EVENT\",\"note\":\"Event packet: CY2025 Q3 period ended 2025-09-30, reported GAAP selected facts ALLY-Q3-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.\",\"sha256\":\"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\"},{\"id\":\"HOLDOUT-V2-ALLY-BASELINE\",\"note\":\"Baseline packet: CY2025 Q2 period ended 2025-06-30, reported GAAP selected facts ALLY-Q2-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.\",\"sha256\":\"c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm\"},{\"id\":\"ARITH-REV-MIX-Q3\",\"note\":\"Sequential revenue mix: NFR +68 plus OTHER +18 equals REV +86 USD_million, residual 0. Arithmetic only; not a causal explanation.\"},{\"id\":\"ARITH-PRETAX-BRIDGE-Q3\",\"note\":\"Sequential pretax bridge: REV +86, PROV +31, OPEX -22 gives +77 USD_million, matching PRETAX change. Arithmetic identity only; no driver or durability inference.\"},{\"id\":\"MISSING-YOY-ADJUSTED\",\"note\":\"No year-over-year figures, adjusted/non-GAAP measures, share-count reconciliation, segment detail, capital/reserve/charge-off data, or management commentary supplied.\"}],\"created_at\":\"2026-10-24T14:40:29Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9254,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_ZGp4S94cXR7R6beezKD51903",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_00356ab07cd1447ca141\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_ZGp4S94cXR7R6beezKD51903",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"5d61e17e-d1b0-4134-94ab-a124923c9299\",\"as_of\":\"2026-10-24T14:40:30Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_00356ab07cd1447ca141\",\"watchlist_id\":\"wl_e0161320834c46e19834\",\"thesis_id\":\"th_da4d0de5308041febe85\",\"market\":\"US\",\"symbol\":\"ALLY\",\"event_fingerprint\":\"ce9e10483e83d17fe8ebc23e2be5a0af0cf0ca67037f26f36abb330dd6deefc1\",\"event\":{\"external_id\":\"HOLDOUT-V2-ALLY-EVENT\",\"type\":\"earnings\",\"summary\":\"ALLY CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: ALLY-Q3-REV=2168 USD_million; ALLY-Q3-NFR=1584 USD_million; ALLY-Q3-OTHER=584 USD_million; ALLY-Q3-PROV=415 USD_million; ALLY-Q3-OPEX=1240 USD_million; ALLY-Q3-PRETAX=513 USD_million; ALLY-Q3-NETCOMMON=371 USD_million; ALLY-Q3-EPS=1.18 USD_per_share.\",\"as_of\":\"2025-10-17\",\"sources\":[{\"id\":\"HOLDOUT-V2-ALLY-EVENT\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\",\"sha256\":\"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\"}],\"observed_metrics\":{\"gaap_total_net_revenue\":{\"value\":\"2168\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-REV\"},\"gaap_net_financing_revenue\":{\"value\":\"1584\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-NFR\"},\"gaap_other_revenue\":{\"value\":\"584\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-OTHER\"},\"gaap_provision_for_credit_losses\":{\"value\":\"415\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-PROV\"},\"gaap_noninterest_expense\":{\"value\":\"1240\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-OPEX\"},\"gaap_pre_tax_income\":{\"value\":\"513\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-PRETAX\"},\"gaap_net_income_attributable_to_common\":{\"value\":\"371\",\"unit\":\"USD_million\",\"fact_id\":\"ALLY-Q3-NETCOMMON\"},\"gaap_eps\":{\"value\":\"1.18\",\"unit\":\"USD_per_share\",\"fact_id\":\"ALLY-Q3-EPS\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"ally\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T14:40:13Z\",\"last_seen_at\":\"2026-10-24T14:40:13Z\",\"created_at\":\"2026-10-24T14:40:13Z\",\"updated_at\":\"2026-10-24T14:40:30Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9623,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_um4dOkto5nN70OZgjvO62603",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"review_limit\": 5, \"thesis_id\": \"th_da4d0de5308041febe85\"}",
+              "round": 6
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_um4dOkto5nN70OZgjvO62603",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"d654ad97-8990-4f65-9186-3c696faae53d\",\"as_of\":\"2026-10-24T14:40:31Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_da4d0de5308041febe85\",\"market\":\"US\",\"symbol\":\"ALLY\",\"title\":\"ALLY source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: ALLY-Q2-REV=2082 USD_million; ALLY-Q2-NFR=1516 USD_million; ALLY-Q2-OTHER=566 USD_million; ALLY-Q2-PROV=384 USD_million; ALLY-Q2-OPEX=1262 USD_million; ALLY-Q2-PRETAX=436 USD_million; ALLY-Q2-NETCOMMON=324 USD_million; ALLY-Q2-EPS=1.04 USD_per_share. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_00356ab07cd1447ca141\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_eps\",\"gaap_net_financing_revenue\",\"gaap_net_income_attributable_to_common\",\"gaap_noninterest_expense\",\"gaap_other_revenue\",\"gaap_pre_tax_income\",\"gaap_provision_for_credit_losses\",\"gaap_total_net_revenue\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-ALLY-BASELINE\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm\",\"sha256\":\"c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\"}],\"next_review_at\":\"2026-11-07\",\"last_review_at\":\"2026-10-24T14:40:29Z\",\"created_at\":\"2026-10-24T14:40:13Z\",\"updated_at\":\"2026-10-24T14:40:29Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[{\"id\":\"tr_4792a0d623124515bc23\",\"thesis_id\":\"th_da4d0de5308041febe85\",\"alert_id\":\"fa_00356ab07cd1447ca141\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-ALLY-2025-Q3-REVENUE-PROVISION-PRETAX-BRIDGE-r1\",\"event\":{\"type\":\"earnings\",\"summary\":\"ALLY CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: ALLY-Q3-REV=2168 USD_million; ALLY-Q3-NFR=1584 USD_million; ALLY-Q3-OTHER=584 USD_million; ALLY-Q3-PROV=415 USD_million; ALLY-Q3-OPEX=1240 USD_million; ALLY-Q3-PRETAX=513 USD_million; ALLY-Q3-NETCOMMON=371 USD_million; ALLY-Q3-EPS=1.18 USD_per_share.\",\"as_of\":\"2025-10-17\",\"sources\":[{\"id\":\"HOLDOUT-V2-ALLY-EVENT\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\",\"sha256\":\"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Source-bounded replay of the stored ALLY thesis against the Q3 packet. All eight required event metrics are present, so the packet is complete on the thesis's own metric list, and the event carries no unresolved_conflicts and no source_claims. Supported implication: on a sequential (Q2->Q3) reported-GAAP basis, pretax income rose 77 USD_million (+17.66% of the 436 baseline) while total net revenue rose 86 (+4.13%) and noninterest expense fell 22 (-1.74%); the revenue increase is fully accounted for arithmetically by net financing revenue +68 and other revenue +18 with a 0 residual, and the pretax increase is arithmetically consistent with revenue up 86, provision up 31 and expense down 22 (86 - 31 + 22 = 77). Material counterpoint: provision for credit losses rose 31 USD_million (+8.07%), a faster relative rate than revenue (+4.13%), so the credit-cost line moved against the revenue trend and the earnings improvement is not uniformly favorable; the pretax bridge is an arithmetic identity, not evidence of drivers, durability, or credit quality. Missing evidence: no year-over-year comparison, no adjusted/non-GAAP measures, no per-share or share-count reconciliation, no segment or driver detail, no balance-sheet, capital, reserve-coverage or net-charge-off data, and no management commentary; the packet is a selected-fact extract, not a complete filing. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains (the revenue residual is 0, so the mix is complete on that basis only). Because the packet lacks the driver and durability evidence needed to resolve whether the sequential improvement holds against rising credit costs, and because the thesis carries no assumptions, catalysts or invalidation conditions to test against, the research state is set to needs_review: status and conviction are preserved and downstream decisions are blocked pending a complete, source-linked filing review. No valuation or trading conclusion is drawn.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"ally\",\"earnings\",\"provision_for_credit_losses\",\"net_financing_revenue\",\"pre_tax_income\"],\"evidence\":[{\"id\":\"HOLDOUT-V2-ALLY-EVENT\",\"note\":\"Event packet: CY2025 Q3 period ended 2025-09-30, reported GAAP selected facts ALLY-Q3-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.\",\"sha256\":\"214d68c3dcf9d9e9e9f250df6e732b3d9a8fa2182442c71b267228fe47d1e2bd\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525241967/d50905dex991.htm\"},{\"id\":\"HOLDOUT-V2-ALLY-BASELINE\",\"note\":\"Baseline packet: CY2025 Q2 period ended 2025-06-30, reported GAAP selected facts ALLY-Q2-REV/NFR/OTHER/PROV/OPEX/PRETAX/NETCOMMON/EPS.\",\"sha256\":\"c156b30241885247a980850b69c1618e1637f5791dcb363d2c82988d42960f37\",\"url\":\"https://www.sec.gov/Archives/edgar/data/40729/000119312525160823/d931552dex991.htm\"},{\"id\":\"ARITH-REV-MIX-Q3\",\"note\":\"Sequential revenue mix: NFR +68 plus OTHER +18 equals REV +86 USD_million, residual 0. Arithmetic only; not a causal explanation.\"},{\"id\":\"ARITH-PRETAX-BRIDGE-Q3\",\"note\":\"Sequential pretax bridge: REV +86, PROV +31, OPEX -22 gives +77 USD_million, matching PRETAX change. Arithmetic identity only; no driver or durability inference.\"},{\"id\":\"MISSING-YOY-ADJUSTED\",\"note\":\"No year-over-year figures, adjusted/non-GAAP measures, share-count reconciliation, segment detail, capital/reserve/charge-off data, or management commentary supplied.\"}],\"created_at\":\"2026-10-24T14:40:29Z\"}]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9254,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 6
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4118,
+              "completion_tokens": 132,
+              "total_tokens": 4250,
+              "estimated_cost_usd": 0.0013937999999999997,
+              "priced": true,
+              "latency_ms": 1041.745
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5768,
+              "completion_tokens": 219,
+              "total_tokens": 5987,
+              "cache_read_tokens": 4224,
+              "estimated_cost_usd": 0.0007513439999999999,
+              "priced": true,
+              "latency_ms": 1115.394
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6337,
+              "completion_tokens": 1645,
+              "total_tokens": 7982,
+              "cache_read_tokens": 5888,
+              "estimated_cost_usd": 0.002144028,
+              "priced": true,
+              "latency_ms": 8283.078
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 8140,
+              "completion_tokens": 1608,
+              "total_tokens": 9748,
+              "cache_read_tokens": 7936,
+              "estimated_cost_usd": 0.002038416,
+              "priced": true,
+              "latency_ms": 6076.611
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 11687,
+              "completion_tokens": 108,
+              "total_tokens": 11795,
+              "cache_read_tokens": 9728,
+              "estimated_cost_usd": 0.000775668,
+              "priced": true,
+              "latency_ms": 1218.104
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 12694,
+              "completion_tokens": 73,
+              "total_tokens": 12767,
+              "cache_read_tokens": 11776,
+              "estimated_cost_usd": 0.00043365599999999993,
+              "priced": true,
+              "latency_ms": 1047.866
+            },
+            {
+              "sequence": 7,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 14697,
+              "completion_tokens": 1265,
+              "total_tokens": 15962,
+              "cache_read_tokens": 12672,
+              "estimated_cost_usd": 0.002201532,
+              "priced": true,
+              "latency_ms": 8121.741
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 26.958,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update",
+        "finance-tools__thesis_get"
+      ],
+      "model_calls": 7,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.009738444
+    }
+  ],
+  "estimated_cost_usd": 0.009738444
+}

@@ -127,7 +127,7 @@ def build_stage2_suite(
     if len(ablation_cases) != 8:
         raise ValueError("Stage 2A all-Pro ablation must contain 8 prespecified configurations")
     suite["formal_freeze_blockers"] = [
-        "Complete two independent human reviews of all 98 source/oracle freeze-audit items and adjudicate every non-PASS item."
+        "Complete two independent human reviews of all 103 source/oracle freeze-audit items and adjudicate every non-PASS item."
     ]
     return suite
 

@@ -1,0 +1,52 @@
+{
+  "masked_id": "J-725986bd16286ff5",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 2,
+    "I": 1,
+    "R": 1,
+    "S": 2,
+    "U": 2
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "every displayed GAAP revenue component and total revenue moved lower, GAAP operating, pretax and net income all moved lower, and the company-defined non-GAAP profit and free-cash-flow measures moved lower in the same direction",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_onprem_saas_revenue:-5522", "source_packet.rows:gaap_professional_services_revenue:-2385", "source_packet.rows:gaap_scores_revenue:-12757", "source_packet.rows:gaap_total_revenue:-20664", "source_packet.rows:gaap_operating_income:-25362", "source_packet.rows:gaap_pretax_income:-34532", "source_packet.rows:gaap_net_income:-26775", "source_packet.rows:non_gaap_net_income:-23598", "source_packet.rows:non_gaap_free_cash_flow:-65395"]
+    },
+    {
+      "location": "final_answer",
+      "span": "Selling, general and administrative expense fell sequentially, which is a favorable operating-expense movement, and the GAAP tax provision was lower on the later quarter",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_sga_expense:-13570", "source_packet.rows:gaap_tax_provision:-7757"],
+      "reason": "The lower tax expense cushions, rather than causes, a decline in net income."
+    },
+    {
+      "location": "final_answer",
+      "span": "A restructuring charge appears only in the later selected rows with no baseline comparator, so its role in the operating-income change cannot be isolated from this extract",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.event_only_rows:gaap_restructuring_charge_event_only:10922", "source_packet.rows:gaap_total_operating_expenses:273897_to_278595", "source_packet.rows:gaap_operating_income:262518_to_237156"],
+      "reason": "A separately audited Q2 restructuring delta is unavailable, but Q3 contains a known 10,922 charge inside the expense subtotal. The wording overdefers its visible Q3 importance while correctly avoiding an assumed Q2 zero."
+    },
+    {
+      "location": "persisted_review",
+      "span": "The non-GAAP reconciliation adjustments moved in offsetting directions, so the gap between GAAP and company-defined profitability is not a clean read on recurring versus non-recurring items",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:non_gaap_share_comp_adjustment:-9551", "source_packet.rows:non_gaap_income_tax_adjustment:-501", "source_packet.rows:non_gaap_excess_tax_benefit_adjustment:+2307", "source_packet.event_only_rows:gaap_restructuring_charge_event_only:10922", "source_packet.rows:gaap_net_income:181789_to_155014", "source_packet.rows:non_gaap_net_income:210551_to_186953"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the thesis remains active with conviction unchanged",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:status=active", "ledger:thesis:conviction=3", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [],
+  "assessable_implication": true,
+  "notes": "Accurate broad-based GAAP, company-defined non-GAAP and cash-flow deterioration with aligned blocked state. The event-quarter 10,922 restructuring charge is visibly material, but no separately audited baseline charge delta is in the packet; answer overdefers its present-quarter relevance without reversing a decision."
+}

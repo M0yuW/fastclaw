@@ -110,6 +110,18 @@ for line in sys.stdin:
 	if err := registerPluginTools(ctx, manager, []*agent.Agent{runtimeAgent}); err != nil {
 		t.Fatal(err)
 	}
+	found := false
+	for _, definition := range runtimeAgent.ToolRegistry().Definitions() {
+		if definition.Function.Name == "fixture-finance__quote" {
+			found = true
+		}
+		if definition.Function.Name == "fixture-finance.quote" {
+			t.Fatal("dotted plugin name must not be sent to the model provider")
+		}
+	}
+	if !found {
+		t.Fatal("provider-safe plugin tool name missing")
+	}
 	toolCtx := agenttools.ContextWithExecutionScope(ctx, agenttools.ExecutionScope{
 		UserID:    "user-1",
 		AgentID:   "finance-agent",
@@ -117,7 +129,7 @@ for line in sys.stdin:
 	})
 	result, err := runtimeAgent.ToolRegistry().Execute(
 		toolCtx,
-		"fixture-finance.quote",
+		"fixture-finance__quote",
 		`{"symbol":"AAPL"}`,
 	)
 	if err != nil {

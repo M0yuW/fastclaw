@@ -227,7 +227,7 @@ def main() -> int:
     lock = {
         "version": 1,
         "dataset": "fastclaw-finance-e2e-v1",
-        "manifest": str(args.manifest.relative_to(ROOT)),
+        "manifest": str(args.manifest.resolve().relative_to(ROOT)),
         "manifest_sha256": manifest_hash(args.manifest),
         "retrieved_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "entries": entries,

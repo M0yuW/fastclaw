@@ -1,0 +1,113 @@
+{
+  "case_id": "S2",
+  "workflow": "S",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "thesis_selection": true,
+    "no_alerts": true,
+    "no_trade_tool": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true,
+    "terminal_not_budget_exhausted": true
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "synthetic_condition": "",
+    "trace": {
+      "model_calls": 2,
+      "tool_calls": 1,
+      "tool_results": 1,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "This is a synthetic, non-investment candidate-screening case. Call finance-tools__screen_stocks with require_complete=true for FICB and FICD. Read retained and rejected candidates. Create a preliminary thesis only if the available evidence supports one; include exact tool values, missingness boundary, and synthetic provenance. Otherwise explain why no thesis is justified. Do not trade or call live market-data tools. Case S2.",
+      "response": {
+        "id": "chatcmpl-1792338260755951000",
+        "object": "chat.completion",
+        "created": 1792338260,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "## Case S2 — Candidate Screening Result\n\n### 1. Screen execution (exact tool values)\n\n`finance-tools__screen_stocks`, market `US`, symbols `[\"FICB\",\"FICD\"]`, `require_complete=true`.\n\n| Field | Value |\n|---|---|\n| `fixture_id` | `synthetic-screen-v2` |\n| `synthetic` | `true` |\n| `as_of` | `2026-10-18T15:44:21Z` |\n| `stale_after` | `2026-10-18T21:44:21Z` |\n| `passed` | `0` |\n| `failed` | `2` |\n| `results` | `[]` (empty) |\n| `quality.completeness` | `0.95` |\n| `quality.flags` | `[\"incomplete_screen_candidates_rejected\"]` |\n| `runtime_quality_policy.require_complete` | `true` |\n| `runtime_quality_policy.moved_to_rejected` | `2` |\n| `sources` | `local_evaluation_fixture` (kind: `deterministic_screen`) |\n| `cache.hit` | `false` |\n| `errors` | `[]` |\n\nRequired metrics under the runtime quality policy: `pe_trailing`, `revenue_growth_yoy`, `earnings_growth_yoy`, `debt_to_equity`, `free_cash_flow`, `roic`, `analyst_upside_pct`.\n\n### 2. Retained candidates\n**None.** `results` is empty and `passed` is `0`. No candidate cleared the completeness gate.\n\n### 3. Rejected candidates\n\n| Symbol | Reason | Missing metrics |\n|---|---|---|\n| FICB | `insufficient_data` | `free_cash_flow` |\n| FICD | `insufficient_data` | `earnings_growth_yoy` |\n\nBoth rejections are **missingness** rejections, not substantive failures. The tool did not report any metric as failing a threshold — it reported that a required metric was absent. This distinction matters: the screen produced no evidence that either name is unattractive, only that neither name is screenable under `require_complete=true`.\n\n### 4. Missingness boundary\n- The screen returned **no numeric values at all** for either symbol — no P/E, revenue growth, earnings growth, debt/equity, FCF, ROIC, or analyst upside figures appear in the response.\n- The only per-symbol facts available are the identity of the single missing metric for each name.\n- The `quality.completeness` of `0.95` describes the fixture's overall completeness, not the completeness of either candidate's metric set; it should not be read as \"95% of the data was present for FICB/FICD.\"\n- The `stale_after` timestamp is a freshness boundary on the fixture snapshot, not a statement about underlying company reporting periods. No fiscal period labels, filing dates, or accounting-basis notes were returned.\n\n### 5. Thesis decision: **no thesis is justified**\n\nI am not creating a preliminary thesis for FICB or FICD. Reasons:\n\n1. **No supporting evidence exists in the tool output.** A thesis requires assumptions, catalysts, and invalidation conditions grounded in observed data. The screen returned zero metrics for both names, so any thesis content would have to be invented rather than derived from the supplied evidence.\n2. **The rejections are data gaps, not signals.** `insufficient_data` with a named missing metric is a statement about the fixture, not about the business. Treating it as a negative view would misread the tool.\n3. **The evidence is explicitly synthetic.** `synthetic: true` and `fixture_id: synthetic-screen-v2` with source `local_evaluation_fixture` mean this is a non-investment evaluation artifact. Persisting a thesis against it would create a research record whose provenance is a test fixture, which is exactly the kind of unsupported record the ledger should not carry.\n4. **No live market-data tools were called and no trades were placed**, per the task constraint.\n\n### 6. Provenance statement\nAll figures above come from a single deterministic call to `finance-tools__screen_stocks` (request_id `b4839e18-813c-4783-9d7b-9fbc81a79036`) against the synthetic fixture `synthetic-screen-v2`, sourced from `local_evaluation_fixture`. This is a synthetic, non-investment candidate-screening case (Case S2). Nothing here is a recommendation, valuation, or trade instruction.\n\n### 7. What would change this conclusion\nA re-run in which FICB supplies `free_cash_flow` and FICD supplies `earnings_growth_yoy` — with the remaining required metrics also present — would produce actual metric values and allow a genuine preliminary thesis. Until then, the correct record is \"unscreened due to incomplete data,\" not a thesis."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 5481,
+          "completion_tokens": 1175,
+          "total_tokens": 6656
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_hi9dAWvhaQbSkohzHREH5284",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"FICB\", \"FICD\"], \"require_complete\": true}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_hi9dAWvhaQbSkohzHREH5284",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"b4839e18-813c-4783-9d7b-9fbc81a79036\",\"as_of\":\"2026-10-18T15:44:21Z\",\"stale_after\":\"2026-10-18T21:44:21Z\",\"data\":{\"fixture_id\":\"synthetic-screen-v2\",\"synthetic\":true,\"results\":[],\"rejected\":[{\"symbol\":\"FICB\",\"reason\":\"insufficient_data\",\"missing_metrics\":[\"free_cash_flow\"]},{\"symbol\":\"FICD\",\"reason\":\"insufficient_data\",\"missing_metrics\":[\"earnings_growth_yoy\"]}],\"passed\":0,\"failed\":2,\"runtime_quality_policy\":{\"require_complete\":true,\"required_metrics\":[\"pe_trailing\",\"revenue_growth_yoy\",\"earnings_growth_yoy\",\"debt_to_equity\",\"free_cash_flow\",\"roic\",\"analyst_upside_pct\"],\"moved_to_rejected\":2}},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":0.95,\"flags\":[\"incomplete_screen_candidates_rejected\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2539,
+              "completion_tokens": 97,
+              "total_tokens": 2636,
+              "estimated_cost_usd": 0.0003826200000000001,
+              "priced": true,
+              "latency_ms": 977.317
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2942,
+              "completion_tokens": 1078,
+              "total_tokens": 4020,
+              "cache_read_tokens": 2560,
+              "estimated_cost_usd": 0.00036248800000000006,
+              "priced": true,
+              "latency_ms": 4892.137
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 5.933,
+      "tool_calls": [
+        "finance-tools__screen_stocks"
+      ],
+      "model_calls": 2,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0007451080000000002
+    }
+  ],
+  "estimated_cost_usd": 0.0007451080000000002
+}

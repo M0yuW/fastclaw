@@ -1,0 +1,434 @@
+{
+  "observation_id": "FIS-2025-Q3-GAAP-ADJUSTED-EARNINGS-BRIDGE-r5",
+  "case_id": "FIS-2025-Q3-GAAP-ADJUSTED-EARNINGS-BRIDGE",
+  "repetition": 5,
+  "workflow": "sec_event_to_thesis_review",
+  "status": "mechanical_pass",
+  "quality_score": null,
+  "error": null,
+  "checks": {
+    "one_thesis_and_alert": true,
+    "source_packet_exact": true,
+    "one_linked_review": true,
+    "alert_acknowledged": true,
+    "state_actionability_consistent": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 6,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_df5aaf4f5e3a44928a18",
+          "market": "US",
+          "symbol": "FIS",
+          "title": "FIS source-bounded earnings thesis",
+          "thesis": "Baseline CY2025 Q2 ended 2025-06-30: FIS-Q2-BANK=1808 USD_million; FIS-Q2-CAP=765 USD_million; FIS-Q2-CORP=43 USD_million; FIS-Q2-REV=2616 USD_million; FIS-Q2-OPINC=408 USD_million; FIS-Q2-PRETAX=139 USD_million; FIS-Q2-TAX=10 USD_million; FIS-Q2-EQUITY=-598 USD_million; FIS-Q2-CONT=-469 USD_million; FIS-Q2-NETATTR=-470 USD_million; FIS-Q2-ADJNET=716 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": true,
+          "actionability": "blocked",
+          "decision_hold_alert_id": "fa_8cd4a77ae31e4eed9e4b",
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "gaap_banking_solutions_revenue",
+            "gaap_capital_market_solutions_revenue",
+            "gaap_consolidated_revenue",
+            "gaap_corporate_other_revenue",
+            "gaap_earnings_before_taxes_and_equity",
+            "gaap_equity_method_investment_earnings_net_of_tax",
+            "gaap_net_earnings_attributable_to_fis",
+            "gaap_net_earnings_continuing_operations",
+            "gaap_operating_income",
+            "gaap_provision_for_income_taxes",
+            "non_gaap_adjusted_net_earnings"
+          ],
+          "evidence": [
+            {
+              "id": "HOLDOUT-FIS-BASELINE-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1136893/000113689325000115/q22025ex991.htm",
+              "sha256": "1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4"
+            }
+          ],
+          "next_review_at": null,
+          "last_review_at": "2026-10-24T09:15:26Z",
+          "created_at": "2026-10-24T09:15:17Z",
+          "updated_at": "2026-10-24T09:15:26Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_e4dc33435b274e9e80c0",
+            "thesis_id": "th_df5aaf4f5e3a44928a18",
+            "alert_id": "fa_8cd4a77ae31e4eed9e4b",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-FIS-2025-Q3-GAAP-ADJUSTED-EARNINGS-BRIDGE-r5",
+            "event": {
+              "type": "earnings",
+              "summary": "FIS CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: FIS-Q3-BANK=1894 USD_million; FIS-Q3-CAP=783 USD_million; FIS-Q3-CORP=40 USD_million; FIS-Q3-REV=2717 USD_million; FIS-Q3-OPINC=457 USD_million; FIS-Q3-PRETAX=375 USD_million; FIS-Q3-TAX=87 USD_million; FIS-Q3-EQUITY=-23 USD_million; FIS-Q3-CONT=265 USD_million; FIS-Q3-NETATTR=264 USD_million; FIS-Q3-ADJNET=789 USD_million.",
+              "as_of": "2025-11-05",
+              "sources": [
+                {
+                  "id": "HOLDOUT-FIS-EVENT-v1",
+                  "url": "https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm",
+                  "sha256": "90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "needs_review",
+            "rationale": "Source-bounded replay of the Q3 CY2025 packet against the Q2 CY2025 baseline. All eleven required event metrics are present, so the packet is complete on the thesis's own metric list, but the bridge from GAAP to adjusted earnings is not explained by the selected rows, so the review is held rather than resolved. Sequential (not year-over-year) changes: consolidated revenue 2616 -> 2717 (+101 USD_million, +3.86% of baseline), of which Banking Solutions 1808 -> 1894 (+86), Capital Market Solutions 765 -> 783 (+18), Corporate/Other 43 -> 40 (-3), with a stated unlisted residual of 0; the mix is arithmetic only and is not a causal attribution. Operating income 408 -> 457 (+49, +12.01%). Pretax earnings 139 -> 375 (+236, +169.78% of baseline) is the largest single move and is not explained by the +49 operating-income change; the selected rows do not reconcile the gap, so no driver is asserted. Equity-method investment earnings improved from -598 to -23 (+575 USD_million) and net earnings attributable to FIS moved from -470 to +264 (+734 USD_million); because a residual remains in the GAAP bridge, the total swing is not attributed to the listed components. Tax provision rose 10 -> 87 (+77 USD_million, +770% of baseline) while pretax rose, so the effective rate is not derivable from these rows alone and no absolute tax or loss dollars are inferred from any rate. Non-GAAP adjusted net earnings 716 -> 789 (+73, +10.2% of baseline) is a different basis from GAAP net earnings and is not comparable line-for-line; the GAAP-to-adjusted spread narrowed sharply, but the reconciling items are not in the packet. Material counterpoint: the GAAP improvement is dominated by items outside operating income and by a swing in equity-method results, so it does not by itself evidence durable operating momentum; adjusted earnings grew far more slowly than GAAP net earnings. Missing evidence: no year-over-year comparatives, no segment operating income, no GAAP-to-adjusted reconciliation, no explanation of the equity-method swing, no cash flow or balance-sheet rows, no valuation inputs. Decision: needs_review, status and conviction preserved, thesis remains blocked pending a sourced, complete, conflict-free follow-up for the same period.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [
+              "fis",
+              "gaap_consolidated_revenue",
+              "gaap_operating_income",
+              "gaap_earnings_before_taxes_and_equity",
+              "gaap_equity_method_investment_earnings_net_of_tax",
+              "gaap_net_earnings_attributable_to_fis",
+              "non_gaap_adjusted_net_earnings"
+            ],
+            "evidence": [
+              {
+                "id": "HOLDOUT-FIS-EVENT-v1",
+                "note": "Q3 CY2025 selected facts, period ended 2025-09-30, as_of 2025-11-05",
+                "sha256": "90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb",
+                "url": "https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm"
+              },
+              {
+                "id": "HOLDOUT-FIS-BASELINE-v1",
+                "note": "Q2 CY2025 baseline selected facts, period ended 2025-06-30",
+                "sha256": "1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4",
+                "url": "https://www.sec.gov/Archives/edgar/data/1136893/000113689325000115/q22025ex991.htm"
+              }
+            ],
+            "created_at": "2026-10-24T09:15:26Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_8cd4a77ae31e4eed9e4b",
+        "watchlist_id": "wl_ef5d10fa933b4e9497a0",
+        "thesis_id": "th_df5aaf4f5e3a44928a18",
+        "market": "US",
+        "symbol": "FIS",
+        "event_fingerprint": "c8e11200293ed47529475a574940b318f76967adad4274a26cbccba4a8090d5c",
+        "event": {
+          "external_id": "HOLDOUT-V2-FIS-EVENT",
+          "type": "earnings",
+          "summary": "FIS CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: FIS-Q3-BANK=1894 USD_million; FIS-Q3-CAP=783 USD_million; FIS-Q3-CORP=40 USD_million; FIS-Q3-REV=2717 USD_million; FIS-Q3-OPINC=457 USD_million; FIS-Q3-PRETAX=375 USD_million; FIS-Q3-TAX=87 USD_million; FIS-Q3-EQUITY=-23 USD_million; FIS-Q3-CONT=265 USD_million; FIS-Q3-NETATTR=264 USD_million; FIS-Q3-ADJNET=789 USD_million.",
+          "as_of": "2025-11-05",
+          "sources": [
+            {
+              "id": "HOLDOUT-FIS-EVENT-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm",
+              "sha256": "90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_banking_solutions_revenue": {
+              "value": "1894",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-BANK"
+            },
+            "gaap_capital_market_solutions_revenue": {
+              "value": "783",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-CAP"
+            },
+            "gaap_corporate_other_revenue": {
+              "value": "40",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-CORP"
+            },
+            "gaap_consolidated_revenue": {
+              "value": "2717",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-REV"
+            },
+            "gaap_operating_income": {
+              "value": "457",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-OPINC"
+            },
+            "gaap_earnings_before_taxes_and_equity": {
+              "value": "375",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-PRETAX"
+            },
+            "gaap_provision_for_income_taxes": {
+              "value": "87",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-TAX"
+            },
+            "gaap_equity_method_investment_earnings_net_of_tax": {
+              "value": "-23",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-EQUITY"
+            },
+            "gaap_net_earnings_continuing_operations": {
+              "value": "265",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-CONT"
+            },
+            "gaap_net_earnings_attributable_to_fis": {
+              "value": "264",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-NETATTR"
+            },
+            "non_gaap_adjusted_net_earnings": {
+              "value": "789",
+              "unit": "USD_million",
+              "fact_id": "FIS-Q3-ADJNET"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "fis",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-24T09:15:17Z",
+        "last_seen_at": "2026-10-24T09:15:17Z",
+        "created_at": "2026-10-24T09:15:17Z",
+        "updated_at": "2026-10-24T09:15:27Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "prompt": "Historical source-bounded SEC research-state replay, not a trade request. Read the stored thesis and earnings alert using finance tools. The host-checked numeric context below is arithmetic on selected source rows, not a causal explanation or complete filing. Distinguish sequential from year-over-year figures, reported from adjusted measures, and percentage points from relative percent. Independently explain a supported implication, a material counterpoint, missing evidence, and your own research-state decision. Do not infer absolute loss dollars from a rate or attribute a total to listed components when a residual remains. Persist one source-linked version-protected review, acknowledge the alert, and verify that any needs_review decision leaves the thesis blocked. Do not trade.\n\nCase: FIS-2025-Q3-GAAP-ADJUSTED-EARNINGS-BRIDGE\nBaseline SEC SHA-256: 1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4\nEvent SEC SHA-256: 90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb\nDisplayed-value comparisons (same metric and basis):\nmetric | baseline fact/value | event fact/value | change | relative change\ngaap_banking_solutions_revenue | FIS-Q2-BANK=1808 USD_million_rounded | FIS-Q3-BANK=1894 USD_million_rounded | 86 USD_million | 4.76% of baseline\ngaap_capital_market_solutions_revenue | FIS-Q2-CAP=765 USD_million_rounded | FIS-Q3-CAP=783 USD_million_rounded | 18 USD_million | 2.35% of baseline\ngaap_consolidated_revenue | FIS-Q2-REV=2616 USD_million_rounded | FIS-Q3-REV=2717 USD_million_rounded | 101 USD_million | 3.86% of baseline\ngaap_corporate_other_revenue | FIS-Q2-CORP=43 USD_million_rounded | FIS-Q3-CORP=40 USD_million_rounded | -3 USD_million | -6.98% of baseline\ngaap_earnings_before_taxes_and_equity | FIS-Q2-PRETAX=139 USD_million_rounded | FIS-Q3-PRETAX=375 USD_million_rounded | 236 USD_million | 169.78% of baseline\ngaap_equity_method_investment_earnings_net_of_tax | FIS-Q2-EQUITY=-598 USD_million_rounded | FIS-Q3-EQUITY=-23 USD_million_rounded | 575 USD_million | n/a\ngaap_net_earnings_attributable_to_fis | FIS-Q2-NETATTR=-470 USD_million_rounded | FIS-Q3-NETATTR=264 USD_million_rounded | 734 USD_million | n/a\ngaap_net_earnings_continuing_operations | FIS-Q2-CONT=-469 USD_million_rounded | FIS-Q3-CONT=265 USD_million_rounded | 734 USD_million | n/a\ngaap_operating_income | FIS-Q2-OPINC=408 USD_million_rounded | FIS-Q3-OPINC=457 USD_million_rounded | 49 USD_million | 12.01% of baseline\ngaap_provision_for_income_taxes | FIS-Q2-TAX=10 USD_million_rounded | FIS-Q3-TAX=87 USD_million_rounded | 77 USD_million | 770% of baseline\nnon_gaap_adjusted_net_earnings | FIS-Q2-ADJNET=716 USD_million_rounded | FIS-Q3-ADJNET=789 USD_million_rounded | 73 USD_million | 10.2% of baseline\nArithmetic mix for gaap_consolidated_revenue: total 101 USD_million; listed components gaap_banking_solutions_revenue=86 USD_million, gaap_capital_market_solutions_revenue=18 USD_million, gaap_corporate_other_revenue=-3 USD_million; unlisted residual 0 USD_million. This is not a causal explanation.\nBoundary: source-selected displayed values only; no causal driver, durability, valuation, or trading conclusion is established by this table.\n\nCase FIS-2025-Q3-GAAP-ADJUSTED-EARNINGS-BRIDGE; thesis ID th_df5aaf4f5e3a44928a18; alert ID fa_8cd4a77ae31e4eed9e4b.",
+      "response": {
+        "id": "chatcmpl-1792833317570471000",
+        "object": "chat.completion",
+        "created": 1792833317,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# FIS-2025-Q3-GAAP-ADJUSTED-EARNINGS-BRIDGE — Research-State Replay\n\n**Scope note:** This is a historical, source-bounded replay of stored research state. All comparisons below are **sequential** (Q2 CY2025, period ended 2025-06-30 → Q3 CY2025, period ended 2025-09-30). No year-over-year figures were supplied, so none are asserted. No valuation, recommendation, or trade is made.\n\n## 1. Supported implication\n\nThe selected rows support a narrow, arithmetic-level statement: consolidated GAAP revenue rose **+101 USD_million (+3.86% of baseline)** from `FIS-Q2-REV=2616` to `FIS-Q3-REV=2717`, and GAAP operating income rose **+49 USD_million (+12.01% of baseline)** from `FIS-Q2-OPINC=408` to `FIS-Q3-OPINC=457`. The revenue mix is fully accounted for by the listed components with a stated **unlisted residual of 0**: Banking Solutions `FIS-Q2-BANK=1808 → FIS-Q3-BANK=1894` (+86), Capital Market Solutions `FIS-Q2-CAP=765 → FIS-Q3-CAP=783` (+18), Corporate/Other `FIS-Q2-CORP=43 → FIS-Q3-CORP=40` (−3). That is a decomposition, **not** a causal explanation — the packet contains no driver facts.\n\nThe one implication I will state as supported: **the GAAP-to-adjusted earnings spread narrowed sharply between the two periods.** GAAP net earnings attributable to FIS moved `FIS-Q2-NETATTR=−470 → FIS-Q3-NETATTR=264` (+734 USD_million) while non-GAAP adjusted net earnings moved `FIS-Q2-ADJNET=716 → FIS-Q3-ADJNET=789` (+73 USD_million, +10.2% of baseline). Because these are **different bases**, the two series are not comparable line-for-line, and the reconciling items are absent from the packet.\n\n## 2. Material counterpoint\n\nThe GAAP improvement is **not** concentrated in operating income. Pretax earnings moved `FIS-Q2-PRETAX=139 → FIS-Q3-PRETAX=375` (+236 USD_million, +169.78% of baseline), a swing roughly five times the +49 operating-income change. The selected rows do not reconcile that gap, so I do not attribute it to any listed component. Separately, equity-method investment earnings moved `FIS-Q2-EQUITY=−598 → FIS-Q3-EQUITY=−23` (+575 USD_million) — a large swing in a line outside operating income. Because a residual remains in the GAAP bridge, the +734 USD_million net-earnings swing is **not** attributed to the listed components.\n\nTwo further cautions:\n- **Tax:** the provision rose `FIS-Q2-TAX=10 → FIS-Q3-TAX=87` (+77 USD_million, +770% of baseline) while pretax rose. An effective rate is not derivable from these rows alone, and I do not infer absolute tax or loss dollars from any rate.\n- **Basis divergence:** adjusted earnings grew +10.2% of baseline while GAAP net earnings swung by hundreds of millions. A reader treating the GAAP swing as durable operating momentum would be over-reading the packet.\n\n## 3. Missing evidence\n\n- No year-over-year comparatives (sequential only).\n- No segment operating income — revenue is split by segment, profitability is not.\n- No GAAP-to-adjusted reconciliation; the reconciling items driving the spread are unidentified.\n- No explanation of the equity-method swing (`FIS-Q2-EQUITY=−598 → FIS-Q3-EQUITY=−23`).\n- No cash flow or balance-sheet rows; no durability, quality-of-earnings, or capital-return evidence.\n- No valuation inputs; no causal driver facts in the packet (`source_claims` empty, `unresolved_conflicts` empty).\n\n## 4. Research-state decision\n\n**Decision: `needs_review`** — impact `mixed`. All eleven `required_event_metrics` were present (`missing_metrics: []`), so the packet is complete on the thesis's own metric list; the hold is driven by the **unexplained GAAP-to-adjusted bridge**, not by missing metrics.\n\nPersisted state (verified by re-read):\n- Review `tr_e4dc33435b274e9e80c0` written against thesis `th_df5aaf4f5e3a44928a18`, version 1 → **version 2**, linked to alert `fa_8cd4a77ae31e4eed9e4b`, with both source SHAs recorded (`90bb1688…72eb` event, `1182290332…ffa4` baseline).\n- Alert `fa_8cd4a77ae31e4eed9e4b` acknowledged, version 1 → **version 2**.\n- **Block verified:** thesis `status: active`, `conviction: 3` (both preserved), `decision_hold: true`, `actionability: blocked`, `decision_hold_alert_id: fa_8cd4a77ae31e4eed9e4b`. The needs_review decision leaves the thesis blocked as required.\n\nResolution path: a sourced, complete, conflict-free follow-up for the same event period with source continuity — specifically a GAAP-to-adjusted reconciliation and an explanation of the equity-method swing — would be needed to lift the hold. No trade was placed or recommended."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 52841,
+          "completion_tokens": 3268,
+          "total_tokens": 56109
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_S4zJa1SW2nMzcoKppoVD7762",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_df5aaf4f5e3a44928a18\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_ykRmko4mX1aTJRhkpmk55000",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"symbol\": \"FIS\", \"market\": \"US\", \"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_S4zJa1SW2nMzcoKppoVD7762",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"ed6cd461-b848-4458-b54f-e8025c911d23\",\"as_of\":\"2026-10-24T09:15:18Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_df5aaf4f5e3a44928a18\",\"market\":\"US\",\"symbol\":\"FIS\",\"title\":\"FIS source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: FIS-Q2-BANK=1808 USD_million; FIS-Q2-CAP=765 USD_million; FIS-Q2-CORP=43 USD_million; FIS-Q2-REV=2616 USD_million; FIS-Q2-OPINC=408 USD_million; FIS-Q2-PRETAX=139 USD_million; FIS-Q2-TAX=10 USD_million; FIS-Q2-EQUITY=-598 USD_million; FIS-Q2-CONT=-469 USD_million; FIS-Q2-NETATTR=-470 USD_million; FIS-Q2-ADJNET=716 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_banking_solutions_revenue\",\"gaap_capital_market_solutions_revenue\",\"gaap_consolidated_revenue\",\"gaap_corporate_other_revenue\",\"gaap_earnings_before_taxes_and_equity\",\"gaap_equity_method_investment_earnings_net_of_tax\",\"gaap_net_earnings_attributable_to_fis\",\"gaap_net_earnings_continuing_operations\",\"gaap_operating_income\",\"gaap_provision_for_income_taxes\",\"non_gaap_adjusted_net_earnings\"],\"evidence\":[{\"id\":\"HOLDOUT-FIS-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000115/q22025ex991.htm\",\"sha256\":\"1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-24T09:15:17Z\",\"updated_at\":\"2026-10-24T09:15:17Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_ykRmko4mX1aTJRhkpmk55000",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"d25eda2d-d8c2-42c9-9ab9-4f095184f8c6\",\"as_of\":\"2026-10-24T09:15:18Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_8cd4a77ae31e4eed9e4b\",\"watchlist_id\":\"wl_ef5d10fa933b4e9497a0\",\"thesis_id\":\"th_df5aaf4f5e3a44928a18\",\"market\":\"US\",\"symbol\":\"FIS\",\"event_fingerprint\":\"c8e11200293ed47529475a574940b318f76967adad4274a26cbccba4a8090d5c\",\"event\":{\"external_id\":\"HOLDOUT-V2-FIS-EVENT\",\"type\":\"earnings\",\"summary\":\"FIS CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: FIS-Q3-BANK=1894 USD_million; FIS-Q3-CAP=783 USD_million; FIS-Q3-CORP=40 USD_million; FIS-Q3-REV=2717 USD_million; FIS-Q3-OPINC=457 USD_million; FIS-Q3-PRETAX=375 USD_million; FIS-Q3-TAX=87 USD_million; FIS-Q3-EQUITY=-23 USD_million; FIS-Q3-CONT=265 USD_million; FIS-Q3-NETATTR=264 USD_million; FIS-Q3-ADJNET=789 USD_million.\",\"as_of\":\"2025-11-05\",\"sources\":[{\"id\":\"HOLDOUT-FIS-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm\",\"sha256\":\"90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb\"}],\"observed_metrics\":{\"gaap_banking_solutions_revenue\":{\"value\":\"1894\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-BANK\"},\"gaap_capital_market_solutions_revenue\":{\"value\":\"783\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-CAP\"},\"gaap_corporate_other_revenue\":{\"value\":\"40\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-CORP\"},\"gaap_consolidated_revenue\":{\"value\":\"2717\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-REV\"},\"gaap_operating_income\":{\"value\":\"457\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-OPINC\"},\"gaap_earnings_before_taxes_and_equity\":{\"value\":\"375\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-PRETAX\"},\"gaap_provision_for_income_taxes\":{\"value\":\"87\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-TAX\"},\"gaap_equity_method_investment_earnings_net_of_tax\":{\"value\":\"-23\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-EQUITY\"},\"gaap_net_earnings_continuing_operations\":{\"value\":\"265\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-CONT\"},\"gaap_net_earnings_attributable_to_fis\":{\"value\":\"264\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-NETATTR\"},\"non_gaap_adjusted_net_earnings\":{\"value\":\"789\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-ADJNET\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"fis\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T09:15:17Z\",\"last_seen_at\":\"2026-10-24T09:15:17Z\",\"created_at\":\"2026-10-24T09:15:17Z\",\"updated_at\":\"2026-10-24T09:15:17Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50,\"market\":\"US\",\"symbol\":\"FIS\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9692,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_HF0eUzIbbena4dOcXmCR6705",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"FIS\", \"event_summary\": \"FIS CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: FIS-Q3-BANK=1894 USD_million; FIS-Q3-CAP=783 USD_million; FIS-Q3-CORP=40 USD_million; FIS-Q3-REV=2717 USD_million; FIS-Q3-OPINC=457 USD_million; FIS-Q3-PRETAX=375 USD_million; FIS-Q3-TAX=87 USD_million; FIS-Q3-EQUITY=-23 USD_million; FIS-Q3-CONT=265 USD_million; FIS-Q3-NETATTR=264 USD_million; FIS-Q3-ADJNET=789 USD_million.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_HF0eUzIbbena4dOcXmCR6705",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"9cdd50ec-f998-4437-99fc-86c97b026575\",\"as_of\":\"2026-10-24T09:15:19Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"FIS\",\"event_summary\":\"FIS CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: FIS-Q3-BANK=1894 USD_million; FIS-Q3-CAP=783 USD_million; FIS-Q3-CORP=40 USD_million; FIS-Q3-REV=2717 USD_million; FIS-Q3-OPINC=457 USD_million; FIS-Q3-PRETAX=375 USD_million; FIS-Q3-TAX=87 USD_million; FIS-Q3-EQUITY=-23 USD_million; FIS-Q3-CONT=265 USD_million; FIS-Q3-NETATTR=264 USD_million; FIS-Q3-ADJNET=789 USD_million.\",\"matches\":[{\"thesis_id\":\"th_df5aaf4f5e3a44928a18\",\"title\":\"FIS source-bounded earnings thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_L9A83JuzOyTx5PW9aoUp9676",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_df5aaf4f5e3a44928a18\", \"expected_version\": 1, \"alert_id\": \"fa_8cd4a77ae31e4eed9e4b\", \"event\": {\"type\": \"earnings\", \"as_of\": \"2025-11-05\", \"summary\": \"FIS CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: FIS-Q3-BANK=1894 USD_million; FIS-Q3-CAP=783 USD_million; FIS-Q3-CORP=40 USD_million; FIS-Q3-REV=2717 USD_million; FIS-Q3-OPINC=457 USD_million; FIS-Q3-PRETAX=375 USD_million; FIS-Q3-TAX=87 USD_million; FIS-Q3-EQUITY=-23 USD_million; FIS-Q3-CONT=265 USD_million; FIS-Q3-NETATTR=264 USD_million; FIS-Q3-ADJNET=789 USD_million. Sequential comparison only (Q2 CY2025 baseline vs Q3 CY2025); no year-over-year figures supplied.\", \"sources\": [{\"id\": \"HOLDOUT-FIS-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm\", \"sha256\": \"90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb\"}, {\"id\": \"HOLDOUT-FIS-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000115/q22025ex991.htm\", \"sha256\": \"1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4\"}]}, \"impact\": \"mixed\", \"decision\": \"needs_review\", \"matched_terms\": [\"fis\", \"gaap_consolidated_revenue\", \"gaap_operating_income\", \"gaap_earnings_before_taxes_and_equity\", \"gaap_equity_method_investment_earnings_net_of_tax\", \"gaap_net_earnings_attributable_to_fis\", \"non_gaap_adjusted_net_earnings\"], \"rationale\": \"Source-bounded replay of the Q3 CY2025 packet against the Q2 CY2025 baseline. All eleven required event metrics are present, so the packet is complete on the thesis's own metric list, but the bridge from GAAP to adjusted earnings is not explained by the selected rows, so the review is held rather than resolved. Sequential (not year-over-year) changes: consolidated revenue 2616 -> 2717 (+101 USD_million, +3.86% of baseline), of which Banking Solutions 1808 -> 1894 (+86), Capital Market Solutions 765 -> 783 (+18), Corporate/Other 43 -> 40 (-3), with a stated unlisted residual of 0; the mix is arithmetic only and is not a causal attribution. Operating income 408 -> 457 (+49, +12.01%). Pretax earnings 139 -> 375 (+236, +169.78% of baseline) is the largest single move and is not explained by the +49 operating-income change; the selected rows do not reconcile the gap, so no driver is asserted. Equity-method investment earnings improved from -598 to -23 (+575 USD_million) and net earnings attributable to FIS moved from -470 to +264 (+734 USD_million); because a residual remains in the GAAP bridge, the total swing is not attributed to the listed components. Tax provision rose 10 -> 87 (+77 USD_million, +770% of baseline) while pretax rose, so the effective rate is not derivable from these rows alone and no absolute tax or loss dollars are inferred from any rate. Non-GAAP adjusted net earnings 716 -> 789 (+73, +10.2% of baseline) is a different basis from GAAP net earnings and is not comparable line-for-line; the GAAP-to-adjusted spread narrowed sharply, but the reconciling items are not in the packet. Material counterpoint: the GAAP improvement is dominated by items outside operating income and by a swing in equity-method results, so it does not by itself evidence durable operating momentum; adjusted earnings grew far more slowly than GAAP net earnings. Missing evidence: no year-over-year comparatives, no segment operating income, no GAAP-to-adjusted reconciliation, no explanation of the equity-method swing, no cash flow or balance-sheet rows, no valuation inputs. Decision: needs_review, status and conviction preserved, thesis remains blocked pending a sourced, complete, conflict-free follow-up for the same period.\", \"evidence\": [{\"id\": \"HOLDOUT-FIS-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm\", \"sha256\": \"90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb\", \"note\": \"Q3 CY2025 selected facts, period ended 2025-09-30, as_of 2025-11-05\"}, {\"id\": \"HOLDOUT-FIS-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000115/q22025ex991.htm\", \"sha256\": \"1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4\", \"note\": \"Q2 CY2025 baseline selected facts, period ended 2025-06-30\"}]}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_L9A83JuzOyTx5PW9aoUp9676",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"c2245d14-7cb6-45dc-b624-a8b516216923\",\"as_of\":\"2026-10-24T09:15:26Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_df5aaf4f5e3a44928a18\",\"market\":\"US\",\"symbol\":\"FIS\",\"title\":\"FIS source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: FIS-Q2-BANK=1808 USD_million; FIS-Q2-CAP=765 USD_million; FIS-Q2-CORP=43 USD_million; FIS-Q2-REV=2616 USD_million; FIS-Q2-OPINC=408 USD_million; FIS-Q2-PRETAX=139 USD_million; FIS-Q2-TAX=10 USD_million; FIS-Q2-EQUITY=-598 USD_million; FIS-Q2-CONT=-469 USD_million; FIS-Q2-NETATTR=-470 USD_million; FIS-Q2-ADJNET=716 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_8cd4a77ae31e4eed9e4b\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_banking_solutions_revenue\",\"gaap_capital_market_solutions_revenue\",\"gaap_consolidated_revenue\",\"gaap_corporate_other_revenue\",\"gaap_earnings_before_taxes_and_equity\",\"gaap_equity_method_investment_earnings_net_of_tax\",\"gaap_net_earnings_attributable_to_fis\",\"gaap_net_earnings_continuing_operations\",\"gaap_operating_income\",\"gaap_provision_for_income_taxes\",\"non_gaap_adjusted_net_earnings\"],\"evidence\":[{\"id\":\"HOLDOUT-FIS-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000115/q22025ex991.htm\",\"sha256\":\"1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-24T09:15:26Z\",\"created_at\":\"2026-10-24T09:15:17Z\",\"updated_at\":\"2026-10-24T09:15:26Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_e4dc33435b274e9e80c0\",\"thesis_id\":\"th_df5aaf4f5e3a44928a18\",\"alert_id\":\"fa_8cd4a77ae31e4eed9e4b\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-FIS-2025-Q3-GAAP-ADJUSTED-EARNINGS-BRIDGE-r5\",\"event\":{\"type\":\"earnings\",\"summary\":\"FIS CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: FIS-Q3-BANK=1894 USD_million; FIS-Q3-CAP=783 USD_million; FIS-Q3-CORP=40 USD_million; FIS-Q3-REV=2717 USD_million; FIS-Q3-OPINC=457 USD_million; FIS-Q3-PRETAX=375 USD_million; FIS-Q3-TAX=87 USD_million; FIS-Q3-EQUITY=-23 USD_million; FIS-Q3-CONT=265 USD_million; FIS-Q3-NETATTR=264 USD_million; FIS-Q3-ADJNET=789 USD_million.\",\"as_of\":\"2025-11-05\",\"sources\":[{\"id\":\"HOLDOUT-FIS-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm\",\"sha256\":\"90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Source-bounded replay of the Q3 CY2025 packet against the Q2 CY2025 baseline. All eleven required event metrics are present, so the packet is complete on the thesis's own metric list, but the bridge from GAAP to adjusted earnings is not explained by the selected rows, so the review is held rather than resolved. Sequential (not year-over-year) changes: consolidated revenue 2616 -> 2717 (+101 USD_million, +3.86% of baseline), of which Banking Solutions 1808 -> 1894 (+86), Capital Market Solutions 765 -> 783 (+18), Corporate/Other 43 -> 40 (-3), with a stated unlisted residual of 0; the mix is arithmetic only and is not a causal attribution. Operating income 408 -> 457 (+49, +12.01%). Pretax earnings 139 -> 375 (+236, +169.78% of baseline) is the largest single move and is not explained by the +49 operating-income change; the selected rows do not reconcile the gap, so no driver is asserted. Equity-method investment earnings improved from -598 to -23 (+575 USD_million) and net earnings attributable to FIS moved from -470 to +264 (+734 USD_million); because a residual remains in the GAAP bridge, the total swing is not attributed to the listed components. Tax provision rose 10 -> 87 (+77 USD_million, +770% of baseline) while pretax rose, so the effective rate is not derivable from these rows alone and no absolute tax or loss dollars are inferred from any rate. Non-GAAP adjusted net earnings 716 -> 789 (+73, +10.2% of baseline) is a different basis from GAAP net earnings and is not comparable line-for-line; the GAAP-to-adjusted spread narrowed sharply, but the reconciling items are not in the packet. Material counterpoint: the GAAP improvement is dominated by items outside operating income and by a swing in equity-method results, so it does not by itself evidence durable operating momentum; adjusted earnings grew far more slowly than GAAP net earnings. Missing evidence: no year-over-year comparatives, no segment operating income, no GAAP-to-adjusted reconciliation, no explanation of the equity-method swing, no cash flow or balance-sheet rows, no valuation inputs. Decision: needs_review, status and conviction preserved, thesis remains blocked pending a sourced, complete, conflict-free follow-up for the same period.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"fis\",\"gaap_consolidated_revenue\",\"gaap_operating_income\",\"gaap_earnings_before_taxes_and_equity\",\"gaap_equity_method_investment_earnings_net_of_tax\",\"gaap_net_earnings_attributable_to_fis\",\"non_gaap_adjusted_net_earnings\"],\"evidence\":[{\"id\":\"HOLDOUT-FIS-EVENT-v1\",\"note\":\"Q3 CY2025 selected facts, period ended 2025-09-30, as_of 2025-11-05\",\"sha256\":\"90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm\"},{\"id\":\"HOLDOUT-FIS-BASELINE-v1\",\"note\":\"Q2 CY2025 baseline selected facts, period ended 2025-06-30\",\"sha256\":\"1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000115/q22025ex991.htm\"}],\"created_at\":\"2026-10-24T09:15:26Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_wX6jNEAgo4pT3DGMptdu8957",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_8cd4a77ae31e4eed9e4b\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_wX6jNEAgo4pT3DGMptdu8957",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"bfe57d53-3bae-4e21-a17e-01a656623b63\",\"as_of\":\"2026-10-24T09:15:27Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_8cd4a77ae31e4eed9e4b\",\"watchlist_id\":\"wl_ef5d10fa933b4e9497a0\",\"thesis_id\":\"th_df5aaf4f5e3a44928a18\",\"market\":\"US\",\"symbol\":\"FIS\",\"event_fingerprint\":\"c8e11200293ed47529475a574940b318f76967adad4274a26cbccba4a8090d5c\",\"event\":{\"external_id\":\"HOLDOUT-V2-FIS-EVENT\",\"type\":\"earnings\",\"summary\":\"FIS CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: FIS-Q3-BANK=1894 USD_million; FIS-Q3-CAP=783 USD_million; FIS-Q3-CORP=40 USD_million; FIS-Q3-REV=2717 USD_million; FIS-Q3-OPINC=457 USD_million; FIS-Q3-PRETAX=375 USD_million; FIS-Q3-TAX=87 USD_million; FIS-Q3-EQUITY=-23 USD_million; FIS-Q3-CONT=265 USD_million; FIS-Q3-NETATTR=264 USD_million; FIS-Q3-ADJNET=789 USD_million.\",\"as_of\":\"2025-11-05\",\"sources\":[{\"id\":\"HOLDOUT-FIS-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm\",\"sha256\":\"90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb\"}],\"observed_metrics\":{\"gaap_banking_solutions_revenue\":{\"value\":\"1894\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-BANK\"},\"gaap_capital_market_solutions_revenue\":{\"value\":\"783\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-CAP\"},\"gaap_corporate_other_revenue\":{\"value\":\"40\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-CORP\"},\"gaap_consolidated_revenue\":{\"value\":\"2717\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-REV\"},\"gaap_operating_income\":{\"value\":\"457\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-OPINC\"},\"gaap_earnings_before_taxes_and_equity\":{\"value\":\"375\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-PRETAX\"},\"gaap_provision_for_income_taxes\":{\"value\":\"87\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-TAX\"},\"gaap_equity_method_investment_earnings_net_of_tax\":{\"value\":\"-23\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-EQUITY\"},\"gaap_net_earnings_continuing_operations\":{\"value\":\"265\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-CONT\"},\"gaap_net_earnings_attributable_to_fis\":{\"value\":\"264\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-NETATTR\"},\"non_gaap_adjusted_net_earnings\":{\"value\":\"789\",\"unit\":\"USD_million\",\"fact_id\":\"FIS-Q3-ADJNET\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"fis\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T09:15:17Z\",\"last_seen_at\":\"2026-10-24T09:15:17Z\",\"created_at\":\"2026-10-24T09:15:17Z\",\"updated_at\":\"2026-10-24T09:15:27Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9677,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_oA36EhfCgAaTw3NToP2F1994",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"review_limit\": 5, \"thesis_id\": \"th_df5aaf4f5e3a44928a18\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_oA36EhfCgAaTw3NToP2F1994",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"465989ce-94bf-461b-b8df-2774b00f9b77\",\"as_of\":\"2026-10-24T09:15:28Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_df5aaf4f5e3a44928a18\",\"market\":\"US\",\"symbol\":\"FIS\",\"title\":\"FIS source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: FIS-Q2-BANK=1808 USD_million; FIS-Q2-CAP=765 USD_million; FIS-Q2-CORP=43 USD_million; FIS-Q2-REV=2616 USD_million; FIS-Q2-OPINC=408 USD_million; FIS-Q2-PRETAX=139 USD_million; FIS-Q2-TAX=10 USD_million; FIS-Q2-EQUITY=-598 USD_million; FIS-Q2-CONT=-469 USD_million; FIS-Q2-NETATTR=-470 USD_million; FIS-Q2-ADJNET=716 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_8cd4a77ae31e4eed9e4b\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_banking_solutions_revenue\",\"gaap_capital_market_solutions_revenue\",\"gaap_consolidated_revenue\",\"gaap_corporate_other_revenue\",\"gaap_earnings_before_taxes_and_equity\",\"gaap_equity_method_investment_earnings_net_of_tax\",\"gaap_net_earnings_attributable_to_fis\",\"gaap_net_earnings_continuing_operations\",\"gaap_operating_income\",\"gaap_provision_for_income_taxes\",\"non_gaap_adjusted_net_earnings\"],\"evidence\":[{\"id\":\"HOLDOUT-FIS-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000115/q22025ex991.htm\",\"sha256\":\"1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-24T09:15:26Z\",\"created_at\":\"2026-10-24T09:15:17Z\",\"updated_at\":\"2026-10-24T09:15:26Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[{\"id\":\"tr_e4dc33435b274e9e80c0\",\"thesis_id\":\"th_df5aaf4f5e3a44928a18\",\"alert_id\":\"fa_8cd4a77ae31e4eed9e4b\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-FIS-2025-Q3-GAAP-ADJUSTED-EARNINGS-BRIDGE-r5\",\"event\":{\"type\":\"earnings\",\"summary\":\"FIS CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: FIS-Q3-BANK=1894 USD_million; FIS-Q3-CAP=783 USD_million; FIS-Q3-CORP=40 USD_million; FIS-Q3-REV=2717 USD_million; FIS-Q3-OPINC=457 USD_million; FIS-Q3-PRETAX=375 USD_million; FIS-Q3-TAX=87 USD_million; FIS-Q3-EQUITY=-23 USD_million; FIS-Q3-CONT=265 USD_million; FIS-Q3-NETATTR=264 USD_million; FIS-Q3-ADJNET=789 USD_million.\",\"as_of\":\"2025-11-05\",\"sources\":[{\"id\":\"HOLDOUT-FIS-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm\",\"sha256\":\"90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Source-bounded replay of the Q3 CY2025 packet against the Q2 CY2025 baseline. All eleven required event metrics are present, so the packet is complete on the thesis's own metric list, but the bridge from GAAP to adjusted earnings is not explained by the selected rows, so the review is held rather than resolved. Sequential (not year-over-year) changes: consolidated revenue 2616 -> 2717 (+101 USD_million, +3.86% of baseline), of which Banking Solutions 1808 -> 1894 (+86), Capital Market Solutions 765 -> 783 (+18), Corporate/Other 43 -> 40 (-3), with a stated unlisted residual of 0; the mix is arithmetic only and is not a causal attribution. Operating income 408 -> 457 (+49, +12.01%). Pretax earnings 139 -> 375 (+236, +169.78% of baseline) is the largest single move and is not explained by the +49 operating-income change; the selected rows do not reconcile the gap, so no driver is asserted. Equity-method investment earnings improved from -598 to -23 (+575 USD_million) and net earnings attributable to FIS moved from -470 to +264 (+734 USD_million); because a residual remains in the GAAP bridge, the total swing is not attributed to the listed components. Tax provision rose 10 -> 87 (+77 USD_million, +770% of baseline) while pretax rose, so the effective rate is not derivable from these rows alone and no absolute tax or loss dollars are inferred from any rate. Non-GAAP adjusted net earnings 716 -> 789 (+73, +10.2% of baseline) is a different basis from GAAP net earnings and is not comparable line-for-line; the GAAP-to-adjusted spread narrowed sharply, but the reconciling items are not in the packet. Material counterpoint: the GAAP improvement is dominated by items outside operating income and by a swing in equity-method results, so it does not by itself evidence durable operating momentum; adjusted earnings grew far more slowly than GAAP net earnings. Missing evidence: no year-over-year comparatives, no segment operating income, no GAAP-to-adjusted reconciliation, no explanation of the equity-method swing, no cash flow or balance-sheet rows, no valuation inputs. Decision: needs_review, status and conviction preserved, thesis remains blocked pending a sourced, complete, conflict-free follow-up for the same period.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"fis\",\"gaap_consolidated_revenue\",\"gaap_operating_income\",\"gaap_earnings_before_taxes_and_equity\",\"gaap_equity_method_investment_earnings_net_of_tax\",\"gaap_net_earnings_attributable_to_fis\",\"non_gaap_adjusted_net_earnings\"],\"evidence\":[{\"id\":\"HOLDOUT-FIS-EVENT-v1\",\"note\":\"Q3 CY2025 selected facts, period ended 2025-09-30, as_of 2025-11-05\",\"sha256\":\"90bb1688ead1644de0cf3c593d795a18be8ae9847d06f4e9e1dee0427d7172eb\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000125/q32025ex991.htm\"},{\"id\":\"HOLDOUT-FIS-BASELINE-v1\",\"note\":\"Q2 CY2025 baseline selected facts, period ended 2025-06-30\",\"sha256\":\"1182290332e4f83c6ae7a94fd70636655fea743ebffcdb14480463fb91adffa4\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1136893/000113689325000115/q22025ex991.htm\"}],\"created_at\":\"2026-10-24T09:15:26Z\"}]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4302,
+              "completion_tokens": 151,
+              "total_tokens": 4453,
+              "estimated_cost_usd": 0.0014717999999999999,
+              "priced": true,
+              "latency_ms": 979.581
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6243,
+              "completion_tokens": 256,
+              "total_tokens": 6499,
+              "cache_read_tokens": 4352,
+              "estimated_cost_usd": 0.000900612,
+              "priced": true,
+              "latency_ms": 1273.057
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6887,
+              "completion_tokens": 1451,
+              "total_tokens": 8338,
+              "cache_read_tokens": 6400,
+              "estimated_cost_usd": 0.0019257,
+              "priced": true,
+              "latency_ms": 6941.793
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 10332,
+              "completion_tokens": 104,
+              "total_tokens": 10436,
+              "cache_read_tokens": 8320,
+              "estimated_cost_usd": 0.00077832,
+              "priced": true,
+              "latency_ms": 1060.045
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 11508,
+              "completion_tokens": 75,
+              "total_tokens": 11583,
+              "cache_read_tokens": 10368,
+              "estimated_cost_usd": 0.000494208,
+              "priced": true,
+              "latency_ms": 994.302
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 13569,
+              "completion_tokens": 1231,
+              "total_tokens": 14800,
+              "cache_read_tokens": 11520,
+              "estimated_cost_usd": 0.00216102,
+              "priced": true,
+              "latency_ms": 6333.793
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 17.627,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update",
+        "finance-tools__thesis_get"
+      ],
+      "model_calls": 6,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.00773166
+    }
+  ],
+  "estimated_cost_usd": 0.00773166
+}

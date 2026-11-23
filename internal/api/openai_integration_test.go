@@ -10,6 +10,7 @@ import (
 	"net/http/httptest"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/fastclaw-ai/fastclaw/internal/agent"
 	"github.com/fastclaw-ai/fastclaw/internal/auth"
@@ -178,6 +179,66 @@ func TestIntegrationChatCompletionsReturnsRequestToolTrace(t *testing.T) {
 	parameters := providerStub.tools[0].Function.Parameters.(map[string]any)
 	if parameters["type"] != "object" {
 		t.Fatalf("schema type = %v", parameters["type"])
+	}
+}
+
+type timeoutIntegrationProvider struct{}
+
+func (*timeoutIntegrationProvider) Chat(context.Context, []provider.Message, []provider.Tool, string, int, float64) (*provider.Response, error) {
+	return nil, errors.New("Chat must not be called")
+}
+
+func (*timeoutIntegrationProvider) ChatStream(ctx context.Context, _ []provider.Message, _ []provider.Tool, _ string, _ int, _ float64) (*provider.StreamReader, error) {
+	<-ctx.Done()
+	return nil, ctx.Err()
+}
+
+func TestIntegrationEvalServerTimeoutReturnsPartialUsage(t *testing.T) {
+	home := t.TempDir()
+	manager, err := agent.NewManager(
+		[]config.ResolvedAgent{{
+			ID: "eval-agent", Home: home, Workspace: home,
+			Model: "fake/model", MaxTokens: 128, MaxToolIterations: 4,
+		}},
+		&timeoutIntegrationProvider{}, nil, agent.WithUserID("user-1"),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	server := NewServer(&traceIntegrationResolver{manager: manager}, nil, nil)
+	body := []byte(`{
+		"messages":[{"role":"user","content":"Analyze the evidence."}],
+		"stream":false,
+		"fastclaw":{
+			"eval":true,"include_trace":true,"include_usage_breakdown":true,
+			"server_timeout_ms":25,
+			"pricing":{"fake/model":{"input_per_million":1,"output_per_million":2}}
+		}
+	}`)
+	request := httptest.NewRequest(http.MethodPost, "/v1/chat/completions", bytes.NewReader(body))
+	request = withAPIIdentity(request, "user-1", "eval-agent")
+	response := httptest.NewRecorder()
+	started := time.Now()
+	server.HandleChatCompletions(response, request)
+	if time.Since(started) > 2*time.Second {
+		t.Fatal("server timeout did not end the model call promptly")
+	}
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", response.Code, response.Body.String())
+	}
+	var completion chatCompletionResponse
+	if err := json.NewDecoder(response.Body).Decode(&completion); err != nil {
+		t.Fatal(err)
+	}
+	if completion.FastClaw == nil || len(completion.FastClaw.ModelCalls) != 1 {
+		t.Fatalf("missing partial model-call telemetry: %+v", completion.FastClaw)
+	}
+	call := completion.FastClaw.ModelCalls[0]
+	if !call.CostUncertain || call.Error == "" || call.TotalTokens != 0 {
+		t.Fatalf("incorrect timeout accounting: %+v", call)
+	}
+	if len(completion.FastClaw.Trace) == 0 || completion.FastClaw.Trace[len(completion.FastClaw.Trace)-1].Type != "error" {
+		t.Fatalf("missing terminal error trace: %+v", completion.FastClaw.Trace)
 	}
 }
 

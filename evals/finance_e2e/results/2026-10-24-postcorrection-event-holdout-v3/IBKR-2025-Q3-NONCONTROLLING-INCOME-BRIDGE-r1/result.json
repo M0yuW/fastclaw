@@ -1,0 +1,439 @@
+{
+  "observation_id": "IBKR-2025-Q3-NONCONTROLLING-INCOME-BRIDGE-r1",
+  "case_id": "IBKR-2025-Q3-NONCONTROLLING-INCOME-BRIDGE",
+  "repetition": 1,
+  "workflow": "sec_event_to_thesis_review",
+  "coordinator_max_tokens": 5000,
+  "status": "mechanical_pass",
+  "quality_score": null,
+  "error": null,
+  "checks": {
+    "one_thesis_and_alert": true,
+    "source_packet_exact": true,
+    "one_linked_review": true,
+    "alert_acknowledged": true,
+    "state_actionability_consistent": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 6,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_c73def8a936d4c61ba9a",
+          "market": "US",
+          "symbol": "IBKR",
+          "title": "IBKR source-bounded earnings thesis",
+          "thesis": "Baseline CY2025 Q2 ended 2025-06-30: IBKR-Q2-COMM=516 USD_million; IBKR-Q2-FEES=62 USD_million; IBKR-Q2-OTHER=42 USD_million; IBKR-Q2-NONINT=620 USD_million; IBKR-Q2-NII=860 USD_million; IBKR-Q2-REV=1480 USD_million; IBKR-Q2-EXP=376 USD_million; IBKR-Q2-PRETAX=1104 USD_million; IBKR-Q2-TAX=98 USD_million; IBKR-Q2-NET=1006 USD_million; IBKR-Q2-NCI=782 USD_million; IBKR-Q2-COMMON=224 USD_million; IBKR-Q2-EPS=0.51 USD_per_share. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": true,
+          "actionability": "blocked",
+          "decision_hold_alert_id": "fa_adff381fdf874b4ca3e4",
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "gaap_commissions",
+            "gaap_consolidated_net_income",
+            "gaap_diluted_eps",
+            "gaap_income_before_taxes",
+            "gaap_income_tax_expense",
+            "gaap_net_income_available_common",
+            "gaap_net_income_noncontrolling_interests",
+            "gaap_other_fees_services",
+            "gaap_other_income",
+            "gaap_total_net_interest_income",
+            "gaap_total_net_revenues",
+            "gaap_total_noninterest_expenses",
+            "gaap_total_noninterest_income"
+          ],
+          "evidence": [
+            {
+              "id": "HOLDOUT-IBKR-BASELINE-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1381197/000138119725000078/ibkr-8k_20250630er.htm",
+              "sha256": "6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee"
+            }
+          ],
+          "next_review_at": "2026-11-24T00:00:00Z",
+          "last_review_at": "2026-10-24T15:06:45Z",
+          "created_at": "2026-10-24T15:06:35Z",
+          "updated_at": "2026-10-24T15:06:45Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_a4049a55f05b4ce183bf",
+            "thesis_id": "th_c73def8a936d4c61ba9a",
+            "alert_id": "fa_adff381fdf874b4ca3e4",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-IBKR-2025-Q3-NONCONTROLLING-INCOME-BRIDGE-r1",
+            "event": {
+              "type": "earnings",
+              "summary": "IBKR CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: IBKR-Q3-COMM=537 USD_million; IBKR-Q3-FEES=66 USD_million; IBKR-Q3-OTHER=85 USD_million; IBKR-Q3-NONINT=688 USD_million; IBKR-Q3-NII=967 USD_million; IBKR-Q3-REV=1655 USD_million; IBKR-Q3-EXP=343 USD_million; IBKR-Q3-PRETAX=1312 USD_million; IBKR-Q3-TAX=126 USD_million; IBKR-Q3-NET=1186 USD_million; IBKR-Q3-NCI=923 USD_million; IBKR-Q3-COMMON=263 USD_million; IBKR-Q3-EPS=0.59 USD_per_share.",
+              "as_of": "2025-10-16",
+              "sources": [
+                {
+                  "id": "HOLDOUT-IBKR-EVENT-v1",
+                  "url": "https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm",
+                  "sha256": "ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "needs_review",
+            "rationale": "All 13 required event metrics are present in the stored alert on the same GAAP basis as the baseline, so the packet is complete for the thesis's required-metric gate. The comparison is sequential (Q3 2025 vs Q2 2025), not year-over-year, and all figures are reported GAAP, not adjusted. Supported implication: consolidated net income rose 180 USD_million (+17.89% of baseline) and diluted EPS rose 0.08 USD_per_share (+15.69%), with pretax income up 208 USD_million (+18.84%) while total noninterest expenses fell 33 USD_million (-8.78%) — a combination consistent with operating leverage, though the packet does not establish that as the cause. Material counterpoint: the noncontrolling-interest bridge dominates the result. NCI absorbed 923 of 1186 USD_million of Q3 consolidated net income (up 141 USD_million, +18.03%), so net income available to common rose only 39 USD_million (+17.41%) versus the 180 USD_million consolidated increase; the common-attributable share of consolidated net income was roughly 22% in Q3 versus roughly 22% in Q2 on these rounded rows, and the EPS gain is therefore far smaller in dollars than the consolidated gain. Tax expense rose 28 USD_million (+28.57% of baseline), a faster relative rate than pretax income (+18.84%), which is a headwind to the net-income bridge; the packet does not disclose the effective tax rate or its drivers. Other income more than doubled (+43 USD_million, +102.38% of baseline) and is the single largest relative mover among revenue lines; its composition and recurrence are not established by the selected rows, so it should not be treated as durable. Missing evidence: no year-over-year comparison, no segment or driver detail, no effective tax rate, no NCI attribution detail, no share count, no balance-sheet or capital-return data, and no adjusted/non-GAAP reconciliation. The revenue mix arithmetic (68 + 107 = 175, residual 0) is an identity check only and is not a causal decomposition. Because the packet is complete and conflict-free but the durability and attribution questions are unresolved, the research state is set to needs_review rather than maintain or upgrade; no valuation or trading conclusion is drawn.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [],
+            "evidence": [
+              {
+                "id": "HOLDOUT-IBKR-EVENT-v1",
+                "note": "Event packet, CY2025 Q3 ended 2025-09-30, GAAP reported, USD_million rounded except EPS",
+                "sha256": "ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208",
+                "url": "https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm"
+              },
+              {
+                "id": "HOLDOUT-IBKR-BASELINE-v1",
+                "note": "Baseline packet, CY2025 Q2 ended 2025-06-30, GAAP reported, USD_million rounded except EPS",
+                "sha256": "6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee",
+                "url": "https://www.sec.gov/Archives/edgar/data/1381197/000138119725000078/ibkr-8k_20250630er.htm"
+              }
+            ],
+            "created_at": "2026-10-24T15:06:45Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_adff381fdf874b4ca3e4",
+        "watchlist_id": "wl_7270b97b35b3475eabf0",
+        "thesis_id": "th_c73def8a936d4c61ba9a",
+        "market": "US",
+        "symbol": "IBKR",
+        "event_fingerprint": "89f00f50940196e1860e930108d01470f808321f1151cec496f43df12815e210",
+        "event": {
+          "external_id": "HOLDOUT-V2-IBKR-EVENT",
+          "type": "earnings",
+          "summary": "IBKR CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: IBKR-Q3-COMM=537 USD_million; IBKR-Q3-FEES=66 USD_million; IBKR-Q3-OTHER=85 USD_million; IBKR-Q3-NONINT=688 USD_million; IBKR-Q3-NII=967 USD_million; IBKR-Q3-REV=1655 USD_million; IBKR-Q3-EXP=343 USD_million; IBKR-Q3-PRETAX=1312 USD_million; IBKR-Q3-TAX=126 USD_million; IBKR-Q3-NET=1186 USD_million; IBKR-Q3-NCI=923 USD_million; IBKR-Q3-COMMON=263 USD_million; IBKR-Q3-EPS=0.59 USD_per_share.",
+          "as_of": "2025-10-16",
+          "sources": [
+            {
+              "id": "HOLDOUT-IBKR-EVENT-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm",
+              "sha256": "ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_commissions": {
+              "value": "537",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-COMM"
+            },
+            "gaap_other_fees_services": {
+              "value": "66",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-FEES"
+            },
+            "gaap_other_income": {
+              "value": "85",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-OTHER"
+            },
+            "gaap_total_noninterest_income": {
+              "value": "688",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-NONINT"
+            },
+            "gaap_total_net_interest_income": {
+              "value": "967",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-NII"
+            },
+            "gaap_total_net_revenues": {
+              "value": "1655",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-REV"
+            },
+            "gaap_total_noninterest_expenses": {
+              "value": "343",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-EXP"
+            },
+            "gaap_income_before_taxes": {
+              "value": "1312",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-PRETAX"
+            },
+            "gaap_income_tax_expense": {
+              "value": "126",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-TAX"
+            },
+            "gaap_consolidated_net_income": {
+              "value": "1186",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-NET"
+            },
+            "gaap_net_income_noncontrolling_interests": {
+              "value": "923",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-NCI"
+            },
+            "gaap_net_income_available_common": {
+              "value": "263",
+              "unit": "USD_million",
+              "fact_id": "IBKR-Q3-COMMON"
+            },
+            "gaap_diluted_eps": {
+              "value": "0.59",
+              "unit": "USD_per_share",
+              "fact_id": "IBKR-Q3-EPS"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "ibkr",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-24T15:06:35Z",
+        "last_seen_at": "2026-10-24T15:06:35Z",
+        "created_at": "2026-10-24T15:06:35Z",
+        "updated_at": "2026-10-24T15:06:46Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "prompt": "Historical source-bounded SEC research-state replay, not a trade request. Read the stored thesis and earnings alert using finance tools. The host-checked numeric context below is arithmetic on selected source rows, not a causal explanation or complete filing. Distinguish sequential from year-over-year figures, reported from adjusted measures, and percentage points from relative percent. Independently explain a supported implication, a material counterpoint, missing evidence, and your own research-state decision. Do not infer absolute loss dollars from a rate or attribute a total to listed components when a residual remains. Persist one source-linked version-protected review, acknowledge the alert, and verify that any needs_review decision leaves the thesis blocked. Do not trade.\n\nCase: IBKR-2025-Q3-NONCONTROLLING-INCOME-BRIDGE\nBaseline SEC SHA-256: 6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee\nEvent SEC SHA-256: ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208\nDisplayed-value comparisons (same metric and basis):\nmetric | baseline fact/value | event fact/value | change | relative change\ngaap_commissions | IBKR-Q2-COMM=516 USD_million_rounded | IBKR-Q3-COMM=537 USD_million_rounded | 21 USD_million | 4.07% of baseline\ngaap_consolidated_net_income | IBKR-Q2-NET=1006 USD_million_rounded | IBKR-Q3-NET=1186 USD_million_rounded | 180 USD_million | 17.89% of baseline\ngaap_diluted_eps | IBKR-Q2-EPS=0.51 USD_per_share_reported | IBKR-Q3-EPS=0.59 USD_per_share_reported | 0.08 USD_per_share | 15.69% of baseline\ngaap_income_before_taxes | IBKR-Q2-PRETAX=1104 USD_million_rounded | IBKR-Q3-PRETAX=1312 USD_million_rounded | 208 USD_million | 18.84% of baseline\ngaap_income_tax_expense | IBKR-Q2-TAX=98 USD_million_rounded | IBKR-Q3-TAX=126 USD_million_rounded | 28 USD_million | 28.57% of baseline\ngaap_net_income_available_common | IBKR-Q2-COMMON=224 USD_million_rounded | IBKR-Q3-COMMON=263 USD_million_rounded | 39 USD_million | 17.41% of baseline\ngaap_net_income_noncontrolling_interests | IBKR-Q2-NCI=782 USD_million_rounded | IBKR-Q3-NCI=923 USD_million_rounded | 141 USD_million | 18.03% of baseline\ngaap_other_fees_services | IBKR-Q2-FEES=62 USD_million_rounded | IBKR-Q3-FEES=66 USD_million_rounded | 4 USD_million | 6.45% of baseline\ngaap_other_income | IBKR-Q2-OTHER=42 USD_million_rounded | IBKR-Q3-OTHER=85 USD_million_rounded | 43 USD_million | 102.38% of baseline\ngaap_total_net_interest_income | IBKR-Q2-NII=860 USD_million_rounded | IBKR-Q3-NII=967 USD_million_rounded | 107 USD_million | 12.44% of baseline\ngaap_total_net_revenues | IBKR-Q2-REV=1480 USD_million_rounded | IBKR-Q3-REV=1655 USD_million_rounded | 175 USD_million | 11.82% of baseline\ngaap_total_noninterest_expenses | IBKR-Q2-EXP=376 USD_million_rounded | IBKR-Q3-EXP=343 USD_million_rounded | -33 USD_million | -8.78% of baseline\ngaap_total_noninterest_income | IBKR-Q2-NONINT=620 USD_million_rounded | IBKR-Q3-NONINT=688 USD_million_rounded | 68 USD_million | 10.97% of baseline\nArithmetic mix for gaap_total_net_revenues: total 175 USD_million; listed components gaap_total_noninterest_income=68 USD_million, gaap_total_net_interest_income=107 USD_million; unlisted residual 0 USD_million. This is not a causal explanation.\nBoundary: source-selected displayed values only; no causal driver, durability, valuation, or trading conclusion is established by this table.\n\nCase IBKR-2025-Q3-NONCONTROLLING-INCOME-BRIDGE; thesis ID th_c73def8a936d4c61ba9a; alert ID fa_adff381fdf874b4ca3e4.",
+      "response": {
+        "id": "chatcmpl-1792854395772641000",
+        "object": "chat.completion",
+        "created": 1792854395,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# IBKR-2025-Q3-NONCONTROLLING-INCOME-BRIDGE — Research-State Replay\n\n**Scope note:** This is a historical, source-bounded research-state replay. No trade was placed, no valuation conclusion is drawn, and no causal driver is asserted beyond what the selected rows state. All comparisons below are **sequential (CY2025 Q3 ended 2025-09-30 vs CY2025 Q2 ended 2025-06-30)**, **reported GAAP**, and expressed as **percentage points of the baseline** where the host table does so — not year-over-year, not adjusted, not relative-percent growth rates.\n\n## 1. What was read\n- Thesis `th_c73def8a936d4c61ba9a` (v1 at read, status `active`, conviction 3, 13 required event metrics, baseline evidence `HOLDOUT-IBKR-BASELINE-v1`, SHA-256 `6e795fee…f249ee`).\n- Alert `fa_adff381fdf874b4ca3e4` (v1, status `new`, event `HOLDOUT-V2-IBKR-EVENT`, as_of 2025-10-16, source `HOLDOUT-IBKR-EVENT-v1`, SHA-256 `ae8c6861…32c208`).\n- Deterministic match returned `symbol_match` only (match_score 0, no term hits) — the linkage is by symbol, not by assumption/catalyst/invalidation text, since the thesis has none stored.\n\n## 2. Supported implication\nThe packet is **complete against the thesis's own required-metric gate**: all 13 required metrics are present in the stored alert, on the same GAAP basis as the baseline, with no unresolved conflicts. On those rows, consolidated net income rose 180 USD_million (+17.89% of baseline) and diluted EPS rose 0.08 USD_per_share (+15.69%), while pretax income rose 208 USD_million (+18.84%) and total noninterest expenses *fell* 33 USD_million (−8.78%). Revenue rose 175 USD_million (+11.82%), of which the listed components are noninterest income +68 and net interest income +107, with an unlisted residual of 0 — an **identity check only**, not a decomposition of cause. The direction of the pretax/expense pair is *consistent with* operating leverage; the packet does not establish that as the explanation.\n\n## 3. Material counterpoint — the NCI bridge\nThe consolidated headline overstates the common-attributable result. Noncontrolling interests absorbed 923 of 1186 USD_million of Q3 consolidated net income (up 141 USD_million, +18.03% of baseline), so **net income available to common rose only 39 USD_million (+17.41%) against a 180 USD_million consolidated increase**. The common-attributable share of consolidated net income is roughly 22% in both periods on these rounded rows — i.e. the split is stable, not improving. Two further cautions:\n- **Tax** rose 28 USD_million (+28.57% of baseline), a faster relative rate than pretax income (+18.84%), a headwind in the net-income bridge; the effective tax rate and its drivers are not in the packet.\n- **Other income** more than doubled (+43 USD_million, +102.38% of baseline) and is the largest relative mover among revenue lines; its composition and recurrence are not established, so it should not be treated as durable.\n\nI do not infer absolute loss or gain dollars from any rate, and I do not attribute the 175 USD_million revenue change to the two listed components as causes — the residual is zero, but that is arithmetic, not attribution.\n\n## 4. Missing evidence\nNo year-over-year comparison; no segment, product, or driver detail; no effective tax rate; no NCI attribution detail (which entities, what ownership); no share count or buyback data; no balance-sheet, margin, or capital-return data; no adjusted/non-GAAP reconciliation; no management commentary. The thesis itself carries no assumptions, catalysts, or invalidation conditions, so there is no stored falsifier to test against this event.\n\n## 5. Research-state decision\n**Decision: `needs_review`; impact: `mixed`.** The packet is complete and conflict-free, but the durability and attribution questions (NCI split, other-income recurrence, tax rate) are unresolved, so neither `maintain` nor `upgrade` is supportable on this evidence. Status and conviction were left unchanged by the review.\n\n## 6. Persistence and verification\n- Review `tr_a4049a55f05b4ce183bf` recorded against thesis v1 → thesis now **version 2**, `last_review_at` 2026-10-24T15:06:45Z, `next_review_at` 2026-11-24.\n- Alert `fa_adff381fdf874b4ca3e4` acknowledged (v1 → v2, status `acknowledged`).\n- **Block verified by re-read:** thesis v2 shows `decision_hold: true`, `actionability: \"blocked\"`, `decision_hold_alert_id: \"fa_adff381fdf874b4ca3e4\"`, status still `active`, conviction still 3. The `needs_review` decision therefore leaves the thesis blocked for downstream decisions, as required.\n\nNo trades, no position sizing, and no investment recommendation were produced."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 53840,
+          "completion_tokens": 3271,
+          "total_tokens": 57111
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_OCbHQ7L8ATK9ef8IEcCE6396",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_c73def8a936d4c61ba9a\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_dVR30pvQPcQ4G6MAul6B0496",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"symbol\": \"IBKR\", \"limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_OCbHQ7L8ATK9ef8IEcCE6396",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"b0b1401c-50df-445e-a5b7-f6631785b8f7\",\"as_of\":\"2026-10-24T15:06:36Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_c73def8a936d4c61ba9a\",\"market\":\"US\",\"symbol\":\"IBKR\",\"title\":\"IBKR source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: IBKR-Q2-COMM=516 USD_million; IBKR-Q2-FEES=62 USD_million; IBKR-Q2-OTHER=42 USD_million; IBKR-Q2-NONINT=620 USD_million; IBKR-Q2-NII=860 USD_million; IBKR-Q2-REV=1480 USD_million; IBKR-Q2-EXP=376 USD_million; IBKR-Q2-PRETAX=1104 USD_million; IBKR-Q2-TAX=98 USD_million; IBKR-Q2-NET=1006 USD_million; IBKR-Q2-NCI=782 USD_million; IBKR-Q2-COMMON=224 USD_million; IBKR-Q2-EPS=0.51 USD_per_share. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_commissions\",\"gaap_consolidated_net_income\",\"gaap_diluted_eps\",\"gaap_income_before_taxes\",\"gaap_income_tax_expense\",\"gaap_net_income_available_common\",\"gaap_net_income_noncontrolling_interests\",\"gaap_other_fees_services\",\"gaap_other_income\",\"gaap_total_net_interest_income\",\"gaap_total_net_revenues\",\"gaap_total_noninterest_expenses\",\"gaap_total_noninterest_income\"],\"evidence\":[{\"id\":\"HOLDOUT-IBKR-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000078/ibkr-8k_20250630er.htm\",\"sha256\":\"6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-24T15:06:35Z\",\"updated_at\":\"2026-10-24T15:06:35Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8108,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_dVR30pvQPcQ4G6MAul6B0496",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"321a77fe-5818-4650-8150-2a797c1956a8\",\"as_of\":\"2026-10-24T15:06:36Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_adff381fdf874b4ca3e4\",\"watchlist_id\":\"wl_7270b97b35b3475eabf0\",\"thesis_id\":\"th_c73def8a936d4c61ba9a\",\"market\":\"US\",\"symbol\":\"IBKR\",\"event_fingerprint\":\"89f00f50940196e1860e930108d01470f808321f1151cec496f43df12815e210\",\"event\":{\"external_id\":\"HOLDOUT-V2-IBKR-EVENT\",\"type\":\"earnings\",\"summary\":\"IBKR CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: IBKR-Q3-COMM=537 USD_million; IBKR-Q3-FEES=66 USD_million; IBKR-Q3-OTHER=85 USD_million; IBKR-Q3-NONINT=688 USD_million; IBKR-Q3-NII=967 USD_million; IBKR-Q3-REV=1655 USD_million; IBKR-Q3-EXP=343 USD_million; IBKR-Q3-PRETAX=1312 USD_million; IBKR-Q3-TAX=126 USD_million; IBKR-Q3-NET=1186 USD_million; IBKR-Q3-NCI=923 USD_million; IBKR-Q3-COMMON=263 USD_million; IBKR-Q3-EPS=0.59 USD_per_share.\",\"as_of\":\"2025-10-16\",\"sources\":[{\"id\":\"HOLDOUT-IBKR-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm\",\"sha256\":\"ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208\"}],\"observed_metrics\":{\"gaap_commissions\":{\"value\":\"537\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-COMM\"},\"gaap_other_fees_services\":{\"value\":\"66\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-FEES\"},\"gaap_other_income\":{\"value\":\"85\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-OTHER\"},\"gaap_total_noninterest_income\":{\"value\":\"688\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-NONINT\"},\"gaap_total_net_interest_income\":{\"value\":\"967\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-NII\"},\"gaap_total_net_revenues\":{\"value\":\"1655\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-REV\"},\"gaap_total_noninterest_expenses\":{\"value\":\"343\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-EXP\"},\"gaap_income_before_taxes\":{\"value\":\"1312\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-PRETAX\"},\"gaap_income_tax_expense\":{\"value\":\"126\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-TAX\"},\"gaap_consolidated_net_income\":{\"value\":\"1186\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-NET\"},\"gaap_net_income_noncontrolling_interests\":{\"value\":\"923\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-NCI\"},\"gaap_net_income_available_common\":{\"value\":\"263\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-COMMON\"},\"gaap_diluted_eps\":{\"value\":\"0.59\",\"unit\":\"USD_per_share\",\"fact_id\":\"IBKR-Q3-EPS\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"ibkr\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T15:06:35Z\",\"last_seen_at\":\"2026-10-24T15:06:35Z\",\"created_at\":\"2026-10-24T15:06:35Z\",\"updated_at\":\"2026-10-24T15:06:35Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":20,\"symbol\":\"IBKR\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9714,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_vuipHPa5hf0uT572ZNly6512",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"IBKR\", \"event_summary\": \"IBKR CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: IBKR-Q3-COMM=537 USD_million; IBKR-Q3-FEES=66 USD_million; IBKR-Q3-OTHER=85 USD_million; IBKR-Q3-NONINT=688 USD_million; IBKR-Q3-NII=967 USD_million; IBKR-Q3-REV=1655 USD_million; IBKR-Q3-EXP=343 USD_million; IBKR-Q3-PRETAX=1312 USD_million; IBKR-Q3-TAX=126 USD_million; IBKR-Q3-NET=1186 USD_million; IBKR-Q3-NCI=923 USD_million; IBKR-Q3-COMMON=263 USD_million; IBKR-Q3-EPS=0.59 USD_per_share.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_vuipHPa5hf0uT572ZNly6512",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"22188648-0fcd-4aed-91fe-4378b3e38422\",\"as_of\":\"2026-10-24T15:06:38Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"IBKR\",\"event_summary\":\"IBKR CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: IBKR-Q3-COMM=537 USD_million; IBKR-Q3-FEES=66 USD_million; IBKR-Q3-OTHER=85 USD_million; IBKR-Q3-NONINT=688 USD_million; IBKR-Q3-NII=967 USD_million; IBKR-Q3-REV=1655 USD_million; IBKR-Q3-EXP=343 USD_million; IBKR-Q3-PRETAX=1312 USD_million; IBKR-Q3-TAX=126 USD_million; IBKR-Q3-NET=1186 USD_million; IBKR-Q3-NCI=923 USD_million; IBKR-Q3-COMMON=263 USD_million; IBKR-Q3-EPS=0.59 USD_per_share.\",\"matches\":[{\"thesis_id\":\"th_c73def8a936d4c61ba9a\",\"title\":\"IBKR source-bounded earnings thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_YNKoWi9lA8rstqlD9Wsk3934",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_c73def8a936d4c61ba9a\", \"expected_version\": 1, \"alert_id\": \"fa_adff381fdf874b4ca3e4\", \"event\": {\"type\": \"earnings\", \"as_of\": \"2025-10-16\", \"summary\": \"IBKR CY2025 Q3 (period ended 2025-09-30) SEC selected-fact packet vs stored CY2025 Q2 baseline (ended 2025-06-30), same GAAP basis, sequential comparison only: REV 1480->1655 (+175, +11.82% of baseline); NONINT 620->688 (+68); NII 860->967 (+107); COMM 516->537 (+21, +4.07%); FEES 62->66 (+4); OTHER 42->85 (+43, +102.38%); EXP 376->343 (-33, -8.78%); PRETAX 1104->1312 (+208, +18.84%); TAX 98->126 (+28, +28.57%); NET 1006->1186 (+180, +17.89%); NCI 782->923 (+141, +18.03%); COMMON 224->263 (+39, +17.41%); EPS 0.51->0.59 (+0.08, +15.69%). Revenue mix arithmetic: listed components NONINT 68 + NII 107 = 175, unlisted residual 0. Arithmetic only; no causal driver, durability, valuation or trading conclusion established.\", \"sources\": [{\"id\": \"HOLDOUT-IBKR-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm\", \"sha256\": \"ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208\"}, {\"id\": \"HOLDOUT-IBKR-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000078/ibkr-8k_20250630er.htm\", \"sha256\": \"6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee\"}]}, \"impact\": \"mixed\", \"decision\": \"needs_review\", \"rationale\": \"All 13 required event metrics are present in the stored alert on the same GAAP basis as the baseline, so the packet is complete for the thesis's required-metric gate. The comparison is sequential (Q3 2025 vs Q2 2025), not year-over-year, and all figures are reported GAAP, not adjusted. Supported implication: consolidated net income rose 180 USD_million (+17.89% of baseline) and diluted EPS rose 0.08 USD_per_share (+15.69%), with pretax income up 208 USD_million (+18.84%) while total noninterest expenses fell 33 USD_million (-8.78%) — a combination consistent with operating leverage, though the packet does not establish that as the cause. Material counterpoint: the noncontrolling-interest bridge dominates the result. NCI absorbed 923 of 1186 USD_million of Q3 consolidated net income (up 141 USD_million, +18.03%), so net income available to common rose only 39 USD_million (+17.41%) versus the 180 USD_million consolidated increase; the common-attributable share of consolidated net income was roughly 22% in Q3 versus roughly 22% in Q2 on these rounded rows, and the EPS gain is therefore far smaller in dollars than the consolidated gain. Tax expense rose 28 USD_million (+28.57% of baseline), a faster relative rate than pretax income (+18.84%), which is a headwind to the net-income bridge; the packet does not disclose the effective tax rate or its drivers. Other income more than doubled (+43 USD_million, +102.38% of baseline) and is the single largest relative mover among revenue lines; its composition and recurrence are not established by the selected rows, so it should not be treated as durable. Missing evidence: no year-over-year comparison, no segment or driver detail, no effective tax rate, no NCI attribution detail, no share count, no balance-sheet or capital-return data, and no adjusted/non-GAAP reconciliation. The revenue mix arithmetic (68 + 107 = 175, residual 0) is an identity check only and is not a causal decomposition. Because the packet is complete and conflict-free but the durability and attribution questions are unresolved, the research state is set to needs_review rather than maintain or upgrade; no valuation or trading conclusion is drawn.\", \"evidence\": [{\"id\": \"HOLDOUT-IBKR-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm\", \"sha256\": \"ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208\", \"note\": \"Event packet, CY2025 Q3 ended 2025-09-30, GAAP reported, USD_million rounded except EPS\"}, {\"id\": \"HOLDOUT-IBKR-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000078/ibkr-8k_20250630er.htm\", \"sha256\": \"6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee\", \"note\": \"Baseline packet, CY2025 Q2 ended 2025-06-30, GAAP reported, USD_million rounded except EPS\"}], \"next_review_at\": \"2026-11-24T00:00:00Z\"}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_YNKoWi9lA8rstqlD9Wsk3934",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"6e2a906f-2957-4c85-8dc9-c4f4bb2e0097\",\"as_of\":\"2026-10-24T15:06:45Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_c73def8a936d4c61ba9a\",\"market\":\"US\",\"symbol\":\"IBKR\",\"title\":\"IBKR source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: IBKR-Q2-COMM=516 USD_million; IBKR-Q2-FEES=62 USD_million; IBKR-Q2-OTHER=42 USD_million; IBKR-Q2-NONINT=620 USD_million; IBKR-Q2-NII=860 USD_million; IBKR-Q2-REV=1480 USD_million; IBKR-Q2-EXP=376 USD_million; IBKR-Q2-PRETAX=1104 USD_million; IBKR-Q2-TAX=98 USD_million; IBKR-Q2-NET=1006 USD_million; IBKR-Q2-NCI=782 USD_million; IBKR-Q2-COMMON=224 USD_million; IBKR-Q2-EPS=0.51 USD_per_share. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_adff381fdf874b4ca3e4\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_commissions\",\"gaap_consolidated_net_income\",\"gaap_diluted_eps\",\"gaap_income_before_taxes\",\"gaap_income_tax_expense\",\"gaap_net_income_available_common\",\"gaap_net_income_noncontrolling_interests\",\"gaap_other_fees_services\",\"gaap_other_income\",\"gaap_total_net_interest_income\",\"gaap_total_net_revenues\",\"gaap_total_noninterest_expenses\",\"gaap_total_noninterest_income\"],\"evidence\":[{\"id\":\"HOLDOUT-IBKR-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000078/ibkr-8k_20250630er.htm\",\"sha256\":\"6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee\"}],\"next_review_at\":\"2026-11-24T00:00:00Z\",\"last_review_at\":\"2026-10-24T15:06:45Z\",\"created_at\":\"2026-10-24T15:06:35Z\",\"updated_at\":\"2026-10-24T15:06:45Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_a4049a55f05b4ce183bf\",\"thesis_id\":\"th_c73def8a936d4c61ba9a\",\"alert_id\":\"fa_adff381fdf874b4ca3e4\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-IBKR-2025-Q3-NONCONTROLLING-INCOME-BRIDGE-r1\",\"event\":{\"type\":\"earnings\",\"summary\":\"IBKR CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: IBKR-Q3-COMM=537 USD_million; IBKR-Q3-FEES=66 USD_million; IBKR-Q3-OTHER=85 USD_million; IBKR-Q3-NONINT=688 USD_million; IBKR-Q3-NII=967 USD_million; IBKR-Q3-REV=1655 USD_million; IBKR-Q3-EXP=343 USD_million; IBKR-Q3-PRETAX=1312 USD_million; IBKR-Q3-TAX=126 USD_million; IBKR-Q3-NET=1186 USD_million; IBKR-Q3-NCI=923 USD_million; IBKR-Q3-COMMON=263 USD_million; IBKR-Q3-EPS=0.59 USD_per_share.\",\"as_of\":\"2025-10-16\",\"sources\":[{\"id\":\"HOLDOUT-IBKR-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm\",\"sha256\":\"ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"All 13 required event metrics are present in the stored alert on the same GAAP basis as the baseline, so the packet is complete for the thesis's required-metric gate. The comparison is sequential (Q3 2025 vs Q2 2025), not year-over-year, and all figures are reported GAAP, not adjusted. Supported implication: consolidated net income rose 180 USD_million (+17.89% of baseline) and diluted EPS rose 0.08 USD_per_share (+15.69%), with pretax income up 208 USD_million (+18.84%) while total noninterest expenses fell 33 USD_million (-8.78%) — a combination consistent with operating leverage, though the packet does not establish that as the cause. Material counterpoint: the noncontrolling-interest bridge dominates the result. NCI absorbed 923 of 1186 USD_million of Q3 consolidated net income (up 141 USD_million, +18.03%), so net income available to common rose only 39 USD_million (+17.41%) versus the 180 USD_million consolidated increase; the common-attributable share of consolidated net income was roughly 22% in Q3 versus roughly 22% in Q2 on these rounded rows, and the EPS gain is therefore far smaller in dollars than the consolidated gain. Tax expense rose 28 USD_million (+28.57% of baseline), a faster relative rate than pretax income (+18.84%), which is a headwind to the net-income bridge; the packet does not disclose the effective tax rate or its drivers. Other income more than doubled (+43 USD_million, +102.38% of baseline) and is the single largest relative mover among revenue lines; its composition and recurrence are not established by the selected rows, so it should not be treated as durable. Missing evidence: no year-over-year comparison, no segment or driver detail, no effective tax rate, no NCI attribution detail, no share count, no balance-sheet or capital-return data, and no adjusted/non-GAAP reconciliation. The revenue mix arithmetic (68 + 107 = 175, residual 0) is an identity check only and is not a causal decomposition. Because the packet is complete and conflict-free but the durability and attribution questions are unresolved, the research state is set to needs_review rather than maintain or upgrade; no valuation or trading conclusion is drawn.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[],\"evidence\":[{\"id\":\"HOLDOUT-IBKR-EVENT-v1\",\"note\":\"Event packet, CY2025 Q3 ended 2025-09-30, GAAP reported, USD_million rounded except EPS\",\"sha256\":\"ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm\"},{\"id\":\"HOLDOUT-IBKR-BASELINE-v1\",\"note\":\"Baseline packet, CY2025 Q2 ended 2025-06-30, GAAP reported, USD_million rounded except EPS\",\"sha256\":\"6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000078/ibkr-8k_20250630er.htm\"}],\"created_at\":\"2026-10-24T15:06:45Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9032,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_84OshI25VMpCwt6fMKKo5363",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_adff381fdf874b4ca3e4\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_84OshI25VMpCwt6fMKKo5363",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"b8481e3d-c828-400a-b6d4-ec4c6b962778\",\"as_of\":\"2026-10-24T15:06:46Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_adff381fdf874b4ca3e4\",\"watchlist_id\":\"wl_7270b97b35b3475eabf0\",\"thesis_id\":\"th_c73def8a936d4c61ba9a\",\"market\":\"US\",\"symbol\":\"IBKR\",\"event_fingerprint\":\"89f00f50940196e1860e930108d01470f808321f1151cec496f43df12815e210\",\"event\":{\"external_id\":\"HOLDOUT-V2-IBKR-EVENT\",\"type\":\"earnings\",\"summary\":\"IBKR CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: IBKR-Q3-COMM=537 USD_million; IBKR-Q3-FEES=66 USD_million; IBKR-Q3-OTHER=85 USD_million; IBKR-Q3-NONINT=688 USD_million; IBKR-Q3-NII=967 USD_million; IBKR-Q3-REV=1655 USD_million; IBKR-Q3-EXP=343 USD_million; IBKR-Q3-PRETAX=1312 USD_million; IBKR-Q3-TAX=126 USD_million; IBKR-Q3-NET=1186 USD_million; IBKR-Q3-NCI=923 USD_million; IBKR-Q3-COMMON=263 USD_million; IBKR-Q3-EPS=0.59 USD_per_share.\",\"as_of\":\"2025-10-16\",\"sources\":[{\"id\":\"HOLDOUT-IBKR-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm\",\"sha256\":\"ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208\"}],\"observed_metrics\":{\"gaap_commissions\":{\"value\":\"537\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-COMM\"},\"gaap_other_fees_services\":{\"value\":\"66\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-FEES\"},\"gaap_other_income\":{\"value\":\"85\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-OTHER\"},\"gaap_total_noninterest_income\":{\"value\":\"688\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-NONINT\"},\"gaap_total_net_interest_income\":{\"value\":\"967\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-NII\"},\"gaap_total_net_revenues\":{\"value\":\"1655\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-REV\"},\"gaap_total_noninterest_expenses\":{\"value\":\"343\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-EXP\"},\"gaap_income_before_taxes\":{\"value\":\"1312\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-PRETAX\"},\"gaap_income_tax_expense\":{\"value\":\"126\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-TAX\"},\"gaap_consolidated_net_income\":{\"value\":\"1186\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-NET\"},\"gaap_net_income_noncontrolling_interests\":{\"value\":\"923\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-NCI\"},\"gaap_net_income_available_common\":{\"value\":\"263\",\"unit\":\"USD_million\",\"fact_id\":\"IBKR-Q3-COMMON\"},\"gaap_diluted_eps\":{\"value\":\"0.59\",\"unit\":\"USD_per_share\",\"fact_id\":\"IBKR-Q3-EPS\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"ibkr\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T15:06:35Z\",\"last_seen_at\":\"2026-10-24T15:06:35Z\",\"created_at\":\"2026-10-24T15:06:35Z\",\"updated_at\":\"2026-10-24T15:06:46Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9706,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_VyxP6FpKCeKAFhdyPVDF9951",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"review_limit\": 5, \"thesis_id\": \"th_c73def8a936d4c61ba9a\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_VyxP6FpKCeKAFhdyPVDF9951",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"c4e0d91c-7199-44bc-91e5-d53712c47231\",\"as_of\":\"2026-10-24T15:06:47Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_c73def8a936d4c61ba9a\",\"market\":\"US\",\"symbol\":\"IBKR\",\"title\":\"IBKR source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: IBKR-Q2-COMM=516 USD_million; IBKR-Q2-FEES=62 USD_million; IBKR-Q2-OTHER=42 USD_million; IBKR-Q2-NONINT=620 USD_million; IBKR-Q2-NII=860 USD_million; IBKR-Q2-REV=1480 USD_million; IBKR-Q2-EXP=376 USD_million; IBKR-Q2-PRETAX=1104 USD_million; IBKR-Q2-TAX=98 USD_million; IBKR-Q2-NET=1006 USD_million; IBKR-Q2-NCI=782 USD_million; IBKR-Q2-COMMON=224 USD_million; IBKR-Q2-EPS=0.51 USD_per_share. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_adff381fdf874b4ca3e4\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_commissions\",\"gaap_consolidated_net_income\",\"gaap_diluted_eps\",\"gaap_income_before_taxes\",\"gaap_income_tax_expense\",\"gaap_net_income_available_common\",\"gaap_net_income_noncontrolling_interests\",\"gaap_other_fees_services\",\"gaap_other_income\",\"gaap_total_net_interest_income\",\"gaap_total_net_revenues\",\"gaap_total_noninterest_expenses\",\"gaap_total_noninterest_income\"],\"evidence\":[{\"id\":\"HOLDOUT-IBKR-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000078/ibkr-8k_20250630er.htm\",\"sha256\":\"6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee\"}],\"next_review_at\":\"2026-11-24T00:00:00Z\",\"last_review_at\":\"2026-10-24T15:06:45Z\",\"created_at\":\"2026-10-24T15:06:35Z\",\"updated_at\":\"2026-10-24T15:06:45Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[{\"id\":\"tr_a4049a55f05b4ce183bf\",\"thesis_id\":\"th_c73def8a936d4c61ba9a\",\"alert_id\":\"fa_adff381fdf874b4ca3e4\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-IBKR-2025-Q3-NONCONTROLLING-INCOME-BRIDGE-r1\",\"event\":{\"type\":\"earnings\",\"summary\":\"IBKR CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: IBKR-Q3-COMM=537 USD_million; IBKR-Q3-FEES=66 USD_million; IBKR-Q3-OTHER=85 USD_million; IBKR-Q3-NONINT=688 USD_million; IBKR-Q3-NII=967 USD_million; IBKR-Q3-REV=1655 USD_million; IBKR-Q3-EXP=343 USD_million; IBKR-Q3-PRETAX=1312 USD_million; IBKR-Q3-TAX=126 USD_million; IBKR-Q3-NET=1186 USD_million; IBKR-Q3-NCI=923 USD_million; IBKR-Q3-COMMON=263 USD_million; IBKR-Q3-EPS=0.59 USD_per_share.\",\"as_of\":\"2025-10-16\",\"sources\":[{\"id\":\"HOLDOUT-IBKR-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm\",\"sha256\":\"ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"All 13 required event metrics are present in the stored alert on the same GAAP basis as the baseline, so the packet is complete for the thesis's required-metric gate. The comparison is sequential (Q3 2025 vs Q2 2025), not year-over-year, and all figures are reported GAAP, not adjusted. Supported implication: consolidated net income rose 180 USD_million (+17.89% of baseline) and diluted EPS rose 0.08 USD_per_share (+15.69%), with pretax income up 208 USD_million (+18.84%) while total noninterest expenses fell 33 USD_million (-8.78%) — a combination consistent with operating leverage, though the packet does not establish that as the cause. Material counterpoint: the noncontrolling-interest bridge dominates the result. NCI absorbed 923 of 1186 USD_million of Q3 consolidated net income (up 141 USD_million, +18.03%), so net income available to common rose only 39 USD_million (+17.41%) versus the 180 USD_million consolidated increase; the common-attributable share of consolidated net income was roughly 22% in Q3 versus roughly 22% in Q2 on these rounded rows, and the EPS gain is therefore far smaller in dollars than the consolidated gain. Tax expense rose 28 USD_million (+28.57% of baseline), a faster relative rate than pretax income (+18.84%), which is a headwind to the net-income bridge; the packet does not disclose the effective tax rate or its drivers. Other income more than doubled (+43 USD_million, +102.38% of baseline) and is the single largest relative mover among revenue lines; its composition and recurrence are not established by the selected rows, so it should not be treated as durable. Missing evidence: no year-over-year comparison, no segment or driver detail, no effective tax rate, no NCI attribution detail, no share count, no balance-sheet or capital-return data, and no adjusted/non-GAAP reconciliation. The revenue mix arithmetic (68 + 107 = 175, residual 0) is an identity check only and is not a causal decomposition. Because the packet is complete and conflict-free but the durability and attribution questions are unresolved, the research state is set to needs_review rather than maintain or upgrade; no valuation or trading conclusion is drawn.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[],\"evidence\":[{\"id\":\"HOLDOUT-IBKR-EVENT-v1\",\"note\":\"Event packet, CY2025 Q3 ended 2025-09-30, GAAP reported, USD_million rounded except EPS\",\"sha256\":\"ae8c686198249b3b227728338112ef0770f854c230e4a5b0910bc1cfd832c208\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000143/ibkr-8k_20250930er.htm\"},{\"id\":\"HOLDOUT-IBKR-BASELINE-v1\",\"note\":\"Baseline packet, CY2025 Q2 ended 2025-06-30, GAAP reported, USD_million rounded except EPS\",\"sha256\":\"6e795feebbd153fdf5f4a0f0f8a7a2199956ecfc58e3cf9aee961d1019f249ee\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1381197/000138119725000078/ibkr-8k_20250630er.htm\"}],\"created_at\":\"2026-10-24T15:06:45Z\"}]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9032,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4367,
+              "completion_tokens": 134,
+              "total_tokens": 4501,
+              "estimated_cost_usd": 0.0014708999999999998,
+              "priced": true,
+              "latency_ms": 1011.022
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6362,
+              "completion_tokens": 280,
+              "total_tokens": 6642,
+              "cache_read_tokens": 4480,
+              "estimated_cost_usd": 0.0009274800000000001,
+              "priced": true,
+              "latency_ms": 1405.106
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 7055,
+              "completion_tokens": 1481,
+              "total_tokens": 8536,
+              "cache_read_tokens": 6528,
+              "estimated_cost_usd": 0.001974468,
+              "priced": true,
+              "latency_ms": 7229.407
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 10519,
+              "completion_tokens": 105,
+              "total_tokens": 10624,
+              "cache_read_tokens": 8448,
+              "estimated_cost_usd": 0.000797988,
+              "priced": true,
+              "latency_ms": 1492.847
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 11746,
+              "completion_tokens": 74,
+              "total_tokens": 11820,
+              "cache_read_tokens": 10624,
+              "estimated_cost_usd": 0.000489144,
+              "priced": true,
+              "latency_ms": 926.721
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 13791,
+              "completion_tokens": 1197,
+              "total_tokens": 14988,
+              "cache_read_tokens": 11776,
+              "estimated_cost_usd": 0.002111556,
+              "priced": true,
+              "latency_ms": 6726.212
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 18.842,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update",
+        "finance-tools__thesis_get"
+      ],
+      "model_calls": 6,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.007771536000000001
+    }
+  ],
+  "estimated_cost_usd": 0.007771536000000001
+}

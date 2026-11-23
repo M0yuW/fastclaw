@@ -1,0 +1,76 @@
+{
+  "masked_id": "J-d9ea0e54a3a5b5f4",
+  "reviewer": "Codex response-blind mini case study diagnostic v1",
+  "coverage": {"final_answer": true, "persisted_review": true},
+  "scores": {"F": 0, "I": 1, "R": 0, "S": 2, "U": 1},
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "consolidated revenue was broadly unchanged while total operating expenses rose ... GAAP operating income, pretax income, consolidated net income and net income attributable to Equifax all fell",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_operating_revenue:+7.9", "source_packet.rows:gaap_total_operating_expenses:+54.4", "source_packet.rows:gaap_operating_income:-46.5", "source_packet.rows:gaap_pretax_income:-46.0", "source_packet.rows:gaap_consolidated_net_income:-31.1", "source_packet.rows:gaap_net_income_attributable_equifax:-31.1"]
+    },
+    {
+      "location": "final_answer",
+      "span": "Workforce Solutions revenue declined on lower Verification Services, while U.S. Information Solutions and International revenue both increased",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:segment_workforce_solutions_revenue:-12.7", "source_packet.rows:segment_verification_services_revenue:-13.5", "source_packet.rows:segment_us_information_solutions_revenue:+8.7", "source_packet.rows:segment_international_revenue:+11.9"]
+    },
+    {
+      "location": "final_answer",
+      "span": "The tax provision line moved toward a larger provision, which is not a smaller tax drag and does not mitigate the pretax decline",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_provision:-68.7_to_-53.8", "source_packet.rows:gaap_income_tax_provision:signed_delta_+14.9", "source_packet.rows:gaap_pretax_income:-46.0", "source_packet.rows:gaap_consolidated_net_income:-31.1"]
+    },
+    {
+      "location": "final_answer",
+      "span": "the effective rate cannot be assessed without the full tax note",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_pretax_income:261.3_to_215.3", "source_packet.rows:gaap_income_tax_provision:-68.7_to_-53.8", "arithmetic:displayed_tax_to_pretax_ratio_about_26.3_to_25.0_percent"]
+    },
+    {
+      "location": "final_answer",
+      "span": "no source-explicit driver links the expense increase to any cause, so causal attribution remains unresolved",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_sga_expense:+49.9", "source_packet.limitations:selected_rows_not_complete_filing"]
+    },
+    {
+      "location": "final_answer",
+      "span": "asserted_state: decision_hold=true, actionability=blocked, alert_status=acknowledged",
+      "verdict": "supported",
+      "evidence_refs": ["persisted_theses_and_reviews[0].thesis.decision_hold:true", "persisted_theses_and_reviews[0].thesis.actionability:blocked", "persisted_alerts[0].status:acknowledged"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "The expense growth outpaced revenue, so GAAP operating income, pretax income, consolidated net income and net income attributable to Equifax all declined sequentially",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_operating_revenue:+7.9", "source_packet.rows:gaap_total_operating_expenses:+54.4", "arithmetic:+7.9_minus_54.4_equals_-46.5", "source_packet.rows:gaap_net_income_attributable_equifax:-31.1"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "The tax provision line moved in the direction of a larger provision, which is not a smaller tax drag and does not offset the pretax decline",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_provision:-68.7_to_-53.8", "arithmetic:tax_signed_contribution_+14.9_offsets_part_of_pretax_-46.0"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review rather than upgraded or invalidated; conviction and status are preserved and the thesis remains blocked",
+      "verdict": "supported",
+      "evidence_refs": ["persisted_theses_and_reviews[0].reviews[0].decision:needs_review", "persisted_theses_and_reviews[0].thesis.status:active", "persisted_theses_and_reviews[0].thesis.conviction:3", "persisted_theses_and_reviews[0].thesis.actionability:blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 2,
+      "code": "signed_tax_provision_contribution_reversed",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_provision:-68.7_to_-53.8", "source_packet.rows:gaap_consolidated_net_income:-31.1"]
+    },
+    {
+      "claim_index": 7,
+      "code": "persisted_review_repeats_tax_sign_error",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_provision:signed_delta_+14.9", "persisted_theses_and_reviews[0].reviews[0].rationale"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The operating bridge and mixed segment directions are useful and correct. The final answer and saved rationale nevertheless reverse the signed tax-provision movement: the expense amount fell from 68.7 to 53.8 million, mitigating the 46.0 million pretax decline by 14.9 million in the displayed net-income bridge. The displayed pretax and tax figures also allow a descriptive effective-rate calculation; they do not by themselves explain its cause. The ledger is correctly blocked, so state alignment passes, but the financial interpretation has a material error. This is a selected, response-blind diagnostic observation, not independent expert review or a population-rate result."
+}

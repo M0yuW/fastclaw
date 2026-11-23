@@ -1,0 +1,214 @@
+{
+  "observation_id": "FS2-SQ-r4",
+  "case_id": "SQ",
+  "repetition": 4,
+  "workflow": "S",
+  "offline_frozen_adapter": true,
+  "synthetic_source_data": false,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "source_locked_tool_result": true,
+    "thesis_count_and_symbol": true,
+    "source_and_period": true,
+    "historical_preliminary_label": true,
+    "valuation_boundary": true,
+    "review_date_safe": true,
+    "no_unexpected_state_or_trade": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 2,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "screen_tool_payload": {
+      "schema_version": "finance.tool.v1",
+      "ok": true,
+      "request_id": "63ed7e15-4b3f-431d-8a35-14fbe28ce86b",
+      "as_of": "2026-10-22T11:58:21Z",
+      "stale_after": "2026-10-22T17:58:21Z",
+      "data": {
+        "fixture_id": "FINTECH-SEC-SCREEN-HOLDOUT-v1",
+        "synthetic": false,
+        "offline_frozen_adapter": true,
+        "not_live_market_data": true,
+        "scope": "historical single-issuer disclosure screen and preliminary research; offline SEC-source adapter, not live market data or a contemporaneous peer ranking",
+        "basis_warning": "Issuer top-line labels differ (total revenue versus total net revenues). Apply only each issuer's own YoY disclosure or matched prior-year top-line calculation. Never rank issuers by these rates or substitute another metric for the threshold.",
+        "criteria": {
+          "reported_top_line_revenue_yoy_min_percent": 20.0
+        },
+        "excluded_dimensions": [
+          "share_price",
+          "valuation",
+          "analyst_target",
+          "future_return",
+          "current_market_data"
+        ],
+        "results": [],
+        "rejected": [
+          {
+            "symbol": "SQ",
+            "company": "Block, Inc.",
+            "period": "Q3 2024 ended 2024-09-30",
+            "release_date": "2024-11-07",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1512673/000119312524253135/d835206dex991.htm",
+            "source_sha256": "574450bf335c828821d52907ad57310ef91258294d967deb6a41e9027766a342",
+            "local_path": ".cache/sources/block-q3-2024-sec.htm",
+            "reported": {
+              "top_line_label": "total_net_revenue",
+              "total_net_revenue_q3_2024_usd_billion_rounded": 5.98,
+              "top_line_revenue_yoy_percent_reported": 6,
+              "revenue_excluding_bitcoin_q3_2024_usd_billion_rounded": 3.55,
+              "revenue_excluding_bitcoin_yoy_percent_reported": 11,
+              "gross_profit_q3_2024_usd_billion_rounded": 2.25,
+              "gross_profit_yoy_percent_reported": 19,
+              "operating_income_q3_2024_usd_million": 323,
+              "net_income_attributable_common_q3_2024_usd_million": 284
+            },
+            "fact_ids": [
+              "SQ-Q3-NETREV",
+              "SQ-Q3-NETREV-YOY",
+              "SQ-Q3-REV-EXBTC",
+              "SQ-Q3-REV-EXBTC-YOY",
+              "SQ-Q3-GROSSPROFIT",
+              "SQ-Q3-GROSSPROFIT-YOY",
+              "SQ-Q3-OPINCOME",
+              "SQ-Q3-NETINCOME-COMMON"
+            ],
+            "locators": [
+              "Q3 2024 shareholder letter revenue and gross profit discussion",
+              "Q3 operating income and net income discussion"
+            ],
+            "reason": "disclosure_criteria_not_met",
+            "failed_criteria": [
+              "reported_top_line_revenue_yoy_below_threshold"
+            ]
+          }
+        ],
+        "passed": 0,
+        "failed": 1
+      },
+      "sources": [
+        {
+          "name": "local_evaluation_fixture",
+          "kind": "deterministic_screen"
+        }
+      ],
+      "quality": {
+        "completeness": 0.9767,
+        "flags": []
+      },
+      "errors": [],
+      "cache": {
+        "hit": false,
+        "ttl_seconds": 21600
+      }
+    },
+    "tool_calls": [
+      "finance-tools__screen_stocks"
+    ],
+    "trace": {
+      "model_calls": 2,
+      "tool_calls": 1,
+      "tool_results": 1,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "Run a historical, SEC-disclosure-only candidate-research workflow for US SQ. Call finance-tools__screen_stocks with require_complete=false. This frozen offline source adapter screens only issuer-reported top-line revenue YoY growth >=20%; it is not a live quote or a seven-factor completeness screen. Read the retained or rejected item, its reported fields, exact failed criteria, source URL and full SHA-256, release date, reporting period, units and metric basis. Independently identify the most material counterpoint from a DIFFERENT supplied field; do not merely restate the screen outcome. If retained, save exactly one HISTORICAL PRELIMINARY candidate thesis with full source URL/hash in structured evidence, key numbers, the counterpoint, a discriminating follow-up question, and an explicit missing price/valuation boundary. If rejected, save no thesis, explain the exact failed criterion and why an alternate metric cannot replace it under this rule, but note any separately useful research signal. Do not trade, use live market tools, rank these issuers on a common date, or claim that passing this one rule means an attractive investment. Do not claim packet omissions are SEC filing omissions. Omit next_review_at unless genuinely future-dated.",
+      "response": {
+        "id": "chatcmpl-1792670300750794000",
+        "object": "chat.completion",
+        "created": 1792670300,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "**Outcome: SQ was rejected. No thesis saved.**\n\n## Screen result (historical, SEC-disclosure-only)\n\n| Field | Value |\n|---|---|\n| Symbol / issuer | SQ — Block, Inc. |\n| Period | Q3 2024, ended 2024-09-30 |\n| Release date | 2024-11-07 |\n| Source | https://www.sec.gov/Archives/edgar/data/1512673/000119312524253135/d835206dex991.htm |\n| SHA-256 | `574450bf335c828821d52907ad57310ef91258294d967deb6a41e9027766a342` |\n| Rule | Issuer-reported top-line revenue YoY ≥ 20.0% |\n| Result | `rejected` — `disclosure_criteria_not_met` |\n| Failed criterion | `reported_top_line_revenue_yoy_below_threshold` |\n\n**Reported fields (as disclosed, rounded, USD):**\n- Top-line label: `total_net_revenue` — Q3 2024 **$5.98B**, YoY **+6%** (fact `SQ-Q3-NETREV`, `SQ-Q3-NETREV-YOY`)\n- Revenue excluding bitcoin — **$3.55B**, YoY **+11%** (`SQ-Q3-REV-EXBTC`, `SQ-Q3-REV-EXBTC-YOY`)\n- Gross profit — **$2.25B**, YoY **+19%** (`SQ-Q3-GROSSPROFIT`, `SQ-Q3-GROSSPROFIT-YOY`)\n- Operating income — **$323M** (`SQ-Q3-OPINCOME`)\n- Net income attributable to common — **$284M** (`SQ-Q3-NETINCOME-COMMON`)\n\n**Why the criterion fails, and why no substitute metric can rescue it:** the rule is defined on the issuer's own reported top-line revenue YoY. Block's own top-line label is `total_net_revenue`, and its own disclosed YoY for that line is 6%, which is 14 percentage points below the 20% threshold. The alternate figures in the packet — revenue excluding bitcoin (+11%) and gross profit (+19%) — are *different metrics on a different basis*, not restatements of the top line. Substituting either would change the rule's subject rather than satisfy it, and the adapter's own basis warning explicitly forbids metric substitution for the threshold. Note also that even the most favorable alternate, gross profit at +19%, still falls short of 20%. No thesis is saved, per the workflow rule for rejected items.\n\n## Independent counterpoint (from a different supplied field)\n\nThe most material tension in this packet is **not** the revenue shortfall — it is the divergence between **gross profit growth (+19%) and top-line growth (+6%)**, read against **positive operating income of $323M and net income to common of $284M**. A 13-point gap between gross profit and revenue growth, alongside positive GAAP operating and net income, is consistent with a mix shift away from low-margin bitcoin revenue toward higher-margin gross profit, and with operating leverage. That is a genuinely different signal from the screen outcome: the screen says \"top line grew too slowly,\" while the packet's profitability fields suggest the *quality* of the growth may be improving even as its *rate* decelerates. This is a hypothesis drawn from the disclosed fields, not a conclusion — the packet does not supply a segment-level margin bridge, and I am not asserting a cause.\n\n## Separately useful research signal (not a pass)\n\nBlock's revenue-excluding-bitcoin line (+11%) and gross profit line (+19%) are the more economically meaningful growth measures for this business model than total net revenue, which is inflated by pass-through bitcoin revenue. A future screen framed on gross profit or ex-bitcoin revenue would treat this issuer very differently. That is a note for research design only — it does not convert this rejection into a pass under the current rule.\n\n## Discriminating follow-up question\n\n*What drove the gap between +19% gross profit growth and +6% total net revenue growth in Q3 2024 — specifically, how much came from bitcoin revenue mix versus from margin expansion in Square/Afterpay and Cash App — and is that gross-profit growth rate durable into subsequent quarters?* Answering this requires the segment-level disclosure and a matched prior-year comparison, which this packet does not contain.\n\n## Explicit boundaries\n\n- **Missing price/valuation:** this packet contains no share price, market capitalization, valuation multiple, analyst target, or expected return. Nothing here supports any view on whether SQ is attractively valued. Passing or failing this single revenue rule says nothing about investment attractiveness.\n- **No live data, no trading:** this was an offline frozen SEC-source adapter, not live market data. No trades placed, no live market tools used.\n- **No cross-issuer ranking:** only one issuer was screened; no common-date peer ranking is implied or possible.\n- **Packet vs. filing:** the absence of segment detail or a margin bridge above reflects what this packet supplies, not an omission by Block from its SEC filing.\n- **No thesis persisted**, and no `next_review_at` set, since no thesis record was created."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 7145,
+          "completion_tokens": 1207,
+          "total_tokens": 8352
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_QNuN2r9ZbaLA5GHbR1v24844",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"SQ\"], \"require_complete\": false}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_QNuN2r9ZbaLA5GHbR1v24844",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"63ed7e15-4b3f-431d-8a35-14fbe28ce86b\",\"as_of\":\"2026-10-22T11:58:21Z\",\"stale_after\":\"2026-10-22T17:58:21Z\",\"data\":{\"fixture_id\":\"FINTECH-SEC-SCREEN-HOLDOUT-v1\",\"synthetic\":false,\"offline_frozen_adapter\":true,\"not_live_market_data\":true,\"scope\":\"historical single-issuer disclosure screen and preliminary research; offline SEC-source adapter, not live market data or a contemporaneous peer ranking\",\"basis_warning\":\"Issuer top-line labels differ (total revenue versus total net revenues). Apply only each issuer's own YoY disclosure or matched prior-year top-line calculation. Never rank issuers by these rates or substitute another metric for the threshold.\",\"criteria\":{\"reported_top_line_revenue_yoy_min_percent\":20.0},\"excluded_dimensions\":[\"share_price\",\"valuation\",\"analyst_target\",\"future_return\",\"current_market_data\"],\"results\":[],\"rejected\":[{\"symbol\":\"SQ\",\"company\":\"Block, Inc.\",\"period\":\"Q3 2024 ended 2024-09-30\",\"release_date\":\"2024-11-07\",\"source_url\":\"https://www.sec.gov/Archives/edgar/data/1512673/000119312524253135/d835206dex991.htm\",\"source_sha256\":\"574450bf335c828821d52907ad57310ef91258294d967deb6a41e9027766a342\",\"local_path\":\".cache/sources/block-q3-2024-sec.htm\",\"reported\":{\"top_line_label\":\"total_net_revenue\",\"total_net_revenue_q3_2024_usd_billion_rounded\":5.98,\"top_line_revenue_yoy_percent_reported\":6,\"revenue_excluding_bitcoin_q3_2024_usd_billion_rounded\":3.55,\"revenue_excluding_bitcoin_yoy_percent_reported\":11,\"gross_profit_q3_2024_usd_billion_rounded\":2.25,\"gross_profit_yoy_percent_reported\":19,\"operating_income_q3_2024_usd_million\":323,\"net_income_attributable_common_q3_2024_usd_million\":284},\"fact_ids\":[\"SQ-Q3-NETREV\",\"SQ-Q3-NETREV-YOY\",\"SQ-Q3-REV-EXBTC\",\"SQ-Q3-REV-EXBTC-YOY\",\"SQ-Q3-GROSSPROFIT\",\"SQ-Q3-GROSSPROFIT-YOY\",\"SQ-Q3-OPINCOME\",\"SQ-Q3-NETINCOME-COMMON\"],\"locators\":[\"Q3 2024 shareholder letter revenue and gross profit discussion\",\"Q3 operating income and net income discussion\"],\"reason\":\"disclosure_criteria_not_met\",\"failed_criteria\":[\"reported_top_line_revenue_yoy_below_threshold\"]}],\"passed\":0,\"failed\":1},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":0.9767,\"flags\":[]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3153,
+              "completion_tokens": 88,
+              "total_tokens": 3241,
+              "estimated_cost_usd": 0.00046606,
+              "priced": true,
+              "latency_ms": 824.308
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3992,
+              "completion_tokens": 1119,
+              "total_tokens": 5111,
+              "cache_read_tokens": 3200,
+              "estimated_cost_usd": 0.0004331600000000001,
+              "priced": true,
+              "latency_ms": 5734.634
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 6.627,
+      "tool_calls": [
+        "finance-tools__screen_stocks"
+      ],
+      "model_calls": 2,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.00089922
+    }
+  ],
+  "estimated_cost_usd": 0.00089922
+}

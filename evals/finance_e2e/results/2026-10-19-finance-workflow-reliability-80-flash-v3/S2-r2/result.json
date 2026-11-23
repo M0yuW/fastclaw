@@ -1,0 +1,124 @@
+{
+  "observation_id": "S2-r2",
+  "case_id": "S2",
+  "repetition": 2,
+  "workflow": "S",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "thesis_selection": true,
+    "no_alerts": true,
+    "no_trade_tool": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 2,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "synthetic_condition": "",
+    "trace": {
+      "model_calls": 2,
+      "tool_calls": 1,
+      "tool_results": 1,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "This is a synthetic, non-investment candidate-screening case. Call finance-tools__screen_stocks with require_complete=true for FICB and FICD. Read retained and rejected candidates. Create a preliminary thesis only if the available evidence supports one; include exact tool values, missingness boundary, and synthetic provenance. Otherwise explain why no thesis is justified. Do not trade or call live market-data tools. Case S2.",
+      "response": {
+        "id": "chatcmpl-1792417327424240000",
+        "object": "chat.completion",
+        "created": 1792417327,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "## Screen Result — Case S2 (synthetic)\n\n**Tool:** `finance-tools__screen_stocks`, market `US`, symbols `FICB`, `FICD`, `require_complete=true`\n**Response:** `ok: true`, `request_id: 351b1c47-5d0d-4255-bd4c-fc988e7100d9`, `as_of: 2026-10-19T13:42:08Z`, `stale_after: 2026-10-19T19:42:08Z`\n**Provenance:** `fixture_id: synthetic-screen-v2`, `synthetic: true`; source `local_evaluation_fixture` (kind `deterministic_screen`); `cache.hit: false`, `ttl_seconds: 21600`\n\n### Retained candidates\nNone. `passed: 0`.\n\n### Rejected candidates\n| Symbol | Reason | Missing metrics |\n|---|---|---|\n| FICB | `insufficient_data` | `free_cash_flow` |\n| FICD | `insufficient_data` | `earnings_growth_yoy` |\n\n`failed: 2`. Runtime quality policy: `require_complete: true`; required metrics were `pe_trailing`, `revenue_growth_yoy`, `earnings_growth_yoy`, `debt_to_equity`, `free_cash_flow`, `roic`, `analyst_upside_pct`; `moved_to_rejected: 2`. Quality block: `completeness: 0.95`, flag `incomplete_screen_candidates_rejected`. No errors returned.\n\n### Missingness boundary\n- The screen returned **no metric values at all** — only the names of the missing metrics. There is no P/E, revenue growth, earnings growth, leverage, FCF, ROIC, or analyst-upside figure for either symbol in this response.\n- FICB is incomplete on one required metric (`free_cash_flow`); FICD is incomplete on one required metric (`earnings_growth_yoy`). Both were rejected rather than passed, so neither has a complete metric set.\n- The `completeness: 0.95` figure is a fixture-level quality statistic, not a per-symbol metric completeness measure, and cannot be used to infer that either candidate is nearly complete.\n- No filing dates, period labels, or accounting-basis labels were supplied, so no period or basis can be attached to any figure.\n\n### Thesis decision: no thesis created\nNo preliminary thesis is justified for FICB or FICD. Under the analysis protocol, a thesis requires the source evidence the screen is meant to supply, and here the screen produced zero retained candidates and zero metric values. Writing a thesis would require inventing assumptions, catalysts, or invalidation levels that no supplied evidence supports — which the protocol forbids. I did not call `thesis_save`, and I did not substitute prior knowledge or live market data for the missing fields.\n\n### What would unblock a thesis\nA re-run or supplementary deterministic screen that returns complete metric sets for the specific missing fields — `free_cash_flow` for FICB and `earnings_growth_yoy` for FICD — together with period labels and accounting basis, so the values can be cited exactly rather than inferred.\n\n*Synthetic, non-investment case. No trades placed; no live market-data tools called.*"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 5742,
+          "completion_tokens": 832,
+          "total_tokens": 6574
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_HjvdLTIh7foLaApTS9pN6915",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"FICB\", \"FICD\"], \"require_complete\": true}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_HjvdLTIh7foLaApTS9pN6915",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"351b1c47-5d0d-4255-bd4c-fc988e7100d9\",\"as_of\":\"2026-10-19T13:42:08Z\",\"stale_after\":\"2026-10-19T19:42:08Z\",\"data\":{\"fixture_id\":\"synthetic-screen-v2\",\"synthetic\":true,\"results\":[],\"rejected\":[{\"symbol\":\"FICB\",\"reason\":\"insufficient_data\",\"missing_metrics\":[\"free_cash_flow\"]},{\"symbol\":\"FICD\",\"reason\":\"insufficient_data\",\"missing_metrics\":[\"earnings_growth_yoy\"]}],\"passed\":0,\"failed\":2,\"runtime_quality_policy\":{\"require_complete\":true,\"required_metrics\":[\"pe_trailing\",\"revenue_growth_yoy\",\"earnings_growth_yoy\",\"debt_to_equity\",\"free_cash_flow\",\"roic\",\"analyst_upside_pct\"],\"moved_to_rejected\":2}},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":0.95,\"flags\":[\"incomplete_screen_candidates_rejected\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2669,
+              "completion_tokens": 97,
+              "total_tokens": 2766,
+              "estimated_cost_usd": 0.0004008200000000001,
+              "priced": true,
+              "latency_ms": 926.368
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3073,
+              "completion_tokens": 735,
+              "total_tokens": 3808,
+              "cache_read_tokens": 2688,
+              "estimated_cost_usd": 0.00026722640000000005,
+              "priced": true,
+              "latency_ms": 3567.569
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 4.591,
+      "tool_calls": [
+        "finance-tools__screen_stocks"
+      ],
+      "model_calls": 2,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0006680464000000002
+    }
+  ],
+  "estimated_cost_usd": 0.0006680464000000002
+}

@@ -1,0 +1,352 @@
+{
+  "observation_id": "FS2-COIN-r3",
+  "case_id": "COIN",
+  "repetition": 3,
+  "workflow": "S",
+  "offline_frozen_adapter": true,
+  "synthetic_source_data": false,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "source_locked_tool_result": true,
+    "thesis_count_and_symbol": true,
+    "source_and_period": true,
+    "historical_preliminary_label": true,
+    "valuation_boundary": true,
+    "review_date_safe": true,
+    "no_unexpected_state_or_trade": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 4,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_61808dc2ca45492f9dd7",
+          "market": "US",
+          "symbol": "COIN",
+          "title": "COIN — Historical preliminary candidate (Q3 2024 SEC disclosure screen pass)",
+          "thesis": "HISTORICAL PRELIMINARY CANDIDATE ONLY. Coinbase Global, Inc. (COIN) passed a single frozen, offline SEC-disclosure screen rule: issuer-reported top-line revenue YoY growth >= 20%. Per the Q3 2024 shareholder letter (period Q3 2024 ended 2024-09-30, released 2024-10-30), total revenue was $1,205,193 thousand versus $674,148 thousand in Q3 2023, a derived YoY growth of 78.8% [COIN-Q3-TOTALREV-2024, COIN-Q3-TOTALREV-2023]. This is a disclosure-based observation, not evidence of an attractive investment. Passing one top-line growth rule says nothing about profitability durability, revenue quality, valuation, or expected return. No share price, valuation multiple, analyst target, or market-cap data was supplied or used; the screen explicitly excludes share_price, valuation, analyst_target, future_return, and current_market_data. No conclusion about valuation or attractiveness is drawn or implied.",
+          "status": "researching",
+          "conviction": 1,
+          "decision_hold": false,
+          "actionability": "available",
+          "decision_hold_alert_id": null,
+          "assumptions": [
+            "The 78.8% YoY figure is a derived calculation from two issuer-reported total_revenue values in the same filing (Q3 2024 vs Q3 2023), not a separately stated growth rate.",
+            "Both revenue figures are on the same issuer basis (total_revenue) and the same units (USD thousands), so the YoY comparison is internally consistent.",
+            "The screen's only criterion is reported top-line revenue YoY >= 20%; no other financial, quality, or valuation dimension was tested.",
+            "The filing is a historical Q3 2024 disclosure; nothing in this packet speaks to any later period or to current conditions."
+          ],
+          "catalysts": [
+            "Not assessed. This is a historical preliminary candidate record; no forward catalyst was identified from the supplied evidence and none is asserted."
+          ],
+          "invalidations": [
+            "A restatement or correction of Q3 2024 or Q3 2023 total revenue that reduces derived YoY growth below 20%.",
+            "Evidence that the two revenue figures are not comparable (different basis, units, or scope), which would void the derived 78.8%.",
+            "Evidence that the retained packet's revenue figures do not match the cited SEC filing at the stated URL and SHA-256."
+          ],
+          "required_event_metrics": [
+            "total_revenue"
+          ],
+          "evidence": [
+            {
+              "fact_ids": [
+                "COIN-Q3-TOTALREV-2024",
+                "COIN-Q3-TOTALREV-2023"
+              ],
+              "metric": "total_revenue",
+              "note": "Issuer-reported total revenue, USD thousands. Q3 2024: 1,205,193; Q3 2023: 674,148. Derived YoY = 78.8%. Basis: issuer top-line label 'total_revenue'.",
+              "period": "Q3 2024 ended 2024-09-30",
+              "release_date": "2024-10-30",
+              "source_sha256": "f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52",
+              "source_url": "https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm",
+              "type": "sec_filing"
+            },
+            {
+              "fact_ids": [
+                "COIN-Q3-REV-QOQ",
+                "COIN-Q3-TRANREV-QOQ"
+              ],
+              "metric": "sequential_change",
+              "note": "COUNTERPOINT (different supplied field): total revenue declined 17% QoQ and transaction revenue declined 27% QoQ in the same quarter that YoY growth was 78.8%. The YoY rate is measured against a weak prior-year base; the sequential direction is negative and transaction revenue — the more cyclical line — fell faster than total revenue.",
+              "period": "Q3 2024 ended 2024-09-30",
+              "release_date": "2024-10-30",
+              "source_sha256": "f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52",
+              "source_url": "https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm",
+              "type": "sec_filing"
+            },
+            {
+              "fact_ids": [
+                "COIN-Q3-NETINCOME",
+                "COIN-Q3-CRYPTOLOSS"
+              ],
+              "metric": "net_income_and_pretax_crypto_portfolio_loss",
+              "note": "Supporting context: net income of ~$75 million (rounded, USD millions) alongside a ~$121 million (rounded) pretax loss on crypto investment portfolio in Q3 2024. Rounded figures; the pretax portfolio loss exceeds reported net income, indicating non-operating items materially affect the bottom line.",
+              "period": "Q3 2024 ended 2024-09-30",
+              "release_date": "2024-10-30",
+              "source_sha256": "f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52",
+              "source_url": "https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm",
+              "type": "sec_filing"
+            },
+            {
+              "fact_ids": [],
+              "metric": "screen_metadata",
+              "note": "Screen: finance-tools__screen_stocks, market US, require_complete=false, criterion reported_top_line_revenue_yoy_min_percent=20.0. Result: passed=1, failed=0, rejected=[]. Adapter: offline_frozen_adapter=true, not_live_market_data=true, fixture FINTECH-SEC-SCREEN-HOLDOUT-v1. Excluded dimensions: share_price, valuation, analyst_target, future_return, current_market_data.",
+              "type": "screen_run"
+            }
+          ],
+          "next_review_at": null,
+          "last_review_at": null,
+          "created_at": "2026-10-22T11:56:49Z",
+          "updated_at": "2026-10-22T11:56:49Z",
+          "version": 1,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "finance-workflow-FS2-COIN-r3"
+        },
+        "reviews": []
+      }
+    ],
+    "alerts": []
+  },
+  "extras": {
+    "screen_tool_payload": {
+      "schema_version": "finance.tool.v1",
+      "ok": true,
+      "request_id": "7621a673-e24c-4d77-99d1-afe424795b04",
+      "as_of": "2026-10-22T11:56:41Z",
+      "stale_after": "2026-10-22T17:56:41Z",
+      "data": {
+        "fixture_id": "FINTECH-SEC-SCREEN-HOLDOUT-v1",
+        "synthetic": false,
+        "offline_frozen_adapter": true,
+        "not_live_market_data": true,
+        "scope": "historical single-issuer disclosure screen and preliminary research; offline SEC-source adapter, not live market data or a contemporaneous peer ranking",
+        "basis_warning": "Issuer top-line labels differ (total revenue versus total net revenues). Apply only each issuer's own YoY disclosure or matched prior-year top-line calculation. Never rank issuers by these rates or substitute another metric for the threshold.",
+        "criteria": {
+          "reported_top_line_revenue_yoy_min_percent": 20.0
+        },
+        "excluded_dimensions": [
+          "share_price",
+          "valuation",
+          "analyst_target",
+          "future_return",
+          "current_market_data"
+        ],
+        "results": [
+          {
+            "symbol": "COIN",
+            "company": "Coinbase Global, Inc.",
+            "period": "Q3 2024 ended 2024-09-30",
+            "release_date": "2024-10-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm",
+            "source_sha256": "f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52",
+            "local_path": ".cache/sources/coinbase-q3-2024-sec.htm",
+            "reported": {
+              "top_line_label": "total_revenue",
+              "total_revenue_q3_2024_usd_thousand": 1205193,
+              "total_revenue_q3_2023_usd_thousand": 674148,
+              "top_line_revenue_yoy_percent_derived": 78.8,
+              "total_revenue_qoq_percent_reported": -17,
+              "transaction_revenue_qoq_percent_reported": -27,
+              "net_income_q3_2024_usd_million_rounded": 75,
+              "pretax_crypto_investment_portfolio_loss_usd_million_rounded": 121
+            },
+            "fact_ids": [
+              "COIN-Q3-TOTALREV-2024",
+              "COIN-Q3-TOTALREV-2023",
+              "COIN-Q3-REV-QOQ",
+              "COIN-Q3-TRANREV-QOQ",
+              "COIN-Q3-NETINCOME",
+              "COIN-Q3-CRYPTOLOSS"
+            ],
+            "locators": [
+              "Q3 2024 shareholder letter page 3 operating summary",
+              "Q3 2024 condensed consolidated statements of operations"
+            ]
+          }
+        ],
+        "rejected": [],
+        "passed": 1,
+        "failed": 0
+      },
+      "sources": [
+        {
+          "name": "local_evaluation_fixture",
+          "kind": "deterministic_screen"
+        }
+      ],
+      "quality": {
+        "completeness": 0.9737,
+        "flags": []
+      },
+      "errors": [],
+      "cache": {
+        "hit": false,
+        "ttl_seconds": 21600
+      }
+    },
+    "tool_calls": [
+      "finance-tools__screen_stocks",
+      "finance-tools__thesis_list",
+      "finance-tools__thesis_save"
+    ],
+    "trace": {
+      "model_calls": 4,
+      "tool_calls": 3,
+      "tool_results": 3,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "Run a historical, SEC-disclosure-only candidate-research workflow for US COIN. Call finance-tools__screen_stocks with require_complete=false. This frozen offline source adapter screens only issuer-reported top-line revenue YoY growth >=20%; it is not a live quote or a seven-factor completeness screen. Read the retained or rejected item, its reported fields, exact failed criteria, source URL and full SHA-256, release date, reporting period, units and metric basis. Independently identify the most material counterpoint from a DIFFERENT supplied field; do not merely restate the screen outcome. If retained, save exactly one HISTORICAL PRELIMINARY candidate thesis with full source URL/hash in structured evidence, key numbers, the counterpoint, a discriminating follow-up question, and an explicit missing price/valuation boundary. If rejected, save no thesis, explain the exact failed criterion and why an alternate metric cannot replace it under this rule, but note any separately useful research signal. Do not trade, use live market tools, rank these issuers on a common date, or claim that passing this one rule means an attractive investment. Do not claim packet omissions are SEC filing omissions. Omit next_review_at unless genuinely future-dated.",
+      "response": {
+        "id": "chatcmpl-1792670200287139000",
+        "object": "chat.completion",
+        "created": 1792670200,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# COIN — Historical SEC-Disclosure Candidate Research\n\n## 1. Screen run and outcome\n\n`finance-tools__screen_stocks` was called once with `market=US`, `symbols=[\"COIN\"]`, `require_complete=false`.\n\n- **Outcome: RETAINED** (passed=1, failed=0, rejected=[])\n- **Adapter:** `offline_frozen_adapter=true`, `not_live_market_data=true`, fixture `FINTECH-SEC-SCREEN-HOLDOUT-v1`\n- **Sole criterion:** `reported_top_line_revenue_yoy_min_percent = 20.0`\n- **Excluded dimensions:** share_price, valuation, analyst_target, future_return, current_market_data\n\n## 2. Retained item and reported fields\n\n| Field | Value |\n|---|---|\n| Issuer | Coinbase Global, Inc. (COIN) |\n| Reporting period | Q3 2024, ended 2024-09-30 |\n| Release date | 2024-10-30 |\n| Top-line label (basis) | `total_revenue` |\n| Total revenue Q3 2024 | $1,205,193 thousand |\n| Total revenue Q3 2023 | $674,148 thousand |\n| Derived YoY growth | 78.8% |\n| Source URL | https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm |\n| Full SHA-256 | `f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52` |\n| Locators | Q3 2024 shareholder letter p.3 operating summary; condensed consolidated statements of operations |\n| Fact IDs | COIN-Q3-TOTALREV-2024, COIN-Q3-TOTALREV-2023, COIN-Q3-REV-QOQ, COIN-Q3-TRANREV-QOQ, COIN-Q3-NETINCOME, COIN-Q3-CRYPTOLOSS |\n\nNo criterion failed. The 78.8% is a **derived** figure from two issuer-reported values on the same basis and units, not a separately stated growth rate.\n\n## 3. Independent counterpoint (different supplied field)\n\nThe most material counterpoint comes from the **sequential** fields, not the YoY field: in the same quarter that YoY growth was 78.8%, **total revenue fell 17% QoQ and transaction revenue fell 27% QoQ** [COIN-Q3-REV-QOQ, COIN-Q3-TRANREV-QOQ]. Two implications follow directly from the packet:\n\n1. The 78.8% YoY rate is measured against a weak prior-year base; it describes a rebound from a depressed quarter, not a monotonic growth trajectory.\n2. Transaction revenue — the more cyclical line — declined faster than total revenue, so the mix shifted toward less transaction-dependent revenue within a shrinking top line.\n\nA secondary, weaker signal: net income of ~$75 million (rounded) sat alongside a ~$121 million (rounded) pretax crypto investment portfolio loss [COIN-Q3-NETINCOME, COIN-Q3-CRYPTOLOSS]. Because the pretax portfolio loss exceeds reported net income, non-operating items materially affect the bottom line. These are rounded figures and should not be treated as precise.\n\n## 4. Saved thesis\n\nExactly one thesis was created: `th_61808dc2ca45492f9dd7`, status `researching`, conviction 1, version 1. It carries the full source URL and SHA-256 in structured evidence, the key numbers, the counterpoint, and the invalidation conditions. `next_review_at` was omitted (no genuinely future-dated review was established).\n\n## 5. Discriminating follow-up question\n\n**Is the Q3 2024 revenue decline a base-effect artifact of a cyclical trough, or the start of a contraction in transaction-driven revenue?** The discriminating test: compare the QoQ direction of transaction revenue against the QoQ direction of subscription-and-services revenue over the next two reported quarters. If transaction revenue keeps falling while the non-transaction line grows, the YoY pass reflects a rebound off a low base rather than durable growth — and the 20% rule would have been satisfied by a decelerating business.\n\n## 6. Explicit missing price/valuation boundary\n\n**No share price, market capitalization, valuation multiple, analyst target, or expected return was supplied or used.** The screen explicitly excludes these dimensions, and no live market tool was called. Consequently:\n\n- This record contains **no valuation assessment** and cannot support one.\n- Passing a single top-line growth rule is **not** evidence of an attractive investment; it is one disclosure fact about one historical quarter.\n- No ranking of issuers on a common date was performed — this is a single-issuer historical screen.\n\n## 7. Scope caveats\n\n- The packet is a frozen offline adapter output, not live market data; nothing here speaks to current conditions or any period after Q3 2024.\n- Absence of a field from this packet is a **packet** limitation, not an SEC filing omission. The filing may well contain data the adapter did not surface.\n- No trades were placed and no investment recommendation is made."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 18552,
+          "completion_tokens": 2857,
+          "total_tokens": 21409
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_Dn2ybkAIY1mUPy895POd1045",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"COIN\"], \"require_complete\": false}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_Dn2ybkAIY1mUPy895POd1045",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"7621a673-e24c-4d77-99d1-afe424795b04\",\"as_of\":\"2026-10-22T11:56:41Z\",\"stale_after\":\"2026-10-22T17:56:41Z\",\"data\":{\"fixture_id\":\"FINTECH-SEC-SCREEN-HOLDOUT-v1\",\"synthetic\":false,\"offline_frozen_adapter\":true,\"not_live_market_data\":true,\"scope\":\"historical single-issuer disclosure screen and preliminary research; offline SEC-source adapter, not live market data or a contemporaneous peer ranking\",\"basis_warning\":\"Issuer top-line labels differ (total revenue versus total net revenues). Apply only each issuer's own YoY disclosure or matched prior-year top-line calculation. Never rank issuers by these rates or substitute another metric for the threshold.\",\"criteria\":{\"reported_top_line_revenue_yoy_min_percent\":20.0},\"excluded_dimensions\":[\"share_price\",\"valuation\",\"analyst_target\",\"future_return\",\"current_market_data\"],\"results\":[{\"symbol\":\"COIN\",\"company\":\"Coinbase Global, Inc.\",\"period\":\"Q3 2024 ended 2024-09-30\",\"release_date\":\"2024-10-30\",\"source_url\":\"https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm\",\"source_sha256\":\"f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52\",\"local_path\":\".cache/sources/coinbase-q3-2024-sec.htm\",\"reported\":{\"top_line_label\":\"total_revenue\",\"total_revenue_q3_2024_usd_thousand\":1205193,\"total_revenue_q3_2023_usd_thousand\":674148,\"top_line_revenue_yoy_percent_derived\":78.8,\"total_revenue_qoq_percent_reported\":-17,\"transaction_revenue_qoq_percent_reported\":-27,\"net_income_q3_2024_usd_million_rounded\":75,\"pretax_crypto_investment_portfolio_loss_usd_million_rounded\":121},\"fact_ids\":[\"COIN-Q3-TOTALREV-2024\",\"COIN-Q3-TOTALREV-2023\",\"COIN-Q3-REV-QOQ\",\"COIN-Q3-TRANREV-QOQ\",\"COIN-Q3-NETINCOME\",\"COIN-Q3-CRYPTOLOSS\"],\"locators\":[\"Q3 2024 shareholder letter page 3 operating summary\",\"Q3 2024 condensed consolidated statements of operations\"]}],\"rejected\":[],\"passed\":1,\"failed\":0},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":0.9737,\"flags\":[]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_CYT2PQVZ1FOQrvqkgcd67644",
+              "name": "finance-tools__thesis_list",
+              "arguments": "{\"symbol\": \"COIN\", \"market\": \"US\"}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_CYT2PQVZ1FOQrvqkgcd67644",
+              "name": "finance-tools__thesis_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"1e25bc6f-e4e3-420a-8bc2-1f2ce6355350\",\"as_of\":\"2026-10-22T11:56:42Z\",\"stale_after\":null,\"data\":{\"theses\":[],\"count\":0,\"filters\":{\"limit\":50,\"market\":\"US\",\"symbol\":\"COIN\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_sZ5HKXPnpOO35W4NPDpV0410",
+              "name": "finance-tools__thesis_save",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"COIN\", \"title\": \"COIN — Historical preliminary candidate (Q3 2024 SEC disclosure screen pass)\", \"thesis\": \"HISTORICAL PRELIMINARY CANDIDATE ONLY. Coinbase Global, Inc. (COIN) passed a single frozen, offline SEC-disclosure screen rule: issuer-reported top-line revenue YoY growth >= 20%. Per the Q3 2024 shareholder letter (period Q3 2024 ended 2024-09-30, released 2024-10-30), total revenue was $1,205,193 thousand versus $674,148 thousand in Q3 2023, a derived YoY growth of 78.8% [COIN-Q3-TOTALREV-2024, COIN-Q3-TOTALREV-2023]. This is a disclosure-based observation, not evidence of an attractive investment. Passing one top-line growth rule says nothing about profitability durability, revenue quality, valuation, or expected return. No share price, valuation multiple, analyst target, or market-cap data was supplied or used; the screen explicitly excludes share_price, valuation, analyst_target, future_return, and current_market_data. No conclusion about valuation or attractiveness is drawn or implied.\", \"assumptions\": [\"The 78.8% YoY figure is a derived calculation from two issuer-reported total_revenue values in the same filing (Q3 2024 vs Q3 2023), not a separately stated growth rate.\", \"Both revenue figures are on the same issuer basis (total_revenue) and the same units (USD thousands), so the YoY comparison is internally consistent.\", \"The screen's only criterion is reported top-line revenue YoY >= 20%; no other financial, quality, or valuation dimension was tested.\", \"The filing is a historical Q3 2024 disclosure; nothing in this packet speaks to any later period or to current conditions.\"], \"catalysts\": [\"Not assessed. This is a historical preliminary candidate record; no forward catalyst was identified from the supplied evidence and none is asserted.\"], \"invalidations\": [\"A restatement or correction of Q3 2024 or Q3 2023 total revenue that reduces derived YoY growth below 20%.\", \"Evidence that the two revenue figures are not comparable (different basis, units, or scope), which would void the derived 78.8%.\", \"Evidence that the retained packet's revenue figures do not match the cited SEC filing at the stated URL and SHA-256.\"], \"evidence\": [{\"fact_ids\": [\"COIN-Q3-TOTALREV-2024\", \"COIN-Q3-TOTALREV-2023\"], \"metric\": \"total_revenue\", \"note\": \"Issuer-reported total revenue, USD thousands. Q3 2024: 1,205,193; Q3 2023: 674,148. Derived YoY = 78.8%. Basis: issuer top-line label 'total_revenue'.\", \"period\": \"Q3 2024 ended 2024-09-30\", \"release_date\": \"2024-10-30\", \"source_sha256\": \"f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52\", \"source_url\": \"https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm\", \"type\": \"sec_filing\"}, {\"fact_ids\": [\"COIN-Q3-REV-QOQ\", \"COIN-Q3-TRANREV-QOQ\"], \"metric\": \"sequential_change\", \"note\": \"COUNTERPOINT (different supplied field): total revenue declined 17% QoQ and transaction revenue declined 27% QoQ in the same quarter that YoY growth was 78.8%. The YoY rate is measured against a weak prior-year base; the sequential direction is negative and transaction revenue — the more cyclical line — fell faster than total revenue.\", \"period\": \"Q3 2024 ended 2024-09-30\", \"release_date\": \"2024-10-30\", \"source_sha256\": \"f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52\", \"source_url\": \"https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm\", \"type\": \"sec_filing\"}, {\"fact_ids\": [\"COIN-Q3-NETINCOME\", \"COIN-Q3-CRYPTOLOSS\"], \"metric\": \"net_income_and_pretax_crypto_portfolio_loss\", \"note\": \"Supporting context: net income of ~$75 million (rounded, USD millions) alongside a ~$121 million (rounded) pretax loss on crypto investment portfolio in Q3 2024. Rounded figures; the pretax portfolio loss exceeds reported net income, indicating non-operating items materially affect the bottom line.\", \"period\": \"Q3 2024 ended 2024-09-30\", \"release_date\": \"2024-10-30\", \"source_sha256\": \"f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52\", \"source_url\": \"https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm\", \"type\": \"sec_filing\"}, {\"fact_ids\": [], \"metric\": \"screen_metadata\", \"note\": \"Screen: finance-tools__screen_stocks, market US, require_complete=false, criterion reported_top_line_revenue_yoy_min_percent=20.0. Result: passed=1, failed=0, rejected=[]. Adapter: offline_frozen_adapter=true, not_live_market_data=true, fixture FINTECH-SEC-SCREEN-HOLDOUT-v1. Excluded dimensions: share_price, valuation, analyst_target, future_return, current_market_data.\", \"type\": \"screen_run\"}], \"conviction\": 1, \"status\": \"researching\", \"required_event_metrics\": [\"total_revenue\"]}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_sZ5HKXPnpOO35W4NPDpV0410",
+              "name": "finance-tools__thesis_save",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"52a73d4a-7bc7-47b0-9140-1e16a645c998\",\"as_of\":\"2026-10-22T11:56:49Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_61808dc2ca45492f9dd7\",\"market\":\"US\",\"symbol\":\"COIN\",\"title\":\"COIN — Historical preliminary candidate (Q3 2024 SEC disclosure screen pass)\",\"thesis\":\"HISTORICAL PRELIMINARY CANDIDATE ONLY. Coinbase Global, Inc. (COIN) passed a single frozen, offline SEC-disclosure screen rule: issuer-reported top-line revenue YoY growth >= 20%. Per the Q3 2024 shareholder letter (period Q3 2024 ended 2024-09-30, released 2024-10-30), total revenue was $1,205,193 thousand versus $674,148 thousand in Q3 2023, a derived YoY growth of 78.8% [COIN-Q3-TOTALREV-2024, COIN-Q3-TOTALREV-2023]. This is a disclosure-based observation, not evidence of an attractive investment. Passing one top-line growth rule says nothing about profitability durability, revenue quality, valuation, or expected return. No share price, valuation multiple, analyst target, or market-cap data was supplied or used; the screen explicitly excludes share_price, valuation, analyst_target, future_return, and current_market_data. No conclusion about valuation or attractiveness is drawn or implied.\",\"status\":\"researching\",\"conviction\":1,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[\"The 78.8% YoY figure is a derived calculation from two issuer-reported total_revenue values in the same filing (Q3 2024 vs Q3 2023), not a separately stated growth rate.\",\"Both revenue figures are on the same issuer basis (total_revenue) and the same units (USD thousands), so the YoY comparison is internally consistent.\",\"The screen's only criterion is reported top-line revenue YoY >= 20%; no other financial, quality, or valuation dimension was tested.\",\"The filing is a historical Q3 2024 disclosure; nothing in this packet speaks to any later period or to current conditions.\"],\"catalysts\":[\"Not assessed. This is a historical preliminary candidate record; no forward catalyst was identified from the supplied evidence and none is asserted.\"],\"invalidations\":[\"A restatement or correction of Q3 2024 or Q3 2023 total revenue that reduces derived YoY growth below 20%.\",\"Evidence that the two revenue figures are not comparable (different basis, units, or scope), which would void the derived 78.8%.\",\"Evidence that the retained packet's revenue figures do not match the cited SEC filing at the stated URL and SHA-256.\"],\"required_event_metrics\":[\"total_revenue\"],\"evidence\":[{\"fact_ids\":[\"COIN-Q3-TOTALREV-2024\",\"COIN-Q3-TOTALREV-2023\"],\"metric\":\"total_revenue\",\"note\":\"Issuer-reported total revenue, USD thousands. Q3 2024: 1,205,193; Q3 2023: 674,148. Derived YoY = 78.8%. Basis: issuer top-line label 'total_revenue'.\",\"period\":\"Q3 2024 ended 2024-09-30\",\"release_date\":\"2024-10-30\",\"source_sha256\":\"f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52\",\"source_url\":\"https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm\",\"type\":\"sec_filing\"},{\"fact_ids\":[\"COIN-Q3-REV-QOQ\",\"COIN-Q3-TRANREV-QOQ\"],\"metric\":\"sequential_change\",\"note\":\"COUNTERPOINT (different supplied field): total revenue declined 17% QoQ and transaction revenue declined 27% QoQ in the same quarter that YoY growth was 78.8%. The YoY rate is measured against a weak prior-year base; the sequential direction is negative and transaction revenue — the more cyclical line — fell faster than total revenue.\",\"period\":\"Q3 2024 ended 2024-09-30\",\"release_date\":\"2024-10-30\",\"source_sha256\":\"f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52\",\"source_url\":\"https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm\",\"type\":\"sec_filing\"},{\"fact_ids\":[\"COIN-Q3-NETINCOME\",\"COIN-Q3-CRYPTOLOSS\"],\"metric\":\"net_income_and_pretax_crypto_portfolio_loss\",\"note\":\"Supporting context: net income of ~$75 million (rounded, USD millions) alongside a ~$121 million (rounded) pretax loss on crypto investment portfolio in Q3 2024. Rounded figures; the pretax portfolio loss exceeds reported net income, indicating non-operating items materially affect the bottom line.\",\"period\":\"Q3 2024 ended 2024-09-30\",\"release_date\":\"2024-10-30\",\"source_sha256\":\"f9a2d60153fd79c6ac9f7dfcd80344995ffa4b121c336808b2e2f13968230a52\",\"source_url\":\"https://www.sec.gov/Archives/edgar/data/1679788/000167978824000186/q324shareholderletter.htm\",\"type\":\"sec_filing\"},{\"fact_ids\":[],\"metric\":\"screen_metadata\",\"note\":\"Screen: finance-tools__screen_stocks, market US, require_complete=false, criterion reported_top_line_revenue_yoy_min_percent=20.0. Result: passed=1, failed=0, rejected=[]. Adapter: offline_frozen_adapter=true, not_live_market_data=true, fixture FINTECH-SEC-SCREEN-HOLDOUT-v1. Excluded dimensions: share_price, valuation, analyst_target, future_return, current_market_data.\",\"type\":\"screen_run\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-22T11:56:49Z\",\"updated_at\":\"2026-10-22T11:56:49Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"finance-workflow-FS2-COIN-r3\"},\"operation\":\"created\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.931,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3154,
+              "completion_tokens": 94,
+              "total_tokens": 3248,
+              "estimated_cost_usd": 0.00046788000000000005,
+              "priced": true,
+              "latency_ms": 1031.878
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3937,
+              "completion_tokens": 83,
+              "total_tokens": 4020,
+              "cache_read_tokens": 3200,
+              "estimated_cost_usd": 0.00013538000000000002,
+              "priced": true,
+              "latency_ms": 1009.043
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4184,
+              "completion_tokens": 1527,
+              "total_tokens": 5711,
+              "cache_read_tokens": 3968,
+              "estimated_cost_usd": 0.0004689104000000001,
+              "priced": true,
+              "latency_ms": 6721.102
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 7277,
+              "completion_tokens": 1153,
+              "total_tokens": 8430,
+              "cache_read_tokens": 5632,
+              "estimated_cost_usd": 0.0005689096,
+              "priced": true,
+              "latency_ms": 5533.503
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 14.384,
+      "tool_calls": [
+        "finance-tools__screen_stocks",
+        "finance-tools__thesis_list",
+        "finance-tools__thesis_save"
+      ],
+      "model_calls": 4,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0016410800000000003
+    }
+  ],
+  "estimated_cost_usd": 0.0016410800000000003
+}

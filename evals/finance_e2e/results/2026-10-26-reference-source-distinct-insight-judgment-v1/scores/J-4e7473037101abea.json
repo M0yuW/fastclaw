@@ -1,0 +1,65 @@
+{
+  "masked_id": "J-4e7473037101abea",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 1,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "premium base sequentially in both written and earned terms, which is the part of the thesis that the extract can actually corroborate",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:quarter_net_premiums_written:+1308", "source_packet.rows:quarter_net_premiums_earned:+539"]
+    },
+    {
+      "location": "final_answer",
+      "span": "combined ratio worsened sequentially while GAAP net income and the per-share amount available to common both fell, and pretax realized securities gains also declined",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:quarter_combined_ratio:86.2_to_89.5", "source_packet.rows:quarter_net_income:3175_to_2615", "source_packet.rows:quarter_eps_available_common:5.40_to_4.45", "source_packet.rows:quarter_pretax_realized_gains_securities:387_to_295"]
+    },
+    {
+      "location": "final_answer",
+      "span": "its deterioration means the incremental premium was not earned at the prior period's underwriting margin",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:quarter_combined_ratio:86.2_to_89.5", "source_packet.rows:quarter_net_premiums_earned:20310_to_20849"],
+      "reason": "The aggregate combined ratio worsened, but these rows do not assign losses or expenses to incremental premium versus the existing book."
+    },
+    {
+      "location": "final_answer",
+      "span": "The realized-gains decline is a separate, market-driven component",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:quarter_pretax_realized_gains_securities:387_to_295"],
+      "reason": "The realized-gain amount is separate from underwriting, but market movement, sale timing and tax-lot decisions are not distinguished."
+    },
+    {
+      "location": "persisted_review",
+      "span": "The underwriting-quality signal and the earnings signal therefore point in opposite directions",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:quarter_combined_ratio:86.2_to_89.5", "source_packet.rows:quarter_net_income:3175_to_2615", "source_packet.rows:quarter_eps_available_common:5.40_to_4.45"],
+      "reason": "Both underwriting ratio and GAAP earnings worsened. Premium growth, not earnings, is the favorable countervailing signal."
+    },
+    {
+      "location": "persisted_review",
+      "span": "research state is held for review rather than upgraded or invalidated",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 4,
+      "code": "persisted_review_reverses_directional_relationship",
+      "evidence_refs": ["source_packet.rows:quarter_combined_ratio", "source_packet.rows:quarter_net_income", "source_packet.rows:quarter_eps_available_common"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Final answer largely identifies the right mixed premium-growth versus underwriting/earnings picture, although it overattributes the aggregate ratio and realized gains. Persisted review then incorrectly says underwriting and earnings move in opposite directions, a material synthesis error despite correctly blocked ledger state."
+}

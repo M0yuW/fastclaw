@@ -1,0 +1,76 @@
+{
+  "masked_id": "J-74f0d5c14603029a",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 0,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "net interest income improved both before and after the credit loss provision, noninterest income and its fee component rose, and the provision itself was lower, so pre-tax and net income both advanced",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_net_interest_income_before_provision:+60456", "source_packet.rows:gaap_net_interest_income_after_provision:+69456", "source_packet.rows:gaap_total_noninterest_income:+14339", "source_packet.rows:gaap_total_fee_income:+10973", "source_packet.rows:gaap_credit_loss_provision:-9000", "source_packet.rows:gaap_pretax_income:+62892", "source_packet.rows:gaap_net_income:+58141"]
+    },
+    {
+      "location": "final_answer",
+      "span": "a wider net interest margin base",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_net_interest_income_before_provision:617074_to_677530", "source_packet.limitations:no_net_interest_margin_or_average_balances"],
+      "reason": "Net interest income rose in dollars, but no net interest margin or average earning-asset denominator is supplied."
+    },
+    {
+      "location": "final_answer",
+      "span": "the reported total therefore understates the increase in recurring operating cost",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_total_operating_noninterest_expense:+31446", "source_packet.rows:gaap_tax_credit_cra_amortization:-10543", "source_packet.rows:gaap_total_noninterest_expense:+20903"],
+      "reason": "The operating-expense subtotal rose more than total noninterest expense, but selected rows do not prove that the former is recurring or that the amortization reduction will reverse."
+    },
+    {
+      "location": "persisted_review",
+      "span": "a GAAP earnings picture that improved on both the revenue and expense sides of the income statement",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_total_noninterest_expense:256020_to_276923", "source_packet.rows:gaap_total_operating_noninterest_expense:229784_to_261230", "source_packet.rows:gaap_compensation_benefits_expense:144841_to_175585"],
+      "reason": "Expense totals and compensation rose; earnings improved despite, not because of, the absolute expense side."
+    },
+    {
+      "location": "persisted_review",
+      "span": "special mention loans declined while classified loans and total criticized loans rose, and the selected rows give no migration, charge-off, nonaccrual or allowance detail",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:credit_special_mention_loans:-23914", "source_packet.rows:credit_classified_loans:+32340", "source_packet.rows:credit_total_criticized_loans:+8426", "source_packet.limitations:no_full_migration_or_allowance_coverage"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is maintained rather than upgraded",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available", "source_packet.rows:credit_classified_loans:+32340", "source_packet.rows:credit_total_criticized_loans:+8426"],
+      "reason": "The prose accurately reports the saved state, so state-alignment S is not failed. Separately, it calls credit quality mixed and identifies missing migration, charge-off and allowance evidence; retaining downstream actionability is an unjustified risk decision under the missing-key-evidence rule, captured in R and U."
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "net_interest_margin_inferred_from_absolute_income",
+      "evidence_refs": ["source_packet.rows:gaap_net_interest_income_before_provision", "source_packet.limitations:no_net_interest_margin_or_average_balances"]
+    },
+    {
+      "claim_index": 3,
+      "code": "persisted_review_expense_direction_wrong",
+      "evidence_refs": ["source_packet.rows:gaap_total_noninterest_expense", "source_packet.rows:gaap_total_operating_noninterest_expense"]
+    },
+    {
+      "claim_index": 5,
+      "code": "unresolved_credit_quality_left_actionable",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:actionability=available", "source_packet.rows:credit_classified_loans", "source_packet.rows:credit_total_criticized_loans"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Income and credit row directions are mostly cited correctly, but the final answer infers a margin without denominator and treats observed operating-expense growth as proven recurring cost; the persisted rationale falsely says the absolute expense side improved. It also leaves a mixed-credit thesis available despite identifying missing migration and reserve evidence as material."
+}

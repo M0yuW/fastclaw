@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,8 +18,8 @@ class Stage2FreezeAuditTest(unittest.TestCase):
             result = prepare(DEFAULT_EVIDENCE, DEFAULT_OUTPUT, root)
             self.assertEqual(44, result["source"])
             self.assertEqual(17, result["oracle_calculation"])
-            self.assertEqual(37, result["evidence_groups"])
-            self.assertEqual(98, result["tasks"])
+            self.assertEqual(42, result["evidence_groups"])
+            self.assertEqual(103, result["tasks"])
             with (root / "audit-tasks.csv").open(newline="", encoding="utf-8") as handle:
                 tasks = list(csv.DictReader(handle))
             source = next(row for row in tasks if row["audit_type"] == "source")
@@ -28,6 +29,10 @@ class Stage2FreezeAuditTest(unittest.TestCase):
             self.assertIn("fact_id", calculation["input_facts"])
             self.assertNotIn("expected", calculation["calculation_spec"])
             self.assertIn("text_preview", group["record_previews"])
+            self.assertIn("\"id\"", group["input_facts"])
+            impairment = next(row for row in tasks if row["audit_id"] == "ORACLE-GROUP|INTC-Q3-IMPAIR")
+            preview = json.loads(impairment["record_previews"])[0]["text_preview"]
+            self.assertIn("accelerated depreciation of $15.9 billion", preview)
             with (root / "reviewer-a.csv").open(newline="", encoding="utf-8") as handle:
                 self.assertIn("independent_result", next(csv.DictReader(handle)))
             review_html = (root / "review.html").read_text(encoding="utf-8")

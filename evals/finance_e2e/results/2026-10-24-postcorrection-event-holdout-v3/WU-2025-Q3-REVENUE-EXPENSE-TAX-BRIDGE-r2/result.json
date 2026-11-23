@@ -1,0 +1,493 @@
+{
+  "observation_id": "WU-2025-Q3-REVENUE-EXPENSE-TAX-BRIDGE-r2",
+  "case_id": "WU-2025-Q3-REVENUE-EXPENSE-TAX-BRIDGE",
+  "repetition": 2,
+  "workflow": "sec_event_to_thesis_review",
+  "coordinator_max_tokens": 5000,
+  "status": "mechanical_pass",
+  "quality_score": null,
+  "error": null,
+  "checks": {
+    "one_thesis_and_alert": true,
+    "source_packet_exact": true,
+    "one_linked_review": true,
+    "alert_acknowledged": true,
+    "state_actionability_consistent": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 7,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_47781f2994a44ffdb12d",
+          "market": "US",
+          "symbol": "WU",
+          "title": "WU source-bounded earnings thesis",
+          "thesis": "Baseline CY2025 Q2 ended 2025-06-30: WU-Q2-REV=1026.1 USD_million; WU-Q2-COST=642.8 USD_million; WU-Q2-SGA=190.6 USD_million; WU-Q2-EXP=833.4 USD_million; WU-Q2-OPINC=192.7 USD_million; WU-Q2-OTHER=-33.0 USD_million; WU-Q2-PRETAX=159.7 USD_million; WU-Q2-TAX=37.6 USD_million; WU-Q2-NET=122.1 USD_million; WU-Q2-EPS=0.37 USD_per_share; WU-Q2-SHARES=329.6 million_shares. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": true,
+          "actionability": "blocked",
+          "decision_hold_alert_id": "fa_bd7b10b5bfd645338298",
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "gaap_cost_of_services",
+            "gaap_diluted_eps",
+            "gaap_income_before_income_taxes",
+            "gaap_net_income",
+            "gaap_operating_income",
+            "gaap_provision_for_income_taxes",
+            "gaap_revenues",
+            "gaap_selling_general_administrative",
+            "gaap_total_expenses",
+            "gaap_total_other_expense_net_signed",
+            "gaap_weighted_average_diluted_shares"
+          ],
+          "evidence": [
+            {
+              "id": "HOLDOUT-WU-BASELINE-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm",
+              "sha256": "953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1"
+            }
+          ],
+          "next_review_at": "2026-11-21",
+          "last_review_at": "2026-10-24T15:04:56Z",
+          "created_at": "2026-10-24T15:04:39Z",
+          "updated_at": "2026-10-24T15:04:56Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_55b31abd633b4e7d9958",
+            "thesis_id": "th_47781f2994a44ffdb12d",
+            "alert_id": "fa_bd7b10b5bfd645338298",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-WU-2025-Q3-REVENUE-EXPENSE-TAX-BRIDGE-r2",
+            "event": {
+              "type": "earnings",
+              "summary": "WU CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WU-Q3-REV=1032.6 USD_million; WU-Q3-COST=643.2 USD_million; WU-Q3-SGA=187.5 USD_million; WU-Q3-EXP=830.7 USD_million; WU-Q3-OPINC=201.9 USD_million; WU-Q3-OTHER=-34.3 USD_million; WU-Q3-PRETAX=167.6 USD_million; WU-Q3-TAX=28.0 USD_million; WU-Q3-NET=139.6 USD_million; WU-Q3-EPS=0.43 USD_per_share; WU-Q3-SHARES=322.8 million_shares.",
+              "as_of": "2025-10-23",
+              "sources": [
+                {
+                  "id": "HOLDOUT-WU-EVENT-v1",
+                  "url": "https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm",
+                  "sha256": "49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "needs_review",
+            "rationale": "Sequential (Q2->Q3) GAAP comparison of the stored baseline against the event packet. Revenue rose 0.63% while total expenses fell 0.32%, so operating income rose 4.77% (9.2 USD million) — a modest operating-leverage effect on selected rows. The larger move is below the operating line: the tax provision fell 9.6 USD million (-25.53%) while pretax income rose 7.9 USD million, so net income rose 17.5 USD million (+14.33%) and diluted EPS rose 16.22%, with a 2.06% lower diluted share count also contributing to the per-share figure. Supported implication: the reported EPS improvement is not explained by operating performance alone; a lower tax provision and a smaller share count account for a material part of the gap between the 4.77% operating-income change and the 16.22% EPS change. Material counterpoint: the tax provision is a level, not a rate, and the packet contains no effective-tax-rate, discrete-item, or jurisdictional detail, so the durability of the lower provision is unestablished; other expense net also moved 1.3 USD million more negative, partly offsetting the operating gain. Missing evidence: prior-year comparatives (so no year-over-year statement is possible), adjusted measures and reconciliations, segment mix, cash flow, and management attribution. No causal driver is asserted and no absolute loss dollars are inferred from any rate. Research state: needs_review — the packet is complete on the eleven required metrics and internally consistent, but the earnings-quality question raised by the tax and share-count bridge is unresolved, so the thesis stays blocked pending prior-year comparatives, tax-rate detail, and adjusted-measure reconciliations. Conviction and status are unchanged; no valuation or trading conclusion.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [],
+            "evidence": [
+              {
+                "basis": "GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)",
+                "fact_ids": [
+                  "WU-Q3-REV",
+                  "WU-Q3-COST",
+                  "WU-Q3-SGA",
+                  "WU-Q3-EXP",
+                  "WU-Q3-OPINC",
+                  "WU-Q3-OTHER",
+                  "WU-Q3-PRETAX",
+                  "WU-Q3-TAX",
+                  "WU-Q3-NET",
+                  "WU-Q3-EPS",
+                  "WU-Q3-SHARES"
+                ],
+                "id": "HOLDOUT-WU-EVENT-v1",
+                "period": "CY2025 Q3 ended 2025-09-30",
+                "sha256": "49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782",
+                "url": "https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm"
+              },
+              {
+                "basis": "GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)",
+                "fact_ids": [
+                  "WU-Q2-REV",
+                  "WU-Q2-COST",
+                  "WU-Q2-SGA",
+                  "WU-Q2-EXP",
+                  "WU-Q2-OPINC",
+                  "WU-Q2-OTHER",
+                  "WU-Q2-PRETAX",
+                  "WU-Q2-TAX",
+                  "WU-Q2-NET",
+                  "WU-Q2-EPS",
+                  "WU-Q2-SHARES"
+                ],
+                "id": "HOLDOUT-WU-BASELINE-v1",
+                "period": "CY2025 Q2 ended 2025-06-30",
+                "sha256": "953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1",
+                "url": "https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm"
+              },
+              {
+                "id": "ARITH-WU-Q3-BRIDGE",
+                "kind": "host_checked_arithmetic",
+                "note": "Selected-row arithmetic only: revenue less total expenses equals operating income in both periods (1032.6-830.7=201.9; 1026.1-833.4=192.7); operating income plus other expense net equals pretax income (201.9-34.3=167.6; 192.7-33.0=159.7); pretax less tax equals net income (167.6-28.0=139.6; 159.7-37.6=122.1). Net income divided by diluted shares approximates reported diluted EPS (139.6/322.8=0.4325; 122.1/329.6=0.3704). No causal attribution is established."
+              },
+              {
+                "id": "MISSING-WU-Q3",
+                "kind": "evidence_gap",
+                "note": "Not present in the supplied packet: prior-year (CY2024 Q3) comparatives, segment/product revenue mix, adjusted (non-GAAP) measures and their reconciliations, discrete tax items and effective-tax-rate drivers, share-repurchase detail, cash flow, balance sheet, guidance, and any management explanation of the tax-rate change."
+              }
+            ],
+            "created_at": "2026-10-24T15:04:56Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_bd7b10b5bfd645338298",
+        "watchlist_id": "wl_c11465fe0a1040fc94d6",
+        "thesis_id": "th_47781f2994a44ffdb12d",
+        "market": "US",
+        "symbol": "WU",
+        "event_fingerprint": "79d4b33efaa7e7c9aaf2d4e0f156a92e3ffd69011ca6913999556a32739347be",
+        "event": {
+          "external_id": "HOLDOUT-V2-WU-EVENT",
+          "type": "earnings",
+          "summary": "WU CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WU-Q3-REV=1032.6 USD_million; WU-Q3-COST=643.2 USD_million; WU-Q3-SGA=187.5 USD_million; WU-Q3-EXP=830.7 USD_million; WU-Q3-OPINC=201.9 USD_million; WU-Q3-OTHER=-34.3 USD_million; WU-Q3-PRETAX=167.6 USD_million; WU-Q3-TAX=28.0 USD_million; WU-Q3-NET=139.6 USD_million; WU-Q3-EPS=0.43 USD_per_share; WU-Q3-SHARES=322.8 million_shares.",
+          "as_of": "2025-10-23",
+          "sources": [
+            {
+              "id": "HOLDOUT-WU-EVENT-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm",
+              "sha256": "49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_revenues": {
+              "value": "1032.6",
+              "unit": "USD_million",
+              "fact_id": "WU-Q3-REV"
+            },
+            "gaap_cost_of_services": {
+              "value": "643.2",
+              "unit": "USD_million",
+              "fact_id": "WU-Q3-COST"
+            },
+            "gaap_selling_general_administrative": {
+              "value": "187.5",
+              "unit": "USD_million",
+              "fact_id": "WU-Q3-SGA"
+            },
+            "gaap_total_expenses": {
+              "value": "830.7",
+              "unit": "USD_million",
+              "fact_id": "WU-Q3-EXP"
+            },
+            "gaap_operating_income": {
+              "value": "201.9",
+              "unit": "USD_million",
+              "fact_id": "WU-Q3-OPINC"
+            },
+            "gaap_total_other_expense_net_signed": {
+              "value": "-34.3",
+              "unit": "USD_million",
+              "fact_id": "WU-Q3-OTHER"
+            },
+            "gaap_income_before_income_taxes": {
+              "value": "167.6",
+              "unit": "USD_million",
+              "fact_id": "WU-Q3-PRETAX"
+            },
+            "gaap_provision_for_income_taxes": {
+              "value": "28.0",
+              "unit": "USD_million",
+              "fact_id": "WU-Q3-TAX"
+            },
+            "gaap_net_income": {
+              "value": "139.6",
+              "unit": "USD_million",
+              "fact_id": "WU-Q3-NET"
+            },
+            "gaap_diluted_eps": {
+              "value": "0.43",
+              "unit": "USD_per_share",
+              "fact_id": "WU-Q3-EPS"
+            },
+            "gaap_weighted_average_diluted_shares": {
+              "value": "322.8",
+              "unit": "million_shares",
+              "fact_id": "WU-Q3-SHARES"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "wu",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-24T15:04:39Z",
+        "last_seen_at": "2026-10-24T15:04:39Z",
+        "created_at": "2026-10-24T15:04:39Z",
+        "updated_at": "2026-10-24T15:04:57Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "prompt": "Historical source-bounded SEC research-state replay, not a trade request. Read the stored thesis and earnings alert using finance tools. The host-checked numeric context below is arithmetic on selected source rows, not a causal explanation or complete filing. Distinguish sequential from year-over-year figures, reported from adjusted measures, and percentage points from relative percent. Independently explain a supported implication, a material counterpoint, missing evidence, and your own research-state decision. Do not infer absolute loss dollars from a rate or attribute a total to listed components when a residual remains. Persist one source-linked version-protected review, acknowledge the alert, and verify that any needs_review decision leaves the thesis blocked. Do not trade.\n\nCase: WU-2025-Q3-REVENUE-EXPENSE-TAX-BRIDGE\nBaseline SEC SHA-256: 953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\nEvent SEC SHA-256: 49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\nDisplayed-value comparisons (same metric and basis):\nmetric | baseline fact/value | event fact/value | change | relative change\ngaap_cost_of_services | WU-Q2-COST=642.8 USD_million_rounded | WU-Q3-COST=643.2 USD_million_rounded | 0.4 USD_million | 0.06% of baseline\ngaap_diluted_eps | WU-Q2-EPS=0.37 USD_per_share_reported | WU-Q3-EPS=0.43 USD_per_share_reported | 0.06 USD_per_share | 16.22% of baseline\ngaap_income_before_income_taxes | WU-Q2-PRETAX=159.7 USD_million_rounded | WU-Q3-PRETAX=167.6 USD_million_rounded | 7.9 USD_million | 4.95% of baseline\ngaap_net_income | WU-Q2-NET=122.1 USD_million_rounded | WU-Q3-NET=139.6 USD_million_rounded | 17.5 USD_million | 14.33% of baseline\ngaap_operating_income | WU-Q2-OPINC=192.7 USD_million_rounded | WU-Q3-OPINC=201.9 USD_million_rounded | 9.2 USD_million | 4.77% of baseline\ngaap_provision_for_income_taxes | WU-Q2-TAX=37.6 USD_million_rounded | WU-Q3-TAX=28 USD_million_rounded | -9.6 USD_million | -25.53% of baseline\ngaap_revenues | WU-Q2-REV=1026.1 USD_million_rounded | WU-Q3-REV=1032.6 USD_million_rounded | 6.5 USD_million | 0.63% of baseline\ngaap_selling_general_administrative | WU-Q2-SGA=190.6 USD_million_rounded | WU-Q3-SGA=187.5 USD_million_rounded | -3.1 USD_million | -1.63% of baseline\ngaap_total_expenses | WU-Q2-EXP=833.4 USD_million_rounded | WU-Q3-EXP=830.7 USD_million_rounded | -2.7 USD_million | -0.32% of baseline\ngaap_total_other_expense_net_signed | WU-Q2-OTHER=-33 USD_million_rounded | WU-Q3-OTHER=-34.3 USD_million_rounded | -1.3 USD_million | n/a\ngaap_weighted_average_diluted_shares | WU-Q2-SHARES=329.6 million_shares_reported | WU-Q3-SHARES=322.8 million_shares_reported | -6.8 million_shares | -2.06% of baseline\nBoundary: source-selected displayed values only; no causal driver, durability, valuation, or trading conclusion is established by this table.\n\nCase WU-2025-Q3-REVENUE-EXPENSE-TAX-BRIDGE; thesis ID th_47781f2994a44ffdb12d; alert ID fa_bd7b10b5bfd645338298.",
+      "response": {
+        "id": "chatcmpl-1792854279086809000",
+        "object": "chat.completion",
+        "created": 1792854279,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# WU-2025-Q3-REVENUE-EXPENSE-TAX-BRIDGE — Research-State Replay\n\n**Scope note:** This is a historical, source-bounded research-state replay. All comparisons below are **sequential Q2→Q3** (CY2025 Q2 ended 2025-06-30 vs. CY2025 Q3 ended 2025-09-30), **GAAP as reported**, USD millions rounded except EPS (USD/share reported) and diluted shares (millions). No year-over-year comparison is possible from the supplied evidence. No valuation, recommendation, or trade is made.\n\n## 1. Supported implication\n\nThe selected rows are internally consistent: revenue − total expenses = operating income (1032.6 − 830.7 = 201.9; 1026.1 − 833.4 = 192.7); operating income + other expense net = pretax income (201.9 − 34.3 = 167.6; 192.7 − 33.0 = 159.7); pretax − tax = net income (167.6 − 28.0 = 139.6; 159.7 − 37.6 = 122.1).\n\nOn those rows, the operating result improved modestly while the per-share result improved much more:\n\n| Metric | Q2 | Q3 | Change | Relative |\n|---|---|---|---|---|\n| Revenue | 1026.1 | 1032.6 | +6.5 | +0.63% |\n| Cost of services | 642.8 | 643.2 | +0.4 | +0.06% |\n| SG&A | 190.6 | 187.5 | −3.1 | −1.63% |\n| Total expenses | 833.4 | 830.7 | −2.7 | −0.32% |\n| Operating income | 192.7 | 201.9 | +9.2 | +4.77% |\n| Other expense, net | −33.0 | −34.3 | −1.3 | more negative |\n| Pretax income | 159.7 | 167.6 | +7.9 | +4.95% |\n| Provision for income taxes | 37.6 | 28.0 | −9.6 | −25.53% |\n| Net income | 122.1 | 139.6 | +17.5 | +14.33% |\n| Diluted EPS | 0.37 | 0.43 | +0.06 | +16.22% |\n| Diluted shares | 329.6 | 322.8 | −6.8 | −2.06% |\n\n**Supported implication:** the reported EPS improvement is *not* explained by operating performance alone. Operating income rose 4.77% while diluted EPS rose 16.22%; the gap is consistent with (a) a 9.6 USD million lower tax provision and (b) a 2.06% smaller diluted share count. This is a statement about the composition of the reported change, not a causal claim about why any line moved.\n\n## 2. Material counterpoint\n\n- **The tax provision is a level, not a rate.** The packet contains no effective-tax-rate, discrete-item, jurisdictional, or valuation-allowance detail. A 9.6 USD million lower provision is therefore of **unestablished durability** — it may or may not recur, and I do not infer any rate or absolute loss dollars from it.\n- **Other expense, net moved against the trend**, 1.3 USD million more negative (−33.0 → −34.3), partly offsetting the operating gain; its composition is not in the packet.\n- **The operating improvement is thin in relative terms**: revenue +0.63% against expenses −0.32% is a small spread on rounded figures, and cost of services was essentially flat (+0.06%). Rounding to 0.1 USD million limits precision on these small deltas.\n- **Per-share benefit from a smaller share count is not evidence of operating improvement** and its cause (buybacks vs. dilution changes) is not in the packet.\n\n## 3. Missing evidence\n\nNot present in the supplied packet: prior-year (CY2024 Q3) comparatives — so **no year-over-year statement is made**; segment/product revenue mix; adjusted (non-GAAP) measures and their reconciliations — so **no reported-vs-adjusted comparison is made**; discrete tax items and effective-tax-rate drivers; share-repurchase detail; cash flow and balance sheet; guidance; and any management explanation of the tax change. The host table is a selected-row extract, not a complete filing.\n\n## 4. Research-state decision\n\n**Decision: `needs_review` — impact `mixed`.** The event packet is complete on all eleven required metrics with no unresolved conflicts, but the earnings-quality question raised by the tax-and-share-count bridge is unresolved. Status (`active`) and conviction (3) are unchanged.\n\n## 5. Persistence and verification\n\n- **Review persisted:** `tr_55b31abd633b4e7d9958` on thesis `th_47781f2994a44ffdb12d`, version 1 → **2**, linked to event source `HOLDOUT-WU-EVENT-v1` (SHA-256 `49811002…152782`) and baseline `HOLDOUT-WU-BASELINE-v1` (SHA-256 `953c9282…d361c1`), plus an explicit evidence-gap record.\n- **Alert acknowledged:** `fa_bd7b10b5bfd645338298`, version 1 → **2**, status `acknowledged`.\n- **Block verified:** re-read of the thesis confirms `decision_hold: true`, `actionability: \"blocked\"`, `decision_hold_alert_id: fa_bd7b10b5bfd645338298`, status `active`, conviction `3`. The `needs_review` decision correctly leaves the thesis blocked for downstream decisions.\n- **Next review:** 2026-11-21 (operational date; the 2025-10-23 source date is recorded in evidence).\n\nNo trades were placed and no trading conclusion was drawn."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 68764,
+          "completion_tokens": 5583,
+          "total_tokens": 74347
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_fgxQy65yCNUbeHtrsjnJ0473",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_47781f2994a44ffdb12d\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_6Sm4faEDc2okQwD0dbm30990",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"symbol\": \"WU\", \"limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_fgxQy65yCNUbeHtrsjnJ0473",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"309e4d3c-87a6-41ef-ade9-9066468af134\",\"as_of\":\"2026-10-24T15:04:40Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_47781f2994a44ffdb12d\",\"market\":\"US\",\"symbol\":\"WU\",\"title\":\"WU source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: WU-Q2-REV=1026.1 USD_million; WU-Q2-COST=642.8 USD_million; WU-Q2-SGA=190.6 USD_million; WU-Q2-EXP=833.4 USD_million; WU-Q2-OPINC=192.7 USD_million; WU-Q2-OTHER=-33.0 USD_million; WU-Q2-PRETAX=159.7 USD_million; WU-Q2-TAX=37.6 USD_million; WU-Q2-NET=122.1 USD_million; WU-Q2-EPS=0.37 USD_per_share; WU-Q2-SHARES=329.6 million_shares. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_cost_of_services\",\"gaap_diluted_eps\",\"gaap_income_before_income_taxes\",\"gaap_net_income\",\"gaap_operating_income\",\"gaap_provision_for_income_taxes\",\"gaap_revenues\",\"gaap_selling_general_administrative\",\"gaap_total_expenses\",\"gaap_total_other_expense_net_signed\",\"gaap_weighted_average_diluted_shares\"],\"evidence\":[{\"id\":\"HOLDOUT-WU-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm\",\"sha256\":\"953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-24T15:04:39Z\",\"updated_at\":\"2026-10-24T15:04:39Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_6Sm4faEDc2okQwD0dbm30990",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"eab28335-9822-4d81-b8d0-ff588a32f171\",\"as_of\":\"2026-10-24T15:04:40Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_bd7b10b5bfd645338298\",\"watchlist_id\":\"wl_c11465fe0a1040fc94d6\",\"thesis_id\":\"th_47781f2994a44ffdb12d\",\"market\":\"US\",\"symbol\":\"WU\",\"event_fingerprint\":\"79d4b33efaa7e7c9aaf2d4e0f156a92e3ffd69011ca6913999556a32739347be\",\"event\":{\"external_id\":\"HOLDOUT-V2-WU-EVENT\",\"type\":\"earnings\",\"summary\":\"WU CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WU-Q3-REV=1032.6 USD_million; WU-Q3-COST=643.2 USD_million; WU-Q3-SGA=187.5 USD_million; WU-Q3-EXP=830.7 USD_million; WU-Q3-OPINC=201.9 USD_million; WU-Q3-OTHER=-34.3 USD_million; WU-Q3-PRETAX=167.6 USD_million; WU-Q3-TAX=28.0 USD_million; WU-Q3-NET=139.6 USD_million; WU-Q3-EPS=0.43 USD_per_share; WU-Q3-SHARES=322.8 million_shares.\",\"as_of\":\"2025-10-23\",\"sources\":[{\"id\":\"HOLDOUT-WU-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\",\"sha256\":\"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\"}],\"observed_metrics\":{\"gaap_revenues\":{\"value\":\"1032.6\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-REV\"},\"gaap_cost_of_services\":{\"value\":\"643.2\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-COST\"},\"gaap_selling_general_administrative\":{\"value\":\"187.5\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-SGA\"},\"gaap_total_expenses\":{\"value\":\"830.7\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-EXP\"},\"gaap_operating_income\":{\"value\":\"201.9\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-OPINC\"},\"gaap_total_other_expense_net_signed\":{\"value\":\"-34.3\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-OTHER\"},\"gaap_income_before_income_taxes\":{\"value\":\"167.6\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-PRETAX\"},\"gaap_provision_for_income_taxes\":{\"value\":\"28.0\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-TAX\"},\"gaap_net_income\":{\"value\":\"139.6\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-NET\"},\"gaap_diluted_eps\":{\"value\":\"0.43\",\"unit\":\"USD_per_share\",\"fact_id\":\"WU-Q3-EPS\"},\"gaap_weighted_average_diluted_shares\":{\"value\":\"322.8\",\"unit\":\"million_shares\",\"fact_id\":\"WU-Q3-SHARES\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"wu\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T15:04:39Z\",\"last_seen_at\":\"2026-10-24T15:04:39Z\",\"created_at\":\"2026-10-24T15:04:39Z\",\"updated_at\":\"2026-10-24T15:04:39Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":20,\"symbol\":\"WU\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9688,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_iTu6IFoH9RJZYVJrbWDI2052",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"WU\", \"event_summary\": \"WU CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: revenue 1032.6, cost of services 643.2, SGA 187.5, total expenses 830.7, operating income 201.9, other expense net -34.3, pretax 167.6, tax 28.0, net income 139.6, diluted EPS 0.43, diluted shares 322.8\"}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_iTu6IFoH9RJZYVJrbWDI2052",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"a6766e40-44bd-4d39-a659-89a93e47fe83\",\"as_of\":\"2026-10-24T15:04:41Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"WU\",\"event_summary\":\"WU CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: revenue 1032.6, cost of services 643.2, SGA 187.5, total expenses 830.7, operating income 201.9, other expense net -34.3, pretax 167.6, tax 28.0, net income 139.6, diluted EPS 0.43, diluted shares 322.8\",\"matches\":[{\"thesis_id\":\"th_47781f2994a44ffdb12d\",\"title\":\"WU source-bounded earnings thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_FnGiRslcDxr8orkRpJIi2784",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_47781f2994a44ffdb12d\", \"alert_id\": \"fa_bd7b10b5bfd645338298\", \"expected_version\": 1, \"decision\": \"needs_review\", \"impact\": \"mixed\", \"event\": {\"type\": \"earnings\", \"as_of\": \"2025-10-23\", \"summary\": \"WU CY2025 Q3 (period ended 2025-09-30) SEC selected-fact packet, compared with the stored CY2025 Q2 baseline (period ended 2025-06-30). All figures are GAAP, USD millions rounded except EPS (USD/share reported) and diluted shares (millions). Sequential Q2->Q3: revenue 1026.1 -> 1032.6 (+6.5, +0.63%); cost of services 642.8 -> 643.2 (+0.4, +0.06%); SGA 190.6 -> 187.5 (-3.1, -1.63%); total expenses 833.4 -> 830.7 (-2.7, -0.32%); operating income 192.7 -> 201.9 (+9.2, +4.77%); other expense net -33.0 -> -34.3 (-1.3, more negative); pretax income 159.7 -> 167.6 (+7.9, +4.95%); provision for income taxes 37.6 -> 28.0 (-9.6, -25.53%); net income 122.1 -> 139.6 (+17.5, +14.33%); diluted EPS 0.37 -> 0.43 (+0.06, +16.22%); diluted shares 329.6 -> 322.8 (-6.8, -2.06%).\", \"sources\": [{\"id\": \"HOLDOUT-WU-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\", \"sha256\": \"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\", \"role\": \"event\"}, {\"id\": \"HOLDOUT-WU-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm\", \"sha256\": \"953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\", \"role\": \"baseline\"}]}, \"evidence\": [{\"id\": \"HOLDOUT-WU-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\", \"sha256\": \"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\", \"period\": \"CY2025 Q3 ended 2025-09-30\", \"basis\": \"GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)\", \"fact_ids\": [\"WU-Q3-REV\", \"WU-Q3-COST\", \"WU-Q3-SGA\", \"WU-Q3-EXP\", \"WU-Q3-OPINC\", \"WU-Q3-OTHER\", \"WU-Q3-PRETAX\", \"WU-Q3-TAX\", \"WU-Q3-NET\", \"WU-Q3-EPS\", \"WU-Q3-SHARES\"]}, {\"id\": \"HOLDOUT-WU-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm\", \"sha256\": \"953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\", \"period\": \"CY2025 Q2 ended 2025-06-30\", \"basis\": \"GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)\", \"fact_ids\": [\"WU-Q2-REV\", \"WU-Q2-COST\", \"WU-Q2-SGA\", \"WU-Q2-EXP\", \"WU-Q2-OPINC\", \"WU-Q2-OTHER\", \"WU-Q2-PRETAX\", \"WU-Q2-TAX\", \"WU-Q2-NET\", \"WU-Q2-EPS\", \"WU-Q2-SHARES\"]}, {\"id\": \"ARITH-WU-Q3-BRIDGE\", \"kind\": \"host_checked_arithmetic\", \"note\": \"Selected-row arithmetic only: revenue less total expenses equals operating income in both periods (1032.6-830.7=201.9; 1026.1-833.4=192.7); operating income plus other expense net equals pretax income (201.9-34.3=167.6; 192.7-33.0=159.7); pretax less tax equals net income (167.6-28.0=139.6; 159.7-37.6=122.1). Net income divided by diluted shares approximates reported diluted EPS (139.6/322.8=0.4325; 122.1/329.6=0.3704). No causal attribution is established.\"}, {\"id\": \"MISSING-WU-Q3\", \"kind\": \"evidence_gap\", \"note\": \"Not present in the supplied packet: prior-year (CY2024 Q3) comparatives, segment/product revenue mix, adjusted (non-GAAP) measures and their reconciliations, discrete tax items and effective-tax-rate drivers, share-repurchase detail, cash flow, balance sheet, guidance, and any management explanation of the tax-rate change.\"}], \"rationale\": \"Sequential (Q2->Q3) GAAP comparison of the stored baseline against the event packet. Revenue rose 0.63% while total expenses fell 0.32%, so operating income rose 4.77% (9.2 USD million) — a modest operating-leverage effect on selected rows. The larger move is below the operating line: the tax provision fell 9.6 USD million (-25.53%) while pretax income rose 7.9 USD million, so net income rose 17.5 USD million (+14.33%) and diluted EPS rose 16.22%, with a 2.06% lower diluted share count also contributing to the per-share figure. Supported implication: the reported EPS improvement is not explained by operating performance alone; a lower tax provision and a smaller share count account for a material part of the gap between the 4.77% operating-income change and the 16.22% EPS change. Material counterpoint: the tax provision is a level, not a rate, and the packet contains no effective-tax-rate, discrete-item, or jurisdictional detail, so the durability of the lower provision is unestablished; other expense net also moved 1.3 USD million more negative, partly offsetting the operating gain. Missing evidence: prior-year comparatives (so no year-over-year statement is possible), adjusted measures and reconciliations, segment mix, cash flow, and management attribution. No causal driver is asserted and no absolute loss dollars are inferred from any rate. Research state: needs_review — the packet is complete on the eleven required metrics and internally consistent, but the earnings-quality question raised by the tax and share-count bridge is unresolved, so the thesis stays blocked pending prior-year comparatives, tax-rate detail, and adjusted-measure reconciliations. Conviction and status are unchanged; no valuation or trading conclusion.\", \"next_review_at\": \"2025-11-21\"}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_FnGiRslcDxr8orkRpJIi2784",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"7c4def14-b483-49ba-9791-ceaff2c0c650\",\"as_of\":\"2026-10-24T15:04:49Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"invalid_input\"]},\"errors\":[{\"code\":\"invalid_input\",\"message\":\"next_review_at must be in the future; historical source dates belong in evidence\",\"retriable\":false}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_4iricrEJP8M8WuXr1Nnf5593",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_bd7b10b5bfd645338298\", \"decision\": \"needs_review\", \"event\": {\"as_of\": \"2025-10-23\", \"sources\": [{\"id\": \"HOLDOUT-WU-EVENT-v1\", \"role\": \"event\", \"sha256\": \"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\"}, {\"id\": \"HOLDOUT-WU-BASELINE-v1\", \"role\": \"baseline\", \"sha256\": \"953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm\"}], \"summary\": \"WU CY2025 Q3 (period ended 2025-09-30) SEC selected-fact packet, compared with the stored CY2025 Q2 baseline (period ended 2025-06-30). All figures are GAAP, USD millions rounded except EPS (USD/share reported) and diluted shares (millions). Sequential Q2->Q3: revenue 1026.1 -> 1032.6 (+6.5, +0.63%); cost of services 642.8 -> 643.2 (+0.4, +0.06%); SGA 190.6 -> 187.5 (-3.1, -1.63%); total expenses 833.4 -> 830.7 (-2.7, -0.32%); operating income 192.7 -> 201.9 (+9.2, +4.77%); other expense net -33.0 -> -34.3 (-1.3, more negative); pretax income 159.7 -> 167.6 (+7.9, +4.95%); provision for income taxes 37.6 -> 28.0 (-9.6, -25.53%); net income 122.1 -> 139.6 (+17.5, +14.33%); diluted EPS 0.37 -> 0.43 (+0.06, +16.22%); diluted shares 329.6 -> 322.8 (-6.8, -2.06%).\", \"type\": \"earnings\"}, \"evidence\": [{\"basis\": \"GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)\", \"fact_ids\": [\"WU-Q3-REV\", \"WU-Q3-COST\", \"WU-Q3-SGA\", \"WU-Q3-EXP\", \"WU-Q3-OPINC\", \"WU-Q3-OTHER\", \"WU-Q3-PRETAX\", \"WU-Q3-TAX\", \"WU-Q3-NET\", \"WU-Q3-EPS\", \"WU-Q3-SHARES\"], \"id\": \"HOLDOUT-WU-EVENT-v1\", \"period\": \"CY2025 Q3 ended 2025-09-30\", \"sha256\": \"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\"}, {\"basis\": \"GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)\", \"fact_ids\": [\"WU-Q2-REV\", \"WU-Q2-COST\", \"WU-Q2-SGA\", \"WU-Q2-EXP\", \"WU-Q2-OPINC\", \"WU-Q2-OTHER\", \"WU-Q2-PRETAX\", \"WU-Q2-TAX\", \"WU-Q2-NET\", \"WU-Q2-EPS\", \"WU-Q2-SHARES\"], \"id\": \"HOLDOUT-WU-BASELINE-v1\", \"period\": \"CY2025 Q2 ended 2025-06-30\", \"sha256\": \"953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm\"}, {\"id\": \"ARITH-WU-Q3-BRIDGE\", \"kind\": \"host_checked_arithmetic\", \"note\": \"Selected-row arithmetic only: revenue less total expenses equals operating income in both periods (1032.6-830.7=201.9; 1026.1-833.4=192.7); operating income plus other expense net equals pretax income (201.9-34.3=167.6; 192.7-33.0=159.7); pretax less tax equals net income (167.6-28.0=139.6; 159.7-37.6=122.1). Net income divided by diluted shares approximates reported diluted EPS (139.6/322.8=0.4325; 122.1/329.6=0.3704). No causal attribution is established.\"}, {\"id\": \"MISSING-WU-Q3\", \"kind\": \"evidence_gap\", \"note\": \"Not present in the supplied packet: prior-year (CY2024 Q3) comparatives, segment/product revenue mix, adjusted (non-GAAP) measures and their reconciliations, discrete tax items and effective-tax-rate drivers, share-repurchase detail, cash flow, balance sheet, guidance, and any management explanation of the tax-rate change.\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"next_review_at\": \"2026-11-21\", \"rationale\": \"Sequential (Q2->Q3) GAAP comparison of the stored baseline against the event packet. Revenue rose 0.63% while total expenses fell 0.32%, so operating income rose 4.77% (9.2 USD million) — a modest operating-leverage effect on selected rows. The larger move is below the operating line: the tax provision fell 9.6 USD million (-25.53%) while pretax income rose 7.9 USD million, so net income rose 17.5 USD million (+14.33%) and diluted EPS rose 16.22%, with a 2.06% lower diluted share count also contributing to the per-share figure. Supported implication: the reported EPS improvement is not explained by operating performance alone; a lower tax provision and a smaller share count account for a material part of the gap between the 4.77% operating-income change and the 16.22% EPS change. Material counterpoint: the tax provision is a level, not a rate, and the packet contains no effective-tax-rate, discrete-item, or jurisdictional detail, so the durability of the lower provision is unestablished; other expense net also moved 1.3 USD million more negative, partly offsetting the operating gain. Missing evidence: prior-year comparatives (so no year-over-year statement is possible), adjusted measures and reconciliations, segment mix, cash flow, and management attribution. No causal driver is asserted and no absolute loss dollars are inferred from any rate. Research state: needs_review — the packet is complete on the eleven required metrics and internally consistent, but the earnings-quality question raised by the tax and share-count bridge is unresolved, so the thesis stays blocked pending prior-year comparatives, tax-rate detail, and adjusted-measure reconciliations. Conviction and status are unchanged; no valuation or trading conclusion.\", \"thesis_id\": \"th_47781f2994a44ffdb12d\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_4iricrEJP8M8WuXr1Nnf5593",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"3fb6b1ef-0b9c-4988-abb3-f034bdf3da1a\",\"as_of\":\"2026-10-24T15:04:56Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_47781f2994a44ffdb12d\",\"market\":\"US\",\"symbol\":\"WU\",\"title\":\"WU source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: WU-Q2-REV=1026.1 USD_million; WU-Q2-COST=642.8 USD_million; WU-Q2-SGA=190.6 USD_million; WU-Q2-EXP=833.4 USD_million; WU-Q2-OPINC=192.7 USD_million; WU-Q2-OTHER=-33.0 USD_million; WU-Q2-PRETAX=159.7 USD_million; WU-Q2-TAX=37.6 USD_million; WU-Q2-NET=122.1 USD_million; WU-Q2-EPS=0.37 USD_per_share; WU-Q2-SHARES=329.6 million_shares. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_bd7b10b5bfd645338298\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_cost_of_services\",\"gaap_diluted_eps\",\"gaap_income_before_income_taxes\",\"gaap_net_income\",\"gaap_operating_income\",\"gaap_provision_for_income_taxes\",\"gaap_revenues\",\"gaap_selling_general_administrative\",\"gaap_total_expenses\",\"gaap_total_other_expense_net_signed\",\"gaap_weighted_average_diluted_shares\"],\"evidence\":[{\"id\":\"HOLDOUT-WU-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm\",\"sha256\":\"953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\"}],\"next_review_at\":\"2026-11-21\",\"last_review_at\":\"2026-10-24T15:04:56Z\",\"created_at\":\"2026-10-24T15:04:39Z\",\"updated_at\":\"2026-10-24T15:04:56Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_55b31abd633b4e7d9958\",\"thesis_id\":\"th_47781f2994a44ffdb12d\",\"alert_id\":\"fa_bd7b10b5bfd645338298\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-WU-2025-Q3-REVENUE-EXPENSE-TAX-BRIDGE-r2\",\"event\":{\"type\":\"earnings\",\"summary\":\"WU CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WU-Q3-REV=1032.6 USD_million; WU-Q3-COST=643.2 USD_million; WU-Q3-SGA=187.5 USD_million; WU-Q3-EXP=830.7 USD_million; WU-Q3-OPINC=201.9 USD_million; WU-Q3-OTHER=-34.3 USD_million; WU-Q3-PRETAX=167.6 USD_million; WU-Q3-TAX=28.0 USD_million; WU-Q3-NET=139.6 USD_million; WU-Q3-EPS=0.43 USD_per_share; WU-Q3-SHARES=322.8 million_shares.\",\"as_of\":\"2025-10-23\",\"sources\":[{\"id\":\"HOLDOUT-WU-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\",\"sha256\":\"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Sequential (Q2->Q3) GAAP comparison of the stored baseline against the event packet. Revenue rose 0.63% while total expenses fell 0.32%, so operating income rose 4.77% (9.2 USD million) — a modest operating-leverage effect on selected rows. The larger move is below the operating line: the tax provision fell 9.6 USD million (-25.53%) while pretax income rose 7.9 USD million, so net income rose 17.5 USD million (+14.33%) and diluted EPS rose 16.22%, with a 2.06% lower diluted share count also contributing to the per-share figure. Supported implication: the reported EPS improvement is not explained by operating performance alone; a lower tax provision and a smaller share count account for a material part of the gap between the 4.77% operating-income change and the 16.22% EPS change. Material counterpoint: the tax provision is a level, not a rate, and the packet contains no effective-tax-rate, discrete-item, or jurisdictional detail, so the durability of the lower provision is unestablished; other expense net also moved 1.3 USD million more negative, partly offsetting the operating gain. Missing evidence: prior-year comparatives (so no year-over-year statement is possible), adjusted measures and reconciliations, segment mix, cash flow, and management attribution. No causal driver is asserted and no absolute loss dollars are inferred from any rate. Research state: needs_review — the packet is complete on the eleven required metrics and internally consistent, but the earnings-quality question raised by the tax and share-count bridge is unresolved, so the thesis stays blocked pending prior-year comparatives, tax-rate detail, and adjusted-measure reconciliations. Conviction and status are unchanged; no valuation or trading conclusion.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[],\"evidence\":[{\"basis\":\"GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)\",\"fact_ids\":[\"WU-Q3-REV\",\"WU-Q3-COST\",\"WU-Q3-SGA\",\"WU-Q3-EXP\",\"WU-Q3-OPINC\",\"WU-Q3-OTHER\",\"WU-Q3-PRETAX\",\"WU-Q3-TAX\",\"WU-Q3-NET\",\"WU-Q3-EPS\",\"WU-Q3-SHARES\"],\"id\":\"HOLDOUT-WU-EVENT-v1\",\"period\":\"CY2025 Q3 ended 2025-09-30\",\"sha256\":\"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\"},{\"basis\":\"GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)\",\"fact_ids\":[\"WU-Q2-REV\",\"WU-Q2-COST\",\"WU-Q2-SGA\",\"WU-Q2-EXP\",\"WU-Q2-OPINC\",\"WU-Q2-OTHER\",\"WU-Q2-PRETAX\",\"WU-Q2-TAX\",\"WU-Q2-NET\",\"WU-Q2-EPS\",\"WU-Q2-SHARES\"],\"id\":\"HOLDOUT-WU-BASELINE-v1\",\"period\":\"CY2025 Q2 ended 2025-06-30\",\"sha256\":\"953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm\"},{\"id\":\"ARITH-WU-Q3-BRIDGE\",\"kind\":\"host_checked_arithmetic\",\"note\":\"Selected-row arithmetic only: revenue less total expenses equals operating income in both periods (1032.6-830.7=201.9; 1026.1-833.4=192.7); operating income plus other expense net equals pretax income (201.9-34.3=167.6; 192.7-33.0=159.7); pretax less tax equals net income (167.6-28.0=139.6; 159.7-37.6=122.1). Net income divided by diluted shares approximates reported diluted EPS (139.6/322.8=0.4325; 122.1/329.6=0.3704). No causal attribution is established.\"},{\"id\":\"MISSING-WU-Q3\",\"kind\":\"evidence_gap\",\"note\":\"Not present in the supplied packet: prior-year (CY2024 Q3) comparatives, segment/product revenue mix, adjusted (non-GAAP) measures and their reconciliations, discrete tax items and effective-tax-rate drivers, share-repurchase detail, cash flow, balance sheet, guidance, and any management explanation of the tax-rate change.\"}],\"created_at\":\"2026-10-24T15:04:56Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9333,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_PYrXHWAIws6QzNXxo9fZ2545",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_bd7b10b5bfd645338298\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_PYrXHWAIws6QzNXxo9fZ2545",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"526c9d16-6ec0-493a-8801-0dcb1666542a\",\"as_of\":\"2026-10-24T15:04:57Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_bd7b10b5bfd645338298\",\"watchlist_id\":\"wl_c11465fe0a1040fc94d6\",\"thesis_id\":\"th_47781f2994a44ffdb12d\",\"market\":\"US\",\"symbol\":\"WU\",\"event_fingerprint\":\"79d4b33efaa7e7c9aaf2d4e0f156a92e3ffd69011ca6913999556a32739347be\",\"event\":{\"external_id\":\"HOLDOUT-V2-WU-EVENT\",\"type\":\"earnings\",\"summary\":\"WU CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WU-Q3-REV=1032.6 USD_million; WU-Q3-COST=643.2 USD_million; WU-Q3-SGA=187.5 USD_million; WU-Q3-EXP=830.7 USD_million; WU-Q3-OPINC=201.9 USD_million; WU-Q3-OTHER=-34.3 USD_million; WU-Q3-PRETAX=167.6 USD_million; WU-Q3-TAX=28.0 USD_million; WU-Q3-NET=139.6 USD_million; WU-Q3-EPS=0.43 USD_per_share; WU-Q3-SHARES=322.8 million_shares.\",\"as_of\":\"2025-10-23\",\"sources\":[{\"id\":\"HOLDOUT-WU-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\",\"sha256\":\"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\"}],\"observed_metrics\":{\"gaap_revenues\":{\"value\":\"1032.6\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-REV\"},\"gaap_cost_of_services\":{\"value\":\"643.2\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-COST\"},\"gaap_selling_general_administrative\":{\"value\":\"187.5\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-SGA\"},\"gaap_total_expenses\":{\"value\":\"830.7\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-EXP\"},\"gaap_operating_income\":{\"value\":\"201.9\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-OPINC\"},\"gaap_total_other_expense_net_signed\":{\"value\":\"-34.3\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-OTHER\"},\"gaap_income_before_income_taxes\":{\"value\":\"167.6\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-PRETAX\"},\"gaap_provision_for_income_taxes\":{\"value\":\"28.0\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-TAX\"},\"gaap_net_income\":{\"value\":\"139.6\",\"unit\":\"USD_million\",\"fact_id\":\"WU-Q3-NET\"},\"gaap_diluted_eps\":{\"value\":\"0.43\",\"unit\":\"USD_per_share\",\"fact_id\":\"WU-Q3-EPS\"},\"gaap_weighted_average_diluted_shares\":{\"value\":\"322.8\",\"unit\":\"million_shares\",\"fact_id\":\"WU-Q3-SHARES\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"wu\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T15:04:39Z\",\"last_seen_at\":\"2026-10-24T15:04:39Z\",\"created_at\":\"2026-10-24T15:04:39Z\",\"updated_at\":\"2026-10-24T15:04:57Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9677,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_cQY3pPClVf91idl3sjgN4876",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"review_limit\": 5, \"thesis_id\": \"th_47781f2994a44ffdb12d\"}",
+              "round": 6
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_cQY3pPClVf91idl3sjgN4876",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"faef6e88-a1aa-40fa-8f6a-9d16bc19b130\",\"as_of\":\"2026-10-24T15:04:58Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_47781f2994a44ffdb12d\",\"market\":\"US\",\"symbol\":\"WU\",\"title\":\"WU source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: WU-Q2-REV=1026.1 USD_million; WU-Q2-COST=642.8 USD_million; WU-Q2-SGA=190.6 USD_million; WU-Q2-EXP=833.4 USD_million; WU-Q2-OPINC=192.7 USD_million; WU-Q2-OTHER=-33.0 USD_million; WU-Q2-PRETAX=159.7 USD_million; WU-Q2-TAX=37.6 USD_million; WU-Q2-NET=122.1 USD_million; WU-Q2-EPS=0.37 USD_per_share; WU-Q2-SHARES=329.6 million_shares. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_bd7b10b5bfd645338298\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_cost_of_services\",\"gaap_diluted_eps\",\"gaap_income_before_income_taxes\",\"gaap_net_income\",\"gaap_operating_income\",\"gaap_provision_for_income_taxes\",\"gaap_revenues\",\"gaap_selling_general_administrative\",\"gaap_total_expenses\",\"gaap_total_other_expense_net_signed\",\"gaap_weighted_average_diluted_shares\"],\"evidence\":[{\"id\":\"HOLDOUT-WU-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm\",\"sha256\":\"953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\"}],\"next_review_at\":\"2026-11-21\",\"last_review_at\":\"2026-10-24T15:04:56Z\",\"created_at\":\"2026-10-24T15:04:39Z\",\"updated_at\":\"2026-10-24T15:04:56Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[{\"id\":\"tr_55b31abd633b4e7d9958\",\"thesis_id\":\"th_47781f2994a44ffdb12d\",\"alert_id\":\"fa_bd7b10b5bfd645338298\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-WU-2025-Q3-REVENUE-EXPENSE-TAX-BRIDGE-r2\",\"event\":{\"type\":\"earnings\",\"summary\":\"WU CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: WU-Q3-REV=1032.6 USD_million; WU-Q3-COST=643.2 USD_million; WU-Q3-SGA=187.5 USD_million; WU-Q3-EXP=830.7 USD_million; WU-Q3-OPINC=201.9 USD_million; WU-Q3-OTHER=-34.3 USD_million; WU-Q3-PRETAX=167.6 USD_million; WU-Q3-TAX=28.0 USD_million; WU-Q3-NET=139.6 USD_million; WU-Q3-EPS=0.43 USD_per_share; WU-Q3-SHARES=322.8 million_shares.\",\"as_of\":\"2025-10-23\",\"sources\":[{\"id\":\"HOLDOUT-WU-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\",\"sha256\":\"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Sequential (Q2->Q3) GAAP comparison of the stored baseline against the event packet. Revenue rose 0.63% while total expenses fell 0.32%, so operating income rose 4.77% (9.2 USD million) — a modest operating-leverage effect on selected rows. The larger move is below the operating line: the tax provision fell 9.6 USD million (-25.53%) while pretax income rose 7.9 USD million, so net income rose 17.5 USD million (+14.33%) and diluted EPS rose 16.22%, with a 2.06% lower diluted share count also contributing to the per-share figure. Supported implication: the reported EPS improvement is not explained by operating performance alone; a lower tax provision and a smaller share count account for a material part of the gap between the 4.77% operating-income change and the 16.22% EPS change. Material counterpoint: the tax provision is a level, not a rate, and the packet contains no effective-tax-rate, discrete-item, or jurisdictional detail, so the durability of the lower provision is unestablished; other expense net also moved 1.3 USD million more negative, partly offsetting the operating gain. Missing evidence: prior-year comparatives (so no year-over-year statement is possible), adjusted measures and reconciliations, segment mix, cash flow, and management attribution. No causal driver is asserted and no absolute loss dollars are inferred from any rate. Research state: needs_review — the packet is complete on the eleven required metrics and internally consistent, but the earnings-quality question raised by the tax and share-count bridge is unresolved, so the thesis stays blocked pending prior-year comparatives, tax-rate detail, and adjusted-measure reconciliations. Conviction and status are unchanged; no valuation or trading conclusion.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[],\"evidence\":[{\"basis\":\"GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)\",\"fact_ids\":[\"WU-Q3-REV\",\"WU-Q3-COST\",\"WU-Q3-SGA\",\"WU-Q3-EXP\",\"WU-Q3-OPINC\",\"WU-Q3-OTHER\",\"WU-Q3-PRETAX\",\"WU-Q3-TAX\",\"WU-Q3-NET\",\"WU-Q3-EPS\",\"WU-Q3-SHARES\"],\"id\":\"HOLDOUT-WU-EVENT-v1\",\"period\":\"CY2025 Q3 ended 2025-09-30\",\"sha256\":\"49811002fae8c533236dbadfaff2ca038da8dbcfc16a5a53c4291757ea152782\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000119312525248746/wu-ex99_1.htm\"},{\"basis\":\"GAAP, USD_million_rounded (EPS USD_per_share_reported; shares million_shares_reported)\",\"fact_ids\":[\"WU-Q2-REV\",\"WU-Q2-COST\",\"WU-Q2-SGA\",\"WU-Q2-EXP\",\"WU-Q2-OPINC\",\"WU-Q2-OTHER\",\"WU-Q2-PRETAX\",\"WU-Q2-TAX\",\"WU-Q2-NET\",\"WU-Q2-EPS\",\"WU-Q2-SHARES\"],\"id\":\"HOLDOUT-WU-BASELINE-v1\",\"period\":\"CY2025 Q2 ended 2025-06-30\",\"sha256\":\"953c9282b28a591264bf9272cc0f8328ecd34eb7b5bfff4ff96610fb88d361c1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1365135/000095017025099165/wu-ex99_1.htm\"},{\"id\":\"ARITH-WU-Q3-BRIDGE\",\"kind\":\"host_checked_arithmetic\",\"note\":\"Selected-row arithmetic only: revenue less total expenses equals operating income in both periods (1032.6-830.7=201.9; 1026.1-833.4=192.7); operating income plus other expense net equals pretax income (201.9-34.3=167.6; 192.7-33.0=159.7); pretax less tax equals net income (167.6-28.0=139.6; 159.7-37.6=122.1). Net income divided by diluted shares approximates reported diluted EPS (139.6/322.8=0.4325; 122.1/329.6=0.3704). No causal attribution is established.\"},{\"id\":\"MISSING-WU-Q3\",\"kind\":\"evidence_gap\",\"note\":\"Not present in the supplied packet: prior-year (CY2024 Q3) comparatives, segment/product revenue mix, adjusted (non-GAAP) measures and their reconciliations, discrete tax items and effective-tax-rate drivers, share-repurchase detail, cash flow, balance sheet, guidance, and any management explanation of the tax-rate change.\"}],\"created_at\":\"2026-10-24T15:04:56Z\"}]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9333,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 6
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4243,
+              "completion_tokens": 133,
+              "total_tokens": 4376,
+              "estimated_cost_usd": 0.0014324999999999997,
+              "priced": true,
+              "latency_ms": 1122.367
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6142,
+              "completion_tokens": 175,
+              "total_tokens": 6317,
+              "cache_read_tokens": 4352,
+              "estimated_cost_usd": 0.0007731120000000001,
+              "priced": true,
+              "latency_ms": 972.133
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6639,
+              "completion_tokens": 1879,
+              "total_tokens": 8518,
+              "cache_read_tokens": 6272,
+              "estimated_cost_usd": 0.0024025319999999998,
+              "priced": true,
+              "latency_ms": 8596.056
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 8665,
+              "completion_tokens": 1877,
+              "total_tokens": 10542,
+              "cache_read_tokens": 8448,
+              "estimated_cost_usd": 0.002368188,
+              "priced": true,
+              "latency_ms": 6343.987
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 12801,
+              "completion_tokens": 107,
+              "total_tokens": 12908,
+              "cache_read_tokens": 10496,
+              "estimated_cost_usd": 0.0008828759999999999,
+              "priced": true,
+              "latency_ms": 951.787
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 13976,
+              "completion_tokens": 73,
+              "total_tokens": 14049,
+              "cache_read_tokens": 12800,
+              "estimated_cost_usd": 0.0005172,
+              "priced": true,
+              "latency_ms": 1252.434
+            },
+            {
+              "sequence": 7,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 16298,
+              "completion_tokens": 1339,
+              "total_tokens": 17637,
+              "cache_read_tokens": 13952,
+              "estimated_cost_usd": 0.002394312,
+              "priced": true,
+              "latency_ms": 6976.076
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 26.269,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update",
+        "finance-tools__thesis_get"
+      ],
+      "model_calls": 7,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.010770720000000001
+    }
+  ],
+  "estimated_cost_usd": 0.010770720000000001
+}

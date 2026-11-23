@@ -1,0 +1,50 @@
+{
+  "version": 2,
+  "status": "selected_source_fact_rows_frozen_before_v2_model_observations",
+  "case_id": "ICE-2025-Q3-EXCHANGE-MIX-TRANSACTION-EXPENSE",
+  "symbol": "ICE",
+  "cik": "0001571949",
+  "workflow_eligibility": ["sec_event_to_thesis_review"],
+  "source_basis": "SEC 8-K EX-99.1 consolidated income statements, Three Months Ended current-year column (third numeric column, not the first nine-month/six-month YTD column). All selected values are reported USD millions. Gross segment revenues bridge to total revenues; total revenues less transaction-based expenses is a distinct net-revenue subtotal.",
+  "baseline": {
+    "period": "CY2025 Q2 ended 2025-06-30",
+    "as_of": "2025-07-31",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1571949/000110465925072465/tm2521993d1_ex99-1.htm",
+    "source_sha256": "664ffa28e56e126e311d8acf1111884e00b66720478ef72da676c017ff7f19b9",
+    "local_path": ".cache/sources/HOLDOUT-ICE-BASELINE-v1.htm",
+    "facts": [
+      {"id":"ICE-Q2-EXCH","metric":"gaap_exchanges_gross_revenue","value":2134,"unit":"USD_million_rounded","source_row":"Exchanges","locator":"Three Months Ended June 30, 2025; third numeric column"},
+      {"id":"ICE-Q2-FIDS","metric":"gaap_fixed_income_data_gross_revenue","value":597,"unit":"USD_million_rounded","source_row":"Fixed income and data services","locator":"Three Months Ended June 30, 2025; third numeric column"},
+      {"id":"ICE-Q2-MORT","metric":"gaap_mortgage_technology_gross_revenue","value":531,"unit":"USD_million_rounded","source_row":"Mortgage technology","locator":"Three Months Ended June 30, 2025; third numeric column"},
+      {"id":"ICE-Q2-GROSS","metric":"gaap_total_gross_revenue","value":3262,"unit":"USD_million_rounded","source_row":"Total revenues","locator":"Three Months Ended June 30, 2025; third numeric column"},
+      {"id":"ICE-Q2-NETREV","metric":"gaap_revenue_less_transaction_expenses","value":2543,"unit":"USD_million_rounded","source_row":"Total revenues, less transaction-based expenses","locator":"Three Months Ended June 30, 2025; third numeric column"},
+      {"id":"ICE-Q2-OPEX","metric":"gaap_total_operating_expenses","value":1246,"unit":"USD_million_rounded","source_row":"Total operating expenses","locator":"Three Months Ended June 30, 2025; third numeric column"},
+      {"id":"ICE-Q2-OPINC","metric":"gaap_operating_income","value":1297,"unit":"USD_million_rounded","source_row":"Operating income","locator":"Three Months Ended June 30, 2025; third numeric column"},
+      {"id":"ICE-Q2-NETATTR","metric":"gaap_net_income_attributable_to_ice","value":851,"unit":"USD_million_rounded","source_row":"Net income attributable to Intercontinental Exchange, Inc.","locator":"Three Months Ended June 30, 2025; third numeric column"}
+    ]
+  },
+  "event": {
+    "period": "CY2025 Q3 ended 2025-09-30",
+    "as_of": "2025-10-30",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1571949/000110465925104017/tm2529550d1_ex99-1.htm",
+    "source_sha256": "9e4c75440525d487c6c8f8177ff81e204bb1d700b3ca6151eccbc57f951bb18a",
+    "local_path": ".cache/sources/HOLDOUT-ICE-EVENT-v1.htm",
+    "facts": [
+      {"id":"ICE-Q3-EXCH","metric":"gaap_exchanges_gross_revenue","value":1861,"unit":"USD_million_rounded","source_row":"Exchanges","locator":"Three Months Ended September 30, 2025; third numeric column"},
+      {"id":"ICE-Q3-FIDS","metric":"gaap_fixed_income_data_gross_revenue","value":618,"unit":"USD_million_rounded","source_row":"Fixed income and data services","locator":"Three Months Ended September 30, 2025; third numeric column"},
+      {"id":"ICE-Q3-MORT","metric":"gaap_mortgage_technology_gross_revenue","value":528,"unit":"USD_million_rounded","source_row":"Mortgage technology","locator":"Three Months Ended September 30, 2025; third numeric column"},
+      {"id":"ICE-Q3-GROSS","metric":"gaap_total_gross_revenue","value":3007,"unit":"USD_million_rounded","source_row":"Total revenues","locator":"Three Months Ended September 30, 2025; third numeric column"},
+      {"id":"ICE-Q3-NETREV","metric":"gaap_revenue_less_transaction_expenses","value":2411,"unit":"USD_million_rounded","source_row":"Total revenues, less transaction-based expenses","locator":"Three Months Ended September 30, 2025; third numeric column"},
+      {"id":"ICE-Q3-OPEX","metric":"gaap_total_operating_expenses","value":1237,"unit":"USD_million_rounded","source_row":"Total operating expenses","locator":"Three Months Ended September 30, 2025; third numeric column"},
+      {"id":"ICE-Q3-OPINC","metric":"gaap_operating_income","value":1174,"unit":"USD_million_rounded","source_row":"Operating income","locator":"Three Months Ended September 30, 2025; third numeric column"},
+      {"id":"ICE-Q3-NETATTR","metric":"gaap_net_income_attributable_to_ice","value":816,"unit":"USD_million_rounded","source_row":"Net income attributable to Intercontinental Exchange, Inc.","locator":"Three Months Ended September 30, 2025; third numeric column"}
+    ]
+  },
+  "precommitted_interpretation_checks": [
+    "Gross segment revenues Q3 minus Q2: Exchanges -273, fixed-income/data +21, mortgage -3 USD million; together -255, exactly the gross total-revenue change. This is a gross segment accounting bridge, not a business-causal attribution.",
+    "Gross revenue falls -255 while transaction-based expenses implied by gross less net fall -123, so net revenue after those expenses falls -132. Do not conflate gross and net revenue.",
+    "Operating expenses fall -9, so operating income changes -123: net revenue -132 minus expense change -9. Net income attributable to ICE falls only -35 and is not fully explained by the selected operating lines.",
+    "The statement first lists nine-month/six-month year-to-date columns. Select the third numeric column for the current standalone Q3 or Q2 quarter; the first numeric column is not a quarterly fact.",
+    "Adjacent-quarter selected facts do not prove a durable franchise trend, causal driver, valuation, or trade."
+  ]
+}

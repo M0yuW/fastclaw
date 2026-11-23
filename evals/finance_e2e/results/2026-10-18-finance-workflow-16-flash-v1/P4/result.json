@@ -1,0 +1,113 @@
+{
+  "case_id": "P4",
+  "workflow": "P",
+  "synthetic_tool_fixture": true,
+  "status": "needs_review",
+  "error": null,
+  "checks": {
+    "no_ledger_mutation": true,
+    "no_incomplete_calculation": false,
+    "uncertainty_explained": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true,
+    "terminal_not_budget_exhausted": true
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "expected_holdings": null,
+    "expected_limit_breached": null,
+    "trace": {
+      "model_calls": 2,
+      "tool_calls": 1,
+      "tool_results": 1,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "This is a synthetic portfolio-risk diagnostic, not a live account. Available holdings: FICA 45%, FICB 30%, and an unreported third holding. The single-holding concentration policy is breached only when a weight exceeds 50%; exactly 50% is at the limit, not above it. Use finance-tools__portfolio_risk with view=concentration if the complete portfolio is known. Explain the measured exposure or why it cannot be reliably computed. Do not infer a missing weight, trade, change holdings, or create ledger records. Case P4.",
+      "response": {
+        "id": "chatcmpl-1792338356805259000",
+        "object": "chat.completion",
+        "created": 1792338356,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# Case P4 — Portfolio Concentration Diagnostic\n\n## Result: exposure cannot be reliably computed\n\nThe concentration view was **not** usable for this portfolio. The tool returned a result, but it does not describe the portfolio you supplied.\n\n## What happened\n\nI called `finance-tools__portfolio_risk` with `view=concentration` and the two known holdings (FICA 45%, FICB 30%). The response is internally inconsistent with the request:\n\n| Field | Value returned | Problem |\n|---|---|---|\n| `holdings` | FICA 0.6, FICB 0.4 | Does not match the submitted 45% / 30% |\n| `largest_weight_pct` | 60.0 | FICA was submitted at 45% |\n| `herfindahl_index` | 0.52 | Consistent with 60/40, not with 45/30 |\n| `limit_breached` | true | Derived from the 60% figure, not from your data |\n| `quality.completeness` | 1.0 | Claims full coverage despite a missing holding |\n\nThe tool appears to have **renormalized the two known weights to sum to 100%** (45/75 ≈ 60%, 30/75 = 40%). That is exactly the inference your instructions prohibit: it silently assigns the unreported third holding a weight of zero and rescales the rest. The `completeness: 1.0` and empty `flags` are therefore misleading — the fixture reports full completeness while a holding is demonstrably absent.\n\n## Why the true exposure is unknown\n\n- Known weights sum to **75%**, leaving **25%** attributable to the unreported third holding.\n- That 25% is a residual, not a measured weight. The third holding's identity and actual weight are not in the evidence, and the residual could be split across cash, additional positions, or reporting gaps.\n- Because the third holding's weight is unknown, **no single-holding weight can be confirmed as above or below the 50% threshold**. FICA at 45% is below the limit as reported, but if the unreported holding is large, FICA's true share of the portfolio is lower still — and the unreported holding itself could exceed 50%.\n- The 60% \"breach\" in the tool output is an artifact of renormalization and must not be treated as a policy breach.\n\n## Policy conclusion\n\n- **Single-holding concentration: indeterminate.** No breach can be asserted or ruled out.\n- The 50% rule is a strict \"exceeds\" test (exactly 50% is at the limit, not above). Nothing in the available evidence establishes a weight above 50%.\n- The reported `limit_breached: true` should be disregarded as unsupported by the supplied holdings.\n\n## What would make this computable\n\nThe identity and weight of the third holding, or a complete holdings statement whose weights sum to 100%. With that, the concentration view could be re-run and the 50% test applied directly.\n\n## Actions not taken\n\nPer your constraints, I did not infer the missing weight, did not trade or alter holdings, and did not create or modify any ledger, thesis, or alert records. No investment recommendation is made here."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 5442,
+          "completion_tokens": 773,
+          "total_tokens": 6215
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_XSknN8J8opPX7DOW2ViQ5526",
+              "name": "finance-tools__portfolio_risk",
+              "arguments": "{\"holdings\": {\"FICA\": 45, \"FICB\": 30}, \"view\": \"concentration\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_XSknN8J8opPX7DOW2ViQ5526",
+              "name": "finance-tools__portfolio_risk",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"7824a8ae-223c-4cee-9a74-32fd74da75a9\",\"as_of\":\"2026-10-18T15:45:57Z\",\"stale_after\":\"2026-10-18T16:45:57Z\",\"data\":{\"fixture_id\":\"synthetic-portfolio-v2\",\"synthetic\":true,\"holdings\":{\"FICA\":0.6,\"FICB\":0.4},\"largest_holding\":\"FICA\",\"largest_weight_pct\":60.0,\"concentration_limit_pct\":50,\"limit_breached\":true,\"herfindahl_index\":0.52},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"portfolio_analytics\"}],\"quality\":{\"completeness\":1.0,\"flags\":[]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":3600}}",
+              "round": 1
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2566,
+              "completion_tokens": 87,
+              "total_tokens": 2653,
+              "estimated_cost_usd": 0.0003836,
+              "priced": true,
+              "latency_ms": 890.843
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2876,
+              "completion_tokens": 686,
+              "total_tokens": 3562,
+              "cache_read_tokens": 2560,
+              "estimated_cost_usd": 0.000243488,
+              "priced": true,
+              "latency_ms": 4175.305
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 5.135,
+      "tool_calls": [
+        "finance-tools__portfolio_risk"
+      ],
+      "model_calls": 2,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.000627088
+    }
+  ],
+  "estimated_cost_usd": 0.000627088
+}

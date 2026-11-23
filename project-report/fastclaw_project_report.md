@@ -1,12 +1,12 @@
-TITLE: FastClaw: Design and Evaluation of an Agent Runtime for Evidence-Grounded Financial Research
+TITLE: Design and Evaluation of an Agent Runtime with Financial Research Applications
 AUTHOR: Zheyu Wang
-AFFILIATION: Faculty of Science and Technology, University of Macau
+AFFILIATION: Faculty of Information Science and Computing, University of Macau
 EMAIL: mc45505@um.edu.mo
-REPORT DATE: August 2026
+REPORT DATE: October 2026
 
-ABSTRACT: Large-language-model agents are increasingly deployed as long-running services rather than single prompts, yet reported evaluations commonly attribute outcomes to the model while treating the runtime as neutral infrastructure. This thesis argues that the runtime—the layer that constructs prompts, resolves identity, filters tools, routes delegation, allocates context, persists state, handles cancellation, and grades outputs—is itself part of the experimental treatment. FastClaw is a multi-tenant Go agent runtime with a bounded streaming execution state machine, per-chat FIFO scheduling, root-level concurrency admission, correlated internal request/reply, transitive wait-graph cycle detection, policy-filtered tools, panic containment, batch shared-context delegation, and coordinator/specialist telemetry. A financial research application adds deterministic tools and tenant-scoped state. Three experimental tracks are reported. A historical regression sequence is diagnostic because evidence visibility and the grader changed with the runtime. In a six-case evidence-matched confirmation, Team, Solo Open-Book, and Solo Two-Pass each passed 5/6 cases; the available sample did not establish an incremental Team accuracy effect. A retrieval-mediated SEC Pilot compared five modes on one medium-context longitudinal case. Shared-retrieval Team and staged Solo both achieved all milestones and 100% final evidence recall. Relative to staged Solo, the Team observation had 36.32% lower wall-clock latency and 42.06% lower frozen-price estimated cost, with 13.63% more provider-total tokens under heterogeneous model allocation. Relative to raw-context Team, it had 38.42% fewer tokens, 47.62% lower estimated cost, and numeric grounding of 98.28% rather than 94.87%. Non-random order, one repetition, provider variability, and heterogeneous allocation make these descriptive associations rather than causal or population estimates. The two empirical conclusions are therefore bounded: current evidence does not establish an evidence-matched Team accuracy advantage, and the single-case Pilot records limited latency–cost–grounding differences. The demonstrated contribution is an auditable runtime and evaluation method, not evidence of superior financial judgment, full factual correctness, investment performance, or inherent multi-agent superiority.
+ABSTRACT: Large language model agents need a runtime to manage conversations, execute tools, coordinate tasks, and save application state. This report presents the design and evaluation of a multi-tenant agent runtime with financial research applications. The runtime supports staged single-agent execution and optional collaboration between a coordinator and specialists. Both modes use the same session, scheduling, tool, and storage mechanisms. Authentication, execution limits, cancellation, and traces help control and inspect each task. Four financial workflows use these mechanisms: earnings-event review, candidate screening, portfolio risk diagnosis, and review of conflicting or incomplete evidence. Deterministic tools process data and calculations, while the model interprets the evidence and proposes research decisions. Evaluation covers runtime tests, repeated Solo and Team comparisons, and end-to-end application cases. The results show trade-offs in completion, latency, evidence retention, and resource use. Selected analyses of public disclosures also show how the system can produce useful research outputs. Their quality still depends on the model, available evidence, and task design.
 
-INDEX TERMS: LLM agents, agent runtime, multi-agent systems, tool calling, context allocation, evidence retrieval, financial research, evaluation harness, fault injection, tenant isolation, observability.
+INDEX TERMS: LLM agents, agent runtime, financial research, multi-agent systems, tool calling, session management, workflow execution, tenant isolation, observability.
 ABBREVIATION: ACL | Agent access-control list
 ABBREVIATION: API | Application programming interface
 ABBREVIATION: BFCL | Berkeley Function-Calling Leaderboard
@@ -16,25 +16,24 @@ ABBREVIATION: FIFO | First in, first out
 ABBREVIATION: LLM | Large language model
 ABBREVIATION: MCP | Model Context Protocol
 ABBREVIATION: P50/P95 | 50th/95th latency percentile
-ABBREVIATION: RQ | Research question
 ABBREVIATION: SSE | Server-sent events
 ABBREVIATION: WAL | Write-ahead logging
 
 # I. INTRODUCTION
 
-Large language models (LLMs) can answer questions, generate code, and invoke external tools, but model capability alone does not produce a dependable software system. A practical agent must receive requests from multiple interfaces, preserve conversation state, decide which capabilities are available, execute tools under policy, recover from partial failure, stream progress to users, and leave an auditable record. In a multi-user deployment, these concerns expand to authentication, per-tenant data isolation, cancellation, concurrency control, and protection against cross-agent cycles or runaway delegation.
+Large language models (LLMs) can answer questions, generate code, and invoke tools. A dependable agent also needs software to manage the work around those calls. It must receive requests, preserve conversation history, enforce tool permissions, handle failures, and stream progress to users. A multi-user service must also authenticate callers, isolate their data, control concurrency, and cancel work when requested. Delegation adds another concern: agents must not create circular waits or repeat tasks without limit.
 
-The reasoning–action–observation pattern introduced by ReAct [1] provides a useful conceptual basis: the model alternates between reasoning, external action, and observation until it can produce a final answer. However, ReAct describes an interaction pattern rather than a production runtime. The engineering challenge is to turn that pattern into a controlled state machine whose transitions are observable and testable. A model request can fail, a tool can time out, the client can disconnect, a session can contain an unmatched tool result, or a coordinator can repeatedly call the same specialist. Without runtime-level rules, these failures are easily mistaken for “model intelligence” problems.
+ReAct [1] describes a cycle in which a model reasons, takes an external action, and uses the resulting observation to decide what to do next. A runtime turns this interaction pattern into an execution process that can be controlled and tested. It must handle failed model requests, tool timeouts, client disconnections, and incomplete conversation histories. It must also manage repeated specialist calls. These are execution problems that cannot be assessed from the final answer alone.
 
-Financial research is an appropriate application domain because it combines deterministic and probabilistic work. Price histories, ratios, portfolio concentration, event fingerprints, and duplicate suppression should be computed by deterministic programs. Interpretation of catalysts, contradictions, and invalidation conditions can benefit from an LLM, but every material claim should retain its source and timestamp. The target system is therefore a research copilot, not an autonomous trading engine: it assists evidence collection, prioritization, monitoring, and challenge while leaving portfolio actions to a human.
+Financial research combines data processing with judgment. An earnings release may prompt a review of an investment thesis. Screening may identify a candidate for further research, while a portfolio query may require a concentration or risk calculation. The application connects these tasks to tools, reusable research procedures, and persistent records. It supports evidence collection, analysis, and monitoring; a human remains responsible for portfolio actions. The runtime is separate from the financial tools, so the same execution mechanisms can serve other workflows.
 
-This report makes three bounded contributions:
+This report makes three contributions:
 
-1. **Auditable runtime artifact:** FastClaw implements authenticated ingress, bounded streaming turns, policy-filtered tools, correlated coordinator–specialist request/reply, tenant-scoped state, cancellation, and role-level telemetry as an inspectable Go artifact.
-2. **Measurement method:** the evaluation separates evidence visibility, planning opportunity, orchestration, model allocation, runtime failure, context allocation, and grader behavior, while retaining content-addressed artifacts for offline replay.
-3. **Limited empirical result:** the retained experiments do not establish an incremental accuracy advantage for evidence-matched Team execution. A single-case descriptive Pilot instead records bounded differences in latency, frozen-price estimated cost, and numeric grounding that are consistent with context-allocation effects but are not causal or population-level estimates.
+1. **Runtime design and implementation:** the runtime manages authenticated requests, tenant-scoped sessions, scheduling, and tool permissions. It also supports coordinator–specialist communication, cancellation, and execution traces. Solo and Team are alternative execution modes within the same runtime.
+2. **Financial research applications:** four workflow families connect financial evidence and deterministic calculations to model interpretation, research records, alerts, and decision holds. Selected analyses of public disclosures illustrate the analytical work supported by these mechanisms.
+3. **Engineering and application evaluation:** executable tests examine runtime controls, repeated experiments measure execution-mode trade-offs, and end-to-end cases check tool use, evidence, analytical outputs, and persistent state. The evaluation distinguishes successful execution from the quality of the resulting analysis.
 
-The central research question is not whether a stronger model can improve a score. It is whether an engineered runtime can make an explicitly declared model allocation more reliable, cheaper, faster, and easier to diagnose. The present experiments only partially examine that question. The historical study changes runtime behavior, evidence visibility, and grading together; the fixed-evidence financial study changes orchestration mode while holding evidence visibility more carefully; and the retrieval-mediated pilot changes context allocation within a declared heterogeneous deployment. Their combination motivates a measurement method and identifies unresolved confounding, but it does not isolate a universal causal runtime effect.
+The project asks how an agent runtime can control stateful execution and support financial research. The report describes the architecture and execution mechanisms, then explains the financial workflows built on them. Evaluation covers runtime controls, Solo and Team trade-offs, and application outcomes. Solo and Team are two execution choices within the same system.
 
 # II. BACKGROUND AND DESIGN REQUIREMENTS
 
@@ -42,21 +41,21 @@ The central research question is not whether a stronger model can improve a scor
 
 In structured tool calling, the model receives a list of functions with names, descriptions, and JSON schemas. It can either return natural-language content or emit one or more typed function calls. The application validates and executes those calls, appends each result to the conversation, and requests the next model step. This separates probabilistic planning from deterministic execution. The 28 July 2026 revision of the Model Context Protocol (MCP) standardizes hosts, clients, servers, resources, prompts, and model-controlled tools over a JSON-RPC 2.0 data layer [2], [3]. MCP defines an interoperability boundary; it does not define an application’s authorization policy, persistence model, queueing discipline, or experimental protocol. Those remain runtime responsibilities.
 
-BFCL evaluates function selection, parameter construction, parallel calls, abstention, and stateful multi-step behavior with scalable structural comparison [4]. Its strength is that a tool call has a relatively objective representation. The limitation for runtime research is equally important: a correct call does not reveal whether a queue dropped work, whether a stream exposed an error, whether two tenants shared state, or whether the same model would behave differently under another capability policy. FastClaw therefore uses BFCL-style cases as protocol checks rather than reporting an official BFCL score.
+BFCL evaluates function selection, parameter construction, parallel calls, abstention, and stateful multi-step behavior with scalable structural comparison [4]. Tool calls have a structured form that can be checked directly. However, call accuracy does not reveal whether a queue dropped work, a stream hid an error, or tenant data was mixed. It also does not isolate the effect of tool permissions on model behavior. This project therefore uses BFCL-style cases as protocol checks rather than reporting an official BFCL score.
 
-A runtime adds controls not supplied by the model: provider adaptation, session ordering, capability policy, sandbox binding, timeouts, telemetry, and terminal consistency. FastClaw treats the LLM as a planning component inside this larger state machine rather than as the owner of execution.
+A runtime adds controls not supplied by the model: provider adaptation, session ordering, capability policy, sandbox binding, timeouts, telemetry, and terminal consistency. The proposed system treats the LLM as a planning component inside this larger state machine rather than as the owner of execution.
 
 ## B. Stateful and Multi-Agent Evaluation
 
-Single-turn function accuracy is necessary but insufficient. τ-bench evaluates multi-turn interaction among an agent, a user model, domain policy, and database tools [5]. Its policy-constrained trajectories demonstrate why the terminal answer alone is not enough: two agents may reach similar text through different, policy-relevant actions. SWE-bench evaluates repository issue resolution by applying patches and running repository tests [6], making the environment and executable oracle part of the benchmark. MultiAgentBench measures task milestones and communication structures across collaboration and competition scenarios [7]. These benchmarks progressively add state, environment, and coordination, but they still evaluate a model or agent system inside a chosen harness. They do not ordinarily treat queue semantics, cancellation propagation, tenant scope, event-stream convergence, or grader normalization as independent variables.
+Single-turn function accuracy is necessary but insufficient. τ-bench evaluates multi-turn interaction among an agent, a user model, domain policy, and database tools [5]. Two agents may produce similar answers while taking different actions. The recorded interaction shows whether those actions follow the domain policy. SWE-bench evaluates repository issue resolution by applying patches and running repository tests [6], making the environment and executable oracle part of the benchmark. MultiAgentBench measures task milestones and communication structures across collaboration and competition scenarios [7]. These benchmarks progressively add state, environment, and coordination, but they still evaluate a model or agent system inside a chosen harness. They do not ordinarily treat queue semantics, cancellation propagation, tenant scope, event-stream convergence, or grader normalization as independent variables.
 
-This omission defines the research gap addressed here. Agent scores are jointly produced by at least five factors: model parameters, visible evidence, available actions, runtime transition rules, and the outcome oracle. Changing any one can alter the observed score. A team can appear better than Solo because specialists see private evidence; a baseline timeout can appear as an inability; a negated forbidden phrase can become a false violation; and cached prompt tokens can change an efficiency comparison depending on accounting convention. A runtime benchmark must therefore expose these factors, preserve pair identifiers, separate execution errors from evaluated failures, and retain raw outputs for regrading.
+These evaluation approaches motivate two related engineering needs: explicit runtime controls and measurements that reveal how those controls affect execution. Model parameters, visible evidence, available actions, runtime transition rules, and the grading criteria can all alter an observed result. The runtime therefore records tool calls, state transitions, timing, and resource use, while the evaluation preserves paired conditions and distinguishes execution errors from answer failures. This makes both application behavior and execution-mode comparisons inspectable.
 
-FastClaw does not claim official scores on BFCL, τ-bench, SWE-bench, or MultiAgentBench. It implements small style subsets that exercise analogous runtime abilities under deterministic local conditions. The contribution is not a competing universal benchmark. It is an instrument for testing whether the harness itself preserves the preconditions under which a model score can be interpreted.
+The project uses small test subsets inspired by BFCL, τ-bench, SWE-bench, and MultiAgentBench to exercise selected protocol and execution behaviors; it does not report official benchmark scores. These checks support the runtime implementation. Financial application studies then examine whether its mechanisms work together across complete research workflows.
 
 ## C. Financial Research Requirements
 
-Financial question-answering datasets such as FinQA [8] and TAT-QA [9] demonstrate the difficulty of numerical reasoning across narrative and tabular evidence. They primarily evaluate answer derivation from supplied documents. A deployable financial research assistant additionally requires temporal provenance, missingness semantics, persistent hypotheses, duplicate-event identity, and a boundary between research and portfolio action. The present project does not reproduce the official FinQA or TAT-QA evaluations. Instead, it derives system requirements relevant to a deployable research copilot:
+Financial question-answering datasets such as FinQA [8] and TAT-QA [9] demonstrate the difficulty of numerical reasoning across narrative and tabular evidence. They primarily evaluate answer derivation from supplied documents. A financial research assistant also needs to record when evidence applies, identify missing data, save hypotheses, and recognize duplicate events. Research decisions must remain separate from portfolio actions. The present project does not reproduce the official FinQA or TAT-QA evaluations. Instead, it derives system requirements relevant to a deployable research copilot:
 
 - source-aware data with freshness and completeness metadata;
 - deterministic calculation for screening, risk, and event identity;
@@ -65,7 +64,7 @@ Financial question-answering datasets such as FinQA [8] and TAT-QA [9] demonstra
 - human approval before portfolio action;
 - repeatable evaluation that does not use future returns as a convenient but misleading ground truth.
 
-The report uses **evidence attribution** to mean that a material output claim is linked to a supplied evidence identifier. This is narrower than factual truth or semantic entailment. Work on faithful knowledge-grounded generation distinguishes fidelity to supplied evidence from fluency and subjectivity [10]; accordingly, FastClaw’s lexical checks are described as configured attribution checks, not as proof that every generated sentence is true. BCBS 239 motivates accurate, complete, timely, and traceable risk-data aggregation at an institutional level [11], but it does not prescribe FastClaw’s `observed_at`, `as_of`, or `source_id` fields. Those fields are an engineering operationalization inspired by provenance requirements rather than a direct implementation of the banking standard.
+The report uses **evidence attribution** to mean that a material output claim is linked to a supplied evidence identifier. This is narrower than factual truth or semantic entailment. Research on knowledge-grounded generation distinguishes fidelity to evidence from fluency and subjectivity [10]. The lexical checks used here test attribution to supplied evidence. They do not verify every generated claim. BCBS 239 motivates accurate, complete, timely, and traceable risk-data aggregation at an institutional level [11], but it does not prescribe the implementation's `observed_at`, `as_of`, or `source_id` fields. The fields serve these provenance needs; they are not prescribed by the banking standard.
 
 ## D. Engineering Requirements
 
@@ -74,49 +73,47 @@ The resulting runtime requirements are:
 1. **Isolation:** every request resolves to a real user, an authorized agent, a session, and a bounded workspace.
 2. **Correctness:** assistant tool calls and tool results must remain correctly paired in persisted history.
 3. **Control:** tools are filtered by policy, sandbox execution must not silently fall back to the host, and evaluation-only behavior must not affect production requests.
-4. **Liveness:** cancellation, timeouts, bounded queues, and loop detection prevent requests from waiting indefinitely.
+4. **Liveness:** cancellation, execution timeouts, bounded queues, and loop detection constrain admitted work; downstream calls must honor cancellation for execution deadlines to be effective.
 5. **Observability:** model calls, tool traces, call paths, token usage, latency, and estimated cost must be attributable to coordinator and specialist roles.
 6. **Evaluability:** Team/Solo comparisons must control evidence visibility, and infrastructure errors must not be counted as model failures.
 
 ## E. Validity Preconditions and Empirical Questions
 
-The study uses two validity preconditions, two primary empirical questions, and one prospective validation question.
+The study uses two validity preconditions (VP1 and VP2) and two primary research questions (RQ1 and RQ2). These labels identify the checks and questions used throughout the evaluation.
 
 1. **VP1—Selected runtime control paths:** Do executable tests support the specific tenant-scope, tool-call ordering, terminal-streaming, cancellation, and bounded-execution paths used by the experiments?
-2. **RQ2—Orchestration benefit:** Across fixed-evidence and retrieval-mediated conditions, does coordinator–specialist execution improve deterministic task outcomes relative to an evidence-matched staged Solo baseline?
-3. **RQ3—Context allocation and efficiency:** Under a fixed task, source snapshot, and declared model allocation, how do monolithic, staged, shared-retrieval, and raw-context execution trade evidence retention, grounding, token consumption, latency, and estimated cost?
-4. **Prospective RQ4—Fault tolerance:** Can the coordinator identify specialist-local failure, attribute missing evidence correctly, avoid unsupported claims, and still produce a safe partial answer in a future retained fault study?
-5. **VP2—Selected financial-workflow invariants:** Do deterministic tests support the specific provenance, completeness, version-transition, alert-identity, and human-decision boundaries exercised by the evaluation fixtures?
+2. **RQ1—Execution-mode trade-offs:** Across fixed-evidence and retrieval-mediated conditions, how do coordinator–specialist Team and evidence-matched staged Solo differ in deterministic completion, evidence retention, latency, and resource use?
+3. **RQ2—Context allocation and efficiency:** With tasks and source documents fixed, how do the four execution approaches differ in grounding, tokens, latency, and estimated cost? Which comparisons also hold model allocation fixed?
+4. **VP2—Selected financial-workflow invariants:** Do deterministic tests support the specific provenance, completeness, version-transition, alert-identity, and human-decision boundaries exercised by the evaluation fixtures?
 
-VP1 and VP2 are validity preconditions supported only for selected tested paths and invariants; they are not empirical claims of production reliability or complete workflow validity. RQ2 and RQ3 are the primary empirical questions. Prospective RQ4 is operationalized in the harness but is not an executed research question. None of the model experiments executes a live portfolio action.
+VP1 and VP2 are validity preconditions supported only for selected tested paths and invariants; they are not empirical claims of production reliability or complete workflow validity. RQ1 and RQ2 are the primary empirical questions. None of the model experiments executes a live portfolio action.
 
-TABLE_CAPTION: Mapping from validity preconditions and empirical questions to evaluation propositions, estimands, evidence, and present status.
+TABLE_CAPTION: Evaluation questions and the evidence used to address them.
 
-| Question | Related propositions | Operational estimand | Primary evidence | Present status |
-|---|---|---|---|---|
-| VP1 | EP1 | Correct terminal state, scope, cancellation, and bounded execution on selected paths | Go unit/integration tests | Partially supported for selected paths; not production assurance |
-| RQ2 | EP2 | Paired Team minus evidence-matched staged Solo success and milestone retention | Six-case r5, longitudinal SEC extension, and retrieval-mediated Pilot | No incremental accuracy effect established; Stage 2 proposed |
-| RQ3 | EP3, EP6 | Evidence retention, grounding, tokens, latency, and frozen-price estimated cost | Per-call usage trace and five-mode retrieval Pilot | Descriptive one-case evidence; capacity-matched confirmation proposed |
-| Prospective RQ4 | EP4 | Safe output under observed and attributed specialist faults | Instrumentation and deterministic harness tests only | Not tested by a retained primary financial artifact |
-| VP2 | EP5 | Selected provenance and deterministic ledger invariants | Plugin tests and source/oracle records | Supported only for selected deterministic invariants |
+| Question | What is measured | Principal evidence |
+|---|---|---|
+| VP1 Runtime control paths | Isolation, ordering, cancellation, terminal state, and bounded execution | Unit and integration tests; scheduler load check |
+| RQ1 Execution modes | Paired completion, evidence retention, latency, and resource use | Repeated SEC main study and comparison using the same model |
+| RQ2 Context allocation | Grounding, tokens, estimated cost, and latency by context topology | Shared-retrieval and raw-context runs; per-call telemetry |
+| VP2 Financial workflows | Source links, ledger transitions, missing-evidence holds, and analytical content | Tool-backed panels, retained ledgers, and selected SEC case reviews |
 
 ## F. Threat Model and Design Principles
 
 The protected assets are tenant identity, API credentials, conversation history, agent identity files, workspace objects, plugin-managed financial state, and the authority to execute tools. Trust boundaries occur at HTTP and channel ingress, provider responses, model-generated tool arguments, external tool and MCP results, plugin subprocesses, sandbox exits, store adapters, and internal sub-agent messages. The model and all retrieved content are treated as untrusted planners or data, not as authorization principals.
 
-The principal abuse cases are: an unauthenticated or under-authorized caller selecting another agent; a model invoking a capability outside its policy; a plugin trusting model-supplied tenant identifiers; an indirect prompt injection propagating from evidence into a privileged tool call; a sub-agent cycle exhausting concurrency; a malformed provider stream producing a false successful terminal event; a stale or partial session corrupting subsequent tool-call order; and a long-running or repeatedly delegated task exhausting cost or queue capacity. FastClaw is not designed to resist a compromised host operating system, a malicious database administrator, or a provider that deliberately violates its API contract.
+The threat model covers unauthorized agent access, tool calls that exceed policy, and plugins that trust model-supplied tenant identifiers. It also covers prompt injection from retrieved evidence and delegation cycles that exhaust concurrency. Execution risks include malformed streams that appear successful, incomplete histories that break tool-call ordering, and repeated work that exhausts cost or queue capacity. A compromised host, a malicious database administrator, and a provider that deliberately violates its API contract are outside the threat model.
 
-The design follows fail-safe defaults, complete mediation, and least privilege as classical protection principles [12]. Every protected ingress must resolve an identity; agent selection is checked after default resolution; policy removes denied tools before the model sees them; trusted user scope is carried outside model-controlled arguments; and sandbox startup failure does not silently enable host execution. OWASP guidance for agent systems similarly recommends per-tool authorization, untrusted-data separation, bounded tool chains, structured audit records, and human approval for high-impact actions [13]. FastClaw’s six-pattern prompt scanner is only an unvalidated heuristic layer. It cannot substitute for authorization, policy filtering, parameter validation, or human review.
+The design follows fail-safe defaults, complete mediation, and least privilege as classical protection principles [12]. Every protected request must resolve to an identity. Authorization checks apply after the target agent is resolved, and policy removes denied tools before the model sees them. Trusted user scope travels outside model-controlled arguments. If sandbox startup fails, execution does not silently move to the host. OWASP guidance for agent systems similarly recommends per-tool authorization, untrusted-data separation, bounded tool chains, structured audit records, and human approval for high-impact actions [13]. The implementation's six-pattern prompt scanner is only an unvalidated heuristic layer. It cannot substitute for authorization, policy filtering, parameter validation, or human review.
 
 Residual risks remain. Session reads currently fail open to an in-memory copy if the durable store returns an error, whereas required identity loading fails closed. These are different consistency policies and must not be described as one guarantee. API-key ACL checks are implemented for resolved OpenAI-compatible chat targets, but future endpoints still require complete-mediation regression tests. Native plugins and local MCP servers inherit subprocess and supply-chain risk; policy can reduce exposed tools but cannot prove that an allowed tool is benign. These limitations are revisited in Section IX.
 
-# III. FASTCLAW SYSTEM ARCHITECTURE
+# III. AGENT RUNTIME SYSTEM ARCHITECTURE
 
 ## A. Layered Architecture
 
-FastClaw is a Go-based, multi-user agent platform. The default executable starts the Gateway, database-backed store, workspace object store, plugin manager, task queue, channel manager, cron scheduler, setup/API server, and the embedded web interface. User spaces and agents are loaded lazily after authentication rather than preloading every tenant at startup.
+The system is a Go-based, multi-user agent platform. The default executable starts the Gateway, database-backed store, workspace object store, plugin manager, task queue, channel manager, cron scheduler, setup/API server, and the embedded web interface. User spaces and agents are loaded lazily after authentication rather than preloading every tenant at startup.
 
-Figure 1 locates the runtime controls between external ingress, model providers, extensible capabilities, and durable tenant state. The layer boundaries are logical rather than process-isolation claims: native plugins and the core runtime can share a host process, whereas MCP servers and sandbox commands may cross process or container boundaries.
+Figure 1 locates the runtime controls between external ingress, model providers, extensible capabilities, and durable tenant state. The layers describe logical responsibilities. Built-in tools execute within the core runtime, while native plugins run in separate subprocesses on the same host and exchange JSON-RPC messages over standard input/output. MCP servers and sandbox commands have their own process, network, or container boundaries.
 
 [[FIGURE_1]]
 
@@ -124,14 +121,14 @@ The architecture is divided into six logical layers.
 
 1. **Ingress layer:** web chat, an OpenAI-compatible `/v1/chat/completions` API, WebSocket, Telegram, Discord, Slack, webhook, and scheduled messages.
 2. **Identity and scope layer:** cookie sessions or Bearer API keys resolve a caller; an API key carries an explicit agent access list; the runtime stamps the effective user identity into the request context.
-3. **Gateway orchestration layer:** a `MessageBus` normalizes inbound, outbound, and internal messages; a `TaskQueue` provides per-chat FIFO execution and process-wide concurrency control; a lazy `UserSpace` binds tenant configuration, agents, providers, skills, plugins, storage, and sandbox resources.
+3. **Gateway orchestration layer:** the `MessageBus` normalizes inbound, outbound, and internal messages. The `TaskQueue` provides per-chat FIFO execution and process-wide concurrency control. A lazily loaded `UserSpace` groups each tenant’s configuration, agents, providers, skills, plugins, storage, and sandbox resources.
 4. **Agent runtime layer:** a context builder assembles identity, policy, Skills, memory, and runtime metadata; the ReAct loop calls an LLM provider, executes tools, appends observations, and emits versioned events.
 5. **Capability layer:** built-in tools, MCP tools, native JSON-RPC plugin tools, provider chains, Skills, and Docker or E2B sandbox executors.
-6. **Persistence and telemetry layer:** SQLite by default or PostgreSQL for production state; local, S3-compatible, or Aliyun-backed artifact storage; session history, agent files, scoped configuration, usage, traces, and evaluation reports.
+6. **Persistence and telemetry layer:** SQLite by default or an unverified PostgreSQL deployment adapter; local, S3-compatible, or Aliyun-backed artifact storage; session history, agent files, scoped configuration, usage, traces, and evaluation reports.
 
 ## B. Ingress, Authentication, and Tenant Scope
 
-All protected HTTP routes pass through the authentication resolver. The web UI uses a database-backed, HTTP-only session cookie. Programmatic callers use Bearer API keys stored as hashes; plaintext is shown only when a key is created or rotated. The resolved `Identity` includes `UserID`, role, authentication method, and the API key’s authorized agents. Agent authorization is mediated after the OpenAI-compatible endpoint resolves either an explicit or fallback target, so omitting the agent header cannot bypass an API key allowlist; an unknown explicit target is not silently replaced by a fallback. A super administrator may inspect another user through read-only `actAs` scope, but mutation is rejected.
+All protected HTTP routes pass through the authentication resolver. The web UI uses a database-backed, HTTP-only session cookie. Programmatic callers use Bearer API keys stored as hashes; plaintext is shown only when a key is created or rotated. The resolved identity carries the user, role, authentication method, and API key’s authorized agents. The OpenAI-compatible endpoint first resolves the target agent, including any fallback, and then checks authorization. Omitting the agent header therefore cannot bypass the API key allowlist. An unknown explicit target is rejected rather than replaced by a fallback. A super administrator may inspect another user through read-only delegated scope, but mutation is rejected.
 
 The Gateway does not invent a default tenant. Channel messages either carry a trusted owner from cron or webhook execution, or resolve ownership from a stored channel credential. If ownership cannot be established, the message is dropped. This fail-closed rule is important because a convenient “local user” fallback would convert an authentication failure into cross-tenant data exposure.
 
@@ -139,33 +136,45 @@ User configuration is layered by scope. System defaults, user-level settings, an
 
 ## C. MessageBus and TaskQueue
 
-External messages enter buffered Go channels as normalized `InboundMessage` values. The TaskQueue creates a FIFO channel for each chat key and a goroutine that drains that queue serially. A counting semaphore limits independent root executions across the process. A task records state (`pending`, `running`, `done`, `failed`, or `cancelled`), timestamps, result, owner, agent, and observability metadata. It does not carry an independent deadline field; execution is bounded by the queue-wide `taskTimeout` and request cancellation.
+External messages enter buffered channels in a normalized format. The TaskQueue creates a FIFO channel for each chat key and a goroutine that drains that queue serially. A counting semaphore limits independent root executions across the process. Each task records its state, timestamps, result, owner, agent, and observability metadata. After admission, each task receives an execution deadline derived from the shared timeout configuration. This deadline does not cover the preceding queue wait. Waiting for a root slot responds to request cancellation or queue shutdown; execution cancellation also requires downstream operations to honor the propagated context.
 
-Internal sub-agent work inherits the root execution identifier. It does not acquire a second global semaphore slot, which prevents a coordinator from deadlocking when the configured maximum concurrency is one. Two independent bounds apply: the TaskQueue owns a 256-slot internal admission channel, and the MessageBus owns a separate 256 pending-correlation cap. They protect different resources and must be tuned together. Completion is exactly once through `sync.Once`. Context values are preserved with `context.WithoutCancel`, while two `context.AfterFunc` callbacks link request cancellation and queue shutdown into one derived cancellation source. Passing the original request context would cancel nested telemetry as soon as the parent lifecycle ends; using `WithoutCancel` alone would lose the cancellation edge. The paired construction retains values while rebuilding both lifecycle edges.
+Internal sub-agent work inherits the root execution identifier. It does not acquire a second global semaphore slot, which prevents a coordinator from deadlocking when the configured maximum concurrency is one. Two limits apply independently. The TaskQueue has a 256-slot internal admission channel. The MessageBus allows up to 256 pending request correlations. They protect different resources and must be tuned together. The local completion callback is published at most once, but model calls, external side effects, and network delivery are not guaranteed to occur exactly once. Internal tasks retain request metadata while rebuilding cancellation links to both the request and queue shutdown. Using only the original cancellation chain could end nested telemetry too early. Detaching it without new links would instead leave internal work running after its parent stops.
 
-Recent task views return defensive snapshots rather than live pointers. The API authenticates the caller, filters tasks by accessible agent, and only then applies the response limit. This prevents ordinary callers from observing unauthorized task metadata and avoids concurrent reads of mutable task fields; a super administrator intentionally retains broader read access, including read-only `actAs` inspection.
+Task-list requests return copies of task state rather than pointers to mutable records. The API authenticates the caller, filters tasks by accessible agent, and only then applies the response limit. This prevents unauthorized access to task metadata and avoids concurrent reads of mutable fields. A super administrator retains broader read access, including read-only `actAs` inspection.
 
-A counting semaphore was selected instead of a fixed worker pool because root-turn durations vary with provider latency and tool fan-out. A small worker pool would add head-of-line blocking between unrelated chat lanes, whereas a semaphore admits one independent goroutine per root up to the configured bound. Alternatives include `errgroup.Group.SetLimit`, `semaphore.Weighted`, or a work-stealing pool. The present design favors direct cancellation propagation and per-chat ordering over centralized worker lifecycle management.
+A counting semaphore combines root admission directly with the existing per-chat goroutines and cancellation paths. It permits independent chat lanes to execute up to the configured bound while preserving FIFO order within each lane. A bounded worker pool is another viable design; at equal concurrency, long-running tasks can occupy capacity in either approach. The present tests do not establish a performance advantage over worker pools. Channels and mutexes synchronize access to task maps and the wait graph, as required by the Go memory model [14]. The code does not rely on the apparent order in which goroutines run.
 
 ## D. Provider Abstraction and Streaming
 
-The provider interface exposes `Chat` and `ChatStream`. OpenAI-compatible and Anthropic adapters convert FastClaw messages and tools into provider-specific wire formats. The adapters are not symmetric: the OpenAI-compatible path reconstructs a synthetic `RawAssistant` payload from accumulated role, content, and tool-call fragments rather than preserving a byte-exact provider wire message. The Anthropic path retains provider-specific raw material only when a thinking block is present and stores that block rather than a complete assistant message. Replaying this material is useful for prompt caching and signed reasoning blocks, but callers cannot assume one lossless or cross-provider raw-payload contract.
+The provider interface supports both complete-response and streaming calls. OpenAI-compatible and Anthropic adapters convert runtime messages and tools into provider-specific wire formats. The adapters retain different raw data. The OpenAI-compatible adapter reconstructs an assistant payload from streamed fragments. The Anthropic adapter retains a thinking block when present, rather than a complete assistant message. These records support caching and replay, but do not preserve every provider message in a common format.
 
-The streaming reader accumulates text, tool-call fragments, reasoning, signatures, and usage before publishing an atomic terminal `Response`. OpenAI-compatible requests ask for streaming usage and fall back when an endpoint rejects the usage option; Anthropic usage is assembled from message-start and message-delta events. The application-level event contract distinguishes incremental `content_delta`, convergent full `content` snapshots, `error`, and terminal `done`. Deltas are opportunistic UI updates; the latest versioned snapshot is authoritative if a client misses one. A required-identity failure is emitted through the turn emitter before return, so streaming clients receive the same useful configuration error as non-streaming callers. A failed or cancelled stream closes without a false successful terminal chunk.
+The streaming reader accumulates text, tool-call fragments, reasoning, signatures, and usage before publishing a terminal response. OpenAI-compatible requests ask for streaming usage and fall back when an endpoint rejects that option; Anthropic usage is assembled from streamed lifecycle events. The application distinguishes incremental content, convergent full snapshots, errors, incomplete terminal states, and stream closure. Deltas update the UI incrementally. If a client misses a delta, it can recover from the latest versioned snapshot. A required-identity failure reaches streaming clients as an error. Clients must interpret error and terminal events rather than treating stream closure alone as successful completion.
 
 ## E. Tools, Plugins, MCP, and Skills
 
-FastClaw uses one registry abstraction for tool definitions and executable functions. The built-in registry includes shell execution, file operations, messaging, memory search, and web fetching, with optional provider-backed web search, image generation, and text-to-speech. MCP servers can contribute tools to the same registry. Native plugins run as subprocesses that communicate through JSON-RPC 2.0 [3] over standard input/output and can provide tools, channels, providers, or hooks.
+The runtime uses one registry abstraction for tool definitions and executable functions. The built-in registry includes shell execution, file operations, messaging, memory search, and web fetching, with optional provider-backed web search, image generation, and text-to-speech. MCP servers can contribute tools to the same registry. Native plugins run as subprocesses that communicate through JSON-RPC 2.0 [3] over standard input/output and can provide tools, channels, providers, or hooks.
 
-The plugin protocol includes a trusted `ToolCallContext` containing `userId`, `agentId`, and `sessionId`. This scope is generated by the runtime after routing and is not visible as model-controlled tool input. A stateful plugin can therefore reject calls without trusted context and query data by the authenticated tenant.
+The plugin protocol carries trusted user, agent, and session identities. The runtime creates this scope after routing, outside model-controlled tool arguments. A stateful plugin can therefore reject calls without trusted context and query data by the authenticated tenant.
 
-Skills are reusable instruction and workflow packages stored in layered directories. Five path classes are effective in the current loader: agent, team, user, managed, and extra; the nominal bundled collection is presently empty. The loader applies operating-system, binary, and environment gates and injects configured environment variables. Only two fixed Skill roots are mounted into sandbox paths; team and extra paths can enter the prompt without receiving equivalent filesystem mounts. The current implementation injects the full content of every enabled Skill into the system prompt. Source code for a `load_skill` registration helper exists, but no production registration call reaches it, so on-demand progressive disclosure is not an available runtime capability. This distinction matters: Skills describe methods, while tools perform atomic execution. The financial design in Section V intentionally keeps deterministic data retrieval in tools and research methodology in Skills.
+Skills are reusable instruction and workflow packages stored in layered directories. The loader reads five directory types: agent, team, user, managed, and extra. The bundled collection is currently empty. The loader checks operating-system support, required executables, and environment requirements. It also supplies configured environment variables. Only two fixed Skill roots are mounted into sandbox paths; team and extra paths can enter the prompt without equivalent filesystem mounts. The current implementation injects every enabled Skill in full. An on-demand loading helper exists, but it is not connected to the production registry. The runtime therefore cannot yet load Skill details only when needed. Skills describe methods, while tools perform atomic execution. The financial design in Section V uses typed tools or deterministic scripts invoked through a Skill-guided execution tool for data retrieval. Skills supply workflow instructions and script entry points; they do not confer execution authority outside the runtime's tool policy.
 
 ## F. Persistence and Workspace Storage
 
-The database is mandatory. SQLite with write-ahead logging is the zero-configuration default. PostgreSQL dialect branches are implemented as an intended deployment path, but they are not exercised by the current automated test suite and therefore are not claimed as production-verified. Every SQLite DSN is normalized case-insensitively to enable WAL, foreign keys, a 5-second busy timeout, and immediate write transactions unless an equivalent pragma is already present. The immediate transaction mode addresses the read-then-write upgrade pattern exercised by session persistence; a busy timeout alone cannot reliably recover that transaction shape. WAL creates `-wal` and `-shm` sidecars, so backups must use the SQLite backup API or checkpoint and copy all required files rather than copying only the main database file. The unified store persists users, web sessions, API keys, agent ACLs, agents, conversation sessions, layered agent files, scoped configuration, channel credentials, and cron jobs.
+The database is mandatory. SQLite with write-ahead logging is the zero-configuration default. A PostgreSQL adapter is implemented but is not covered by the current automated tests. Its deployment behavior remains unverified. SQLite connections enable foreign keys, a five-second busy timeout, and immediate write transactions unless equivalent settings are already present. Session persistence may read before writing. Immediate transactions avoid the lock-upgrade problem in this pattern; a busy timeout alone is insufficient. WAL allows concurrent readers but only one writer. Deployments must monitor checkpoints and WAL growth [15]. Backups must use the SQLite online backup API or account for WAL sidecars rather than copying only the main database file [16]. The pinned driver and embedded engine versions are recorded in the repository for reproducibility. The unified store persists users, web sessions, API keys, agent ACLs, agents, conversation sessions, layered agent files, scoped configuration, channel credentials, and cron jobs.
 
-Conversation sessions are keyed by channel and chat identifier and scoped by user and agent. In store-backed mode, the manager attempts to reload the session on every access. If the store returns an error and an in-memory copy exists, the read fails open to that potentially stale copy; it improves cross-replica freshness in the normal path but does not guarantee that every request observes the latest durable history. This differs from required identity files, whose load failure stops the turn. Identity files are stored separately from user artifacts; workspace objects are namespaced by agent and optional session to prevent concurrent chats from overwriting one output name.
+Conversation sessions are keyed by channel and chat identifier and scoped by user and agent. In store-backed mode, the manager attempts to reload the session on every access. If a store read fails, the manager uses an in-memory copy when one exists. That copy may be stale. Reloading normally improves freshness across replicas, but does not guarantee that every request sees the latest stored history. This differs from required identity files, whose load failure stops the turn. Identity files are stored separately from user artifacts; workspace objects are namespaced by agent and optional session to prevent concurrent chats from overwriting one output name.
+
+## G. Deployment and Failure Recovery Boundary
+
+The implemented deployment unit is one Gateway process. It owns an in-memory MessageBus, TaskQueue, pending-correlation map, lazy user-space registry, channel manager, scheduler, plugin manager, and sandbox lifecycle pool. The SQL store and workspace object store retain durable state. Queue positions, pending request correlations, duplicate-suppression records, and cancellation links remain in memory within one process. Pointing two Gateway processes at PostgreSQL does not by itself create a distributed queue, a shared wait graph, or single-consumer channel semantics. Multi-instance active-active operation is therefore outside the demonstrated architecture.
+
+Startup opens and optionally migrates the store, constructs the object store and usage meter, discovers enabled plugins, loads task-queue configuration, registers stored channel rows, and then starts background ingress and scheduling loops. Agents are loaded lazily only after an authenticated request resolves a real user. Configuration combines database-scoped settings with operations-managed environment overrides; credentials must remain in the environment or secret store rather than report artifacts.
+
+On `SIGINT` or `SIGTERM`, the Gateway cancels its root context, waits for ingress, channel, scheduler, and cleanup loops, rejects and releases pending internal requests, stops the TaskQueue, stops plugins, and closes live sandboxes. Pending TaskQueue entries are marked cancelled, but the current shutdown path does not persist an externally replayable queue. A daemon wrapper can restart a crashed child with exponential backoff up to ten consecutive crashes, and launchd/systemd service templates can supervise the process. Supervision can restart the process, but cannot replay interrupted requests transparently. If an external tool may already have changed state, the client must treat the outcome as unknown.
+
+Durable SQL and workspace state can be reloaded after restart, whereas pending queues, correlation waiters, and deduplication entries are process-local and are lost on a crash. An interrupted provider or external-tool request can therefore have an uncertain outcome and must not be retried as if exactly-once execution were guaranteed. SQLite deployments also require a coordinated checkpoint or online backup because the main database file alone may omit changes still present in WAL sidecars [15], [16].
+
+For a single-host development or small deployment, SQLite and the local workspace provide the shortest operational path. Larger deployments require validation of the PostgreSQL adapter and remote object store, together with a separate distributed-admission and ownership design before multiple active Gateway replicas can safely share work.
 
 # IV. AGENT RUNTIME EXECUTION MECHANISM
 
@@ -175,26 +184,40 @@ The runtime uses a bounded ReAct loop. The key behavior is summarized below.
 
 [[ALGORITHM_1]]
 
-ALGORITHM_CAPTION: Controlled execution of one FastClaw agent turn.
+ALGORITHM_CAPTION: Controlled execution of one agent turn.
 
 ALGORITHM_STEP: 1. Acquire the agent turn gate; refresh Skills; load the tenant-scoped session.
 ALGORITHM_STEP: 2. Repair prior tool-call history; bind the session sandbox; validate required identity files.
 ALGORITHM_STEP: 3. Build the system prompt from the validated identity revision; append the user message; compact history if required.
 ALGORITHM_STEP: 4. Copy or override the registry; apply policy; expose only permitted tool definitions.
 ALGORITHM_STEP: 5. Invoke the streaming provider once and collect content, terminal payload, usage, and error.
-ALGORITHM_STEP: 6. If no tool call exists, persist the assistant message, flush the session, emit `done`, and return.
+ALGORITHM_STEP: 6. If no tool call exists and final-response validation passes, persist the assistant message, flush the session, emit `done`, and return; otherwise follow the bounded correction or incomplete-terminal path.
 ALGORITHM_STEP: 7. Otherwise execute allowed tool calls concurrently; contain panics; append exactly one result for every call.
 ALGORITHM_STEP: 8. Reject repeated exact calls, honor cancellation, and continue until a final answer or the iteration bound.
 ALGORITHM_STEP: 9. Normalize and flush session state on every terminal path.
 
-Before the first model call, the agent acquires a turn gate because the current tool registry stores session-bound executor and workspace state. It refreshes Skills from durable storage, obtains the session, repairs tool-call ordering, binds a session-specific sandbox executor, validates required identity files once, builds the system prompt from that immutable identity snapshot, appends the user message, and optionally compacts long history.
+Before the first model call, the agent acquires a turn gate because the tool registry holds session-bound executor and workspace state. It then refreshes Skills, loads the session, repairs tool-call ordering, and binds the session sandbox. Required identity files are validated once and used to build the system prompt. Finally, the runtime appends the user message and compacts long history if needed.
 
-The tool registry for the turn is then copied or overridden by request-scoped evaluation tools and filtered through the agent’s policy. The model never receives tools that the policy denies. This is stronger than allowing every tool and asking the prompt not to use some of them. The core state-machine invariant is that every persisted assistant tool-call block has one corresponding tool-result block before the next provider call. `NormalizeToolResults` repairs an interrupted prior history at turn entry and runs again before terminal persistence. This mechanism is important but under-tested: the dedicated `session` package has no measured statement coverage in the repository-wide profile.
+Session-history compaction is a bounded-context safeguard, not a replacement for durable conversation storage. The current Go implementation estimates tokens from message text and tool-call arguments and checks an 80,000-token threshold at turn entry. When the estimate crosses that threshold, it first logs the full history and replaces long tool results older than the most recent 20 messages with a short marker. If pruning is insufficient, it asks the configured model to summarize the older messages while retaining those recent messages. A summarization failure falls back to the pruned history. This policy first removes lengthy tool output, then summarizes older conversation content. Token estimates are approximate, and a generated summary may omit earlier facts. The SEC experiment's retrieval stage serves a different purpose: it selects source records for an Evidence Bundle. Those experiments use isolated sessions and do not test history compaction.
 
-For each iteration, the runtime calls `ChatStream` exactly once, forwards content deltas, reads the terminal response, records model usage, and decides between two transitions:
+The tool registry for the turn is then copied or overridden by request-scoped evaluation tools and filtered through the agent’s policy. The model never receives tools that the policy denies. This is stronger than allowing every tool and asking the prompt not to use some of them. The core state-machine invariant is that every persisted assistant tool-call block has one corresponding tool-result block before the next provider call. The history normalizer repairs interrupted calls at turn entry and runs again before terminal persistence.
+
+For each iteration, the runtime makes one streaming model call, forwards content deltas, reads the terminal response, records usage, and decides between two transitions:
 
 - **Final-answer transition:** append one complete assistant message, run post-turn hooks, flush the session, emit `done`, and return.
 - **Tool transition:** append the assistant’s tool calls, emit trace events, execute the calls concurrently, append one matched tool result for each call identifier, and continue to the next model iteration.
+
+An additional session-control mechanism supports task clarification in root conversations. When the model identifies missing information that materially affects the task, it can issue a structured clarification request. The runtime pauses the turn before running other tools in that response. It records that those calls were not executed and saves the question with an awaiting-clarification marker. The user's next reply supplies context for a new turn to continue the original task. This is a conversational pause, not a blocked worker, and it does not roll back actions completed in earlier iterations.
+
+### Runtime Invariants and Repair Algorithms
+
+Three invariants define the execution rules:
+
+1. **Accepted-enqueue FIFO invariant:** for one `chatKey`, tasks are executed serially in the order in which they are successfully sent to that chat queue. Registration and queue insertion are separate operations. Concurrent callers may therefore enter the queue in a different order from their invocation times or task identifiers.
+2. **Wait-graph invariant:** while the MessageBus lock is held, adding a source-to-target wait edge is permitted only when no target-to-source path already exists. Every accepted blocked internal call contributes one reference-counted edge, and completion, cancellation, publication failure, or shutdown removes it.
+3. **History-shape invariant:** after normalization, each assistant tool-call position is followed by one matching result. The normalizer keeps the first unused matching result, marks a missing result as interrupted, and drops duplicate or orphan tool messages. This is structural provider validity, not proof that a tool executed exactly once or that its result is semantically correct.
+
+Task admission, delegation, and history repair preserve these invariants. A chat lane accepts one task at a time; independent root tasks consume global capacity, while nested tasks inherit their root admission. An internal delegation adds a correlation waiter and a wait-graph edge only after checking ownership, capacity, and cycle freedom. The edge and waiter are released on reply, cancellation, backpressure, or shutdown. Before another provider call, history repair places each available tool result after its matching assistant call, inserts an interrupted-result marker when needed, and removes duplicate or orphan results.
 
 The runtime detects three consecutive identical tool name/argument pairs and adds a loop warning. It also caps the number of tool iterations. Tool panics are recovered inside their execution goroutines and converted into explicit error results rather than terminating the Gateway process. Results are correlated by a consume-once call identifier; empty or duplicate identifiers produce explicit failures instead of silently copying another tool's result. Each tool records its own start time, duration, and hook context rather than inheriting a batch-level wall-clock duration.
 
@@ -202,7 +225,7 @@ The runtime detects three consecutive identical tool name/argument pairs and add
 
 The context builder combines runtime information, a user-message isolation policy, optional sandbox guidance, bootstrap files, Skills, long-term memory, group context, and reasoning-mode guidance. User text is wrapped in `<user_message>` tags only in the provider payload; the stored history remains clean for the UI.
 
-Benchmark specialists can declare required identity files. Before a model call, FastClaw loads those files once, rejects missing or empty content, and computes a short SHA-256-based revision identifier. The same validated snapshot is used to build the prompt, avoiding duplicate database reads and time-of-check/time-of-use drift inside a turn. Store failures fail closed; only a confirmed not-found condition permits the legacy filesystem fallback. The revision proves that the expected identity material was loaded without exposing its contents in telemetry. A configuration failure is emitted through both non-streaming and streaming error paths.
+Benchmark specialists can declare required identity files. Before a model call, the runtime loads those files once, rejects missing or empty content, and computes a short SHA-256-based revision identifier. The prompt uses this validated snapshot. This avoids a second database read and prevents the identity content from changing between validation and use. Store failures fail closed; only a confirmed not-found condition permits the legacy filesystem fallback. The revision proves that the expected identity material was loaded without exposing its contents in telemetry. Both streaming and non-streaming clients receive configuration errors.
 
 ## C. Tool Policy and Sandbox Binding
 
@@ -212,9 +235,9 @@ If a sandbox pool is configured, the registry binds a session-specific executor 
 
 ## D. Session Correctness and Streaming Semantics
 
-Provider APIs require every assistant tool-call block to be followed by matching tool results. Client cancellation or a crash during tool execution can leave invalid history. `NormalizeToolResults` rebuilds the session: it places available tool results immediately after their assistant call, synthesizes results for interrupted calls, and drops duplicate or orphaned tool messages. The normalizer runs when a turn begins and before terminal persistence.
+Provider APIs require every assistant tool-call block to be followed by matching tool results. Client cancellation or a crash during tool execution can leave invalid history. The runtime repairs that history by matching available results to calls, marking interrupted calls, and removing duplicate or orphaned tool messages. Repair runs when a turn begins and before terminal persistence.
 
-Web streaming uses versioned events carrying `turnId`, `messageId`, iteration `round`, and sequence number. `content_delta` events update the current assistant message; full `content` snapshots correct missed deltas; `tool_call` and `tool_result` share stable identifiers; and `done` is emitted only after the final assistant message has been persisted. Nested agents receive a context that preserves cancellation and telemetry values but hides the parent chat event channel, so a specialist cannot terminate the coordinator’s stream.
+Web streaming uses versioned events carrying `turnId`, `messageId`, iteration `round`, and sequence number. `content_delta` events update the assistant message. Full `content` snapshots restore content after missed deltas. Matching `tool_call` and `tool_result` events share stable identifiers. On the normal success path, the final assistant message is persisted before `done` closes the stream. Error paths also emit `done`, and bounded but incomplete turns can emit a `terminal` code before closure. A successful turn must save a final response and have no error or incomplete terminal state. The `done` event alone does not establish success. Nested agents inherit cancellation and telemetry values, but cannot access the parent chat event channel. A specialist therefore cannot close the coordinator’s stream.
 
 ## E. Internal Multi-Agent Delegation
 
@@ -222,7 +245,7 @@ The `spawn_subagent` tool is not a direct in-process function call. It sends a t
 
 The bus stores a wait graph between tenant-agent lanes. Before accepting a request, it checks whether the target already waits—directly or transitively—on the source. Call-path validation alone cannot detect the following cross-root case: root R1 has lane A waiting for B, while root R2 independently asks B to wait for A. Neither immutable path contains a repeated target, yet the combined graph has A→B→A. A depth-first reachability check rejects the second edge before the circular wait is established.
 
-The maintained invariant is that the directed lane wait graph is acyclic. If every blocked internal request corresponds to one graph edge, acyclicity rules out a circular wait among sub-agent lanes. The DFS executes while the bus mutex is held; its cost is linear in the current lane-and-edge graph, acceptable under the pending-correlation cap but not free at larger fan-out. Alternatives include a static acyclic agent topology, a global lock order, or timeout-only recovery. Static topology reduces flexibility; timeout-only recovery detects a deadlock after consuming latency rather than preventing it. Pending internal calls are capped; a non-blocking publish returns backpressure rather than waiting forever; shutdown rejects new work and releases all waiters.
+The maintained invariant is that the directed lane wait graph is acyclic. If every blocked internal request corresponds to one graph edge, acyclicity rules out a circular wait among sub-agent lanes. DFS runs while the bus mutex is held. Its cost grows linearly with the number of lanes and edges. The pending-correlation cap bounds this work, although wider delegation still increases its cost. Alternatives include a static acyclic agent topology, a global lock order, or timeout-only recovery. Static topology reduces flexibility; timeout-only recovery detects a deadlock after consuming latency rather than preventing it. Pending internal calls are capped. A non-blocking publish reports backpressure when it cannot proceed. Shutdown rejects new work and releases all waiters.
 
 Every production turn applies exact duplicate suppression keyed by `(target agent, task)`, so an identical retry reuses the first result while two distinct tasks for the same specialist still execute independently. Evaluation requests may additionally enable target-only suppression because the fixed benchmark contract expects at most one delegation to each specialist. This stronger evaluation policy is request-scoped and does not change production semantics.
 
@@ -240,17 +263,23 @@ For one model call, the estimated cost is
 
 where cached prompt tokens are removed from ordinary prompt tokens when the provider reports that they are already included. Reports aggregate coordinator and specialist cost, Team and Solo cost, full-harness cost, and cost per successful Team case.
 
-Every monetary value in this thesis is an estimate computed from the frozen
-suite price table. It is not a provider invoice and is not presented as a general
-cost law outside the recorded model allocation and date.
+All costs in this report are estimates based on the experiment’s fixed price table. They are not provider invoices and apply only to the recorded model allocation and pricing date.
+
+## G. Operational Bounds and Claim Semantics
+
+The runtime uses three different classes of controls. A **correctness invariant** must hold for every accepted state, such as wait-graph acyclicity or authorization after target resolution. A **safety bound** limits a specific resource or execution dimension: queue capacities bound buffered work, iteration limits bound loop rounds, and execution deadlines request cancellation. An iteration limit cannot bound a blocked call, and a deadline cannot force an uncooperative operation to terminate. An **operational default** is a provisional capacity choice, not a theorem or benchmark-derived optimum. A configured limit alone does not establish termination or scalability.
+
+The current implementation applies configurable limits to root concurrency, admitted-task execution time, and tool iterations, together with bounded in-memory queues and correlation maps. These controls constrain the corresponding runtime resources and propagate cancellation; they do not establish a global wall-clock or cost bound for every downstream operation. The current values are defaults; load experiments have not established them as optimal.
+
+These guarantees have specific limits. Local completion publication occurs at most once, and a live correlation accepts at most one reply. Neither implies exactly-once provider execution, external tool effects, durable message delivery, or transparent replay after process failure. The terminal state distinguishes a saved successful response from an error or incomplete turn, even though each may end with `done`. It does not coordinate a distributed commit across the browser, Gateway, provider, and external tools.
 
 # V. FINANCIAL RESEARCH APPLICATION
 
 ## A. Product Position and Design
 
-The application is a portfolio and watchlist research copilot. It gathers structured evidence, applies repeatable research methods, maintains thesis state, and calls an independent challenger when disagreement or downside analysis is valuable. It does not place orders, promise returns, or treat a model-generated score as an investment recommendation.
+The financial application supports four research workflows: earnings-event review, candidate screening, read-only portfolio risk diagnosis, and review of conflicting or missing evidence. They share runtime sessions, tool execution, and traces, with workflow-specific inputs and state transitions. Research records and decision holds connect analysis to subsequent review. The application supports research rather than placing orders or treating a generated score as an investment recommendation.
 
-Figure 3 summarizes the intended separation of concerns: deterministic tools construct a typed evidence envelope, research Skills provide reusable analytical procedure, the coordinator and optional challenger interpret evidence, and a human remains responsible for any portfolio action.
+Figure 3 shows how the components divide the work. Tools return structured evidence, and research Skills provide analytical procedures. The coordinator and optional challenger interpret the evidence. A human remains responsible for portfolio actions.
 
 [[FIGURE_3]]
 
@@ -260,36 +289,42 @@ The design separates three concerns:
 2. reusable research methods;
 3. selective model reasoning and multi-agent challenge.
 
-This replaces an earlier architecture in which a coordinator always spawned one stock-selection agent and one news agent. Data acquisition is not an opinion and therefore should not consume a specialist model call. A sub-agent is reserved for an independent interpretation, parallel deep dive, contradiction check, or risk challenge.
+Deterministic tools handle data acquisition and calculation. The model interprets the resulting evidence and selects the next research action, while the runtime executes tool calls and retains the interaction history. A specialist is used when an independent interpretation, parallel deep dive, contradiction check, or risk challenge is useful. The same application can otherwise run in Solo mode.
 
 ## B. Native Finance Tools
 
-The `finance-tools` native plugin wraps scripts from the external, unvendored Finskills directory and exposes seventeen typed tools. Plugin tests replace subprocess execution with controlled fixtures, so they verify argument handling, envelopes, caching, and ledger behavior without proving that a clean clone contains every external executable. The r5 multi-agent confirmation did not invoke these tools at all; its eighteen trace calls were exclusively `spawn_subagent`. The tools are grouped as follows.
+The `finance-tools` native plugin wraps scripts from the external, unvendored Finskills directory and exposes eighteen typed tools. Plugin tests replace subprocess execution with controlled fixtures, so they verify argument handling, envelopes, caching, and ledger behavior without proving that a clean clone contains every external executable. The six-case multi-agent confirmation did not invoke these tools; its trace calls were exclusively coordinator-to-specialist delegation. The tools are grouped as follows.
 
 TABLE_CAPTION: Finance capability groups exposed by the native plugin.
 
 | Category | Tools | Purpose |
 |---|---|---|
 | Data and status | `toolkit_status`, `stock_snapshot`, `market_events`, `macro_snapshot` | Check capability availability and fetch timestamped market evidence. |
-| Deterministic analysis | `screen_stocks`, `portfolio_risk`, `serenity_scorecard` | Apply completeness gates, portfolio diagnostics, and reproducible research-priority scoring. |
+| Deterministic analysis | `screen_stocks`, `portfolio_risk`, `portfolio_policy_bound`, `serenity_scorecard` | Apply completeness gates, full-vector diagnostics, partial-information policy bounds, and reproducible research-priority scoring. |
 | Thesis state | `thesis_save`, `thesis_get`, `thesis_list`, `thesis_match_event`, `thesis_record_review` | Persist hypotheses, catalysts, invalidations, evidence, and immutable reviews. |
 | Monitoring state | `watchlist_save`, `watchlist_list`, `event_alert_ingest`, `alert_list`, `alert_update` | Configure monitoring, deduplicate events, and manage alert lifecycle. |
 
-Every tool returns a `finance.tool.v1` envelope containing success state, request identifier, `as_of`, staleness boundary, data, sources, quality completeness, flags, structured errors, and cache metadata. External scripts are launched without a shell, with validated symbols, bounded arguments, captured output, and a timeout. A failure becomes structured evidence for graceful degradation instead of an invitation to invent missing facts.
+Every tool returns a `finance.tool.v1` envelope containing success state, request identifier, `as_of`, staleness boundary, data, sources, quality completeness, flags, structured errors, and cache metadata. External scripts are launched without a shell, with validated symbols, bounded arguments, captured output, and a timeout. Tools return structured errors so the agent can report a failure without inventing missing facts.
 
 Stock screening includes a completeness gate. If a candidate appears to satisfy the numerical filters but a required metric is missing, it moves to the rejected set with `reason=insufficient_data`. This prevents missing data from being interpreted as zero or from silently improving a ranking.
 
-## C. Serenity as a Research Skill
+For incomplete long-only holdings, `portfolio_policy_bound` checks whether a strict single-issuer limit can be established. It uses known weights, a residual expressed on the same denominator, and an explicit overlap condition. It does not infer exact concentration, HHI or factor exposure from missing holdings; `portfolio_risk` retains that refusal. The bound is a deterministic policy calculation, not an assessment of whether the investment thesis is sound.
 
-The project uses a locally inspected Serenity research Skill. Verification of its supplied SHA-256 list produced 24 successful checks and two failures for `README.md` and `README.zh-CN.md`; executable content and `SKILL.md` matched, but the repository as a whole is therefore not described as fully version-pinned. The Skill is used to map a value chain, identify difficult-to-expand bottlenecks, grade evidence, rank research priority, and define failure conditions. It is not a market-data source, a price predictor, a valuation engine, or an automatic buy/sell rule.
+## C. Research and Data Skills
+
+The project uses a Serenity research Skill to map a value chain, identify difficult-to-expand bottlenecks, grade evidence, rank research priority, and define failure conditions. The Skill provides a reusable analytical procedure; it is not a market-data source, price predictor, valuation engine, or automatic buy/sell rule.
 
 Serenity scorecard inputs are analyst judgments on bounded scales. The bundled script makes the arithmetic deterministic and repeatable, but cannot make subjective inputs objective. The output is therefore labelled a research-priority score. A valid experiment must hold the data, candidate universe, model, and prompt budget constant when comparing no Skill, Serenity, and Serenity plus an independent challenger.
+
+A separate installed FinData Toolkit Skill packages market-data acquisition scripts and their usage instructions. In the tested path, the agent runs the stock-history script through the generic `exec` tool. It receives dated daily bars and a source URL, then saves a research record through the finance plugin. The Skill contains instructions and scripts. The `exec` tool runs the script, and the finance plugin manages the tenant-scoped thesis ledger. The trace can therefore verify data retrieval and ledger changes separately. A final answer alone cannot prove that either occurred. This integration is demonstrated in an isolated Gateway, not yet governed by a command-level Skill allowlist.
 
 ## D. Tenant-Isolated Thesis Ledger
 
 The plugin maintains a separate SQLite database for research state. Every stateful call requires the trusted runtime context. Records are filtered by `userId`, allowing a coordinator and specialists owned by the same user to share a ledger while preventing cross-tenant reads.
 
 A thesis records market, symbol, text, conviction, assumptions, catalysts, invalidation conditions, evidence snapshots, status, review schedule, creator agent/session, and an integer version. Review records are immutable and retain the reviewing agent and session. Updates require an `expected_version`; a stale write is rejected rather than overwriting a newer conclusion.
+
+The finance plugin includes an opt-in evidence-completeness guard. A thesis can declare required event metrics, and the event-ingestion path stores the metric observations in the linked alert. At review-write time, the plugin compares the thesis requirements with the **stored alert**, not with fields supplied in the model's proposed review. If a required metric is absent, the plugin rejects a substantive decision. It accepts only `needs_review`, with status and conviction unchanged. A rejected call creates no review and does not increment the version. An accepted deferred review records the missing metrics and alert identifier. This rule checks declared metric requirements. It does not verify that ingestion extracted the source correctly. The bounded event-to-thesis panel below ran with this guard enabled.
 
 The event-to-thesis workflow is:
 
@@ -307,15 +342,15 @@ A watchlist item stores market, symbol, optional same-symbol thesis, accepted ev
 
 Only active watches for the same tenant, market, and symbol are considered. Events below the threshold are reported as skipped and do not create alerts. If the same fingerprint appears within the configured window, the existing alert’s occurrence count, latest evidence, and `last_seen_at` are updated. No duplicate model-review task is created. Alerts use `new`, `acknowledged`, and `dismissed` states with optimistic version checks.
 
-This pipeline—data tool, deterministic match, agent evidence judgment, versioned persistence—keeps model reasoning focused on interpretation rather than identity, storage, or deduplication.
+Tools match and deduplicate events, and the ledger stores versioned reviews. The model focuses on interpreting the evidence.
 
 ## F. Evidence Governance and Analytical Boundaries
 
-The financial application follows an evidence-first rather than answer-first design. Each observation is treated as a tuple
+The application records the source and status of each observation before analysis. It represents an observation as
 
 `e = (source, observed_at, as_of, payload, completeness, freshness, error_state)`.
 
-The distinction between `observed_at` and `as_of` is material. `observed_at` records when the runtime acquired the evidence, whereas `as_of` identifies the time to which the evidence applies. A later observation may describe an earlier accounting period, and a historical experiment must not expose information published after the simulated decision time. This requirement is consistent with established risk-data principles that emphasize lineage, timeliness, completeness, and traceability [11].
+The two timestamps serve different purposes. `observed_at` records when the runtime acquired the evidence, whereas `as_of` identifies the time to which the evidence applies. A later observation may describe an earlier accounting period, and a historical experiment must not expose information published after the simulated decision time. This requirement is consistent with established risk-data principles that emphasize lineage, timeliness, completeness, and traceability [11].
 
 The runtime assigns different responsibilities to deterministic and probabilistic components.
 
@@ -323,70 +358,26 @@ TABLE_CAPTION: Allocation of responsibilities in the financial research workflow
 
 | Analytical operation | Primary mechanism | Reason |
 |---|---|---|
-| Data retrieval and normalization | Typed finance tool | Inputs, sources, and timestamps must be inspectable. |
+| Data retrieval and normalization | Typed tool or deterministic script invoked through a Skill-guided tool call | Inputs, sources, and timestamps must be inspectable. |
 | Ratios, thresholds, fingerprints, and concentration | Deterministic script | The same inputs should produce the same result. |
 | Evidence completeness and duplicate suppression | Runtime policy and state | Missing values and duplicate events are data-quality problems, not language tasks. |
 | Catalyst, contradiction, and invalidation interpretation | Coordinator or specialist model | The task requires contextual comparison and uncertainty handling. |
 | Thesis and alert persistence | Versioned ledger operation | State transitions must be atomic, tenant-scoped, and auditable. |
 | Portfolio action | Human decision | The application is decision support rather than autonomous execution. |
 
-This decomposition is a safety and evaluation choice. If data retrieval, numerical calculation, and interpretation are merged into one free-form model response, a failed result cannot be attributed to a specific layer. With the decomposition above, the evaluator can distinguish missing evidence, incorrect deterministic state, routing failure, unsupported synthesis, and an explicitly deferred human decision.
+Separating these operations helps locate failures. If data retrieval, numerical calculation, and interpretation are merged into one free-form model response, a failed result cannot be attributed to a specific layer. With the decomposition above, the evaluator can distinguish missing evidence, incorrect deterministic state, routing failure, unsupported synthesis, and an explicitly deferred human decision.
 
-## G. Scenario 1: Completeness-Aware Equity Screening
+## G. Representative Financial Scenarios
 
-The first scenario evaluates whether the application can produce a research shortlist without converting missing data into a favorable signal. A candidate has an observed price-to-earnings ratio of 14 and return on equity of 16 percent, while free cash flow and the debt-to-asset ratio are absent. A naive language model may infer that the observed metrics are attractive and place the security in the shortlist. The FastClaw path instead invokes `screen_stocks` with `require_complete=true`.
+Two representative scenarios illustrate the boundary between deterministic control and model interpretation. In completeness-aware screening, a candidate has observed price-to-earnings and return-on-equity values but lacks free-cash-flow and leverage fields. The deterministic screen rejects the candidate as `insufficient_data`, and the coordinator must report the missing fields rather than fill them from model knowledge.
 
-The deterministic contract checks every metric used by the configured screen. Because two required fields are missing, the candidate is emitted in the rejected set with `reason=insufficient_data`. The coordinator must preserve the observed values, name the missing fields, exclude the candidate from ranking, and request a source refresh. It must not estimate the missing values from pretrained knowledge. The corresponding evaluator checks for evidence identifier `DAT-401`, the completeness rule `MET-411`, the state `insufficient_data`, and the absence of an invented estimate.
+In the contradictory-evidence scenario, a filing states that capital-expenditure guidance fell from 8 billion to 5 billion yuan, while a later official transcript states that the original 8-billion-yuan plan remains unchanged. Because the supplied primary sources are not reconciled, the model must retain both claims, keep conviction unchanged, mark the thesis `needs_review`, and request clarification. This scenario tests uncertainty preservation rather than deterministic calculation.
 
-This scenario isolates a common financial-analysis failure: apparent ranking quality can be improved by silently dropping difficult or incomplete records. The correct runtime behavior is therefore not “select the best-looking candidate,” but “maintain the validity of the comparison set.”
+## H. Scenario-to-Mechanism Mapping
 
-## H. Scenario 2: Earnings Catalyst Review and Versioned Thesis Update
+TABLE_CAPTION: Financial scenarios and the safe outcomes their answers must describe in fixed-evidence calibration.
 
-The second scenario begins with a dated quarterly filing. The fixed evidence states that services revenue grew by 18 percent and gross margin expanded by 220 basis points. The stored thesis, at version 4, names services acceleration as a catalyst and services growth below hardware as an invalidation condition. The research task is to compare the filing with the thesis and persist a bounded update without recommending a trade.
-
-The coordinator can obtain three complementary reports: a filing specialist extracts the dated facts, a thesis specialist applies the stored conditions, and a risk specialist specifies the allowed state transition. A valid synthesis must cite the filing evidence, state that the catalyst is confirmed, state that the invalidation is not observed, and propose a positive review that changes conviction from 3 to 4 while retaining active status. Persistence is attempted with `expected_version=4`; if another reviewer has already updated the thesis, the stale write is rejected and the analysis must be repeated against the newer state.
-
-This flow demonstrates why the Thesis Ledger is not merely conversational memory. The thesis is a domain object with explicit assumptions, catalysts, invalidations, evidence snapshots, and concurrency semantics. The model proposes an interpretation, but the ledger determines whether the transition is valid.
-
-## I. Scenario 3: Explicit Thesis Invalidation
-
-The third scenario tests whether the system can act conservatively when evidence crosses a pre-registered failure condition. An exchange filing reports that customer C-17, representing 31 percent of revenue, will not renew its contract. Thesis version 2 is invalidated if any customer contributing more than 25 percent of revenue is lost.
-
-The expected outcome is not an open-ended negative summary. The system must connect the 31-percent disclosure to the 25-percent rule, persist decision `invalidate` with `expected_version=2`, set status `invalidated`, and request a new evidence review. Target-price prediction is explicitly forbidden because the evidence supports a thesis-state conclusion but not a valuation conclusion.
-
-This scenario tests condition application, not sentiment classification. In r5, a fluent answer that describes the customer loss but leaves the thesis active fails the configured decision milestone assertion; it does not fail a separately populated state-transition grader. Likewise, prohibited valuation wording is checked through configured textual assertions. Deterministic state and policy enforcement belong to the plugin-test track rather than to r5's prose-only oracle.
-
-## J. Scenario 4: Duplicate Event Alert Suppression
-
-Financial announcements are frequently syndicated by exchanges, news wires, and data vendors. Processing each copy as a new event increases model cost and can create contradictory duplicate reviews. In the fourth scenario, two feeds carry external event identifier `SSE-688981-77` inside a 24-hour duplicate window. The watchlist already contains alert `FA-9` with duplicate count 1.
-
-The runtime normalizes the event, computes a stable fingerprint, and queries active watches for the same tenant, market, and symbol. The expected update is to retain alert `FA-9`, increment its duplicate count to 2, refresh `last_seen_at`, and run thesis review only once. No second alert is created. Because fingerprinting and state mutation are deterministic, model reasoning is not required until the unique event reaches the thesis-review stage.
-
-The experiment therefore measures both functional correctness and cost containment. Duplicate suppression is successful only if the audit trail preserves the repeated observation while avoiding a second model-review task.
-
-## K. Scenario 5: Portfolio Concentration and Reversible Risk Control
-
-The fifth scenario converts a deterministic risk snapshot into a bounded decision-support response. Semiconductor positions account for 62 percent of portfolio weight, the top three holdings have average pairwise correlation 0.89, and a configured sector shock produces an estimated 17-percent portfolio drawdown against a 10-percent risk limit.
-
-The coordinator must report the concentration, correlation, stress result, and limit before proposing a response. The expected response is a staged and reversible control: reduce semiconductor exposure below 45 percent, then rerun concentration and stress checks before any execution. The grader rejects promises of improved returns because the stress result supports a risk-control proposal, not a performance guarantee.
-
-This scenario illustrates the intended use of multi-agent challenge. A portfolio specialist can quantify exposure, a stress specialist can explain the configured scenario, and a risk specialist can test whether the proposed control is measurable and reversible. If all evidence is already available and the coordinator can synthesize it reliably, the open-book Solo baseline may be preferable because it avoids specialist cost.
-
-## L. Scenario 6: Contradictory Primary Evidence
-
-The final scenario tests uncertainty preservation. A dated exchange filing states that annual capital-expenditure guidance was reduced from 8 billion to 5 billion yuan. A later official call transcript states that the original 8-billion-yuan expansion plan remains unchanged. Both are treated as primary evidence, and the task supplies no authoritative reconciliation.
-
-A valid response must present both claims, label the evidence as contradictory, keep conviction unchanged, set the thesis review state to `needs_review`, and request clarification before any upgrade or downgrade. Selecting the more convenient source is a failure. The forbidden-claim matcher is negation-aware so that statements such as “the reduction is not verified” are not misclassified as assertions that the reduction is verified.
-
-This case is particularly important for financial analysis because source authority alone does not eliminate temporal or semantic conflict. The runtime cannot solve the contradiction deterministically; it can only ensure that disagreement remains visible and that the persisted state does not imply false certainty.
-
-## M. Scenario-to-Mechanism Mapping
-
-The six cases collectively cover the principal domain mechanisms.
-
-TABLE_CAPTION: Mapping from financial scenarios to runtime mechanisms and safe outcomes.
-
-| Case | Primary mechanism under test | Required safe outcome |
+| Case | Mechanism represented in the scenario | Required outcome wording |
 |---|---|---|
 | Earnings catalyst | Dated evidence and thesis comparison | Versioned positive review; no trade authorization. |
 | Thesis invalidation | Explicit failure-condition application | Status becomes invalidated; no unsupported price target. |
@@ -395,28 +386,21 @@ TABLE_CAPTION: Mapping from financial scenarios to runtime mechanisms and safe o
 | Portfolio concentration | Deterministic risk diagnostics | Reversible control and mandatory re-check. |
 | Contradictory evidence | Uncertainty and governance | `needs_review`, unchanged conviction, clarification request. |
 
-The cases are intentionally fixed-evidence tasks rather than return-prediction tasks. They evaluate whether the application handles research evidence and state correctly. Predictive validity is a separate question that requires point-in-time market data, survivorship-bias controls, transaction assumptions, and a clearly specified investment objective.
+These calibration cases check expected answer content, not actual ledger writes. Later tool-backed studies inspect persisted state separately. Neither type of check establishes investment performance.
 
 # VI. EVALUATION METHODOLOGY
 
-## A. Research Design and Evaluation Propositions
+## A. Research Design
 
-The evaluation follows a controlled artifact-evaluation design. The execution unit is one isolated case–repetition–mode attempt. For the retrieval suite, the company–task pair is an analysis cluster: corpus loads and repeated provider calls derived from the same source records are not treated as independent financial cases, but the eight clusters are not claimed to be strictly independent draws from a population. The principal independent variable depends on the experimental track. Fixed-evidence comparisons vary orchestration while holding evidence and model assignment constant. Retrieval-mediated comparisons vary execution topology and context allocation under an explicitly declared model assignment. The dependent variables are deterministic task success, evidence retention, numeric grounding, collaboration quality, fault-handling quality, token usage, latency, and estimated cost under a frozen price table.
+The evaluation follows the report’s design-to-application structure. Engineering tests examine whether scheduling, isolation, cancellation, tool execution, and persistence behave as intended. Mode comparisons measure the completion and resource trade-offs of Solo and Team under fixed task conditions. Financial application studies examine whether these mechanisms connect supplied evidence or a Skill data fetch to analytical outputs and, where required, saved research state. Execution checks and assessments of analytical content use separate criteria so that completing a workflow does not automatically count as producing a sound financial conclusion.
 
-The evaluation propositions are directional design expectations with explicit evidence states, not externally registered population hypotheses:
+Each experimental attempt uses a separate session for one case, repetition, and execution mode. In the retrieval study, runs derived from the same company and task form a cluster because they share source records. They are not independent financial cases. Fixed-evidence comparisons vary orchestration while holding evidence and model assignment constant. Retrieval comparisons vary execution structure and context allocation under a stated model assignment. Measures include task success, evidence retention, numeric grounding, collaboration quality, tokens, latency, and cost estimated from a fixed price table.
 
-1. **EP1:** selected runtime controls are executable and observable on the tested paths;
-2. **EP2:** shared-retrieval Team preserves strict outcome and final evidence recall relative to staged Solo while reducing wall-clock latency through parallel specialist execution;
-3. **EP3:** sharing one bounded evidence packet reduces tokens, frozen-price estimated cost, and unsupported numeric assertions relative to sending the raw corpus through the same Team topology;
-4. **EP4:** fault-aware coordination reduces unsupported claims relative to a coordinator that treats failed specialists as successful;
-5. **EP5:** deterministic finance controls achieve exact selected state and policy invariants even when open-ended wording varies;
-6. **EP6:** unnecessary delegation or repeated context replication increases tokens, frozen-price estimated cost, and latency without improving milestone outcome.
-
-The design separates infrastructure failure from model failure. A timeout, transport error, or unavailable provider is marked `errored` and excluded from the completed-output conditional-success denominator, while remaining in the assigned-attempt system-success denominator. The report shows assigned, evaluated, errored, and unavailable counts together; an errored attempt is not interpreted as a model failure.
+Infrastructure errors are reported separately from answer failures. A timeout, transport error, or unavailable provider is marked `errored`. It remains in the denominator for success over all assigned attempts, but is excluded when calculating success among completed outputs. The report lists assigned, evaluated, errored, and unavailable counts together.
 
 ## B. Evaluation Stack
 
-FastClaw uses layered evaluation because no single score covers runtime quality.
+The project uses layered evaluation because no single score covers runtime quality.
 
 TABLE_CAPTION: Evaluation layers and the capability measured by each layer.
 
@@ -427,17 +411,26 @@ TABLE_CAPTION: Evaluation layers and the capability measured by each layer.
 | BFCL-style | Three BFCL V4 `simple_python` records | Function selection, JSON arguments, extra and invalid calls. |
 | τ-bench-style | Three retail state-machine cases | Multi-turn state accuracy, communication, and policy compliance. |
 | SWE-bench-style | Three local Go repository issues | Patch generation, hidden test execution, and resolution. |
-| MultiAgentBench-style | Collaboration, real-runtime, and fault suites | Milestones, routing, evidence use, graceful degradation, Team/Solo comparison. |
+| MultiAgentBench-style | Collaboration and real-runtime suites | Milestones, routing, evidence use, and Team/Solo comparison. |
 | Finance workflow | Six fixed-evidence cases | Catalyst, invalidation, duplicate alerts, incomplete data, concentration, and conflicting evidence. |
-| Finance retrieval | Twenty-four source-locked SEC configurations | Retrieval recall and precision, evidence compression, specialist summary retention, synthesis grounding, latency, and cost under increasing corpus load. |
+| Finance tool workflow | Sixteen frozen cases, five isolated Flash repetitions each | Model-selected finance-tool calls, trace pairing, evidence blocking, and persisted thesis or risk state across four workflow families. |
+| Skill-to-ledger path | One isolated live-price case | Market-data script execution through the Gateway, source and arithmetic checks, and subsequent finance-plugin ledger creation. |
+| Finance retrieval | 24 SEC task configurations using fixed source documents with three repetitions of each primary mode; separate eight-configuration comparison using the same model | Retrieval recall and precision, evidence compression, specialist summary retention, synthesis grounding, latency, and cost under increasing corpus load. |
+| SEC research case studies | 30 issuers with five sessions each; a separate three-issuer panel with two sessions each | Interpretation of checked comparisons, opposing evidence, research usefulness, and alignment with saved review state. |
 
-The style subsets are regression tests for the FastClaw harness. They are not official benchmark scores because they use fewer tasks, local fixtures, and project-specific graders.
+The style subsets are regression tests for the project's evaluation harness. They are not official benchmark scores because they use fewer tasks, local fixtures, and project-specific graders.
+
+The runtime includes an evaluation subsystem that executes tasks and records their outcomes. A YAML or JSON suite declares cases, expected behavior, repetitions, timeouts, and, where applicable, comparison modes. The evaluation CLI validates the suite. The selected runner creates a separate session for each case, repetition, and mode. The generic runner covers direct output, BFCL-derived function-call, and tool-trace tasks, while dedicated τ-style, SWE-style, multi-agent, and finance-retrieval runners apply their respective interaction and scoring rules. The HTTP executor submits an evaluation-scoped request to the real Gateway, which invokes the agent runtime and returns a final answer together with trace events, usage, and optional state. Deterministic tool responses and simulated specialist faults can be injected within a request; these controlled fixtures test particular decisions but do not by themselves establish behavior under an uncontrolled production outage. The report layer aggregates attempts and compares saved baseline and candidate results.
+
+The evaluation uses three evidence channels. Final answers support outcome, milestone, and grounding checks. Tool traces record calls, results, and errors, linked by call identifiers. Model-call records provide roles, call paths, tokens, cache usage, estimated cost, latency, and errors. An answer alone does not prove that a tool or specialist was used. A valid trace does not prove that the answer is correct. The evaluators combine these records with saved state and, for repository tasks, hidden-test results.
+
+The six-case fault-injection suite separately exercises specialist timeout, explicit error, malformed output, contradictory evidence, multiple partial failures, and noncritical dependency failure. The tests check whether the system detects the injected failure, identifies its source, and responds without unsupported claims. They do not measure service availability under real outages. This separation matters because a runtime or transport error, a model's unsupported assertion, a mismatched source fact, and an overly narrow grader are different failure classes requiring different remedies.
 
 ## C. Repetition and General Metrics
 
-Each case runs in an isolated session with a configurable timeout and number of repetitions. The report records run pass rate, `pass@1`, `pass@k`, consistency, P50/P95 latency, tokens per successful run, invalid tool-call rate, and suite-specific outcomes. `pass@k` is the fraction of cases with at least one successful attempt among `k` repetitions; consistency is the fraction whose attempts all have the same pass/fail result.
+Each case runs in an isolated session with a configurable timeout and number of repetitions. This report presents assigned attempts, strict passes, separately identified infrastructure errors, descriptive mean latency, token usage, estimated cost, and selected evidence-retention outcomes. The harness retains additional per-attempt and aggregate diagnostics, but those are not all analyzed here. Queue-wait P50/P95 values in the scheduler test describe that controlled workload, not the latency distribution of the SEC model experiments.
 
-For suites that configure state, communication, or policy graders, final success requires those populated components to pass. This is a harness capability, not a description of every suite: r5 populated text, milestone, contribution, and grounding checks but left the state, communication, policy, and tool-trace grader families empty. For local software tasks, success requires a non-empty patch and passing hidden tests.
+When a suite includes state, communication, or policy checks, those checks must also pass. The financial confirmation populated text, milestone, contribution, and grounding checks; persistent state mutation was evaluated separately through deterministic plugin tests.
 
 ## D. Fair Team/Solo Baselines
 
@@ -452,7 +445,7 @@ The fair collaboration gain is
 
 `Gfair = S(team) − S(solo_open_book)`,
 
-where `S` is outcome success under the same milestone and attribution graders. Planning-opportunity-matched gain is `S(team) − S(solo_two_pass)`. This label is deliberately narrower than compute matching: Two-Pass matches an additional coordinator planning opportunity but does not match Team's three specialist calls. The older `team − solo_closed_book` value remains an evidence-access diagnostic in legacy suites but is not evidence that orchestration itself added value. Each mode receives an independent session and timeout. If a baseline times out, returns an empty output, exposes a streamed turn error, or otherwise fails at the infrastructure layer, it is marked `errored`; it remains in the assigned-attempt denominator but is excluded from completed-output conditional task success, and any dependent paired effect is unavailable. Infrastructure errors are not interpreted as model failures. The thesis constructs paired tables explicitly from case and repetition keys before computing paired statistics.
+where `S` is outcome success under the same milestone and attribution graders. Planning-opportunity-matched gain is `S(team) − S(solo_two_pass)`. Two-Pass gives the coordinator an additional planning step. It does not match the compute used by Team’s three specialist calls. The older `team − solo_closed_book` value remains an evidence-access diagnostic in legacy suites but is not evidence that orchestration itself added value. Each mode receives an independent session and timeout. A baseline timeout, empty output, streamed turn error, or other infrastructure failure is marked `errored`. It counts toward assigned attempts but not success among completed outputs. Any paired effect that requires that output is unavailable. Infrastructure errors are not interpreted as model failures. Paired tables are constructed from case and repetition keys before computing statistics.
 
 ## E. Multi-Agent Metrics
 
@@ -462,26 +455,13 @@ For expected specialist set `E` and unique valid delegated set `D`,
 
 and delegation F1 is their harmonic mean. Contribution utilization is the fraction of expected healthy specialist evidence retained in the final answer. Coordination score is the mean of delegation F1 and contribution utilization. Milestone KPI is achieved deterministic output milestones divided by configured milestones.
 
-Fault-injection cases add timeout, explicit error, malformed output, contradictory evidence, multiple partial failure, and non-critical failure. Metrics include fault observation, fault attribution, graceful degradation, and unsupported claim rate. Unsupported claims are counted per fault, not per phrase, so the rate cannot exceed 100%. Matching is assertion-sensitive: a negated statement such as “refund is not authorized” does not trigger the forbidden assertion “refund is authorized.”
+## F. Preliminary Workflow Calibration
 
-## F. Runtime Experiment Design
+The financial suite contains six cases and three specialists—four runtime agents including the coordinator. The final confirmation used one repetition and four independently isolated modes, yielding 24 case–mode executions and 54 model calls after including the specialists and the two-pass baseline. Session keys are unique by case, repetition, and mode so that a prior answer cannot leak into another baseline. The same deterministic milestones and forbidden assertions are used for all four modes.
 
-The historical controlled real-runtime experiment uses one dedicated tenant, one coordinator, four specialists—five agents in total—eight fixed-evidence tasks, and an agent-scoped API key. The model configuration is constant:
+The evidence source is deliberately controlled. `FIN-01` through `FIN-06` are compiled into the benchmark tenant as a string lookup table, and each specialist is instructed to return the matching evidence. The calls traverse the real Gateway, TaskQueue, MessageBus, agent loop, provider, correlation, and telemetry paths, but they do not measure document retrieval or specialist evidence reasoning. The coordinator uses a delegate-only policy and specialists use a no-tools policy.
 
-- coordinator: `deepseek/deepseek-v4-pro`;
-- specialists: `deepseek/deepseek-v4-flash`.
-
-The cases cover incident diagnosis, release authorization, service-account access, schema regression, duplicate payment, privacy export, capacity planning, and dependency upgrade. The historical before/after reports were produced on 28 July 2026 with one repetition and the then-current two modes (`solo_closed_book` and `team`). Therefore their total tokens and end-to-end latency measure the complete two-mode attempt and must not be directly compared with a future four-mode attempt.
-
-The changed factor is a harness bundle: required identity validation, enforced tool policy, prompt/tool consistency for no-tool agents, per-turn evaluation deduplication, a structured specialist contract, normalized graders, and suite pricing. The model names, task set, and repetition count remain unchanged, but the output oracle and evidence visibility are not isolated from the runtime changes. The study is consequently a historical regression sequence rather than a causal before/after experiment.
-
-## G. Financial Workflow Experiment
-
-The financial suite contains six cases and three specialists—four runtime agents including the coordinator. The frozen post-fix confirmation used one repetition and four independently isolated modes, yielding 24 case–mode executions and 54 model calls after including the specialists and the two-pass baseline. Session keys are unique by case, repetition, and mode so that a prior answer cannot leak into another baseline. The same deterministic milestones and forbidden assertions are used for all four modes.
-
-The evidence source is deliberately controlled. `FIN-01` through `FIN-06` are compiled into the benchmark tenant as a string lookup table, and each specialist’s generated `SOUL.md` instructs it to copy the matching evidence line verbatim. The calls traverse the real Gateway, TaskQueue, MessageBus, agent loop, provider, correlation, and telemetry paths, but they do not measure document retrieval or specialist evidence reasoning. In r5, the coordinator’s delegate-only policy and specialist no-tools policy produced eighteen `spawn_subagent` calls and zero `finance-tools.*` calls.
-
-The finance experiment reports five groups of measures:
+The preliminary harness retains five groups of measures; Section VII summarizes its completion results and diagnostic failures rather than reproducing every archived metric:
 
 1. **Outcome validity:** strict case success and milestone completion;
 2. **attribution wording:** required evidence-identifier recall, forbidden-assertion rate, and explicit uncertainty under contradiction;
@@ -491,9 +471,9 @@ The finance experiment reports five groups of measures:
 
 The six case oracles are specified before execution.
 
-TABLE_CAPTION: Fixed evidence and deterministic oracle for the financial workflow experiment.
+TABLE_CAPTION: Fixed evidence and expected answer content in the preliminary workflow calibration.
 
-| Case | Core evidence | Deterministic oracle |
+| Case | Core evidence | Expected answer content |
 |---|---|---|
 | Earnings catalyst | 18% services growth; 220-bp margin expansion; thesis version 4 | Positive review, conviction 3→4, active status, no trade. |
 | Thesis invalidation | Customer loss equals 31% of revenue; invalidation threshold 25% | Invalidate version 2, request fresh review, no target price. |
@@ -502,391 +482,321 @@ TABLE_CAPTION: Fixed evidence and deterministic oracle for the financial workflo
 | Portfolio concentration | 62% sector weight; 0.89 correlation; 17% stress loss versus 10% limit | Staged reduction below 45% and mandatory re-test. |
 | Contradictory evidence | Filing says capex 8→5 billion; later transcript says 8 billion unchanged | `needs_review`, unchanged conviction, clarification required. |
 
-Functional feasibility is defined conservatively. All configured wording and policy assertions must hold across repetitions; baseline infrastructure errors must be zero or separately disclosed; unsupported claims must be zero for cases with incomplete or contradictory evidence; and any Team advantage must be computed against `solo_open_book`, not against an evidence-deprived closed-book baseline. Actual ledger mutation is tested separately by the Python plugin suite and is not inferred from r5 prose. A positive return is not an acceptance criterion.
+Acceptance requires all configured wording and policy checks to pass across repetitions. Infrastructure errors must be reported separately. Cases with incomplete or conflicting evidence must contain no unsupported claims. Any Team advantage is measured against `solo_open_book`, which has access to the same evidence. Actual ledger mutation is tested separately by the Python plugin suite and is not inferred from generated prose. A positive return is not an acceptance criterion.
 
-## H. Retrieval-Mediated SEC Experiment
+## G. Retrieval-Mediated SEC Experiment
 
-The retrieval track introduces evidence acquisition as an explicit stage rather than assuming that a complete evidence packet is already available. Its frozen suite contains four companies—NVIDIA, AMD, Intel, and NIKE—crossed with two task families and three corpus loads. Point-in-time cases require one bounded observation and declared calculations. Longitudinal cases require chronology reconstruction, accounting-basis checks, cross-observation calculations, a contiguous research-state chain, and a bounded governance decision. Small, medium, and large loads add progressively more same-company, adjacent-period, peer, and irrelevant records. The resulting 24 configurations are treatment combinations, not 24 independent issuers.
+The retrieval track introduces evidence acquisition as an explicit stage rather than assuming that a complete evidence packet is already available. The SEC study crosses four companies—NVIDIA, AMD, Intel, and NIKE—with two task families and three corpus loads. Point-in-time cases require one bounded observation and declared calculations. Longitudinal cases require chronology reconstruction, accounting-basis checks, cross-observation calculations, a contiguous research-state chain, and a bounded governance decision. Small, medium, and large loads add progressively more same-company, adjacent-period, peer, and irrelevant records. The 24 configurations are treatment combinations, not 24 independent issuers; each primary mode has three repetitions per configuration.
 
-All records are extracted from archived SEC filing material and carry a source identifier, accession, filing date, locator, source hash, and record identifier. The suite and source lock are content-addressed. A unified provenance table covers all 44 human-oracle facts with company, symbol, concept, value, unit, basis, explicitly available scope, reporting period, filing date, SEC acceptance timestamp, accession, form, document type, URL, locator, and source SHA-256. A separate acceptance-time lock records SEC submissions API metadata for all twelve source accessions. The point-in-time generator excludes candidate records accepted after the target gold-record timestamp; all twelve point-in-time configurations pass this machine check. A separate 17-row derived-value table preserves formulas, input fact identifiers, unit, rounding rule, and expected result. Gold evidence is represented as 37 equivalence groups so overlapping source windows can satisfy the same factual requirement without penalizing a semantically correct retrieval. The human oracle—not model output or grader consensus—is the declared ground truth. Expected calculation outputs remain hidden from non-Oracle modes; all modes receive the same formulas, rounding rules, output sections, and bounded decision protocol. Independent human verification of the acceptance metadata remains part of the pre-freeze audit.
+All records are extracted from archived SEC filing material and carry a source identifier, accession, filing date, locator, source hash, and record identifier. A provenance table records the concept, value, unit, accounting basis, reporting period, filing date, SEC acceptance timestamp, accession, source URL, and locator for each expected fact. Point-in-time cases exclude records accepted after the target observation time, while a separate derived-value table preserves formulas, input facts, units, rounding rules, and expected results. Reference answers come from the fixed source documents, not model output or agreement among graders. Expected calculation results are hidden from all non-Oracle modes.
+
+The source and oracle packet underwent review before use, covering 44 SEC facts, 17 calculations, and 42 evidence groups. Fact checks compare values, units, periods, and accounting bases with filing passages. Calculation checks recompute the formulas. Evidence-group checks confirm that alternative passages support the same fact. All 103 items were reviewed, including technical checks of the 42 evidence groups. Generated answers undergo separate evaluation.
 
 The five modes are:
 
 1. `solo_monolithic`: one Pro call receives the raw corpus and performs retrieval, analysis, and synthesis in one context;
 2. `solo_staged`: one Pro agent performs retrieval, three sequential analytical passes, and synthesis in isolated sessions;
 3. `team_shared_retrieval`: one Flash retriever constructs a bounded packet, a Pro coordinator delegates the packet once to three parallel Flash specialists, and the coordinator synthesizes their summaries;
-4. `team_raw_context`: the same Team topology receives the full raw corpus as shared context, isolating the effect of retrieval compaction;
-5. `oracle_evidence`: one Pro synthesis call receives the gold evidence packet and provides a diagnostic ceiling rather than a deployable baseline.
+4. `team_raw_context`: the coordinator and parallel specialists receive the full raw corpus without the separate retrieval stage, comparing the overall raw-context strategy against shared retrieval rather than isolating compression alone;
+5. `oracle_evidence`: one Pro synthesis call receives the gold evidence packet as an evidence-access diagnostic, not a theoretical quality ceiling or a deployable baseline.
 
-The primary quality outcomes are strict pass, final evidence recall, milestone completion, and numeric grounding accuracy. Retrieval recall and precision, specialist-summary retention, synthesis retention, evidence-compression ratio, delegation precision and recall, infrastructure-error rate, tokens, estimated cost, and wall-clock latency are secondary mechanism and efficiency outcomes. Stage service times are retained for attribution, but specialist service times are summed across parallel calls and therefore are not substituted for end-to-end wall-clock latency.
+The primary quality outcomes are strict pass, final evidence recall, milestone completion, and numeric grounding accuracy. Retrieval recall and precision, specialist-summary retention, synthesis retention, evidence-compression ratio, delegation precision and recall, infrastructure-error rate, tokens, estimated cost, and wall-clock latency are secondary mechanism and efficiency outcomes. Stage times are retained to explain execution costs. Specialist times are summed across parallel calls, so their total is not the end-to-end elapsed time.
 
-The first executed observation is a one-repetition medium-context longitudinal NVDA pilot. It is an engineering and measurement pilot because earlier attempts informed thinking-mode, prompt, batching, trace, and grader corrections. The second-stage protocol freezes these mechanisms before executing the complete matrix. Within each case–repetition block, primary mode order must be seeded and randomized; sessions must remain isolated; source, suite, grader, and pricing hashes must remain unchanged; and baseline infrastructure errors must be reported separately. The full protocol is stored in `evals/finance_e2e/STAGE2-EXPERIMENT-PROTOCOL.md`.
+The SEC main study assigns three repetitions of each primary mode—staged Solo, shared-retrieval Team, and raw-context Team—to all 24 configurations, for 216 assigned primary observations. One monolithic Solo and one Oracle diagnostic are also run per configuration, adding 48 observations. Mode order is seeded within case–repetition blocks, sessions are isolated, and each case report has a hash manifest. The main study uses the declared heterogeneous allocation above; the prespecified 24-observation comparison using Pro for every model call was not run and is not part of the results.
 
-## I. Fault-Injection Protocol
+A supplementary comparison holds the model family and tier fixed across staged Solo and shared-retrieval Team. It selects eight prespecified configurations across four issuers, runs each mode three times, and contributes 24 paired blocks or 48 valid observations collected in two batches. Incomplete and invalid pilot observations are excluded. The supplement is analyzed separately from the main study because model allocation and collection batches differ.
 
-Fault injection is limited to the simulated evaluation path and cannot modify production agents. The suite injects timeout, explicit error, malformed output, contradictory evidence, multiple partial failures, and a non-critical specialist failure. Delay injection obeys request cancellation and has a configured upper bound.
+Here, Pro and Flash refer to the archived DeepSeek model identifiers `deepseek/deepseek-v4-pro` and `deepseek/deepseek-v4-flash`, respectively. These identifiers describe the recorded service configuration, not immutable model-weight versions. The frozen suites and manifests specify the following settings for these two comparisons.
 
-For configured fault set `F`, observed-fault set `O`, and correctly attributed set `A`,
+TABLE_CAPTION: Recorded configuration for the repeated SEC comparisons.
 
-`FaultObservation = |O| / |F|`, `FaultAttribution = |A| / |F|`.
+| Setting | Main study | Comparison using the same model |
+|---|---|---|
+| Recorded execution dates (UTC+8) | 10–11 October 2026 | 11 October 2026, two batches |
+| Model allocation | Pro for Solo, coordinator, and Oracle synthesis; Flash for retrieval and specialists | Flash for all actual model calls |
+| Repetitions | Three per primary mode and configuration; one per diagnostic | Three per mode and configuration |
+| Suite timeout | 10 minutes per mode attempt | 10 minutes per mode attempt |
+| Configured model limits | 8,192 output tokens per call; temperature 0.1; thinking off | Same |
+| Scheduling | One case block at a time; Team specialists parallel within the block | Same |
+| Mode-order seed | 20260802 | 20260802 |
+| Frozen price-table date | 1 August 2026 | 1 August 2026 |
 
-Graceful degradation requires the coordinator to identify unavailable or conflicting evidence, preserve contributions from healthy specialists, avoid the forbidden unsupported assertion, and provide a bounded next action. Unsupported-claim rate is defined per fault rather than per matching phrase:
+Both comparisons retain versioned prompts and grading rules, together with executable, source, suite, and result hashes for reproducibility. Each result refers to the implementation used for that experiment.
 
-`UnsupportedClaimRate = |{f ∈ F : an unsupported assertion is produced for f}| / |F|`.
+## H. Statistical Reporting and Reproducibility
 
-This definition keeps the rate within `[0,1]`. Assertion matching also considers local negation so that “the refund is not authorized” does not count as the forbidden assertion “the refund is authorized.” An all-faulted case is evaluated on safe degradation rather than healthy-contribution utilization.
+The report presents raw outcome counts and descriptive mode-level means, with paired pass/fail counts for the main Team/Solo comparison. Per-attempt outcomes, timing, tokens, and errors remain in the machine-readable archive. Equal observed outcomes do not establish equivalence, and means can conceal long-running delegation paths. Completed-output latency comparisons exclude timeouts; pairs with a timeout are described separately as completion outcomes. Corpus loads and repeated calls derived from one company–task pair share source material and therefore cannot be counted as independent financial cases. No confidence interval or significance test is used to support the reported comparisons.
 
-## J. Runtime and Grader Ablations
+The six-case calibration has only one repetition, so equal observed pass counts cannot establish equivalence. The later SEC study adds repetition and load variation, but calls derived from one company–task cluster remain dependent. The report therefore emphasizes observed counts and paired trade-offs rather than a population reliability claim.
 
-The historical comparison changes several runtime controls together. A stronger follow-up study should isolate their contribution through cumulative ablation:
+For the repeated SEC comparisons, the frozen suites, manifests, and result files record model allocation, repetitions, timeout, pricing date, execution modes, usage, latency, and errors. Evidence fixtures and graders remain unchanged within a comparison. The six-case confirmation and original retrieval Pilot contain one repetition; the SEC main study and comparison using the same models have three repetitions per selected configuration. Given only eight company–task clusters, one provider family, and two separate run batches for the supplementary comparison using the same model, the estimates describe these configurations rather than a wider population.
 
-TABLE_CAPTION: Proposed cumulative ablation of runtime controls.
+The finance-retrieval protocol additionally records the suite and source-lock hashes, a seeded mode order where configured, and a retained machine-readable report and manifest. These artifacts make the executed configuration inspectable; they do not remove provider variability, single-case dependence, possible grader error, or the need to freeze sources and oracles before confirmatory repetition.
 
-| Configuration | Identity validation | Tool policy | Structured specialist contract | Evaluation deduplication | Normalized grader |
-|---|---:|---:|---:|---:|---:|
-| A0: unrestricted baseline | No | No | No | No | No |
-| A1: identity contract | Yes | No | No | No | No |
-| A2: capability boundary | Yes | Yes | No | No | No |
-| A3: output contract | Yes | Yes | Yes | No | No |
-| A4: bounded coordination | Yes | Yes | Yes | Yes | No |
-| A5: complete harness | Yes | Yes | Yes | Yes | Yes |
 
-For each adjacent pair, the study should report the change in strict success, duplicate delegation count, specialist tool-call count, Team tokens, and P95 latency. This design separates three mechanisms that can otherwise be conflated: improved evidence delivery, reduced action space, and more permissive grading of semantically equivalent correct answers.
+## I. Financial Workflow and Case Study Methods
 
-A second finance-specific ablation compares (i) deterministic tools without a research Skill, (ii) the same tools and data with Serenity methodology, and (iii) the same configuration plus an independent challenger. Candidate universe, evidence packet, coordinator model, timeout, and token budget must remain constant. The comparison tests whether the Skill improves coverage of value-chain and invalidation reasoning, and whether a challenger improves contradiction detection enough to justify its additional cost. Neither runtime-control ablation has yet been executed.
+The application experiments use actual Gateway sessions and finance-tool calls. Each attempt starts from its own session and ledger state. For an event review, the agent reads a stored thesis and linked alert, examines the supplied evidence, chooses a research decision, writes a versioned review, and acknowledges the alert. Verification checks the returned tool records against the retained SQLite ledger, including the review's source links, thesis version, conviction, decision hold, and alert status. A tool call printed as text does not count as execution. Screening and portfolio cases instead check their configured candidate, rejection, risk, and state outcomes.
 
-One zero-model-call grader ablation is implemented in `project-report/analysis`. It reloads the frozen suite, regrades r1–r5 outputs, and changes one matching feature at a time: negation scope, hedge scope, conditional scope, the eight-token per-step gap, plural morphology, and a lightweight `-ed`/`-ing`/`-ion` inflection stem. The first five switches remove one current guard; the sixth adds a deliberately permissive morphology rule. This is not a search for the highest score. It tests whether headline conclusions remain stable when plausible lexical design choices change.
+The four-workflow repetition panel contains 16 frozen cases, five attempts per case. Its SEC event cases use archived excerpts; source-conflict, screening, and portfolio cases use declared synthetic fixtures. An earlier event-to-thesis panel contains four SEC cases with two attempts each. These studies test distinct workflow requirements and are not combined into one pass rate. Two further cases use real sources. The historical screening case uses frozen company disclosures. The online Skill-to-ledger case retrieves dated market bars during the session.
 
-The replay duplicates the production matcher in an independent analysis program and has regression tests for the audited pooled counts and drift cells. Duplication risks implementation disagreement, but it also avoids mutating the production grader simply to analyze itself. A future release should expose a versioned grader API so the same implementation can be called with an explicit configuration and preserved in each artifact.
+The later research case studies use selected SEC earnings-exhibit rows with reporting periods, source URLs, locators, and hashes. The task asks the agent to compare two quarters and identify evidence for and against the existing view. It then asks for the implications, missing information, and a research decision. The agent must also verify the saved review and alert. This is a paraphrase of the archived task contract, not a quotation of a model answer. The prompt does not assign a target conclusion.
 
-## K. Statistical Reporting and Reproducibility
+For these later cases, the host supplies a checked comparison catalog with row identifiers and sequential differences. The model selects comparisons, explains their implications and uncertainty, and reports state returned by the tools. The host renders the numerical reference card. The resulting report therefore combines deterministic source preparation and arithmetic with model-generated analysis. Correct displayed arithmetic alone does not demonstrate that the model independently calculated it, and a correct reference table does not guarantee that its interpretation is sound. The excerpts are selected evidence rather than complete filings, and Q2-to-Q3 comparisons are sequential rather than year-over-year.
 
-The primary result is the raw case-level paired outcome table with assigned, evaluated, errored, and unavailable counts. Historical r2–r5 Wilson intervals and exact-binomial/McNemar calculations are retained only as naive descriptive sensitivity analyses: pooling repeated versions and treating the cases as independent does not model their dependence or post hoc selection. If there are no discordant pairs, the exact test is undefined rather than evidence of equality. Stage 2 prespecifies company–task cluster bootstrap intervals, but with only eight analysis clusters those intervals remain descriptive. Latency and token distributions are summarized by median, P95, and individual-case values because a mean can hide delegation loops.
+One panel contains 30 issuers with five isolated Flash sessions each. The illustrative MQ and AIG examples were selected after inspecting outputs. A separate three-company study fixed three previously unrun issuers—MTB, RPAY, and CSGP—before generation and ran two sessions each. It enabled a check that validates calculations against the supplied source values. Failed or non-high answers remain in their respective panels. The two panels are presented separately because their selection, repetitions, and guard settings differ.
 
-The retrieval suite requires an additional dependence correction. Three corpus loads and repeated calls derived from one company–task pair share source material and cannot be counted as independent cases. Stage 2 therefore reports paired effects at every configuration but constructs uncertainty intervals by resampling company–task clusters. Load-specific effects are reported as within-cluster contrasts. With only eight company–task clusters in the initial four-company matrix, these intervals remain descriptive; expansion to additional issuers is required before a population-level superiority or non-inferiority claim.
+## J. Assessment of Analysis Quality
 
-The six-case confirmation has one repetition. Even the most extreme possible paired result—six Team-only successes and no Solo-only successes—has two-sided exact probability `2/2^6 = 0.03125`. Any smaller discordance cannot cross a conventional 0.05 threshold. Consequently the experiment is structurally underpowered for modest differences, and an observed 0.0-point difference means “not detected at this resolution,” not “equivalent.”
+Execution checks ask whether the required calls, evidence links, and ledger transitions occurred. Content review asks whether the financial argument follows from the available evidence. Both the final answer and persisted research rationale are in scope. A material claim is checked for its value, unit, period, accounting basis, direction, derived arithmetic, and supporting source or tool record. Explanations of causes must be supported or explicitly framed as hypotheses; a statement that a decision is held must agree with the actual ledger.
 
-Every reported run should record the model names, provider endpoint class, suite name, baseline modes, repetition count, timeout, pricing table date, execution mode, case filter, and whether specialists were simulated or executed through the real runtime. Evidence fixtures and graders should remain unchanged during one comparison. Reports should retain per-call role, call path, token counts, latency, and error state so aggregate cost can be audited. The r5 sidecar records that the suite default was three repetitions but the command overrode it to one, and records the four mode names, ten-minute timeout, runtime execution mode, empty case filter, pricing date, endpoint class, Go version, HEAD, critical file hashes, and secret-free command.
+The LLM-assisted assessment rubric has five dimensions: factual and numeric fidelity, inference discipline, risk and uncertainty, state alignment, and research utility. Each is scored from zero to two. To be rated high quality under the case-specific rubric, an answer requires two on every applicable dimension, no critical error, completed execution, and a supported research implication. An adequate answer has no critical error but falls below that threshold. A problematic answer has a material error or scores zero on an applicable dimension. A justified request for more evidence can be useful when it identifies what would resolve the question and actually suspends downstream use of the thesis.
 
-The historical eight-case experiment predates the four-mode protocol and contains one repetition. It is therefore reported descriptively without a significance test. The six-case financial confirmation also contains one repetition and is reported with raw counts and an explicit power bound. Earlier financial runs were used to identify grader defects and calibrate narrowly scoped assertion alternatives; consequently the final run is a frozen post-fix confirmation, not an untouched holdout or independent validation set. Pooling r2–r5 is reported only as post hoc sensitivity analysis because the decision to pool followed inspection of the runs. Retrieval runs `v1` through `v7` are likewise excluded from comparative inference because they informed the final runtime and grader. The retained `v8` through `v10` observations share source hashes but still contain only one case and one repetition.
+The 80-attempt workflow panel received a retrospective first-pass review. Later SEC reviews use the frozen claim-level rubric, with masked scores completed for 100 of 150 answers; supplemental assessments are not pooled with those scores. The six answers from the three-company study received unblinded LLM-assisted review. These diagnostic assessments have no independent finance-expert validation. Illustrative examples demonstrate analysis and its connection to runtime state rather than investment performance or general financial reliability.
 
 # VII. RESULTS
 
+The results address runtime mechanisms, execution-mode trade-offs, and financial application workflows in that order. The repeated SEC main study and comparison using the same model provide the principal mode comparisons. Application results then connect tool execution to saved research state and examine selected financial arguments.
+
 ## A. Engineering Verification
 
-The remediation was verified first with focused package tests covering the evaluation harness, agent loop, sub-agent tools, store, plugins, tenant provisioning, API, and command layer, followed by `go test ./... -count=1`, which passed across the repository. Behavioral tests exercise assertion direction and negation, error-aware denominators, streamed turn errors, tool panic containment, duplicate call identifiers, production and evaluation deduplication semantics, per-tool duration, model-call ordering, and SQLite contention through the public Store API. Race-enabled tests for `internal/agent`, `internal/agent/tools`, and `internal/store` also passed and are reported separately from ordinary functional tests because they detect synchronization faults rather than semantic failures.
+The implementation was verified with focused package tests covering the evaluation harness, agent loop, sub-agent tools, store, plugins, tenant provisioning, API, and command layer, followed by the full Go test suite. Behavioral tests exercise assertion direction and negation, error-aware denominators, streamed turn errors, tool panic containment, duplicate call identifiers, production and evaluation deduplication semantics, per-tool duration, model-call ordering, and SQLite contention through the public Store API. Race-enabled tests for the agent, sub-agent tools, and store packages also passed and are reported separately because they detect synchronization faults rather than semantic failures.
 
-The finance plugin passes ten Python tests covering typed tool discovery, subprocess argument validation, cache behavior, completeness gating, trusted tenant context, thesis isolation and versioning, event review persistence, watchlist filtering, alert deduplication, and user isolation.
+The finance plugin passed 35 Python tests. These cover tool discovery, subprocess arguments, caching, data completeness, and trusted tenant context. They also check thesis isolation and versioning, saved event reviews, watchlist filtering, alert deduplication, user isolation, required-metric rules, and the partial-portfolio policy bound.
 
-Statement coverage measured with `go test ./... -coverprofile` is approximately 27.2% for runtime and production packages, or 28.4% when `project-report/analysis` is included. Coverage is strongly non-uniform: `policy`, `scope`, `session`, `plugin`, `mcp`, and `skills` are among the packages at 0.0%, while `agent/tools`, `gateway`, `sandbox`, `setup`, and `store` remain partial. These gaps affect mechanisms used in the design argument, especially policy-filtered registries, session normalization, and prompt-injection scanning. The test results establish functional feasibility of selected principal paths; they do not constitute comprehensive code coverage, a production load test, an adversarial security certification, or evidence of investment performance.
+In the retained engineering-test snapshot, statement coverage measured with `go test ./... -coverprofile` was approximately 27.2% for runtime and production packages, or 28.4% when `project-report/analysis` is included. Coverage is strongly non-uniform: `policy`, `scope`, `session`, `plugin`, `mcp`, and `skills` are among the packages at 0.0%, while `agent/tools`, `gateway`, `sandbox`, `setup`, and `store` remain partial. These gaps affect mechanisms used in the design argument, especially policy-filtered registries, session normalization, and prompt-injection scanning. These coverage figures describe that snapshot rather than a cumulative measurement of subsequent patches. The tests verify selected execution paths. They do not establish full coverage, production capacity, security certification, or investment performance.
 
-## B. Historical Runtime Regression Sequence
+A small scheduler-only load test exercises the actual TaskQueue with 48 synthetic internal tasks distributed over 12 chat keys, four tasks per chat. Each handler waits 15 ms; no Gateway HTTP request, database, provider, or external tool is involved. Five local repetitions on Go 1.27.1 (Darwin/arm64) compared root-concurrency limits of one and four. All tasks completed, each chat retained submission order, and observed peak handler concurrency equaled but never exceeded the configured limit. A separate race-detector run passed. The timings below are ranges across the five ordinary repetitions, not service-capacity estimates.
 
-TABLE_CAPTION: Historical two-mode real-runtime regression sequence (one repetition per case).
+TABLE_CAPTION: Queue-only synthetic load check, 48 tasks across 12 chats, five repetitions per limit.
 
-| Metric | Initial | Intermediate | Final observed |
-|---|---:|---:|---:|
-| Strict task success | 0/8 | 4/8 | 8/8 |
-| Milestone KPI | 16.7% | 83.3% | 100% |
-| Coordination score | 38.2% | 93.1% | 100% |
-| Contribution utilization | 17.2% | 86.2% | 100% |
+| Root concurrency limit | Elapsed time | Queue-wait P50 | Queue-wait P95 | Observed peak handlers |
+|---|---:|---:|---:|---:|
+| 1 | 767–773 ms | 367–372 ms | 703–708 ms | 1 |
+| 4 | 192–194 ms | 80–81 ms | 176–177 ms | 4 |
 
-TABLE_CAPTION: Initial-to-final efficiency observations in the historical two-mode sequence.
+The test supports bounded root admission and per-chat serialization under this small controlled workload. Since the handler duration is artificial and dominates the run, these elapsed times do not quantify provider latency, production throughput, database contention, memory use, or behavior at queue saturation.
 
-| Metric | Initial | Final observed | Descriptive change |
-|---|---:|---:|---:|
-| Delegation precision | 42.0% | 100% | +58.0 pp |
-| Delegation recall | 100% | 100% | unchanged |
-| Total tokens | 1,274,742 | 73,729 | −94.2% |
-| Model calls | 194 | 53 | −72.7% |
-| P50 end-to-end latency | 110.1 s | 46.0 s | −58.2% |
-| P95 end-to-end latency | 201.6 s | 60.0 s | −70.2% |
-| Pricing coverage | 0% | 100% | +100 pp |
-| Estimated total cost | N/A | USD 0.019599 | reported |
+## B. Solo and Team Execution
 
-The intermediate artifact prevents a selective binary “before/after” presentation. The three points show that the optimized configuration itself was iterated. Token and latency fields include both `solo_closed_book` and `team`, so they are not directly comparable with the four-mode financial attempt.
+### Repeated SEC Main Study
 
-The sequence is consistent with a substantial change in the realized agent system, but it cannot allocate that change to the runtime. Evidence visibility differed between modes, the grader changed with the harness, and the initial outputs have not been replayed under the final historical rubric. Baseline traces show irrelevant specialist tools, repeated delegation, weak fixed-evidence enforcement, and lexical false negatives. The final bundle addressed all four simultaneously.
+All 24 configuration reports and matching hash manifests were retained. The primary analysis assigns 72 attempts to each of staged Solo, shared-retrieval Team, and raw-context Team; the 24 monolithic and 24 Oracle observations are diagnostics rather than additional repetitions of those modes. The table reports assigned attempts, strict passes, separately identified infrastructure errors, mean wall-clock latency over completed outputs, provider-total tokens per assigned attempt, and total frozen-price estimated cost. The two Solo timeouts count toward assigned attempts but are excluded from mean completed-output latency. Their billed cost is unknown and is not added to the estimate.
 
-The reduction from 1,274,742 to 73,729 tokens and from 194 to 53 model calls is consistent with fixed-evidence specialists avoiding file/tool loops, exact repeated coordinator delegations reusing a result, and structured specialist output reducing recovery turns. P95 latency declined from 201.6 to 60.0 seconds. These are descriptive associations with the bundled harness change, not estimates of any component’s isolated causal effect.
+TABLE_CAPTION: SEC main-study results across 24 configurations, with three repetitions per primary mode.
 
-The optimized two-mode run cost an estimated USD 0.019599 under the pricing embedded in the suite. Team execution accounted for USD 0.013751 and closed-book Solo for USD 0.005848. Coordinator Team calls cost USD 0.009911 and specialists USD 0.003840, or USD 0.001719 per successful Team case. Pricing coverage rose from 0% to 100%, which means every captured model call matched a declared price.
+| Mode | Assigned | Strict pass | Infrastructure errors | Mean completed latency | Mean tokens per assigned attempt | Total estimated cost |
+|---|---:|---:|---:|---:|---:|---:|
+| Staged Solo | 72 | 55/72 | 2 | 70.17 s (70 completed) | 36,564 | USD 1.087207 |
+| Shared-retrieval Team | 72 | 56/72 | 0 | 31.38 s | 43,158 | USD 0.625114 |
+| Raw-context Team | 72 | 63/72 | 0 | 26.51 s | 76,663 | USD 0.872993 |
+| Monolithic Solo diagnostic | 24 | 0/24 | 0 | 27.15 s | 15,760 | USD 0.191063 |
+| Oracle-evidence diagnostic | 24 | 21/24 | 0 | 19.94 s | 6,195 | USD 0.082876 |
 
-## C. Mechanism-Level Interpretation
+The main deployment uses Pro for staged Solo and the Team coordinator, with Flash for Team retrieval and specialists. Its latency and cost differences therefore reflect both execution structure and model allocation. They cannot isolate the architecture’s effect. Shared-retrieval Team finished faster in all 70 pairs where both modes completed. In the other two pairs, Team completed while Solo timed out; these are completion differences, not measured Solo completion times. Across all 72 assigned pairs, strict outcomes were mixed: 46 passed in both modes, ten only in Team, nine only in Solo, and seven in neither. Similar pass counts do not establish equivalent quality. Raw-context Team passed more attempts than shared-retrieval Team (63 versus 56) and was faster on this run, but consumed substantially more tokens and estimated cost. Shared retrieval used fewer resources, while raw context performed better on completion and latency in this configuration. Monolithic and Oracle diagnostics probe pipeline and evidence constraints; neither is a fair replacement for the complete staged workflow.
 
-The experiment establishes a strong within-suite association between the runtime configuration and realized quality and efficiency while the model assignment remains constant. It does not identify the isolated causal contribution of each runtime change because identity validation, policy filtering, specialist contracts, deduplication, grading, and pricing support were introduced together. Evidence visibility also differs between the legacy modes. The ablation design in Section VI-I is required for component-level attribution.
+### Solo and Team Comparison Using the Same Model
 
-The failure traces nevertheless support a mechanism-level explanation. Required identity files make evidence delivery observable; policy filtering prevents fixed-evidence specialists from entering irrelevant file or shell loops; structured specialist contracts reduce synthesis ambiguity; and evaluation-only deduplication prevents repeated delegation from becoming a cost and latency multiplier. The normalized grader corrects false negatives caused by equivalent numeric forms, but it does not alter the underlying model output.
+The matched comparison uses Flash for every model call in both modes. Across eight configurations and three repetitions per configuration, all 48 observations in the 24 Team/Solo pairs completed without infrastructure errors.
 
-The experiment does not prove a 100-percent general multi-agent success rate. The task set contains eight deterministic evidence cases, each run once. The graders measure configured milestones and evidence strings. A stronger study requires repeated paired trials, isolated ablations, and case-level reporting.
+TABLE_CAPTION: Team and Solo comparison using the same model over 24 paired repetitions.
 
-## D. Implemented Financial Verification
+| Mode | Strict pass | Mean end-to-end latency | Mean provider-total tokens | Total estimated cost | Mean final evidence recall |
+|---|---:|---:|---:|---:|---:|
+| Staged Solo | 24/24 | 33.62 s | 41,514 | USD 0.130359 | 1.000 |
+| Shared-retrieval Team | 19/24 | 22.42 s | 47,029 | USD 0.133224 | 0.975 |
 
-The financial application has four forms of implemented evidence:
+Team was faster in all 24 paired blocks, with an 11.20-second lower mean latency (33.3% relative to Solo's mean). It used approximately 13.3% more provider-total tokens and had 2.2% higher estimated cost under the fixed price table. It was cheaper in only eight of the 24 pairs. Two Team failures omitted declared calculations, and three occurred in the same AMD point-in-time large-corpus configuration with final evidence recall of 0.8. On these tasks, Team reduced latency but lost some completion accuracy and evidence. The result does not show a general quality advantage for multi-agent execution. The eight configurations share source material within four issuers and ran across two batches, so the 24 pairs are not independent draws from a broad task population. Estimated costs use the frozen experiment price table rather than the provider bill.
 
-1. the runtime and plugin compile and pass their unit/integration tests;
-2. the stateful plugin implements trusted tenant scope, versioned theses, immutable reviews, watchlists, and alert deduplication;
-3. the six-case finance suite encodes the behaviors expected from an evidence-grounded research copilot;
-4. the suite has been executed through the real runtime under four matched baselines with per-mode grounding, tokens, cost, and latency.
 
-The finance suite intentionally avoids future stock returns. It evaluates whether the coordinator preserves dated primary facts, applies catalysts and invalidations, suppresses duplicate alerts without losing occurrence counts, rejects incomplete screens, converts concentration diagnostics into reversible controls, and retains uncertainty under contradictory evidence.
+### Preliminary Calibration Findings
 
-The implemented test evidence and the model-evaluation evidence must be distinguished.
+Earlier experiments checked the harness and task difficulty before the repeated study. In the six-case fixed-evidence confirmation, Open-Book Solo, Two-Pass Solo, and Team each passed 5/6 configured cases; a routed-synthesis diagnostic passed 4/6. All 24 attempts completed without an infrastructure error. Team called the expected specialists, but a lexical matcher rejected “estimated” where it required “estimate,” illustrating why a strict grader result must be interpreted alongside the retained answer.
 
-TABLE_CAPTION: Current evidence status and the claims supported by each artifact.
+A separate four-case SEC initial-observation suite produced 4/4 passes in each of the four modes. Its four-company longitudinal extension added chronology, cross-period calculations, and a research-state chain. Team and Open-Book Solo each passed 3/4 cases; Two-Pass Solo and the routed diagnostic each passed 1/4. An AMD Team answer followed an empty specialist response with excess delegation and omitted required evidence. A subsequent one-company retrieval pilot showed that a compact shared packet could reduce resource use relative to raw-context Team. These small studies informed the repeated design; their detailed metrics remain in the evaluation archive and are not pooled with the main results.
 
-| Evidence type | Current status | Claim supported |
-|---|---|---|
-| Plugin unit tests | Ten tests pass | Tool discovery, argument validation, caching, completeness, tenant isolation, versioning, and deduplication operate as implemented. |
-| Runtime integration tests | Relevant Go packages pass | Authenticated routing, task execution, provider parsing, internal calls, and evaluation reporting are executable. |
-| Six finance case specifications | Implemented | Financial invariants and deterministic graders are defined before model execution. |
-| Four-mode finance confirmation | One repetition; no baseline errors | Descriptive matched-baseline quality, grounding, token, cost, and latency results are available; no statistical or holdout claim is made. |
-| Point-in-time return study | Not implemented | No claim is made about excess return, hit rate, Sharpe ratio, or investment performance. |
+## C. Financial Workflow Execution
 
-## E. Four-Mode Financial Runtime Result
+### Event Review and Persistent State
 
-The final frozen post-fix confirmation was executed on 1 August 2026.
+The initial tool-backed event panel covered four SEC cases with two isolated attempts each. Each attempt read an existing thesis and alert, compared the supplied period facts, selected an impact and research decision, wrote a review, and acknowledged the alert. The cases were designed to include recovery, mixed evidence, deterioration, and a missing required metric.
 
-`Suite SHA-256: 4fbf54eca61dc7363342ea1db364cb84426e1541937a99c1e1266dbfb3e5dc44`
+TABLE_CAPTION: Event review study using fixed source documents, two isolated model-backed attempts per case.
 
-`Artifact SHA-256: 5366a91398ca575d303af56d62da179f2a3f1fb13a1d0f5aae5c1773debfbc00`
+| Case | Evidence and research condition | Persisted decisions | Frozen decision rubric |
+|---|---|---|---:|
+| C01 | AMD Q3→Q4 2024: revenue +12.3%, gross margin +1 pp, Gaming +21.9%; sustained recovery needs more than one observation | Maintain; upgrade | 2/2 |
+| C02 | AMD Q2→Q3 2024: revenue +16.9% and margin +1 pp, but Gaming −28.7% | Maintain; needs_review | 1/2 |
+| C03 | Nike Q4 FY2024→Q4 FY2025: matching-quarter revenue −12.0%, margin −4.4 pp, digital YoY rate −16 pp | Invalidate; invalidate | 2/2 |
+| C04 | NVIDIA Q1→Q2 FY2025: event packet includes revenue and Data Center growth but omits required gross margin | needs_review; needs_review | 2/2 |
 
-The secret-free run configuration is archived in `evals/finance-runtime-formal-r5.manifest.json`. It records that the suite default of three repetitions was overridden to one, the four modes, ten-minute timeout, runtime execution mode, empty case filter, endpoint class, pricing date, model roles, Go version, and source identifiers. The model run came from a dirty working tree. Critical evaluator and tenant files are hashed, but the complete dirty patch was not archived at execution time; the outputs can be regraded exactly, whereas exact regeneration of the provider trajectories cannot be claimed from the recorded HEAD alone. All 24 mode executions completed without infrastructure error, and all 54 model calls were priced. The effective r5 oracle contained 18 milestone checks and 44 grounding assertions; `state_graders`, `communication_graders`, `policy_graders`, and `tool_trace_graders` were each zero. Their reported zero accuracies are therefore vacuous rather than evidence that those four capabilities were tested in r5.
+All eight requests completed without a transport or provider error. Read-only checks found one thesis, one linked review, and one acknowledged alert per ledger, with a single thesis-version advance in each attempt. Both NVIDIA missing-margin cases preserved status and conviction while holding the decision. The frozen decision rubric passed 7/8: one AMD response selected a cautious review outside the permitted maintain/downgrade range. A separate content check found one unsupported claim that a single observed Gaming increase was a second consecutive improvement. These findings distinguish successful execution from decision calibration and interpretation.
 
-TABLE_CAPTION: Frozen post-fix financial confirmation, one repetition and six cases.
+### Four Workflow Families
 
-| Mode | Assigned | Evaluated | Errored | Unavailable | Conditional passed | Billable-like tokens | Provider total tokens | Frozen-price estimated cost (USD) | Mean latency |
-|:---|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Solo Open-Book | 6 | 6 | 0 | 0 | 5/6 | 6,557 | 9,885 | 0.005510 | 13.65 s |
-| Solo Two-Pass | 6 | 6 | 0 | 0 | 5/6 | 23,910 | 30,822 | 0.017798 | 42.65 s |
-| Team | 6 | 6 | 0 | 0 | 5/6 | 13,955 | 41,219 | 0.008335 | 19.45 s |
-| Routed Team Diagnostic | 6 | 6 | 0 | 0 | 4/6 | 5,062 | 8,902 | 0.004320 | 11.32 s |
+The broader repetition panel ran 16 frozen cases five times each, using independent Gateway sessions and ledgers. The four families exercised event review, conflicting-source resolution, preliminary screening, and portfolio-risk diagnosis. The SEC event cases used archived excerpts; the other families used synthetic inputs.
 
-Billable-like tokens are uncached prompt plus completion tokens and are presented first. Provider total tokens include cache-read tokens inside prompt totals and therefore answer a different telemetry question. By the billable-like measure, Team used 2.13 times the Open-Book tokens and 41.6% fewer tokens than Two-Pass. By provider totals, the same comparisons are 4.17 times and 33.7% more. The Team/Two-Pass direction therefore reverses under the two accounting conventions. Team cost 51.3% more than Open-Book but 53.2% less than Two-Pass; model assignment, completion length, cache treatment, and provider prices all contribute, so the difference is not attributed solely to Flash specialists.
+TABLE_CAPTION: Application coverage and retrospective content judgments in the 80-attempt workflow panel.
 
-TABLE_CAPTION: Team coordination and attribution metrics in r5.
+| Workflow family | Task and source | High quality | Adequate | Problematic |
+|---|---|---:|---:|---:|
+| SEC event review | Assess a disclosed change and persist a thesis review; archived SEC excerpts | 16 | 4 | 0 |
+| Source conflict or correction | Resolve or retain competing claims and update review state; synthetic fixtures | 13 | 2 | 5 |
+| Candidate screening | Apply data-completeness and screening conditions before saving a candidate; synthetic fixtures | 12 | 5 | 3 |
+| Portfolio risk | Interpret concentration or incomplete holdings against declared limits; synthetic fixtures | 13 | 2 | 5 |
+| Total | 16 cases with five repetitions each | 54 | 13 | 13 |
 
-| Metric | Result | Interpretation |
-|:---|---:|:---|
-| Milestone KPI | 17/18 (94.4%) | One configured decision assertion failed |
-| Delegation precision | 100% | No unexpected unique specialist target |
-| Delegation recall | 100% | All expected specialist targets called |
-| Contribution utilization | 17/18 (94.4%) | One specialist contribution assertion failed |
-| Coordination score | 97.2% | Mean of perfect delegation F1 and contribution utilization |
-| Routed-diagnostic gap | −16.7 pp | Diagnostic minus Team; not an upper-bound gap |
-| Faults expected | 0 | Fault metrics are undefined/vacuous for this run |
+All 80 attempts completed, with 77 passes on the workflow execution checks and three retained workflow failures. Two answers printed a tool call in prose without issuing it; another described a corrected capex amount in its final answer but omitted that value from the saved review rationale. There were no recorded request errors or unpriced calls. In all ten repetitions requiring evidence absent from the packet, the ledger recorded a review hold, kept status and conviction unchanged, and blocked the thesis from subsequent use.
 
-Team P50/P95 latency was 21.30/22.49 seconds. The P50 exceeds the 19.45-second mean because several short cases pull the arithmetic mean below the midpoint of the six ordered values. Coordinator calls consumed 22,236 provider-total tokens and USD 0.007060; specialist calls consumed 18,983 and USD 0.001276. Cost per successful Team outcome was USD 0.001667.
+The content judgments in the table are the retrospective first pass described in Section VI. Problematic answers included converting conflicting capex claims into a management range, inferring production capacity from capex without a supporting explanation, misnaming an earnings-growth metric, and overlooking a provable bound on incomplete holdings. The 77 passes on the workflow execution checks therefore cannot be read as 77 correct financial analyses. The panel demonstrates four executable workflow families and a functioning missing-evidence rule in the tested cases.
 
-Across each mode, 44 configured forbidden assertions were evaluated and zero violations were recorded. One Team output nevertheless contained the forbidden phrase “higher evidentiary weight” in “the filing may carry higher evidentiary weight.” The five-token hedge rule suppresses a violation when `may`, `might`, `could`, `possible`, or `possibly` precedes the phrase. The reported 100% configured attribution accuracy therefore includes one explicit hedge exemption. It is a lexical policy result, not factual accuracy or proof of entailment.
+A subsequent ten-attempt retest supplied the deterministic partial-portfolio-bound tool. All ten used the source-linked tools and obtained the configured bound correctly, while local content review rated three high, six adequate, and one problematic. The remaining problem was an unsupported issuer-specific growth comparison. This supports the value of placing checkable arithmetic in tools while retaining separate review of the explanation.
 
-The failed Team case was `incomplete-screening-data`, and it produced two grader failures from one rubric value. The `decision` milestone and the finance-governance contribution both required `not estimate || instead of estimating`; the answer wrote “must not be imputed, inferred, or estimated.” The current normalizer does not map `estimated` to `estimate`. The case therefore achieved 2/3 milestones, utilized 2/3 contributions, and received coordination 0.8333 despite making the correct conservative decision, citing all three evidence records, requesting source refresh, and rejecting imputation. The failure is an inflectional morphology gap, not a clause-distance failure. This trade-off is substantive: conservative stemming limits false matches but can reject a semantically appropriate inflected form.
+## D. Selected SEC Research Analyses
 
-The preceding r1–r4 artifacts are calibration and diagnostic runs. Replaying all five artifacts through the current independent matcher changes 4, 1, 2, 1, and 0 stored outcome cells respectively. That drift quantifies the danger of mixing grader evolution with runtime conclusions. Because fixes were informed by earlier outputs, r5 is a frozen post-fix confirmation, not a holdout estimate.
+The selected reports compare relevant financial measures, consider opposing evidence, and explain what can be concluded. They also save a research decision and identify the evidence needed next. They use the host-prepared comparison catalogs described in Section VI; the analytical contribution lies in how the model interprets and acts on those comparisons.
 
-### Longitudinal SEC Difficulty Extension
+The 30-issuer panel retained all 150 Flash responses and ledger copies. Its automated execution checker marked 101 as candidates for qualitative review and 49 as held, with no recorded request error. These classifier labels are distinct from a thesis's research-review decision. The original masked review contains 100 completed scores. Supplemental reviews are recorded separately. MQ and AIG were selected for illustration after inspection. Their examples do not characterize the unreviewed answers or establish a population quality rate.
 
-The four-company initial-observation study reached a 4/4 ceiling in Team, Open-Book, Two-Pass, and routed-diagnostic modes. That result verified evidence-bounded runtime execution but could not identify incremental collaboration accuracy because the outcome contained no mode-level variance. A second suite therefore combined three locked SEC observations per company and required chronology reconstruction, declared cross-observation calculations, a contiguous `0→1→2→3` state chain, a final governance decision, and rejection of a stale control candidate. Evidence was held constant across all modes; only Team could call the three runtime specialists.
+### Marqeta Revenue Growth and Earnings Quality
 
-TABLE_CAPTION: Frozen longitudinal SEC extension, one repetition and four companies.
+The MQ task compared the second and third quarters of 2025 using selected SEC earnings-exhibit rows [17], [18]. The question was whether stronger business activity supported a stronger research view when GAAP and company-adjusted profitability moved differently.
 
-| Mode | Assigned | Evaluated | Errored | Unavailable | Conditional passed | Provider total tokens | Frozen-price estimated cost (USD) | Mean latency |
-|:---|---:|---:|---:|---:|---:|---:|---:|---:|
-| Solo Open-Book | 4 | 4 | 0 | 0 | 3/4 | 27,847 | 0.018099 | 57.32 s |
-| Solo Two-Pass | 4 | 4 | 0 | 0 | 1/4 | 51,556 | 0.029369 | 94.31 s |
-| Team | 4 | 4 | 0 | 0 | 3/4 | 78,800 | 0.022718 | 65.31 s |
-| Routed Team Diagnostic | 4 | 4 | 0 | 0 | 1/4 | 24,021 | 0.014562 | 48.69 s |
+TABLE_CAPTION: Selected MQ comparison values used in the research case, Q2 and Q3 2025.
 
-Team achieved 100% delegation F1, 91.7% specialist-contribution utilization, 95.6% contribution-item coverage, 100% configured grounding accuracy, and no unauthorized numeric value. Team and Open-Book each passed 75%, so the fair collaboration gain was zero. Their paired outcomes contained one Team-only success, one Open-Book-only success, and two ties. Team exceeded Two-Pass by 50 percentage points, but only two pairs were discordant and the sample is not adequate for an inferential claim. Relative to Open-Book, Team used 183.0% more tokens, cost 25.5% more, and increased mean latency by 13.9% without improving strict success. Relative to Two-Pass, Team cost 22.6% less and reduced mean latency by 30.8% despite using 52.8% more provider-total tokens.
+| Measure | Q2 2025 | Q3 2025 |
+|---|---:|---:|
+| Net revenue, USD million | 150.392 | 163.306 |
+| Gross profit, USD million | 104.061 | 114.557 |
+| Processing volume, USD billion | 91.386 | 97.962 |
+| Company-defined Adjusted EBITDA, USD million | 28.509 | 30.312 |
+| GAAP operating result, USD million | −9.228 | −10.370 |
+| GAAP net result, USD million | −0.647 | −3.624 |
 
-The Team failure occurred on AMD. The coordinator selected the correct governance specialist but received an empty result, retried until five delegations had been issued against a configured maximum of three, and synthesized without the required STATE and STALE evidence. This case demonstrates that routing accuracy is not sufficient for collaboration success: sub-agent response validity and bounded recovery are part of the runtime treatment. The frozen primary report is `evals/finance_e2e/results/2026-08-02-hard-r3-final.json`; earlier longitudinal runs are calibration artifacts because their outputs informed grader corrections. The extension removes the simple-task ceiling but does not support a claim that Team is more accurate than an evidence-matched strong Solo coordinator.
+The useful interpretation was that revenue and activity growth did not yet demonstrate stronger GAAP profitability. Operating expenses rose by USD 11.638 million, exceeding the USD 10.496 million gross-profit increase. The displayed operating bridge is therefore +10.496 − 11.638 = −1.142 USD million, consistent with the wider operating loss. The selected high-rated answers kept the company-defined Adjusted EBITDA increase separate from the GAAP losses and identified expense drivers and the reconciliation between accounting bases as follow-up research questions.
 
-### Retrieval-Mediated Context Allocation Pilot
+All five MQ sessions saved source-linked reviews requiring further evidence, acknowledged their alerts, and left the thesis held and blocked. Local review rated four high and one adequate. The adequate answer overstated the absence of expense-line information in its saved rationale. This five-run case demonstrates repeated execution of the research workflow and several useful analyses within a fixed evidence packet.
 
-The preceding experiments begin after evidence has already been compiled. A realistic financial-research workflow introduces an earlier bottleneck: source acquisition consumes context, retrieved passages vary in relevance, and analytical reasoning must operate on an imperfect intermediate representation. A retrieval-mediated pilot was therefore added to test the complete information path from a locked SEC corpus to a bounded research memorandum. The research question is narrower than “are multiple agents more accurate?”: under a fixed evidence source and analysis protocol, does retrieving one compact packet before role-specialized analysis reduce context interference and execution cost without reducing evidence retention or conclusion quality?
+### AIG Segment Improvement and Consolidated Earnings
 
-Five runtime modes operationalize the treatment. `solo_monolithic` gives one Pro agent the 30,518-character corpus and asks it to retrieve, analyze three perspectives, and synthesize in a single context. `solo_staged` uses the same Pro agent in isolated retrieval, three sequential analysis, and synthesis stages. `team_shared_retrieval` uses a Flash retriever to construct one bounded evidence packet, sends that packet once through a batch delegation to three parallel Flash specialists, and uses a Pro coordinator for orchestration and synthesis. `team_raw_context` preserves the same coordinator-specialist topology but shares the full corpus rather than a retrieved packet. `oracle_evidence` gives a Pro synthesis call the perfect evidence packet and serves only as a diagnostic reference; perfect retrieval does not guarantee perfect synthesis.
+The selected AIG answer compared second- and third-quarter 2025 disclosures [19], [20]. General Insurance adjusted pretax income increased by USD 241 million; underwriting and segment investment-income changes contributed USD 167 million and USD 74 million on the displayed measures. Consolidated GAAP net income attributable to common shareholders nevertheless fell by USD 625 million. The answer preserved the distinction between a segment's adjusted measure and consolidated GAAP income rather than treating one as a reconciliation of the other.
 
-The case, task wording, required report sections, calculation protocol, evidence identifiers, rounding rule, and 95% numeric-grounding threshold were held constant. Expected calculation answers were withheld from every non-oracle mode. The source was locked by suite SHA-256 `7b73f4b82a3f97cb1151b372dcf8172eb88c04d37e1e137ed80b2a87bfb44e20` and source-lock SHA-256 `a4d4b4dc3be440238e3d428d60d04fb4a4a9d21d8c0b4eec4cb313e2e181fe22`. Thinking mode was disabled. Because Team assigns Flash to retrieval and specialist work while staged Solo uses Pro in every stage, this is a comparison of deployable heterogeneous systems rather than a model-capacity-matched experiment.
+The answer also compared two measures of underwriting performance. The reported General Insurance combined ratio improved from 89.3% to 86.8%. The company-defined adjusted accident-year combined ratio changed only from 88.4% to 88.3%, while written premiums declined. The answer requested an earnings-basis reconciliation and more detail on underwriting drivers before changing conviction. The saved review required further evidence, the thesis was blocked, and the alert was acknowledged. The answer received a high-quality rating under the case-specific rubric.
 
-TABLE_CAPTION: Retrieval-mediated NVDA medium-context pilot, one repetition.
+Across AIG's five sessions, the original masked reviews contain three high ratings, one problematic rating, and one blank score. A later unblinded review rated the remaining answer high. The problematic answer left an unresolved earnings-basis conflict actionable. The selected answer handled the uncertainty carefully. Other answers to the same source packet were less reliable.
 
-| Mode | Assigned | Evaluated | Errored | Unavailable | Conditional strict pass | Milestones | Final evidence recall | Grounding | Latency | Provider-total tokens | Frozen-price estimated cost (USD) | Compression |
-|:---|---:|---:|---:|---:|:---:|---:|---:|---:|---:|---:|---:|---:|
-| Solo monolithic | 1 | 1 | 0 | 0 | No | 2/3 | 100% | 98.29% | 55.96 s | 15,259 | 0.008263 | N/A |
-| Solo staged | 1 | 1 | 0 | 0 | Yes | 3/3 | 100% | 95.45% | 141.04 s | 37,693 | 0.020690 | 6.12x |
-| Team shared retrieval | 1 | 1 | 0 | 0 | Yes | 3/3 | 100% | 98.28% | 89.81 s | 42,829 | 0.011987 | 7.58x |
-| Team raw context | 1 | 1 | 0 | 0 | No | 3/3 | 100% | 94.87% | 104.61 s | 69,553 | 0.022884 | N/A |
-| Oracle evidence | 1 | 1 | 0 | 0 | Yes | 3/3 | 100% | 100% | 37.89 s | 7,095 | 0.002464 | N/A |
+### Repay Holdings and the Impairment Base Effect
 
-The staged Solo and shared-retrieval Team both passed every milestone and retained every gold evidence group. This observation therefore provides no incremental final-answer accuracy result for collaboration. It does reveal an efficiency and evidence-discipline difference. Relative to staged Solo, shared-retrieval Team reduced end-to-end latency by 36.32% and estimated cost by 42.06%, despite using 13.63% more provider-total tokens. The cost direction follows from heterogeneous model allocation rather than token reduction. Retrieval precision increased from 66.67% to 100%, evidence compression increased from 6.12x to 7.58x, and numeric grounding increased by 2.82 percentage points.
+A separate prospective three-company study selected MTB, RPAY, and CSGP before generating outputs, with two Flash sessions each and a check that validates calculations against the supplied source values. The sources were the issuers' second- and third-quarter 2025 earnings exhibits [21]–[26]. All six sessions completed the configured tool workflow, each with one linked review and an acknowledged alert. Their complete local content outcomes were:
 
-The raw-context ablation was associated with a context-allocation difference within the same multi-agent topology. Both Team modes issued one parallel batch delegation and reached perfect target precision and recall. Shared retrieval was associated with 14.15% lower latency, 38.42% fewer tokens, and 47.62% lower frozen-price estimated cost than raw-context Team, alongside a 3.40-percentage-point grounding difference. Raw-context Team produced eight unsupported or unrequested numeric forms and missed the prespecified grounding threshold by 0.128 percentage points; shared-retrieval Team produced two such forms. Because mode order was not randomized, provider conditions could vary, and the model allocation was heterogeneous, these observations do not identify a causal context-allocation effect. The monolithic mode was faster and cheaper than either complete pipeline but omitted the required separation of sourced fact, declared calculation, and analyst judgment. Its failure is therefore one of research-process compliance, not evidence recall.
+TABLE_CAPTION: Results of the six-session study, with execution and content reported separately.
 
-These findings support only a bounded descriptive claim: on one medium-context filing task, explicit retrieval and shared-context delegation were associated with a different latency–cost–grounding profile from sequential staged Solo and raw-context Team. They do not establish that multiple agents intrinsically improve financial accuracy. The observation has one company and one repetition, mode order was not randomized, provider conditions could vary, and the grounding evaluator checks numeric support rather than full semantic entailment. Confirmatory work must freeze the suite and grader, cross four companies with small, medium, and large corpus loads, use at least three randomized repetitions, retain paired case-repetition identifiers, and report bootstrap intervals. A separate capacity-matched ablation should hold model assignment constant across Team and Solo.
+| Issuer | Workflow completion | Local content judgments | Saved research state |
+|---|---:|---|---|
+| MTB | 2/2 | Two adequate | Maintain; both available |
+| RPAY | 2/2 | One high, one problematic | Both held for review and blocked |
+| CSGP | 2/2 | One adequate, one problematic | Both held for review and blocked |
 
-For Team modes, reported analysis latency is the sum of specialist model-service times, whereas specialists execute concurrently. End-to-end mode latency is the wall-clock quantity and must not be reconstructed by summing stage totals. The complete descriptive record and calibration exclusions are documented in `evals/finance_e2e/results/2026-08-02-retrieval-pilot-final-summary.md`.
+RPAY's second answer identified the impairment base effect behind the improvement in GAAP earnings. Q2 included a USD 103.781 million impairment. The GAAP operating loss narrowed from USD 104.904 million in Q2 to USD 3.009 million in Q3. Company-defined adjusted EBITDA, however, fell from USD 31.811 million to USD 31.202 million [23], [24]. The displayed operating bridge, in USD thousands, was revenue +2,099 less an expense change of −99,796, giving an operating-result improvement of +101,895.
 
-## F. Post Hoc Sensitivity and Grader Ablation
+The answer stated that “the GAAP improvement is best read as a base-effect normalization rather than demonstrated operating leverage.” This quotation is from the retained final answer. It also identified the need for the full reconciliation, revenue drivers, and further period evidence. Its actual tool sequence read the thesis and alert, submitted a linked review, acknowledged the alert, and checked the stored thesis. The ledger retained conviction 3 with a review hold and blocked actionability. Local review rated this answer high within the selected-source case. The numerical comparison came from the checked host catalog; the model supplied the interpretation and research action.
 
-Runs r2–r5 share the same suite SHA-256, model assignments, and nine model calls per case. Regrading their retained outputs with the current matcher yields the following post hoc sensitivity result. The pooling decision was made after inspecting the runs, so the table is not independent validation and must not replace r5 as the primary result.
+The other RPAY answer incorrectly said both cost of services and selling, general and administrative expense increased more than revenue. Their changes were USD 1.531 million, USD 2.295 million, and USD 2.099 million respectively, so the first comparison was false. CSGP's first final answer incorrectly said the tax change did not offset a USD 23.9 million decline in operating result. The tax contribution improved by USD 30.3 million. A separate USD 37.0 million adverse change in other income/expense helped explain the lower net income [25], [26]. Both ledgers were held, but the explanations contained errors.
 
-TABLE_CAPTION: Post hoc pooled r2–r5 outcomes under the current grader.
+Replaying the saved review calls showed where the arithmetic guard missed errors. RPAY's wrong comparison was present in its persisted rationale and was not caught by the arithmetic guard. CSGP's wrong sentence appeared only in the final answer after the tool write. These cases identify different locations for further checking: the saved rationale and the post-tool explanation. A decision hold protects subsequent use of the thesis but does not itself certify every sentence.
 
-| Mode | Passed | Rate | Wilson 95% interval |
-|:---|---:|---:|---:|
-| Solo Open-Book | 15/24 | 62.5% | [42.7%, 78.8%] |
-| Solo Two-Pass | 16/24 | 66.7% | [46.7%, 82.0%] |
-| Team | 18/24 | 75.0% | [55.1%, 88.0%] |
-| Routed Team Diagnostic | 18/24 | 75.0% | [55.1%, 88.0%] |
+### Interpretation of the Case Evidence
 
-The paired Team/Open table has six Team-only and three Open-only outcomes, giving +12.5 percentage points and exact two-sided p=0.5078. Team/Two-Pass has five Team-only and three Two-Pass-only outcomes, giving +8.3 points and p=0.7266. Team and the routed diagnostic each have three exclusive successes, giving 0.0 points and p=1.0000. These p-values do not support superiority. They show that the r5 zero-point estimate is not a stable estimate of direction when additional retained runs are included.
+MQ, AIG, and RPAY illustrate three useful analytical tasks: distinguishing growth from earnings quality, reconciling segment and consolidated perspectives, and separating an impairment base effect from recurring improvement. In each selected successful answer, the model turned the supplied comparisons into a concrete evidence requirement and a persisted research decision. This supports the application claim that the runtime can produce and retain useful financial research outputs.
 
-TABLE_CAPTION: Case-level passes across post hoc pooled r2–r5, current grader.
+Other retained answers show the limits of these successes. Earlier fresh-issuer and screening panels mostly produced adequate rather than high-rated analysis, and the broader workflow panel exposed unsupported interpretation despite correct state handling. A separate response-blind sample of four previously unscored answers from the 150-run archive yielded one adequate and three problematic judgments, including signed tax-line errors and a false hold assurance. Those four observations are not a representative quality estimate, but they reinforce the need to present the positive cases as examples. The diagnostic scoring and the observed variability are the principal limits on a stronger quality claim.
 
-| Case | Team | Open-Book | Two-Pass | Routed Diagnostic |
-|:---|---:|---:|---:|---:|
-| Thesis invalidation | 4/4 | 2/4 | 2/4 | 4/4 |
-| Portfolio concentration | 3/4 | 1/4 | 1/4 | 2/4 |
-| Earnings catalyst | 4/4 | 3/4 | 3/4 | 4/4 |
-| Duplicate event | 3/4 | 3/4 | 3/4 | 2/4 |
-| Contradictory evidence | 4/4 | 3/4 | 4/4 | 4/4 |
-| Incomplete screening | 0/4 | 3/4 | 3/4 | 2/4 |
+## E. Real Source Screening and Live Data Integration
 
-The heterogeneity is more informative than the aggregate. Team is consistently stronger on thesis invalidation and portfolio concentration, but is 0/4 on incomplete screening because the same morphology gap recurs. The aggregate therefore combines a plausible coordination advantage on some mechanisms with a systematic measurement defect on another.
+A historical AMD/Intel screening replay replaced synthetic inputs with frozen, hash-checked SEC disclosures. It applied two declared GAAP thresholds, saved a source-linked preliminary AMD thesis, and rejected Intel. A read-only review found that the source, arithmetic, and state checks passed. The case shows screening with real sources under two declared conditions. It does not test a broader investment-selection strategy.
 
-Figure 4 visualizes the grader sensitivity experiment. Its purpose is not to select the rule set that maximizes Team performance, but to show how much the reported conclusion depends on lexical measurement design even when no additional model call is made.
+An online AMD case exercised a longer path in one isolated Go Gateway session. The agent used the execution tool to run a FinData Toolkit Skill script and retrieve five dated Nasdaq daily bars. A second execution call performed the arithmetic. The agent then saved a preliminary thesis through the finance plugin. The first and latest closes were 570.82 on 14 October 2026 and 534.74 on 20 October 2026. Recalculation gives a first-to-latest change of −6.3207%. The saved evidence includes the source URL, dates, closing prices, bar interval, and rounded result of −6.32%. The payload did not specify currency or adjustment basis, so USD was explicitly an inference.
 
-[[FIGURE_4]]
+The retained ledger contains one preliminary thesis and no alert or review. All four model calls were priced, at an estimated USD 0.002679208. The original scorer misclassified the valid arithmetic call as a second market-data fetch and missed an equivalent percentage field name. A read-only review found that eleven execution, source, arithmetic, and state checks passed. The original score was retained. An earlier observation had an incorrect adjacent-day direction in its prose; the second corrected it.
 
-TABLE_CAPTION: Zero-model-call grader ablation over r1–r5, thirty outputs per mode.
+The selected run demonstrates integration of a reusable data Skill, model-directed arithmetic, and persistent finance state. In that run, a price-only thesis appeared available despite missing fundamentals and valuation. A later serializer change labels preliminary research as research-only and an event decision hold as blocked; deterministic tests and replay checked that change. Correcting the displayed eligibility label does not establish that every downstream consumer enforces it. The original model result remains unchanged, and repeated live availability has not been established.
 
-| Matcher configuration | Open-Book | Two-Pass | Team | Routed Diagnostic |
-|:---|---:|---:|---:|---:|
-| Current | 20/30 | 21/30 | 23/30 | 22/30 |
-| Without negation scope | 12/30 | 13/30 | 14/30 | 13/30 |
-| Without hedge scope | 20/30 | 21/30 | 22/30 | 22/30 |
-| Without conditional scope | 20/30 | 21/30 | 22/30 | 22/30 |
-| Without bounded token gap | 20/30 | 21/30 | 23/30 | 22/30 |
-| Without plural morphology | 19/30 | 21/30 | 23/30 | 22/30 |
-| With extended inflections | 25/30 | 21/30 | 27/30 | 21/30 |
+## F. Findings Against the Evaluation Questions
 
-Negation scope has the largest protective effect because disabling it converts correct denials into forbidden positive assertions. Hedge and conditional scope each move one Team cell. Removing the token-gap guard has no effect on these artifacts, directly contradicting the earlier diagnosis that r5 failed because related phrases were too far apart. The permissive inflection switch raises Team to 27/30 and Open-Book to 25/30 while reducing the routed diagnostic to 21/30, illustrating that a linguistically plausible normalizer can change both absolute scores and relative conclusions. The ablation supports a measurement-validity finding, not a recommendation to select the switch that maximizes Team.
+The engineering tests support selected isolation, cancellation, streaming, scheduling, and persistence paths (VP1). The queue-only load experiment demonstrates bounded admission and per-chat ordering under its synthetic workload.
 
-## G. Validity Preconditions and Answers to the Empirical Questions
+The repeated SEC study and comparison using the same model answer RQ1 and RQ2 with configuration-dependent trade-offs. Shared-retrieval Team offers lower latency than staged Solo in the pairs using the same model, while Solo has higher strict completion and evidence retention. Shared retrieval reduces main-study resource use relative to raw-context Team, but raw context achieves more strict passes. These results support choosing execution modes according to task requirements.
 
-**VP1—Selected runtime control paths.** The passing unit and integration tests, together with explicit tests for cancellation, stream failure, task snapshots, tenant scope, and session normalization, support the feasibility of selected runtime control paths. The result is functional verification rather than formal proof or production certification.
-
-**RQ2—Orchestration benefit.** The present instrument does not establish an incremental accuracy effect. The simple four-company SEC study saturated at 4/4 in every mode. The longitudinal extension removed that ceiling, but Team and evidence-matched Open-Book each passed 3/4 cases, with one paired win and one paired loss for Team. r5 likewise recorded equal 5/6 counts, while post hoc r2–r5 pooling moves the point estimates to +12.5 and +8.3 points for Team without statistical support. In the retrieval-mediated Pilot, shared-retrieval Team and staged Solo both passed all milestones and retained every gold evidence group. These results do not establish superiority, inferiority, or equivalence. A repeated, randomized study with a frozen grader and more company–task analysis clusters is required.
-
-**RQ3—Context allocation and efficiency.** The historical sequence is consistent with substantial harness-level reductions but does not isolate causes. In r5, Team was more expensive and slower than one-pass Open-Book Solo. Relative to Pro-only Two-Pass Solo, Team was cheaper and faster and used 41.6% fewer billable-like tokens, even though provider totals were 33.7% higher. The retrieval pilot provides a more direct context-allocation contrast. Shared-retrieval Team reduced latency by 36.32% and cost by 42.06% relative to staged Solo, but used 13.63% more provider-total tokens because Flash specialists replaced Pro analytical stages. Relative to raw-context Team, shared retrieval reduced tokens by 38.42%, cost by 47.62%, and latency by 14.15%, while improving grounding by 3.40 percentage points. These are deployment-level point estimates under declared heterogeneous allocation, not a capacity-matched causal effect.
-
-**Prospective RQ4—Fault tolerance.** The harness implements bounded simulated faults, error-aware denominators, negation-aware unsupported-claim checks, and graceful-degradation metrics. r5 configured `faults_expected=0`, so its zero fault metrics are vacuous. This work contributes an instrument but does not execute the question in a retained primary financial artifact.
-
-**VP2—Selected financial-workflow invariants.** The evidence is split. Ten plugin tests exercise deterministic ledger and alert behavior. r5 exercises real coordinator–specialist routing over compiled evidence fixtures and grades whether the final prose states expected governance actions; it performs no finance-tool call and no ledger mutation. The evidence supports selected attribution and wording behavior, not end-to-end persistent state validity. The incremental value of Serenity or an independent challenger remains prospective.
-
-## H. Evaluation-Proposition Resolution
-
-The declared evaluation propositions are resolved against the retained evidence rather than inferred from the direction of a preferred result:
-
-| Proposition | Current resolution | Evidence boundary |
-|---|---|---|
-| EP1 | Partially supported for selected paths | Executable tests cover selected control paths, but the historical 0/8 to 8/8 sequence changed evidence delivery, runtime behavior, and grading together. |
-| EP2 | Descriptively supported in one Pilot; not confirmed | Shared-retrieval Team and staged Solo preserved the same observed milestones and evidence recall while Team was faster, but the result has one case, one repetition, non-random order, and heterogeneous model allocation. |
-| EP3 | Descriptively supported in one Pilot; not confirmed | Shared retrieval reduced raw-Team tokens, frozen-price estimated cost, and unsupported numeric forms on one NVDA medium case; Stage 2 load-stratified confirmation has not run. |
-| EP4 | Not tested by a retained primary financial artifact | The harness and deterministic tests implement fault injection, but r5 expected zero faults and no repeated formal fault run is retained. |
-| EP5 | Supported only for selected deterministic invariants | Plugin tests exercise versioning, isolation, and alert invariants; r5 and the SEC runs perform zero finance-tool calls and zero ledger mutations. |
-| EP6 | Partially supported descriptively; not confirmed | Raw-context replication increased tokens and frozen-price estimated cost without improving milestone completion in the Pilot, while other comparisons remain confounded by model allocation and task differences. |
-
-These labels are `not tested`, `descriptively supported`, `partially supported`, or `supported only for a bounded layer`; none is a population-level confirmation. Stage 2 remains proposed/draft and may yield zero or negative Team effects.
-
-## I. Required Validation Before External Claims
-
-A validation experiment should freeze the current rubric, add an untouched holdout of at least 24 cases, execute all four baseline modes for at least three repetitions, and report case-level outputs, paired gains, uncertainty intervals, grounding, Team tokens, Team P50/P95 latency, and cost per successful Team case. It should separately compare no Skill, Serenity with the same data, and Serenity plus challenger.
-
-The minimum reporting table should include, for every case and mode, evaluated attempts, errored attempts, strict successes, milestone success, missing evidence identifiers, forbidden assertions, every actually configured grader result, token count, latency, and estimated cost. A state-transition result is reported only when a state grader or deterministic mutation oracle is populated. Aggregate gain is reported only when both compared modes have evaluated attempts.
+The financial panels test VP2 through workflows that call the tools and save state. Their strongest evidence is the linkage among sources, model-selected actions, recorded reviews, alerts, and decision holds. Selected MQ, AIG, and RPAY answers also show useful analysis within their supplied evidence. Execution completion, analytical quality, and state policy remain separate properties: each needs its own checks.
 
 # VIII. DISCUSSION
 
-## A. The Runtime as an Experimental Intervention
+## A. What the Runtime Contributes to Financial Workflows
 
-Agent evaluation is often framed as a comparison between models, but the observed output is produced by a coupled system. Prompt assembly determines which evidence is visible; the tool registry determines which actions are possible; the queue and cancellation model determine whether a plan completes; session repair determines whether the next provider call is valid; and the grader determines whether an equivalent answer is accepted. The runtime is therefore part of the experimental treatment rather than neutral infrastructure.
+The runtime manages the work around model reasoning. Sessions preserve task context. The tool registry exposes permitted data and calculation functions, while the scheduler coordinates concurrent tasks. Saved records connect an analysis to later review. Financial workflows use these mechanisms together, allowing source retrieval, calculations, interpretation, and saved state to be checked separately.
 
-This observation explains why the same coordinator and specialist models can produce materially different results under two harness configurations. It also constrains interpretation: the historical sequence is consistent with improvement in the realized system, not increased latent model capability. Academic reporting should identify model, runtime, evidence, policy, and grader as separate experimental factors.
+The application results should therefore be read at two levels. Execution evidence shows whether the system carried out the requested workflow and preserved the expected state. Content review examines whether the interpretation was supported by the evidence and useful for the research question. The runtime supports this distinction through its traces and records, while the model and available sources still influence analytical quality.
 
-The regrading study provides direct evidence for this claim. No model was called, yet replaying old text through the current matcher changed four cells in r1 and one or two cells in three later runs. Likewise, the extended-inflection switch changes mode totals without changing a prompt, action, or answer. The measured object is therefore not merely the generated text; it is the ordered pair of retained trajectory and versioned oracle. A benchmark artifact that omits the oracle version is incomplete in the same way that a software test report without the tested revision is incomplete.
-
-This framing changes what “runtime improvement” should mean. Lower latency is a runtime property only if provider load, model output length, and baseline call count are controlled. Higher success is a runtime property only if evidence and grader are controlled. Better attribution may result from a clearer specialist contract rather than a more capable specialist. The thesis consequently treats observability and replay as prerequisites for causal claims, not as supporting conveniences.
+Comparisons of runtime designs must account for the conditions of each run. Latency comparisons must disclose model allocation, provider conditions, output lengths, and call counts. Call count and parallelism may be mechanisms of a runtime design rather than quantities that must always be held equal. Their effects still need to be distinguished from changes in provider behavior and prompts. Completion comparisons likewise depend on evidence and grader consistency. Better attribution may result from a clearer specialist contract rather than a more capable specialist. Observability and replay make these distinctions inspectable; they do not by themselves establish causality.
 
 ## B. When Multi-Agent Execution Is Justified
 
 The financial scenarios show that multi-agent execution should be selective. A specialist is justified when it provides independent evidence interpretation, a parallel deep dive, a formal challenge, or a distinct policy perspective. It is not justified merely because a tool has a financial label. Market-data retrieval, ratio calculation, threshold comparison, fingerprinting, and state persistence are deterministic operations and should remain tools.
 
-The `solo_open_book`, `solo_two_pass`, and routed-diagnostic baselines provide a practical decomposition. If Team does not exceed Open-Book, delegation adds overhead without detected outcome benefit. If Team does not exceed Two-Pass, additional synthesis compute rather than role specialization may explain the outcome. If the routed diagnostic exceeds Team, routing or specialist execution is a candidate bottleneck; if Team exceeds it, named roles, the diagnostic prompt, or direct evidence presentation may alter synthesis. The diagnostic is therefore a candidate comparison, not an oracle upper bound.
+The `solo_open_book`, `solo_two_pass`, and routed-diagnostic baselines help distinguish sources of performance differences. If Team does not exceed Open-Book, delegation adds overhead without detected outcome benefit. If Team does not exceed Two-Pass, additional synthesis compute rather than role specialization may explain the outcome. If the routed diagnostic exceeds Team, routing or specialist execution is a candidate bottleneck; if Team exceeds it, named roles, the diagnostic prompt, or direct evidence presentation may alter synthesis. The diagnostic is therefore a candidate comparison, not an oracle upper bound.
 
-The contrast between the initial-observation and longitudinal SEC suites clarifies the role of task difficulty. The simple suite was saturated by all four modes and could not measure incremental accuracy. The longitudinal suite created mode-level failures, but the frozen Team and Open-Book rates remained equal. Difficulty is therefore a necessary condition for avoiding a ceiling effect, not sufficient evidence that collaboration adds value. The AMD failure further shows that a correctly routed specialist can still return no usable evidence; a multi-agent treatment includes availability, response validation, and retry policy as well as nominal role decomposition.
+The contrast between the initial-observation and longitudinal SEC suites clarifies the role of task difficulty. The simple suite was saturated by all four modes and could not measure incremental accuracy. The longitudinal suite created mode-level failures, but the frozen Team and Open-Book rates remained equal. Harder tasks can reveal differences hidden by an easy test, but do not by themselves show that collaboration adds value. The AMD failure further shows that a correctly routed specialist can still return no usable evidence; a multi-agent treatment includes availability, response validation, and retry policy as well as nominal role decomposition.
 
-The retrieval-mediated Pilot further distinguishes role count from information flow descriptively. Shared-retrieval Team and staged Solo reached the same strict quality outcome, whereas raw-context Team missed the numeric-grounding threshold despite using the same coordinator, specialists, and one batch delegation. Shared retrieval generated a smaller specialist evidence packet, fewer unsupported numeric forms, lower wall-clock latency, and lower estimated cost than raw-context Team. This single-case pattern is consistent with selective retrieval and one-copy shared context being relevant mechanisms; it does not identify their causal contribution or show that adding agents is sufficient.
+The completed SEC study distinguishes role count from information flow more clearly than the earlier Pilot. In the main heterogeneous deployment, shared retrieval reduced Team token use and frozen-price estimated cost relative to raw-context Team, but raw context achieved more strict passes and lower mean latency. In the comparison using the same model, shared-retrieval Team was consistently faster than staged Solo, whereas Solo completed every selected task and retained all required final evidence. Evidence compression and parallelism are therefore engineering controls with measurable benefits and failure modes, not automatic improvements to every metric.
 
-Case-level replay shows why one aggregate recommendation would be premature. Team achieved 4/4 on thesis invalidation versus 2/4 Open-Book and 3/4 on portfolio concentration versus 1/4. These cases require combining threshold evidence with a governance action and are consistent with the prespecified proposition that role separation may help. In contrast, Team achieved 0/4 on incomplete screening while Open-Book achieved 3/4, but the failure is traceable to `estimate` versus `estimated` rather than to an unsafe decision. A domain-adaptive router should therefore be evaluated against mechanism classes, not only a global mean.
-
-Selective delegation is the practical implication. A coordinator can first classify whether the task requires independent evidence extraction, methodology application, or adversarial challenge. Deterministic data collection and state mutation remain tools. A specialist is admitted only when its information or role is expected to change a measurable decision. This admission rule converts multi-agent orchestration from a default architecture into a bounded experimental treatment.
+These results favor selective delegation. The same runtime can execute a staged Solo workflow when completeness and evidence retention are paramount, or admit parallel specialists when latency matters and their outputs can be checked for missing calculations and evidence groups. Deterministic data collection and state mutation remain tools. Team and Solo are modes of the same runtime. A future routing policy should choose between them according to task requirements.
 
 ## C. Financial Value Without Autonomous Trading
 
-The application’s value proposition is research-process quality rather than direct return prediction. The system can reduce repeated data collection, expose missing fields, preserve thesis history, surface invalidation conditions, suppress duplicate alerts, and structure disagreement. These outputs are useful even when the final investment decision remains human.
+The application supports research by connecting evidence, analysis, and persistent review decisions. The system can reduce repeated data collection, expose missing fields, preserve thesis history, surface invalidation conditions, suppress duplicate alerts, and structure disagreement. These outputs are useful even when the final investment decision remains human.
 
-This boundary is also methodologically useful. Return prediction introduces market regime, benchmark selection, turnover, transaction cost, corporate actions, survivorship, and look-ahead confounders. Workflow correctness can be evaluated first with deterministic evidence and state oracles. Predictive evaluation may then be added as a separate layer after the data pipeline satisfies point-in-time requirements.
+Keeping research assistance separate from trading also simplifies evaluation. Return prediction requires controls for market conditions, benchmarks, turnover, transaction costs, and corporate actions. It must also account for survivorship bias and future information leaking into historical tests. Workflow correctness can be evaluated first with deterministic evidence and state oracles. Predictive evaluation may then be added as a separate layer after the data pipeline satisfies point-in-time requirements.
 
-The fixed-evidence finance experiment occupies an intentionally narrow position in that stack: it measures whether the coordinator reproduces supplied evidence and states a bounded governance decision. The retrieval track extends the boundary to source-locked archived SEC records, explicit evidence selection, specialist summaries, and final synthesis. It still does not measure live-web retrieval, semantic entailment, execution of the seventeen finance tools, persistent ledger mutation, or subsequent portfolio outcomes. This separation improves diagnosis while limiting product claims: neither a 5/6 fixed-fixture result nor a successful SEC retrieval pilot validates investment advice.
+The fixed-evidence experiment checks whether the coordinator retains supplied evidence and states the required research decision. The retrieval track extends the boundary to archived SEC records fixed before evaluation, explicit evidence selection, specialist summaries, and final synthesis. The tool-backed panels add actual finance-tool calls and persistent ledger mutations, while the isolated live Skill case adds one external market-data fetch before thesis creation. The latter does not validate autonomous filing discovery, all financial tools, broad semantic accuracy, or subsequent portfolio outcomes. The eligibility-label error led to the serializer fix described in Section VII E. Downstream decision paths still need to enforce that label. These separate tests improve diagnosis without validating investment advice.
 
 Return-based analysis should be added only after the data pipeline supports point-in-time constituent universes, dated `as_of` snapshots, corporate-action adjustment, delisting coverage, and explicit look-ahead prevention. It must remain separate from workflow correctness: a system can preserve evidence correctly without profitable forecasts, while a profitable backtest can still be invalid if it leaks future information.
 
-## D. Quality–Cost Trade-off
+## D. Quality and Resource Trade-offs
 
-The historical sequence indicates that poor coordination can dominate model cost. Duplicate delegation, unrestricted specialist tools, and recovery turns coincided with more than one million tokens across eight cases. The final bundle reduced this overhead while constraining capabilities and reusing evaluation-only duplicate results, but the sequence does not identify each mechanism’s causal share.
+The useful deployment question is which execution mode satisfies the task's completion requirements within its latency and cost budget. In the study using the same model for both modes, Team reduced mean latency from 33.62 to 22.42 seconds, but passed 19/24 attempts against Solo's 24/24 and used slightly more estimated cost. The repeated heterogeneous study showed a different resource comparison: shared retrieval used fewer tokens and lower estimated cost than raw-context Team, while raw context passed more cases.
 
-However, lower cost is not inherently better. The appropriate objective is the minimum cost that satisfies a fixed evidence and outcome standard. The frozen finance confirmation separates uncached prompt, cache-read, completion, provider total, latency, and cost. Team cost USD 0.008335, compared with USD 0.005510 for one-pass Open-Book and USD 0.017798 for Two-Pass, while all three passed 5/6 cases. Under billable-like token accounting Team used 41.6% fewer tokens than Two-Pass; under provider total accounting it used 33.7% more. This sign reversal shows why one undocumented token field cannot support an efficiency claim.
-
-A practical deployment should optimize a Pareto surface rather than one scalar. The relevant dimensions include strict task outcome, configured attribution, latency percentile, priced cost, and infrastructure error rate. A mode is dominated only if another mode is no worse on every required dimension and better on at least one. With r5 point estimates, Open-Book is cheaper and faster than Team at the same pass count, whereas Team is cheaper and faster than Two-Pass at the same pass count. The post hoc case matrix suggests possible Team benefits on selected mechanisms, but the evidence is too weak to justify routing every request through specialists.
-
-The retrieval pilot adds context allocation to this surface. Shared-retrieval Team and staged Solo have the same strict outcome, but the Team is faster and cheaper under heterogeneous model allocation while consuming more provider-total tokens. Shared-retrieval Team dominates raw-context Team on the observed strict outcome, grounding, latency, tokens, and cost, but only for one case. This pattern motivates a load-stratified confirmation rather than a universal Team default. A routing policy should admit retrieval and specialists when expected context reduction or parallel analysis exceeds coordination overhead.
+These results support offering both execution paths. Solo is appropriate when the observed completeness advantage matters more than latency; Team is a candidate when parallel specialist work is useful and its output can be checked before acceptance. A future routing policy would need to test that choice prospectively. Token totals must also retain their accounting definitions: provider totals include cache reads, while uncached-input-plus-output measures describe a different quantity.
 
 ## E. Generalizability
 
-The architecture generalizes to domains that combine deterministic state with interpretive judgment, such as compliance review, incident response, customer operations, and scientific evidence synthesis. The financial scenarios are nevertheless domain specific. Thesis invalidation, portfolio concentration, and announcement deduplication encode assumptions that may not transfer directly to credit underwriting, high-frequency trading, or personal financial advice.
+The architecture could support other tasks that combine stored state with interpretation, such as compliance review, incident response, customer operations, and scientific evidence synthesis. The financial scenarios are nevertheless domain specific. Thesis invalidation, portfolio concentration, and announcement deduplication encode assumptions that may not transfer directly to credit underwriting, high-frequency trading, or personal financial advice.
 
-Generalization should therefore be tested at the mechanism level. Tenant isolation, bounded execution, tool-call pairing, correlated delegation, fault attribution, and evidence provenance are domain-independent mechanisms. The finance case oracles and research methodology are domain-specific configurations layered on top of them.
+Generalization should therefore be tested at the mechanism level. Tenant isolation, bounded execution, tool-call pairing, correlated delegation, and evidence provenance are domain-independent mechanisms. The finance case oracles and research methodology are domain-specific configurations layered on top of them.
 
 ## F. Threats to Validity
 
-TABLE_CAPTION: Principal threats to validity and mitigation status.
+The experiments support different claims at different levels. Synthetic tasks isolate state and policy behavior. Repeated SEC comparisons characterize execution modes. Selected real-source examples demonstrate attainable analysis. None of these sources alone describes the quality of an unrestricted financial assistant.
 
-| Validity class | Threat | Consequence | Current mitigation or required action |
-|:---|:---|:---|:---|
-| Construct | Lexical matcher approximates semantic attribution | Correct inflections fail; hedged forbidden phrases pass | Preserve outputs, version grader, report ablation; validate entailment separately |
-| Construct | r5 “state” grader observes prose, not mutation | Workflow wording can be mistaken for ledger correctness | Separate plugin tests from runtime text results |
-| Construct | Fixed-evidence specialists copy compiled evidence verbatim | r5 does not measure retrieval or specialist evidence selection | Keep fixture and archived-SEC tracks separate; do not pool their claims |
-| Construct | Numeric corpus membership approximates grounding | Supported-looking values may lack semantic entailment | Preserve claim/value diagnostics; add human-reviewed claim-to-evidence labels |
-| Construct | Provider total includes cache reads inside prompt | Efficiency direction can reverse | Report billable-like and provider totals together |
-| Internal | Historical runtime and grader changed together | 0/8→8/8 cannot be causally attributed | Report as regression sequence; execute cumulative ablation |
-| Internal | r2–r5 pooling selected post hoc | Positive direction may reflect analysis choice | Keep r5 primary; label sensitivity analysis |
-| Internal | Gain guard checks counts, not pair identifiers | Misaligned cases could produce invalid gain | Pair manually by case/repetition; add identifier guard |
-| Internal | Retrieval Pilot modes were not randomized | Provider load, cache state, or order can confound latency | Seed and randomize mode order within case–repetition blocks |
-| Internal | The researcher authored the runtime, suite, and deterministic graders | Design choices or post hoc interpretation may favor the artifact under study | Content-address artifacts; retain raw outputs; require two independent source/oracle reviewers; report disagreements and sensitivity analyses |
-| External | Fixed suite has six cases; retrieval pilot has one executed case and one model family | Results may not transfer to other issuers, loads, or providers | Execute frozen 24-configuration matrix, then expand company–task clusters |
-| External | No finance-tool calls in r5 | End-to-end application generalization is unsupported | Add retrieval-and-mutation integration suite |
-| Conclusion | r5 has n=6; retrieval Pilot has n=1; both use one repetition | Modest paired effects and variance are not estimable | Three randomized repetitions and cluster-aware paired reporting |
-| Conclusion | Graders and retrieval runtime were calibrated on earlier outputs | Final observations are not independent holdouts | Freeze suite, grader, runtime settings, and exclusions before Stage 2 |
+TABLE_CAPTION: Principal limits on interpreting the reported experiments.
 
-The table makes the central limitation explicit: measurement and capability are entangled. The present evidence is strongest where executable tests define a transition and weakest where natural-language wording stands in for semantic or persistent state correctness. The recommended next experiment is therefore not simply “more cases.” It is a prespecified separation of evidence source, runtime policy, orchestration mode, and grader version.
+| Issue | Effect on interpretation | Reporting treatment |
+|---|---|---|
+| Lexical and numeric grounding checks | A supported number may appear in a false explanation; a correct phrase may fail a lexical rule | Report automated check results separately from claim-level review and retain the raw answer |
+| Deterministic comparison catalogs | Displayed arithmetic is prepared by the host | Attribute evidence selection and interpretation to the model, and calculation to the checked preparation pipeline |
+| Repeated source packets | Repetitions and corpus loads are dependent | Keep issuer and task clusters visible; do not pool observations into a general reliability rate |
+| Main-study model allocation | Pro/Flash role assignment differs across modes | Use the subset using the same model for the closer model-matched comparison |
+| Multiple execution batches | Provider conditions can affect latency | Retain batch identity and restrict latency findings to the observed runs |
+| Case and reviewer selection | Illustrated successes were selected after inspection; local model review is not independent expert validation | Disclose selection, report contrasting outcomes, and identify retrospective, masked, and unblinded reviews |
+| Limited end-to-end scope | Most events are pre-ingested; one live data case does not establish continuous source availability | Describe the exact source and tool path exercised |
+| Guard coverage | A state hold does not prevent every false comparison or a later erroneous final sentence | Check ledger state and prose separately; report the observed guard misses |
+
+Traces and saved state provide direct evidence of execution. Assessing analytical usefulness also requires checking the claims against their sources. The report uses both kinds of evidence without treating successful execution as proof of sound financial interpretation.
 
 # IX. SECURITY, ETHICS, LIMITATIONS, AND FUTURE WORK
 
 ## A. Security Controls
 
-FastClaw applies defense in depth and treats risk management as a lifecycle activity rather than a single filter [14]:
+The system applies defense in depth and treats risk management as a lifecycle activity rather than a single filter [27]:
 
 - authenticated cookie or API-key ingress with tenant scope;
 - agent ownership and API-key ACL checks on management, observability, and resolved OpenAI-compatible chat targets;
@@ -898,85 +808,83 @@ FastClaw applies defense in depth and treats risk management as a lifecycle acti
 - trusted plugin execution context and user-filtered financial state;
 - optimistic version checks for concurrent thesis and alert updates.
 
-These controls reduce risk but do not prove complete security. The prompt-injection scanner has no dedicated test coverage and is described as an unvalidated heuristic, not a security control with measured detection performance. XML isolation is an instruction boundary, not a cryptographic one; and a permissive policy still exposes powerful tools. Production deployment should use least-privilege presets, network allowlists, secret management, audit retention, parameter validation, human approval for destructive actions, and adversarial testing [13].
+These controls reduce risk but do not prove complete security. The prompt-injection scanner has no dedicated test coverage and is described as an unvalidated heuristic, not a security control with measured detection performance. XML tags separate instructions but do not provide cryptographic isolation. A permissive policy also leaves powerful tools available. Production deployment should use least-privilege presets, network allowlists, secret management, audit retention, parameter validation, human approval for destructive actions, and adversarial testing [13].
 
-The API-key ACL defect identified during review illustrates complete mediation in practice. The former chat path checked explicit agent headers in middleware but could resolve an omitted header to an inaccessible fallback. The handler now authorizes the resolved target and returns 403 for an inaccessible fallback; an unknown explicit identifier returns 404 instead of falling through. Behavioral tests cover omitted, inaccessible, unknown, and permitted targets. The correction improves the current endpoint but does not remove the need to audit each new route.
+The API-key ACL defect identified during review illustrates complete mediation in practice. The former chat path checked explicit agent headers in middleware but could resolve an omitted header to an inaccessible fallback. The handler now checks the resolved target and returns 403 for an inaccessible fallback. An unknown explicit identifier returns 404 rather than selecting a fallback. Behavioral tests cover omitted, inaccessible, unknown, and permitted targets. The correction improves the current endpoint but does not remove the need to audit each new route.
 
 ## B. Financial Ethics and Human Oversight
 
-FastClaw is a research assistant, not an investment adviser or execution engine. It may organize evidence, apply deterministic calculations, maintain a thesis record, and propose a reversible review action. It must not promise return, infer suitability, size a position for a client, or place an order. NIST AI RMF emphasizes explicit human roles and responsibilities for decisions and oversight [14]. In this application, a human remains accountable for accepting evidence, changing portfolio policy, and authorizing any irreversible external action.
+The financial research application is an assistant, not an investment adviser or execution engine. It may organize evidence, apply deterministic calculations, maintain a thesis record, and propose a reversible review action. It must not promise return, infer suitability, size a position for a client, or place an order. NIST AI RMF emphasizes explicit human roles and responsibilities for decisions and oversight [27]. In this application, a human remains accountable for accepting evidence, changing portfolio policy, and authorizing any irreversible external action.
 
-Auditability does not eliminate responsibility. A trace can show which evidence identifier, policy preset, agent, model, and tool call contributed to an answer, but it does not certify that the evidence was licensed, complete, current, or fair. Real deployments must document data rights, retention, market-data terms, and whether generated commentary is shown to a client. Sensitive account or portfolio information must not be placed in model prompts or logs without an approved data-processing basis.
+An audit trail supports review but does not replace it. A trace can show which evidence identifier, policy preset, agent, model, and tool call contributed to an answer, but it does not certify that the evidence was licensed, complete, current, or fair. Real deployments must document data rights, retention, market-data terms, and whether generated commentary is shown to a client. Sensitive account or portfolio information must not be placed in model prompts or logs without an approved data-processing basis.
 
-The fixed benchmark evidence is synthetic and avoids personal or client data. This reduces privacy risk but also removes realistic retrieval ambiguity. A future archived-data experiment should preserve publication time and source licenses, redact personal information, and separate research evaluation from any live portfolio workflow. Human reviewers should see evidence and proposed state changes before acceptance, not only a fluent final narrative.
+The preliminary fixed-evidence benchmark and synthetic workflow fixtures avoid personal or client data. Later SEC experiments use archived public disclosures, while the separate live Skill case retrieves online market data. Synthetic inputs reduce privacy risk but omit some real-source ambiguity; archived inputs preserve inspectable evidence without establishing live-source availability. Further data collection should preserve publication time and source licenses, redact personal information, and separate research evaluation from any live portfolio workflow. Human reviewers should see evidence and proposed state changes before acceptance, not only a fluent final narrative.
 
 ## C. Current Limitations
 
 First, the agent-level turn gate serializes all sessions of one agent because the registry stores mutable session-bound state. The TaskQueue can run different agents concurrently, but true per-session concurrency for one agent requires immutable per-turn registries or a per-session gate.
 
+The per-chat FIFO guarantee begins at successful channel enqueue. Concurrent callers obtain task identifiers under a mutex but send to the queue after releasing it. Their queue insertion order may therefore differ from their identifier order. This does not permit two tasks from one chat channel to execute simultaneously, but callers must not infer a total order from wall-clock invocation or task identifiers under concurrent submission.
+
 Second, session appends are individually persisted rather than committed as one transaction. Normalization repairs interrupted histories, but transactional batch append would provide a stronger consistency model. Store-backed reads can fail open to a stale in-memory session on store error, so cross-replica freshness is best effort rather than guaranteed.
 
-Third, Skills are currently injected in full. Installing a large financial Skill library can consume context and distract the model. The existing `load_skill` helper is unreachable in production, and some Skill paths are prompt-visible without equivalent sandbox mounts. Progressive disclosure should initially expose only names and descriptions, then register and test on-demand loading for one to three selected methods.
+Third, Skills are currently injected in full. Installing a large financial Skill library can consume context and distract the model. On-demand loading is not connected to the production registry, and some Skill paths are prompt-visible without equivalent sandbox mounts. Progressive disclosure should initially expose only names and descriptions, then register and test on-demand loading for one to three selected methods.
 
-Fourth, all retained real-runtime studies use one repetition. The historical study has eight cases and two unmatched evidence modes; the fixed-evidence confirmation has six cases and four matched modes; and the final retrieval pilot has one executed case across five modes. The retrieval suite defines 24 treatment configurations, but unexecuted configurations are not evidence and configurations sharing one company–task source set are not independent issuers. None of these tracks is an official benchmark or a population estimate. Earlier outputs informed both the fixed-evidence rubric and retrieval runtime, so the retained runs are confirmations after calibration rather than untouched holdouts.
+Fourth, the fixed-evidence confirmation and original retrieval Pilot have one repetition and remain exploratory. The later SEC study executes 24 configurations with three repetitions per primary mode; the supplementary comparison using the same model covers eight selected configurations. These observations are not official benchmark scores or population estimates. Loads and repetitions derived from a company–task source set must not be counted as independent issuers, and the selected reports for the same-model comparison span two batches.
 
-Fifth, the configured attribution and numeric-grounding graders are lexical and local. The fixed-evidence matcher handles direction, negation, quotation, decimal punctuation, conditional scope, and conservative plural normalization, but rejects `estimated` for required `estimate` and exempts a forbidden phrase after `may`. The retrieval grader checks whether numeric forms are authorized by source records or declared calculations; it does not prove that the surrounding sentence is entailed. Claim-level evidence linking and human validation are required for broader factuality claims.
+Fifth, the attribution and numeric-grounding graders rely on lexical matching and source-bound rules. Although they account for several forms of negation, quotation, and numeric variation, wording differences can still cause misclassification. Matching a number to a source record or declared calculation does not establish that the surrounding claim follows from the evidence. Broader factuality assessment requires claim-level semantic review.
 
-Sixth, SQLite WAL improves concurrent runtime behavior but changes backup semantics: the main database file is not a complete live backup while uncheckpointed changes remain in sidecars. Operational documentation and deployment automation must account for this.
+Sixth, SQLite WAL supports concurrent access but requires care during backup. The main database file is incomplete while uncheckpointed changes remain in sidecar files. Operational documentation and deployment automation must account for this.
 
-Seventh, the financial layer lacks persistent portfolio holdings and policy limits, outbound alert delivery and retry state, and exchange-calendar-aware scheduling. It also lacks a point-in-time market data store suitable for unbiased backtesting. Finskills remains an external, unvendored dependency, and the Serenity hash manifest did not verify two documentation files.
+The MessageBus wait graph, TaskQueue, correlation map, and deduplication cache are process-local. The daemon can restart a failed Gateway, but it cannot replay volatile work or determine whether an interrupted external side effect occurred. PostgreSQL support does not make the scheduler distributed, and active-active Gateway replicas do not yet have lease, partition ownership, or durable-queue semantics.
 
-Finally, r5 uses compiled, verbatim-copy specialist evidence, while the retrieval pilot uses archived SEC records and model-based evidence selection. Both execute zero finance-tool calls, zero ledger mutations, and zero injected faults. The combined evidence validates controlled orchestration and one archived-document retrieval path, not live source discovery, persistent workflow execution, or graceful degradation. Authorization should also be continuously audited across every API surface as the OpenAI-compatible API evolves.
+Seventh, the financial layer lacks persistent portfolio holdings and policy limits, outbound alert delivery and retry state, and exchange-calendar-aware scheduling. It also lacks a point-in-time market data store suitable for unbiased backtesting, and Finskills remains an external, unvendored dependency.
+
+Finally, the fixed-evidence confirmation uses compiled, verbatim-copy specialist evidence, while the SEC Pilot and repeated SEC study use archived records and model-based evidence selection. Those studies did not invoke finance tools or mutate the ledger. Later tool-backed panels persist reviews, alerts, screens, and preliminary theses, but their SEC events are pre-ingested or historical and other inputs include synthetic fixtures. The online Skill case verifies one live data fetch and ledger creation. It does not test autonomous filing discovery or repeatability during upstream outages. Its isolated agent used a broad tool preset rather than a command-level Skill allowlist. Preliminary theses now receive a research-only label, but universal enforcement of that restriction by downstream decision consumers has not been demonstrated. These gaps concern workflow execution and controls. They are separate from judgments about the value of an analysis.
 
 ## D. Future Work
 
-The highest-priority engineering work is:
+Longer-term engineering and evaluation work includes:
 
-1. complete and freeze the proposed second-stage SEC protocol, then execute all 24 existing configurations with three seeded, randomized repetitions;
-2. add claim-to-evidence links and separately validate rubric or semantic entailment judges against human labels while retaining deterministic state, policy, and evidence-identifier checks;
-3. randomize mode order, preserve company–task cluster identifiers, and add a capacity-matched Team/Solo ablation before interpreting heterogeneous cost differences;
-4. expand the SEC panel with JPMorgan Chase, Visa, PayPal, and Microsoft after the four-company matrix passes source and grader audit;
-5. add in-flight budgets for model calls, tokens, cost, and latency;
-6. aggregate identity revision, policy preset, and deduplication hits directly into the report;
-7. bound wide specialist fan-out below the internal bus backpressure limit;
-8. introduce immutable per-turn registries and per-session concurrency;
-9. add transactional session append, progressive Skill loading, portfolio policy state, alert delivery adapters, and exchange calendars;
-10. build point-in-time financial datasets before evaluating returns.
+1. extend the matched Solo/Team comparison beyond its four issuers and one provider family; the larger SEC application panel uses a different task and does not expand that comparison;
+2. extend the existing local claim-to-evidence review with independent human labels and broader checks of saved rationales and final explanations;
+3. optionally repeat the matched Team/Solo comparison with other model tiers to test transfer beyond the completed subset using the same model;
+4. extend the finance-tool and live-Skill paths to autonomous event acquisition, repeated-event idempotency, adverse evidence, and paired Team/Solo execution; add a narrow Skill-command policy and a decision-eligibility guard for price-only preliminary theses;
+5. add in-flight model-call, token, cost, and latency budgets together with per-session concurrency;
+6. add transactional session append, progressive Skill loading, portfolio policy state, alert delivery, and exchange-calendar support;
+7. design durable admission, lease ownership, idempotency, and replay semantics before active-active deployment;
+8. construct point-in-time financial datasets before evaluating investment performance.
 
 # X. CONCLUSION
 
-This thesis treated an LLM agent as a controlled software runtime rather than a prompt wrapper. FastClaw turns a reasoning–action loop into an authenticated, tenant-scoped, stateful, streaming execution system. Its principal mechanisms are a per-chat FIFO TaskQueue with bounded root admission, a correlated MessageBus with transitive wait-graph cycle prevention, a policy-filtered tool registry, a terminally consistent turn emitter, session normalization, fail-closed required identity loading, request-scoped evaluation tools, and per-call role, token, cost, and latency attribution. The implementation also demonstrates why these mechanisms require explicit invariants: every assistant tool call must receive one result, every protected target must be authorized after resolution, and every waiting sub-agent lane must preserve an acyclic graph.
+This project designs and evaluates an agent runtime with financial research applications. Its architecture supports staged Solo execution and coordinator–specialist Team execution through shared mechanisms for authenticated requests, tenant-scoped sessions, bounded scheduling, policy-filtered tools, streaming responses, and persistent state. Cancellation, cycle prevention, session-history repair, and per-call telemetry make the execution path observable and constrain common failure modes. Financial workflows use these mechanisms to connect data collection, analytical interpretation, and research-state management.
 
-VP1 is satisfied only for selected tested control paths. Focused unit and integration tests execute authentication, provider parsing, cancellation, tool panic containment, internal calls, task snapshots, storage contention, evaluation reporting, and the corrected OpenAI-compatible ACL path. They show that these selected mechanisms are executable and that several previously silent failures are observable. They do not provide formal verification, exhaustive path coverage, or production assurance. Statement coverage is approximately 27.2% for the runtime and production packages, or 28.4% when the report's own analysis program is included. Important packages such as policy, scope, session, plugin, MCP, and Skills have no measured test coverage in that profile.
+Executable tests support selected control paths, and the small scheduler load test completed all configured tasks while preserving per-chat ordering and the concurrency limit. The checks verify these functions under the tested conditions. Coverage remains incomplete, and the single-Gateway design does not provide durable distributed scheduling or transparent replay after a process failure.
 
-RQ2 remains not determinable as an accuracy claim. In the primary six-case confirmation, Team, Open-Book, and Two-Pass each passed 5/6 cases. A zero-point difference at one repetition does not establish equivalence. Post hoc replay produces a positive but unsupported Team direction, while the incomplete-screening case shows that one morphology defect can reverse a mode comparison. The longitudinal SEC extension again produced equal Team and evidence-matched Open-Book totals. In the retrieval pilot, shared-retrieval Team and staged Solo both passed all milestones and retained every gold evidence group. Across three designs, no result establishes that multiple agents intrinsically improve financial answer accuracy.
+The execution-mode experiments show useful trade-offs. In the repeated SEC main study, shared-retrieval Team passed 56/72 assigned attempts and staged Solo passed 55/72, with two Solo provider timeouts retained. In the comparison using the same model, Solo passed 24/24 and Team passed 19/24, while Team was faster in every pair and reduced mean latency from 33.62 to 22.42 seconds. Shared retrieval also reduced main-study resource use relative to raw-context Team, although raw context achieved more strict passes. These findings support a runtime that offers both modes and exposes their costs and outcomes for task-specific selection.
 
-RQ3 has only descriptive evidence. In r5, Team had higher frozen-price estimated cost than one-pass Open-Book and lower estimated cost than Pro-only Two-Pass, while billable-like versus provider-total token definitions produced opposite directional comparisons. In the single-case retrieval Pilot, shared-retrieval Team and staged Solo reached the same strict outcome; the Team observation had 36.32% lower latency and 42.06% lower estimated cost but 13.63% more provider-total tokens under heterogeneous allocation. Against raw-context Team, shared retrieval was associated with 14.15% lower latency, 38.42% fewer tokens, 47.62% lower estimated cost, and a 3.40-percentage-point grounding difference. These observations are consistent with a limited latency–cost–grounding difference, but non-random order, provider variability, one repetition, and heterogeneous allocation prevent a causal or general Pareto claim.
+The financial application demonstrates how the runtime supports work beyond generating a final answer. Across four workflow families, agents called finance tools, linked evidence to research records, acknowledged alerts, and applied decision holds. The 16-case repetition panel recorded 77/80 passes on the workflow execution checks, and all ten missing-critical-evidence repetitions blocked subsequent use while preserving the existing thesis. A separate live Skill case connected market-data retrieval and arithmetic to a saved preliminary research record.
 
-Prospective RQ4 is not an executed empirical question. FastClaw implements simulated, request-scoped fault injection, error-aware denominators, fault observation and attribution, unsupported-claim checks, and graceful-degradation metrics. However, r5 has `faults_expected=0`; its zero fault rates are empty values rather than evidence of robust coordinator behavior. A repeated retained fault suite remains required.
+Several analyses of real disclosures produced useful research observations. MQ answers distinguished business growth from deteriorating GAAP profitability. An AIG answer separated segment-adjusted improvement from weaker consolidated earnings. An RPAY answer identified the impairment base effect behind a narrower GAAP loss. The checked comparison catalogs supplied their arithmetic, while the model identified opposing evidence, explained implications, requested specific further information, and persisted a review decision. These examples demonstrate a working combination of deterministic tools and model interpretation.
 
-VP2 is satisfied only for selected deterministic invariants. Plugin tests exercise tenant-isolated theses, optimistic versioning, immutable reviews, watchlist filtering, and alert deduplication. The fixed-evidence runtime experiment supports controlled routing and governance wording but not retrieval. The SEC Pilot supports archived-record selection, evidence compression, specialist analysis, and bounded synthesis for one case. Neither model experiment invokes finance tools or mutates the ledger. The evidence therefore does not validate a complete live financial-research transaction.
-
-The principal contribution is consequently a measurement-oriented, auditable agent runtime and an inconclusive accuracy result: no incremental Team effect was detected at the present resolution. FastClaw makes runtime policy, evidence visibility, execution errors, role-specific frozen-price estimated cost, and grader behavior inspectable. The analysis can change a lexical feature and replay retained outputs without purchasing another model call, exposing how much of an apparent capability result belongs to the oracle. This is stronger evidence for auditability than for financial intelligence.
-
-Future work should complete and freeze the proposed second-stage protocol before executing it across the existing 24 SEC configurations with three seeded repetitions, randomized mode order, preserved company–task cluster identifiers, and paired cluster-bootstrap reporting. It should then expand the issuer panel and run a capacity-matched Team/Solo ablation. A separate mutation track should invoke deterministic finance tools, write versioned ledger state, and use human-reviewed claim-to-evidence links. Return-based evaluation should remain separate until the dataset controls publication time, constituent membership, corporate actions, delisting, turnover, and transaction costs. Until those conditions are met, FastClaw should be presented as a research copilot and runtime evaluation platform—not an autonomous adviser, an official benchmark submission, or evidence of investment performance.
+Other archived answers contain incorrect comparisons, unsupported inferences, and mismatches between prose and saved state. The successful examples therefore do not establish consistent analytical quality. The contribution is a working runtime, financial research applications built on it, and an evaluation of their observed behavior. Together, the engineering tests, mode comparisons, and application cases show how execution controls and financial reasoning can be combined and inspected. Further work can strengthen semantic checks, state consistency, source acquisition, and deployment resilience.
 
 # APPENDIX A. FINANCIAL CASE ACCEPTANCE CHECKLIST
 
-The following checklist converts the six financial scenarios into auditable acceptance conditions.
+The following checklist defines answer-level acceptance conditions for the six fixed-evidence calibration scenarios. State changes in this table are actions the answer must propose or describe; this experiment does not execute them. Actual ledger mutations are evaluated separately in the tool-backed studies.
 
-TABLE_CAPTION: Case-level evidence, state, and policy acceptance conditions.
+TABLE_CAPTION: Case-level evidence, proposed-state, and policy wording checks.
 
 | Case | Evidence checks | Governance wording checks | Policy checks |
 |---|---|---|---|
 | Earnings catalyst | Filing ID, date, 18% growth, and 220-bp margin expansion retained | Review references thesis version 4; conviction 3→4; active status | No trade authorization |
 | Thesis invalidation | Customer C-17, 31% revenue share, and 25% threshold retained | Decision `invalidate`; expected version 2; invalidated status | No unsupported target price |
-| Duplicate event | External event ID and 24-hour window retained | Existing alert reused; duplicate count 1→2; `last_seen_at` updated | Thesis review executed once |
+| Duplicate event | External event ID and 24-hour window retained | Proposes reusing the alert, incrementing count 1→2, and updating `last_seen_at` | Proposes only one thesis review |
 | Incomplete screen | Observed PE/ROE separated from missing free-cash-flow and leverage fields | Candidate excluded with `insufficient_data` | No imputation from model knowledge |
 | Portfolio concentration | 62% sector weight, 0.89 correlation, 17% stress loss, and 10% limit retained | Proposed exposure target below 45%; checks scheduled again | No return guarantee; no automatic execution |
 | Contradictory evidence | Both dated primary-source claims retained | `needs_review`; conviction unchanged | No convenient-source selection; clarification requested |
 
-For each attempt, failure classification should identify one primary layer: evidence retrieval, deterministic calculation, tool routing, specialist execution, coordinator synthesis, state persistence, policy compliance, or infrastructure. This classification prevents all unsuccessful outputs from being grouped under a generic “model failure.”
+Failure classification should identify the layer supported by the retained evidence. In this calibration, that means routing, specialist response, synthesis, policy wording, or infrastructure; a proposed state change is not evidence of persistence. Later tool-backed studies additionally inspect calculation results and actual state transitions. This distinction prevents all unsuccessful outputs from being grouped under a generic “model failure.”
 
 # APPENDIX B. REPRODUCIBILITY CHECKLIST
 
@@ -989,20 +897,11 @@ Before execution:
 5. verify that no baseline begins with cached conversation history;
 6. record company–task cluster identifiers and the planned pair key.
 
-The repository-level evidence entrypoint is `evals/thesis-evidence-manifest.json`.
-It separates confirmatory, descriptive-Pilot, and proposed artifacts and hashes the
-suite, source lock, raw report, analysis, summary, grader/analysis source, and
-sub-manifest chain. From a clean checkout, run
-`python3 evals/finance_e2e/thesis_evidence_manifest.py --check`. A missing file,
-hash drift, stale generated manifest, or confirmatory-status mixing fails the
-check. This supports offline reconstruction and regrading of retained outputs;
-it does not claim exact regeneration of historical stochastic provider trajectories.
-
 During execution:
 
 1. retain case, repetition, mode, session identifier, and root execution identifier;
 2. retain model-call role, call path, token usage, cache usage, latency, and error state;
-3. retain tool-call identifiers, tool results, delegation targets, and fault observations;
+3. retain tool-call identifiers, tool results, and delegation targets;
 4. distinguish model/tool failure from timeout, transport, authentication, or provider failure;
 5. retain the realized randomized mode order;
 6. stop the run if sources, evidence fixtures, graders, model aliases, or pricing change.
@@ -1010,66 +909,12 @@ During execution:
 After execution:
 
 1. report evaluated and errored attempts separately;
-2. report raw counts with rates and confidence intervals where repetition permits;
+2. report raw counts and descriptive rates with their denominators;
 3. calculate only the track-specific predeclared paired effects;
 4. report Team-only latency and tokens in addition to full-harness totals;
-5. disclose simulated specialists, fault injection, omitted cases, reruns, and pricing assumptions;
-6. use company–task cluster-aware intervals for retrieval configurations;
+5. disclose simulated specialists, omitted cases, reruns, and pricing assumptions;
+6. disclose shared company–task sources and avoid treating repeated calls as independent financial cases;
 7. archive machine-readable results together with a human-readable failure analysis.
-
-# APPENDIX C. R5 REPRODUCTION RECORD
-
-TABLE_CAPTION: Recorded configuration for the primary financial confirmation.
-
-| Item | Recorded value |
-|:---|:---|
-| Suite | `evals/multiagent-finance-runtime.yaml` |
-| Suite SHA-256 | `4fbf54eca61dc7363342ea1db364cb84426e1541937a99c1e1266dbfb3e5dc44` |
-| Artifact | `finance-runtime-formal-r5.json` |
-| Artifact SHA-256 | `5366a91398ca575d303af56d62da179f2a3f1fb13a1d0f5aae5c1773debfbc00` |
-| Baselines | `solo_open_book`, `solo_two_pass`, `team`, `oracle_team` |
-| Repetitions | Suite default 3; actual CLI override 1 |
-| Timeout / execution | 10 minutes / real runtime |
-| Case filter | None; all six cases |
-| Coordinator | `bench-coordinator`, `deepseek/deepseek-v4-pro` |
-| Specialists | Three agents, `deepseek/deepseek-v4-flash` |
-| Endpoint class | OpenAI-compatible chat-completions API through local Gateway |
-| Pricing date | 1 August 2026 |
-| Go toolchain | `go1.26.4 darwin/arm64` |
-
-The complete secret-free command and critical source-file hashes are in `evals/finance-runtime-formal-r5.manifest.json`. The executable source changed during calibration, and the complete local patch was not archived when r5 was produced. Therefore a reader can verify suite and artifact integrity, replay the current grader over retained outputs, and reproduce the analysis tables, but cannot regenerate exactly the same provider trajectories from the retained manifest alone. This limitation is retained rather than replaced with a false reproducibility claim.
-
-The benchmark evidence is a compiled lookup table, specialists are instructed to copy the matching line, and r5 contains eighteen `spawn_subagent` calls but no finance-tool call. Finskills is external and unvendored. The API credential is intentionally excluded from every report and manifest.
-
-# APPENDIX D. STAGE 2 PRE-EXECUTION PROTOCOL RECORD
-
-Stage 2 is not a completed result. This appendix records the analysis decisions that must be frozen before the first formal provider request. The complete operational protocol is stored in `evals/finance_e2e/STAGE2-EXPERIMENT-PROTOCOL.md`.
-
-TABLE_CAPTION: Pre-execution design record for the retrieval-mediated Stage 2 study.
-
-| Item | Prespecified design |
-|:---|:---|
-| Status | Draft until the freeze checklist passes; immutable after first formal request |
-| Stage 2A panel | NVIDIA, AMD, Intel, and NIKE |
-| Task and load matrix | Point-in-time and longitudinal × small, medium, and large context |
-| Configurations / analysis clusters | 24 treatment configurations / 8 company–task analysis clusters |
-| Observation ID | `(company, task_family, corpus_load, repetition, mode)` |
-| Pair key | `(company, task_family, corpus_load, repetition)`; mode is excluded |
-| Counts | 72 case–repetition blocks; 216 primary observations; 48 diagnostics; 24 ablation observations; 288 total |
-| Primary modes | `solo_staged`, `team_shared_retrieval`, `team_raw_context` |
-| Repetitions | Three per primary mode and configuration |
-| Diagnostics | `solo_monolithic` and `oracle_evidence`, once per configuration |
-| Randomization | Seed `20260802`; randomized primary-mode order within each case–repetition block |
-| Quality floors | 95% numeric grounding; 90% final evidence recall; 75% retrieval recall and summary retention |
-| Primary comparisons | Shared Team versus staged Solo; shared Team versus raw-context Team |
-| Dependence correction | Pair within configuration; bootstrap company–task clusters; report load interactions |
-| Capacity ablation | All-Pro shared Team on eight prespecified medium-longitudinal and large-point configurations |
-| Point-in-time gate | Record `as_of_timestamp`; verify every included `accepted_at <= as_of_timestamp`; list later excluded filings |
-| Human audit | Two reviewers on prespecified outputs; supported, derived, unsupported, or not assessable claims |
-| Resource gate | Pause at USD 10 or twelve serial hours pending review |
-| Invalidation | Any source, suite, grader, model-alias, pricing, or treatment change creates a new study version |
-
-The 24 configurations must not be reported as 24 independent issuers, and the eight company–task analysis clusters are not asserted to be strictly independent population draws. Diagnostics and the separately reported all-Pro ablation do not enter the primary analysis. Stage 2 remains proposed/draft until the two-reviewer 98-item source/oracle audit is complete and every non-PASS item is adjudicated. Stage 2B adds JPMorgan Chase, Visa, PayPal, and Microsoft only after source and oracle audit, increasing business-model diversity without changing the frozen Stage 2A result.
 
 # REFERENCES
 
@@ -1099,10 +944,30 @@ The 24 configurations must not be reported as 24 independent issuers, and the ei
 
 [13] OWASP Foundation, “AI Agent Security Cheat Sheet,” OWASP Cheat Sheet Series, 2026. [Online]. Available: https://cheatsheetseries.owasp.org/cheatsheets/AI_Agent_Security_Cheat_Sheet.html. Accessed: Aug. 1, 2026.
 
-[14] National Institute of Standards and Technology, “Artificial Intelligence Risk Management Framework (AI RMF 1.0),” NIST AI 100-1, Jan. 2023, doi: 10.6028/NIST.AI.100-1.
+[14] The Go Authors, “The Go Memory Model,” version Jun. 6, 2022. [Online]. Available: https://go.dev/ref/mem. Accessed: Sep. 23, 2026.
 
-[15] E. B. Wilson, “Probable inference, the law of succession, and statistical inference,” J. Amer. Statist. Assoc., vol. 22, no. 158, pp. 209–212, 1927.
+[15] SQLite Consortium, “Write-Ahead Logging.” [Online]. Available: https://www.sqlite.org/wal.html. Accessed: Sep. 23, 2026.
 
-[16] Q. McNemar, “Note on the sampling error of the difference between correlated proportions or percentages,” Psychometrika, vol. 12, no. 2, pp. 153–157, Jun. 1947, doi: 10.1007/BF02295996.
+[16] SQLite Consortium, “SQLite Backup API.” [Online]. Available: https://www.sqlite.org/backup.html. Accessed: Sep. 23, 2026.
 
-[17] B. Efron, “Bootstrap methods: Another look at the jackknife,” Ann. Statist., vol. 7, no. 1, pp. 1–26, Jan. 1979, doi: 10.1214/aos/1176344552.
+[17] Marqeta, Inc., “Second Quarter 2025 Earnings Release,” exhibit to SEC filing accession 0001522540-25-000020, Aug. 6, 2025. [Online]. Available: https://www.sec.gov/Archives/edgar/data/1522540/000152254025000020/mqearningsrelease-q2x2025.htm
+
+[18] Marqeta, Inc., “Third Quarter 2025 Earnings Release,” exhibit to SEC filing accession 0001522540-25-000033, Nov. 5, 2025. [Online]. Available: https://www.sec.gov/Archives/edgar/data/1522540/000152254025000033/mqearningsrelease-q3x2025.htm
+
+[19] American International Group, Inc., “Second Quarter 2025 Earnings Release,” SEC exhibit, Aug. 6, 2025. [Online]. Available: https://www.sec.gov/Archives/edgar/data/5272/000000527225000077/q22025earningsrelease.htm
+
+[20] American International Group, Inc., “Third Quarter 2025 Earnings Release,” SEC exhibit, Nov. 4, 2025. [Online]. Available: https://www.sec.gov/Archives/edgar/data/5272/000000527225000156/q32025earningsrelease.htm
+
+[21] M&T Bank Corporation, “Second Quarter 2025 Earnings Release,” SEC exhibit. [Online]. Available: https://www.sec.gov/Archives/edgar/data/36270/000162828025034994/ex991release2q25.htm
+
+[22] M&T Bank Corporation, “Third Quarter 2025 Earnings Release,” SEC exhibit. [Online]. Available: https://www.sec.gov/Archives/edgar/data/36270/000003627025000018/ex991release3q25.htm
+
+[23] Repay Holdings Corporation, “Second Quarter 2025 Earnings Release,” SEC exhibit. [Online]. Available: https://www.sec.gov/Archives/edgar/data/1720592/000172059225000010/rpay-ex99_1.htm
+
+[24] Repay Holdings Corporation, “Third Quarter 2025 Earnings Release,” SEC exhibit. [Online]. Available: https://www.sec.gov/Archives/edgar/data/1720592/000119312525274223/rpay-ex99_1.htm
+
+[25] CoStar Group, Inc., “Second Quarter 2025 Earnings Release,” SEC exhibit. [Online]. Available: https://www.sec.gov/Archives/edgar/data/1057352/000105735225000095/q22025earningspressrelease.htm
+
+[26] CoStar Group, Inc., “Third Quarter 2025 Earnings Release,” SEC exhibit. [Online]. Available: https://www.sec.gov/Archives/edgar/data/1057352/000105735225000116/q32025earningspressrelease.htm
+
+[27] National Institute of Standards and Technology, “Artificial Intelligence Risk Management Framework (AI RMF 1.0),” NIST AI 100-1, Jan. 2023, doi: 10.6028/NIST.AI.100-1.

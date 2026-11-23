@@ -1,0 +1,14 @@
+# Guarded SEC review pilot: first-pass result
+
+Two preselected, source-locked SEC event-to-thesis reviews completed on fresh sessions and ledgers with the Flash model. This is a **two-case engineering pilot**, not a reliability estimate or an independent expert assessment. The model used the finance tools under a review-only policy; the accounting-lineage guard generated the persisted rationale from stored facts and validated claims. No trades were placed.
+
+| Case | Mechanical checks | Codex first-pass quality | Estimated model cost | Main observation |
+| --- | --- | --- | ---: | --- |
+| INTC Q2→Q3 2024 | 12/12 | high within case (F/I/R/S/U = 2/2/2/2/2) | $0.002075 | Correct $3.1bn + $2.9bn + $9.9bn = $15.9bn reconciliation; no unsupported quantitative gross-margin attribution; review and ledger align. |
+| NKE Q4 FY2024→Q2 FY2025 | 12/12 | adequate within case (1/2/2/1/2) | $0.001875 | Correctly treats the periods as non-adjacent and the margin offsets as qualitative, but loosely juxtaposes the source's 100-bp decline with the 110-bp difference between sampled periods and overstates alert matching: only the margin invalidation was actually matched. |
+
+Combined estimated model spend: **$0.003949**, below the protocol's $0.015 stop. Both results have `status=mechanical_pass`, no recorded transport error, actual finance tool calls, one linked review, acknowledged alert, and a version increment. The raw results and manifest are frozen by `RESULT-SHA256.txt`; verify from repository root with `shasum -a 256 -c evals/finance_e2e/results/2026-10-22-guarded-sec-review-pilot-flash-v1/RESULT-SHA256.txt`.
+
+The guard is a *ledger write constraint*: it rejects unsupported declared causal links and replaces the free-form stored rationale with a source-bound summary. INTC attempted an unsupported draft claim and recovered before its accepted write. It does **not** verify the entire final chat response or the investment merit of a downgrade. NKE's final-text matcher error illustrates that boundary. The trusted input classifier and source-locked packet are also part of this result; source correctness is not established by the guard alone.
+
+Quality labels apply the frozen `INSIGHT-QUALITY-JUDGE-RUBRIC-v1.md` to raw outputs and stored state. The judge is Codex, not blind to workflow design and not an independent financial expert. These two selected companies were used during prior development, so this pilot is not an unseen holdout. It supports feasibility of a protected end-to-end path, **not** a claim that the runtime stably produces high-quality insights across companies, workflows, prompts, or repeated runs. The retrospective archived-output checker remains unrun pending separate authorization for sending those outputs to the external model; it is not included in these counts.

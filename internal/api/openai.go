@@ -186,6 +186,17 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	agentCtx := r.Context()
+	if req.FastClaw != nil && req.FastClaw.ServerTimeoutMS != 0 {
+		if !req.FastClaw.Eval || req.FastClaw.ServerTimeoutMS < 1 || req.FastClaw.ServerTimeoutMS > int((12*time.Hour)/time.Millisecond) {
+			writeJSON(w, http.StatusBadRequest, map[string]any{
+				"error": map[string]string{"message": "server_timeout_ms requires a bounded eval request", "type": "invalid_request_error"},
+			})
+			return
+		}
+		var cancel context.CancelFunc
+		agentCtx, cancel = context.WithTimeout(agentCtx, time.Duration(req.FastClaw.ServerTimeoutMS)*time.Millisecond)
+		defer cancel()
+	}
 	if req.FastClaw != nil && req.FastClaw.Eval {
 		agentCtx = tools.ContextWithSubAgentTargetDedup(agentCtx)
 		agentCtx = tools.ContextWithSubAgentBudget(
@@ -193,6 +204,9 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 			req.FastClaw.SubAgentMaxCalls,
 			req.FastClaw.SubAgentMaxCallsPerTarget,
 		)
+		if req.FastClaw.SubAgentSharedContext != "" {
+			agentCtx = tools.ContextWithSubAgentSharedContext(agentCtx, req.FastClaw.SubAgentSharedContext)
+		}
 		agentCtx = agent.ContextWithModelOverride(agentCtx, req.Model)
 	}
 	var snapshotState func() map[string]any
@@ -238,6 +252,7 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 			agentCtx, finishTrace = startTraceCapture(agentCtx)
 		}
 		reply := ag.HandleMessage(agentCtx, msg)
+		agentErr := agentCtx.Err()
 		var trace []completionTraceEvent
 		if finishTrace != nil {
 			trace = finishTrace()
@@ -250,8 +265,20 @@ func (s *Server) HandleChatCompletions(w http.ResponseWriter, r *http.Request) {
 		if usageCollector != nil {
 			modelCalls = usageCollector.Snapshot()
 		}
+		if req.FastClaw != nil && req.FastClaw.IncludeTrace && agentErr != nil && !hasCompletionTraceError(trace) {
+			trace = append(trace, completionTraceEvent{Type: "error", Message: agentErr.Error()})
+		}
 		s.fullResponse(w, reply, chatID, model, now, trace, state, modelCalls)
 	}
+}
+
+func hasCompletionTraceError(trace []completionTraceEvent) bool {
+	for _, event := range trace {
+		if event.Type == "error" {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Server) streamResponseFromAgent(w http.ResponseWriter, r *http.Request, ctx context.Context, ag *agent.Agent, msg bus.InboundMessage, chatID, model string, created int64) {

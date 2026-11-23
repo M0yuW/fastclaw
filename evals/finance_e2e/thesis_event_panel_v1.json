@@ -1,0 +1,104 @@
+{
+  "suite_id": "thesis-event-panel-v1",
+  "purpose": "Small source-locked SEC event-to-research-ledger workflow panel; no trading or return prediction",
+  "model": "deepseek/deepseek-v4-pro",
+  "pricing_usd_per_million_tokens": {
+    "deepseek/deepseek-v4-pro": {
+      "input_per_million": 0.435,
+      "output_per_million": 0.87,
+      "cache_read_per_million": 0.003625
+    }
+  },
+  "estimated_spend_stop_usd": 0.10,
+  "cases": [
+    {
+      "id": "AMD-Q4-positive",
+      "scenario": "positive_change",
+      "baseline_episode": "FSEC-AMD-02",
+      "event_episode": "FSEC-AMD-03",
+      "symbol": "AMD",
+      "baseline_label": "Q3 2024",
+      "event_label": "Q4 2024",
+      "baseline_metrics": ["AMD-Q3-REV", "AMD-Q3-GM", "AMD-Q3-GAME"],
+      "event_metrics": ["AMD-Q4-REV", "AMD-Q4-GM", "AMD-Q4-GAME"],
+      "seed_thesis": "Revenue growth with stable or improving GAAP gross margin supports the growth thesis. Gaming revenue has been weak and remains a segment-mix risk until sustained recovery is evidenced. Assess each new filing against both conditions.",
+      "seed_catalysts": ["revenue growth with non-declining GAAP gross margin"],
+      "seed_invalidations": ["sustained revenue or margin deterioration", "unresolved Gaming segment weakness"],
+      "oracle": {
+        "required_fact_ids": ["AMD-Q4-REV", "AMD-Q4-GM", "AMD-Q4-GAME"],
+        "calculations": {"revenue_change_percent": 12.30, "gross_margin_change_pp": 1.0, "gaming_change_percent": 21.86},
+        "risk_to_identify": "Gaming recovery in one quarter does not establish sustained segment recovery",
+        "acceptable_decisions": ["maintain", "upgrade"],
+        "status_constraint": ["active"],
+        "conviction_constraint": "explain any change rather than assume it"
+      }
+    },
+    {
+      "id": "AMD-Q3-mixed",
+      "scenario": "benefit_and_risk",
+      "baseline_episode": "FSEC-AMD-01",
+      "event_episode": "FSEC-AMD-02",
+      "symbol": "AMD",
+      "baseline_label": "Q2 2024",
+      "event_label": "Q3 2024",
+      "baseline_metrics": ["AMD-Q2-REV", "AMD-Q2-GM", "AMD-Q2-GAME"],
+      "event_metrics": ["AMD-Q3-REV", "AMD-Q3-GM", "AMD-Q3-GAME"],
+      "seed_thesis": "Revenue and gross-margin improvement support the growth thesis, but Gaming revenue deterioration remains a material segment-mix risk. Reassess both sides after each filing.",
+      "seed_catalysts": ["revenue growth", "GAAP gross-margin improvement"],
+      "seed_invalidations": ["persistent or worsening Gaming weakness"],
+      "oracle": {
+        "required_fact_ids": ["AMD-Q3-REV", "AMD-Q3-GM", "AMD-Q3-GAME"],
+        "calculations": {"revenue_change_percent": 16.86, "gross_margin_change_pp": 1.0, "gaming_change_percent": -28.70},
+        "risk_to_identify": "Gaming revenue fell despite higher total revenue and margin",
+        "acceptable_decisions": ["maintain", "downgrade"],
+        "status_constraint": ["active", "watch"],
+        "conviction_constraint": "explain any change rather than assume it"
+      }
+    },
+    {
+      "id": "NKE-deterioration",
+      "scenario": "clear_deterioration",
+      "baseline_episode": "FSEC-NKE-01",
+      "event_episode": "FSEC-NKE-02",
+      "symbol": "NKE",
+      "baseline_label": "Q4 FY2024",
+      "event_label": "Q2 FY2025",
+      "baseline_metrics": ["NKE-Q4FY24-REV", "NKE-Q4FY24-GM", "NKE-Q4FY24-DIGITAL"],
+      "event_metrics": ["NKE-Q2FY25-REV", "NKE-Q2FY25-GM", "NKE-Q2FY25-DIGITAL"],
+      "seed_thesis": "A recovery thesis depends on stabilizing sales, GAAP gross margin, and digital-channel trends. A later filing showing simultaneous lower revenue and gross margin with a deeper digital contraction would materially challenge it.",
+      "seed_catalysts": ["stabilizing sales and digital demand"],
+      "seed_invalidations": ["lower revenue and gross margin alongside a deeper digital contraction in a later selected filing"],
+      "oracle": {
+        "required_fact_ids": ["NKE-Q2FY25-REV", "NKE-Q2FY25-GM", "NKE-Q2FY25-DIGITAL"],
+        "calculations": {"selected_observation_revenue_change_percent": -2.00, "gross_margin_change_pp": -1.1, "digital_yoy_rate_change_pp": -11.0},
+        "period_warning": "Q4 FY2024 and Q2 FY2025 are nonconsecutive selected observations; do not call the comparison quarter over quarter",
+        "risk_to_identify": "weaker sales, margin, and digital channel together",
+        "acceptable_decisions": ["downgrade", "invalidate"],
+        "status_constraint": ["watch", "invalidated"],
+        "conviction_constraint": "lower conviction or explicitly justify invalidation"
+      }
+    },
+    {
+      "id": "NVDA-packet-missing-margin",
+      "scenario": "controlled_evidence_omission",
+      "baseline_episode": "FSEC-NVDA-01",
+      "event_episode": "FSEC-NVDA-02",
+      "symbol": "NVDA",
+      "baseline_label": "Q1 FY2025",
+      "event_label": "Q2 FY2025",
+      "baseline_metrics": ["NVDA-Q1-REV", "NVDA-Q1-GM", "NVDA-Q1-DC"],
+      "event_metrics": ["NVDA-Q2-REV", "NVDA-Q2-DC"],
+      "seed_thesis": "Data Center and total revenue growth support the thesis only if GAAP gross-margin resilience also remains established. A new event packet that lacks a margin observation is insufficient to conclude that the margin condition was met.",
+      "seed_catalysts": ["revenue and Data Center growth with demonstrated margin resilience"],
+      "seed_invalidations": ["documented material GAAP gross-margin deterioration"],
+      "oracle": {
+        "required_fact_ids": ["NVDA-Q2-REV", "NVDA-Q2-DC"],
+        "calculations": {"revenue_change_percent": 15.34, "data_center_change_percent": 16.37},
+        "risk_to_identify": "the supplied event packet omits Q2 gross margin; do not claim the SEC filing itself omitted it",
+        "acceptable_decisions": ["needs_review"],
+        "status_constraint": ["active"],
+        "conviction_constraint": "unchanged until missing metric is checked"
+      }
+    }
+  ]
+}

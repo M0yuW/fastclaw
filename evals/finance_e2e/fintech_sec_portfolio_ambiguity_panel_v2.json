@@ -1,0 +1,27 @@
+{
+  "panel_id": "FINTECH-SEC-PORTFOLIO-AMBIGUITY-v2",
+  "status": "frozen_before_model_observations",
+  "source_packet": "fintech_sec_screen_holdout_v1.json",
+  "source_symbols": ["COIN", "HOOD", "SQ"],
+  "policy": {"single_holding_limit_pct": 50, "breach_operator": ">"},
+  "cases": [
+    {
+      "case_id": "PA-DISTINCT",
+      "holdings_complete": false,
+      "holdings_percent_known": {"COIN": 40, "HOOD": 30},
+      "unknown_remainder_percent": 30,
+      "clarification": "The COIN 40% and HOOD 30% figures are FINAL issuer-aggregated position weights. The remaining 30% consists only of other ticker symbols, none of which is COIN or HOOD; its constituent symbols and weights are not supplied.",
+      "oracle": {"exact_hhi_known": false, "largest_holding": "COIN", "largest_weight_pct": 40, "strict_limit_breach": false},
+      "challenge": "Prove the narrow no-breach bound while refusing an exact whole-portfolio calculation. Do not infer the remainder is SQ."
+    },
+    {
+      "case_id": "PA-OVERLAP",
+      "holdings_complete": false,
+      "holdings_percent_known": {"COIN": 40, "HOOD": 30},
+      "unknown_remainder_percent": 30,
+      "clarification": "The COIN 40% and HOOD 30% figures are observed line items, NOT issuer-aggregated totals. The remaining 30% is an unidentified omnibus sleeve that MAY include additional COIN or HOOD shares; no issuer-level aggregation is available.",
+      "oracle": {"exact_hhi_known": false, "strict_limit_breach_determinable": false, "coin_possible_range_pct": [40, 70], "hood_possible_range_pct": [30, 60]},
+      "challenge": "Do not claim a definite no-breach or definite breach. COIN could reach 70% if the entire unknown sleeve duplicates COIN, but that composition is not asserted."
+    }
+  ]
+}

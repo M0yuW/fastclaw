@@ -1,0 +1,436 @@
+{
+  "case_id": "C2",
+  "workflow": "C",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "one_review": true,
+    "source_claims_exact": true,
+    "review_linked": true,
+    "alert_acknowledged": true,
+    "hold_policy": true,
+    "conflict_detection": true,
+    "actionability": true,
+    "claims_retained": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true,
+    "terminal_not_budget_exhausted": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_ab746e3014aa4e4884ce",
+          "market": "US",
+          "symbol": "FICE",
+          "title": "Synthetic capacity-plan thesis",
+          "thesis": "Review the FY2025 capex plan using attributable primary evidence.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": true,
+          "actionability": "blocked",
+          "decision_hold_alert_id": "fa_b05fdbe6141a4843bb65",
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "capex_plan"
+          ],
+          "evidence": [],
+          "next_review_at": "2026-10-25",
+          "last_review_at": "2026-10-18T15:44:38Z",
+          "created_at": "2026-10-18T15:44:32Z",
+          "updated_at": "2026-10-18T15:44:38Z",
+          "version": 3,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_292589d378314f7984ab",
+            "thesis_id": "th_ab746e3014aa4e4884ce",
+            "alert_id": "fa_b05fdbe6141a4843bb65",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-C2",
+            "event": {
+              "type": "management_update",
+              "summary": "FICE synthetic management evidence: FICE FY2025 capex plan: USD 8,000 million. FICE FY2025 capex plan: USD 5,000 million; no correction statement.",
+              "as_of": "2026-10-18",
+              "sources": [
+                {
+                  "id": "C2-A",
+                  "url": "local-fixture://finance-16/C2/A",
+                  "sha256": "fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13"
+                },
+                {
+                  "id": "C2-B",
+                  "url": "local-fixture://finance-16/C2/B",
+                  "sha256": "07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "needs_review",
+            "rationale": "Two attributed management statements give conflicting FY2025 capex plan figures for FICE: USD 8,000 million (fact_id C2-A, source sha256 fb3558f5...) and USD 5,000 million (fact_id C2-B, source sha256 07b21948...). The event packet records no correction statement and no explicit statement dates beyond the packet as_of of 2026-10-18, so the ordering of the two statements cannot be established from the supplied evidence. A later figure therefore cannot be treated as superseding the earlier one; the packet's observed_metrics field carries only the 5,000 figure (fact_id C2-B) and does not resolve the conflict. Because capex_plan is a required event metric and the two independent sources remain in unresolved conflict, the supported conclusion is limited to: both figures were attributed to FY2025 capex plan, and the plan level is indeterminate within a 5,000-8,000 USD million range. Status and conviction are unchanged (active, 3); the thesis remains on decision hold and blocked for downstream decisions pending a trusted resolution (e.g., a dated correction, transcript with timestamps, or filing that reconciles the two statements). No trade or recommendation is made.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [
+              {
+                "metric": "capex_plan",
+                "period": "FY2025",
+                "unit": "USD_million",
+                "claims": [
+                  {
+                    "metric": "capex_plan",
+                    "period": "FY2025",
+                    "value": "8000",
+                    "unit": "USD_million",
+                    "fact_id": "C2-A",
+                    "source_sha256": "fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13"
+                  },
+                  {
+                    "metric": "capex_plan",
+                    "period": "FY2025",
+                    "value": "5000",
+                    "unit": "USD_million",
+                    "fact_id": "C2-B",
+                    "source_sha256": "07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96"
+                  }
+                ]
+              }
+            ],
+            "matched_terms": [
+              "fice",
+              "capex_plan",
+              "FY2025"
+            ],
+            "evidence": [
+              {
+                "fact_id": "C2-A",
+                "metric": "capex_plan",
+                "note": "Attributed management statement; no date given beyond packet as_of 2026-10-18",
+                "period": "FY2025",
+                "source_sha256": "fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13",
+                "unit": "USD_million",
+                "value": "8000"
+              },
+              {
+                "fact_id": "C2-B",
+                "metric": "capex_plan",
+                "note": "Attributed management statement; no correction statement recorded; carried in observed_metrics but does not resolve conflict",
+                "period": "FY2025",
+                "source_sha256": "07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96",
+                "unit": "USD_million",
+                "value": "5000"
+              },
+              {
+                "note": "unresolved_conflicts entry in alert fa_b05fdbe6141a4843bb65 lists both claims for capex_plan FY2025 with no resolution"
+              }
+            ],
+            "created_at": "2026-10-18T15:44:38Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_b05fdbe6141a4843bb65",
+        "watchlist_id": "wl_e3d5faf8b36e4402b96a",
+        "thesis_id": "th_ab746e3014aa4e4884ce",
+        "market": "US",
+        "symbol": "FICE",
+        "event_fingerprint": "00e614efce9ebe003d61acaf0fd26d5424b96da3f8e2fef92a839dd62b3f3937",
+        "event": {
+          "external_id": "synthetic-finance-16-C2",
+          "type": "management_update",
+          "summary": "FICE synthetic management evidence: FICE FY2025 capex plan: USD 8,000 million. FICE FY2025 capex plan: USD 5,000 million; no correction statement.",
+          "as_of": "2026-10-18",
+          "sources": [
+            {
+              "id": "C2-A",
+              "url": "local-fixture://finance-16/C2/A",
+              "sha256": "fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13"
+            },
+            {
+              "id": "C2-B",
+              "url": "local-fixture://finance-16/C2/B",
+              "sha256": "07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96"
+            }
+          ],
+          "observed_metrics": {
+            "capex_plan": {
+              "value": "5000",
+              "unit": "USD_million",
+              "fact_id": "C2-B"
+            }
+          },
+          "source_claims": [
+            {
+              "metric": "capex_plan",
+              "period": "FY2025",
+              "value": "8000",
+              "unit": "USD_million",
+              "fact_id": "C2-A",
+              "source_sha256": "fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13"
+            },
+            {
+              "metric": "capex_plan",
+              "period": "FY2025",
+              "value": "5000",
+              "unit": "USD_million",
+              "fact_id": "C2-B",
+              "source_sha256": "07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96"
+            }
+          ],
+          "unresolved_conflicts": [
+            {
+              "metric": "capex_plan",
+              "period": "FY2025",
+              "unit": "USD_million",
+              "claims": [
+                {
+                  "metric": "capex_plan",
+                  "period": "FY2025",
+                  "value": "8000",
+                  "unit": "USD_million",
+                  "fact_id": "C2-A",
+                  "source_sha256": "fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13"
+                },
+                {
+                  "metric": "capex_plan",
+                  "period": "FY2025",
+                  "value": "5000",
+                  "unit": "USD_million",
+                  "fact_id": "C2-B",
+                  "source_sha256": "07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96"
+                }
+              ]
+            }
+          ]
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "fice",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-18T15:44:32Z",
+        "last_seen_at": "2026-10-18T15:44:32Z",
+        "created_at": "2026-10-18T15:44:32Z",
+        "updated_at": "2026-10-18T15:44:38Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "extras": {
+    "synthetic_documents": [
+      {
+        "id": "C2-A",
+        "url": "local-fixture://finance-16/C2/A",
+        "sha256": "fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13",
+        "text": "FICE FY2025 capex plan: USD 8,000 million."
+      },
+      {
+        "id": "C2-B",
+        "url": "local-fixture://finance-16/C2/B",
+        "sha256": "07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96",
+        "text": "FICE FY2025 capex plan: USD 5,000 million; no correction statement."
+      }
+    ],
+    "trace": {
+      "model_calls": 5,
+      "tool_calls": 5,
+      "tool_results": 5,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "This is a synthetic research-state case. Read the stored thesis and alert. Compare the attributed management statements and dates; do not assume a later number silently supersedes an earlier one. Decide what is supported and what remains uncertain. Record a version-protected linked review, then acknowledge the alert. Do not trade. Case C2; thesis ID th_ab746e3014aa4e4884ce; alert ID fa_b05fdbe6141a4843bb65.",
+      "response": {
+        "id": "chatcmpl-1792338272537121000",
+        "object": "chat.completion",
+        "created": 1792338272,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# Case C2 — FICE FY2025 Capex Plan: Conflicting Management Statements\n\n## What the stored state contained\n- **Thesis** `th_ab746e3014aa4e4884ce` (FICE, US): \"Review the FY2025 capex plan using attributable primary evidence.\" Status `active`, conviction 3, `decision_hold: true`, actionability `blocked`, required event metric `capex_plan`. No assumptions, catalysts, invalidations, or prior evidence/reviews were stored (version 2 at read).\n- **Alert** `fa_b05fdbe6141a4843bb65` (version 1, status `new`): event type `management_update`, as_of 2026-10-18, external_id `synthetic-finance-16-C2`, two sources C2-A and C2-B.\n\n## Comparison of the attributed statements\n| Fact | Period | Metric | Value | Source |\n|---|---|---|---|---|\n| C2-A | FY2025 | capex_plan | USD 8,000 million | `local-fixture://finance-16/C2/A`, sha256 `fb3558f5…` |\n| C2-B | FY2025 | capex_plan | USD 5,000 million | `local-fixture://finance-16/C2/B`, sha256 `07b21948…` |\n\nBoth are attributed to management for the same period and metric, and the packet records **no correction statement**. The only date available is the packet-level `as_of` of 2026-10-18; neither claim carries its own statement date. Consequently the chronological order of the two statements is **not established by the supplied evidence**, and the later figure cannot be assumed to supersede the earlier one. The packet's `observed_metrics` field carries only the 5,000 figure (fact_id C2-B), but that is a packet bookkeeping field, not a dated correction, and it does not resolve the conflict — the packet itself lists both claims under `unresolved_conflicts`.\n\n## What is supported\n- Two distinct FY2025 capex plan figures were attributed to FICE management: USD 8,000 million (C2-A) and USD 5,000 million (C2-B).\n- The two sources are independent (distinct URLs and distinct SHA-256 hashes) and remain in unresolved conflict.\n- The FY2025 capex plan level is therefore **indeterminate within a USD 5,000–8,000 million range** on the current evidence.\n\n## What remains uncertain\n- Which statement is authoritative, and whether either was superseded, restated, or referred to a different scope (e.g., gross vs. net, committed vs. planned, fiscal-year timing).\n- Whether a correction exists outside the supplied packet.\n- Any downstream implication for the capacity-plan thesis — not assessable while the input metric is unresolved.\n\n## Actions taken\n- **Linked review recorded**: `tr_292589d378314f7984ab` on thesis `th_ab746e3014aa4e4884ce`, linked to alert `fa_b05fdbe6141a4843bb65`, version-protected at expected_version 2 → thesis now **version 3**.\n  - Decision: `needs_review`; impact: `mixed`; status unchanged (`active`); conviction unchanged (3); next review 2026-10-25.\n  - The review carries the unresolved-conflict record and both source claims with their fact_ids and hashes.\n- **Alert acknowledged**: `fa_b05fdbe6141a4843bb65` version 1 → **version 2**, status `acknowledged`.\n- **Thesis remains on decision hold and blocked** for downstream decisions pending a trusted resolution (a dated correction, timestamped transcript, or filing reconciling the two statements).\n\nNo trades, position changes, or investment recommendations were made."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 25411,
+          "completion_tokens": 2200,
+          "total_tokens": 27611
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_yA1Q2RS85uRAwjO7BOcR3227",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_ab746e3014aa4e4884ce\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_zYl8OT5ykKWBRkLJbPXe5656",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_yA1Q2RS85uRAwjO7BOcR3227",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"e17d8480-24a3-4f45-a2d6-85e3317e94a5\",\"as_of\":\"2026-10-18T15:44:33Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_ab746e3014aa4e4884ce\",\"market\":\"US\",\"symbol\":\"FICE\",\"title\":\"Synthetic capacity-plan thesis\",\"thesis\":\"Review the FY2025 capex plan using attributable primary evidence.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_b05fdbe6141a4843bb65\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"capex_plan\"],\"evidence\":[],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-18T15:44:32Z\",\"updated_at\":\"2026-10-18T15:44:32Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.6957,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_zYl8OT5ykKWBRkLJbPXe5656",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"f03a8c84-2b19-4eb5-891e-11ea73998b57\",\"as_of\":\"2026-10-18T15:44:33Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_b05fdbe6141a4843bb65\",\"watchlist_id\":\"wl_e3d5faf8b36e4402b96a\",\"thesis_id\":\"th_ab746e3014aa4e4884ce\",\"market\":\"US\",\"symbol\":\"FICE\",\"event_fingerprint\":\"00e614efce9ebe003d61acaf0fd26d5424b96da3f8e2fef92a839dd62b3f3937\",\"event\":{\"external_id\":\"synthetic-finance-16-C2\",\"type\":\"management_update\",\"summary\":\"FICE synthetic management evidence: FICE FY2025 capex plan: USD 8,000 million. FICE FY2025 capex plan: USD 5,000 million; no correction statement.\",\"as_of\":\"2026-10-18\",\"sources\":[{\"id\":\"C2-A\",\"url\":\"local-fixture://finance-16/C2/A\",\"sha256\":\"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\"},{\"id\":\"C2-B\",\"url\":\"local-fixture://finance-16/C2/B\",\"sha256\":\"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\"}],\"observed_metrics\":{\"capex_plan\":{\"value\":\"5000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-B\"}},\"source_claims\":[{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"8000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-A\",\"source_sha256\":\"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\"},{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"5000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-B\",\"source_sha256\":\"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\"}],\"unresolved_conflicts\":[{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"unit\":\"USD_million\",\"claims\":[{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"8000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-A\",\"source_sha256\":\"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\"},{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"5000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-B\",\"source_sha256\":\"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\"}]}]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"fice\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-18T15:44:32Z\",\"last_seen_at\":\"2026-10-18T15:44:32Z\",\"created_at\":\"2026-10-18T15:44:32Z\",\"updated_at\":\"2026-10-18T15:44:32Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_ctiiVq7BVjYoYqtPZSnz2584",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"FICE\", \"event_summary\": \"FICE synthetic management evidence: FICE FY2025 capex plan: USD 8,000 million. FICE FY2025 capex plan: USD 5,000 million; no correction statement.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_ctiiVq7BVjYoYqtPZSnz2584",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"c64eb175-7139-477f-9a90-a5d1f88a3b8f\",\"as_of\":\"2026-10-18T15:44:34Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"FICE\",\"event_summary\":\"FICE synthetic management evidence: FICE FY2025 capex plan: USD 8,000 million. FICE FY2025 capex plan: USD 5,000 million; no correction statement.\",\"matches\":[{\"thesis_id\":\"th_ab746e3014aa4e4884ce\",\"title\":\"Synthetic capacity-plan thesis\",\"status\":\"active\",\"version\":2,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_aCAhDLtJTCVJvg59RbqZ1489",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_ab746e3014aa4e4884ce\", \"alert_id\": \"fa_b05fdbe6141a4843bb65\", \"expected_version\": 2, \"event\": {\"summary\": \"FICE synthetic management evidence: FICE FY2025 capex plan: USD 8,000 million. FICE FY2025 capex plan: USD 5,000 million; no correction statement.\", \"type\": \"management_update\", \"as_of\": \"2026-10-18\", \"sources\": [{\"id\": \"C2-A\", \"url\": \"local-fixture://finance-16/C2/A\", \"sha256\": \"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\"}, {\"id\": \"C2-B\", \"url\": \"local-fixture://finance-16/C2/B\", \"sha256\": \"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\"}]}, \"impact\": \"mixed\", \"decision\": \"needs_review\", \"new_status\": \"active\", \"new_conviction\": 3, \"matched_terms\": [\"fice\", \"capex_plan\", \"FY2025\"], \"rationale\": \"Two attributed management statements give conflicting FY2025 capex plan figures for FICE: USD 8,000 million (fact_id C2-A, source sha256 fb3558f5...) and USD 5,000 million (fact_id C2-B, source sha256 07b21948...). The event packet records no correction statement and no explicit statement dates beyond the packet as_of of 2026-10-18, so the ordering of the two statements cannot be established from the supplied evidence. A later figure therefore cannot be treated as superseding the earlier one; the packet's observed_metrics field carries only the 5,000 figure (fact_id C2-B) and does not resolve the conflict. Because capex_plan is a required event metric and the two independent sources remain in unresolved conflict, the supported conclusion is limited to: both figures were attributed to FY2025 capex plan, and the plan level is indeterminate within a 5,000-8,000 USD million range. Status and conviction are unchanged (active, 3); the thesis remains on decision hold and blocked for downstream decisions pending a trusted resolution (e.g., a dated correction, transcript with timestamps, or filing that reconciles the two statements). No trade or recommendation is made.\", \"evidence\": [{\"fact_id\": \"C2-A\", \"metric\": \"capex_plan\", \"period\": \"FY2025\", \"value\": \"8000\", \"unit\": \"USD_million\", \"source_sha256\": \"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\", \"note\": \"Attributed management statement; no date given beyond packet as_of 2026-10-18\"}, {\"fact_id\": \"C2-B\", \"metric\": \"capex_plan\", \"period\": \"FY2025\", \"value\": \"5000\", \"unit\": \"USD_million\", \"source_sha256\": \"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\", \"note\": \"Attributed management statement; no correction statement recorded; carried in observed_metrics but does not resolve conflict\"}, {\"note\": \"unresolved_conflicts entry in alert fa_b05fdbe6141a4843bb65 lists both claims for capex_plan FY2025 with no resolution\"}], \"next_review_at\": \"2026-10-25\"}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_aCAhDLtJTCVJvg59RbqZ1489",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"7784d355-489c-40e8-aac1-1450b5bfac13\",\"as_of\":\"2026-10-18T15:44:38Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_ab746e3014aa4e4884ce\",\"market\":\"US\",\"symbol\":\"FICE\",\"title\":\"Synthetic capacity-plan thesis\",\"thesis\":\"Review the FY2025 capex plan using attributable primary evidence.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_b05fdbe6141a4843bb65\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"capex_plan\"],\"evidence\":[],\"next_review_at\":\"2026-10-25\",\"last_review_at\":\"2026-10-18T15:44:38Z\",\"created_at\":\"2026-10-18T15:44:32Z\",\"updated_at\":\"2026-10-18T15:44:38Z\",\"version\":3,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_292589d378314f7984ab\",\"thesis_id\":\"th_ab746e3014aa4e4884ce\",\"alert_id\":\"fa_b05fdbe6141a4843bb65\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-C2\",\"event\":{\"type\":\"management_update\",\"summary\":\"FICE synthetic management evidence: FICE FY2025 capex plan: USD 8,000 million. FICE FY2025 capex plan: USD 5,000 million; no correction statement.\",\"as_of\":\"2026-10-18\",\"sources\":[{\"id\":\"C2-A\",\"url\":\"local-fixture://finance-16/C2/A\",\"sha256\":\"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\"},{\"id\":\"C2-B\",\"url\":\"local-fixture://finance-16/C2/B\",\"sha256\":\"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Two attributed management statements give conflicting FY2025 capex plan figures for FICE: USD 8,000 million (fact_id C2-A, source sha256 fb3558f5...) and USD 5,000 million (fact_id C2-B, source sha256 07b21948...). The event packet records no correction statement and no explicit statement dates beyond the packet as_of of 2026-10-18, so the ordering of the two statements cannot be established from the supplied evidence. A later figure therefore cannot be treated as superseding the earlier one; the packet's observed_metrics field carries only the 5,000 figure (fact_id C2-B) and does not resolve the conflict. Because capex_plan is a required event metric and the two independent sources remain in unresolved conflict, the supported conclusion is limited to: both figures were attributed to FY2025 capex plan, and the plan level is indeterminate within a 5,000-8,000 USD million range. Status and conviction are unchanged (active, 3); the thesis remains on decision hold and blocked for downstream decisions pending a trusted resolution (e.g., a dated correction, transcript with timestamps, or filing that reconciles the two statements). No trade or recommendation is made.\",\"missing_metrics\":[],\"unresolved_conflicts\":[{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"unit\":\"USD_million\",\"claims\":[{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"8000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-A\",\"source_sha256\":\"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\"},{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"5000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-B\",\"source_sha256\":\"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\"}]}],\"matched_terms\":[\"fice\",\"capex_plan\",\"FY2025\"],\"evidence\":[{\"fact_id\":\"C2-A\",\"metric\":\"capex_plan\",\"note\":\"Attributed management statement; no date given beyond packet as_of 2026-10-18\",\"period\":\"FY2025\",\"source_sha256\":\"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\",\"unit\":\"USD_million\",\"value\":\"8000\"},{\"fact_id\":\"C2-B\",\"metric\":\"capex_plan\",\"note\":\"Attributed management statement; no correction statement recorded; carried in observed_metrics but does not resolve conflict\",\"period\":\"FY2025\",\"source_sha256\":\"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\",\"unit\":\"USD_million\",\"value\":\"5000\"},{\"note\":\"unresolved_conflicts entry in alert fa_b05fdbe6141a4843bb65 lists both claims for capex_plan FY2025 with no resolution\"}],\"created_at\":\"2026-10-18T15:44:38Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9324,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_FQgQKWd5zCiJFOjbJb902581",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_b05fdbe6141a4843bb65\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_FQgQKWd5zCiJFOjbJb902581",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"9873afda-f38d-4939-9c85-bde63e0b938e\",\"as_of\":\"2026-10-18T15:44:38Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_b05fdbe6141a4843bb65\",\"watchlist_id\":\"wl_e3d5faf8b36e4402b96a\",\"thesis_id\":\"th_ab746e3014aa4e4884ce\",\"market\":\"US\",\"symbol\":\"FICE\",\"event_fingerprint\":\"00e614efce9ebe003d61acaf0fd26d5424b96da3f8e2fef92a839dd62b3f3937\",\"event\":{\"external_id\":\"synthetic-finance-16-C2\",\"type\":\"management_update\",\"summary\":\"FICE synthetic management evidence: FICE FY2025 capex plan: USD 8,000 million. FICE FY2025 capex plan: USD 5,000 million; no correction statement.\",\"as_of\":\"2026-10-18\",\"sources\":[{\"id\":\"C2-A\",\"url\":\"local-fixture://finance-16/C2/A\",\"sha256\":\"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\"},{\"id\":\"C2-B\",\"url\":\"local-fixture://finance-16/C2/B\",\"sha256\":\"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\"}],\"observed_metrics\":{\"capex_plan\":{\"value\":\"5000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-B\"}},\"source_claims\":[{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"8000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-A\",\"source_sha256\":\"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\"},{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"5000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-B\",\"source_sha256\":\"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\"}],\"unresolved_conflicts\":[{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"unit\":\"USD_million\",\"claims\":[{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"8000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-A\",\"source_sha256\":\"fb3558f58226575a731b8ad9b37df3766ccf01a68ab2cfa67c4b47f3005d9f13\"},{\"metric\":\"capex_plan\",\"period\":\"FY2025\",\"value\":\"5000\",\"unit\":\"USD_million\",\"fact_id\":\"C2-B\",\"source_sha256\":\"07b21948bfb8201cfa4c7262a1d2417075c11afdb8e22ef1c71579669933ca96\"}]}]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"fice\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-18T15:44:32Z\",\"last_seen_at\":\"2026-10-18T15:44:32Z\",\"created_at\":\"2026-10-18T15:44:32Z\",\"updated_at\":\"2026-10-18T15:44:38Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2549,
+              "completion_tokens": 116,
+              "total_tokens": 2665,
+              "estimated_cost_usd": 0.00038934,
+              "priced": true,
+              "latency_ms": 902.918
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3965,
+              "completion_tokens": 134,
+              "total_tokens": 4099,
+              "cache_read_tokens": 2560,
+              "estimated_cost_usd": 0.00024138800000000001,
+              "priced": true,
+              "latency_ms": 771.043
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4366,
+              "completion_tokens": 1003,
+              "total_tokens": 5369,
+              "cache_read_tokens": 4096,
+              "estimated_cost_usd": 0.0003301088,
+              "priced": true,
+              "latency_ms": 3979.651
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6728,
+              "completion_tokens": 120,
+              "total_tokens": 6848,
+              "cache_read_tokens": 5248,
+              "estimated_cost_usd": 0.0002554944,
+              "priced": true,
+              "latency_ms": 754.039
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 7803,
+              "completion_tokens": 827,
+              "total_tokens": 8630,
+              "cache_read_tokens": 6784,
+              "estimated_cost_usd": 0.0003932152000000001,
+              "priced": true,
+              "latency_ms": 3836.953
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 10.317,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update"
+      ],
+      "model_calls": 5,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0016095464
+    }
+  ],
+  "estimated_cost_usd": 0.0016095464
+}

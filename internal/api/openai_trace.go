@@ -31,6 +31,8 @@ type fastClawRequestOptions struct {
 	ToolBehaviors             map[string]evalToolBehavior   `json:"tool_behaviors,omitempty"`
 	SubAgentMaxCalls          int                           `json:"subagent_max_calls,omitempty"`
 	SubAgentMaxCallsPerTarget int                           `json:"subagent_max_calls_per_target,omitempty"`
+	SubAgentSharedContext     string                        `json:"subagent_shared_context,omitempty"`
+	ServerTimeoutMS           int                           `json:"server_timeout_ms,omitempty"`
 }
 
 type completionMetadata struct {
@@ -81,6 +83,7 @@ type evalToolEnvironment struct {
 
 type completionTraceEvent struct {
 	Type      string `json:"type"`
+	Code      string `json:"code,omitempty"`
 	ID        string `json:"id,omitempty"`
 	Name      string `json:"name,omitempty"`
 	Arguments string `json:"arguments,omitempty"`
@@ -521,6 +524,8 @@ func convertTraceEvent(event agent.ChatEvent) (completionTraceEvent, bool) {
 	case "error":
 		trace.Message, _ = event.Data["message"].(string)
 		trace.Message = truncateTraceField(trace.Message)
+	case "terminal":
+		trace.Code, _ = event.Data["code"].(string)
 	default:
 		return completionTraceEvent{}, false
 	}

@@ -258,6 +258,16 @@ func TestNumericGroundingUnderstandsFinancialUnitSuffixes(t *testing.T) {
 	}
 }
 
+func TestNumericGroundingDoesNotApplyFollowingTableDownColumnToPriorLevel(t *testing.T) {
+	output := `Gross margin 75.1 % 78.4 % 70.1 % Down 3.3 pts Up 5.0 pts. ` +
+		`Gross margin 73.0 % 74.6 % 76.0 % Down 1.6 pts Down 3.0 pts.`
+	authorized := []string{"75.1", "78.4", "70.1", "-3.3", "5.0", "73.0", "74.6", "76.0", "-1.6", "-3.0"}
+	assertions, violations := evaluateNumericGrounding(output, authorized)
+	if assertions != 10 || violations != 0 {
+		t.Fatalf("numeric grounding = %d assertions, %d violations", assertions, violations)
+	}
+}
+
 func TestRequiredAssertionsNormalizeUnicodeMinus(t *testing.T) {
 	if !containsRequiredAssertion("Gross margin changed −3.3 percentage points.", "-3.3 percentage points") {
 		t.Fatal("unicode minus assertion did not match")

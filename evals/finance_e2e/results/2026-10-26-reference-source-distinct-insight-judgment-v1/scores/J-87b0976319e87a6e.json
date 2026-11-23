@@ -1,0 +1,71 @@
+{
+  "masked_id": "J-87b0976319e87a6e",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 2,
+    "I": 0,
+    "R": 1,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "revenue and operating profit rose while operating expenses were nearly flat",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:net_revenues:+170.2", "source_packet.rows:operating_income:+164.9", "source_packet.rows:operating_expenses:+5.3"]
+    },
+    {
+      "location": "final_answer",
+      "span": "the asset base grew with a smaller net cash outflow than in the prior quarter",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:ending_aum:1676.8_to_1767.2", "source_packet.rows:aum_net_cash_flows:-14.9_to_-7.9"]
+    },
+    {
+      "location": "final_answer",
+      "span": "that is a volatile, non-recurring investment-related item rather than a durable fee stream",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:capital_allocation_income:-0.4_to_42.0", "source_packet.limitations:capital_allocation_income_unverified_recurrence"],
+      "reason": "The selected signed line establishes a large swing but neither its recurrence profile nor investment-specific cause."
+    },
+    {
+      "location": "final_answer",
+      "span": "The company-defined adjusted parent net income rose by less than GAAP parent net income, so the two bases diverge and the GAAP figure should not be treated as the operating result",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:adjusted_parent_net_income:+124.9", "source_packet.rows:parent_net_income:+140.9", "source_packet.rows:operating_income:+164.9"],
+      "reason": "The different adjusted and GAAP increases are real, but do not imply that GAAP parent income is unusable or that the adjusted parent-income metric is equivalent to GAAP operating income."
+    },
+    {
+      "location": "final_answer",
+      "span": "sustained positive net flows, a stable or rising effective fee rate, and capital allocation-based income reverting toward its prior level would argue the improvement is less durable",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:aum_net_cash_flows:-7.9", "source_packet.rows:effective_fee_rate_ex_performance:39.1", "source_packet.rows:capital_allocation_income:-0.4_to_42.0"],
+      "reason": "A reversion of capital-allocation income would weaken reported earnings, but sustained positive flows and a stable/rising fee rate would strengthen the core advisory interpretation. The sentence reverses the sign of two decision-relevant signals."
+    },
+    {
+      "location": "persisted_review",
+      "span": "A Q3-only model-delivery asset addition has no comparator and is not a net flow",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.event_only_rows:q3_model_delivery_assets_added:9.2", "source_packet.limitations:model_delivery_not_net_flow"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "The thesis remains active at unchanged conviction pending fuller filing evidence on flow composition, fee-rate drivers, and the durability of capital allocation-based income",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:conviction=3", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 4,
+      "code": "decision_signal_reversal",
+      "evidence_refs": ["source_packet.rows:aum_net_cash_flows:-7.9", "source_packet.rows:effective_fee_rate_ex_performance:39.1"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Sound numerical comparisons and explicit Q3-only AUM scope caveat, but the conclusion invents non-recurrence of capital allocation income and mislabels the GAAP/adjusted relationship. The future-evidence test reverses the direction of positive flows and fee stabilization. Ledger accurately reflects maintain/available, so state alignment is not the error; unsafe reasoning remains in the user-facing conclusion."
+}

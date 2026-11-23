@@ -142,6 +142,8 @@ type ExecutionRequest struct {
 	Pricing                   map[string]ModelPricing
 	SubAgentMaxCalls          int
 	SubAgentMaxCallsPerTarget int
+	SubAgentSharedContext     string
+	ServerTimeoutMS           int
 }
 
 type ModelPricing struct {
@@ -171,6 +173,7 @@ type ModelCallUsage struct {
 	CacheCreationTokens int      `json:"cache_creation_tokens,omitempty"`
 	EstimatedCostUSD    float64  `json:"estimated_cost_usd"`
 	Priced              bool     `json:"priced"`
+	CostUncertain       bool     `json:"cost_uncertain,omitempty"`
 	LatencyMS           float64  `json:"latency_ms"`
 	Error               string   `json:"error,omitempty"`
 }

@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "status": "selected_source_fact_rows_frozen_before_model_observations",
+  "case_id": "OMF-2025-Q3-CREDIT-SIGNAL-MIX",
+  "symbol": "OMF",
+  "cik": "0001584207",
+  "workflow_eligibility": ["sec_event_to_thesis_review"],
+  "source_basis": "Selected GAAP quarterly income-statement rows and separately labelled C&I delinquency/loss ratios in SEC 8-K EX-99.1; not a full credit vintage or loan-level analysis.",
+  "baseline": {
+    "period": "CY2025 Q2 ended 2025-06-30",
+    "as_of": "2025-07-25",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1584207/000158420725000033/exhibit991earningsreleaseo.htm",
+    "source_sha256": "f0077b50f5b65d60eace82ea31080ce2a9844417283e236adef0659b81cfc4d2",
+    "local_path": ".cache/sources/HOLDOUT-OMF-BASELINE-v1.htm",
+    "facts": [
+      {"id": "OMF-Q2-NII", "metric": "gaap_net_interest_income", "value": 1022, "unit": "USD_million_rounded", "source_row": "Net interest income", "basis": "quarterly_consolidated"},
+      {"id": "OMF-Q2-NETINC", "metric": "gaap_net_income", "value": 167, "unit": "USD_million_rounded", "source_row": "Net income", "basis": "quarterly_consolidated"},
+      {"id": "OMF-Q2-PROV", "metric": "gaap_provision_expense_magnitude", "value": 511, "unit": "USD_million_rounded", "source_row": "Provision for finance receivable losses", "basis": "quarterly_consolidated", "normalization": "absolute_value_of_parenthesized_expense_cell"},
+      {"id": "OMF-Q2-OPEX", "metric": "gaap_operating_expense_magnitude", "value": 419, "unit": "USD_million_rounded", "source_row": "Operating expenses", "basis": "quarterly_consolidated", "normalization": "absolute_value_of_parenthesized_expense_cell"},
+      {"id": "OMF-Q2-D30", "metric": "ci_consumer_30_plus_delinquency_ratio", "value": 5.17, "unit": "percent", "source_row": "30+ days delinquency ratio", "basis": "ci_consumer_loans_selected_ratio"},
+      {"id": "OMF-Q2-D90", "metric": "ci_consumer_90_plus_delinquency_ratio", "value": 2.12, "unit": "percent", "source_row": "90+ days delinquency ratio", "basis": "ci_consumer_loans_selected_ratio"},
+      {"id": "OMF-Q2-NCO", "metric": "ci_consumer_net_charge_off_ratio", "value": 7.19, "unit": "percent", "source_row": "Net charge-offs", "basis": "ci_consumer_loans_selected_ratio"}
+    ]
+  },
+  "event": {
+    "period": "CY2025 Q3 ended 2025-09-30",
+    "as_of": "2025-10-31",
+    "source_url": "https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm",
+    "source_sha256": "1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c",
+    "local_path": ".cache/sources/HOLDOUT-OMF-EVENT-v1.htm",
+    "facts": [
+      {"id": "OMF-Q3-NII", "metric": "gaap_net_interest_income", "value": 1072, "unit": "USD_million_rounded", "source_row": "Net interest income", "basis": "quarterly_consolidated"},
+      {"id": "OMF-Q3-NETINC", "metric": "gaap_net_income", "value": 199, "unit": "USD_million_rounded", "source_row": "Net income", "basis": "quarterly_consolidated"},
+      {"id": "OMF-Q3-PROV", "metric": "gaap_provision_expense_magnitude", "value": 488, "unit": "USD_million_rounded", "source_row": "Provision for finance receivable losses", "basis": "quarterly_consolidated", "normalization": "absolute_value_of_parenthesized_expense_cell"},
+      {"id": "OMF-Q3-OPEX", "metric": "gaap_operating_expense_magnitude", "value": 436, "unit": "USD_million_rounded", "source_row": "Operating expenses", "basis": "quarterly_consolidated", "normalization": "absolute_value_of_parenthesized_expense_cell"},
+      {"id": "OMF-Q3-D30", "metric": "ci_consumer_30_plus_delinquency_ratio", "value": 5.55, "unit": "percent", "source_row": "30+ days delinquency ratio", "basis": "ci_consumer_loans_selected_ratio"},
+      {"id": "OMF-Q3-D90", "metric": "ci_consumer_90_plus_delinquency_ratio", "value": 2.35, "unit": "percent", "source_row": "90+ days delinquency ratio", "basis": "ci_consumer_loans_selected_ratio"},
+      {"id": "OMF-Q3-NCO", "metric": "ci_consumer_net_charge_off_ratio", "value": 6.67, "unit": "percent", "source_row": "Net charge-offs", "basis": "ci_consumer_loans_selected_ratio"}
+    ]
+  },
+  "precommitted_interpretation_checks": [
+    "Quarterly GAAP net income rises 32 USD million and net interest income rises 50 USD million, while the provision expense magnitude falls 23 USD million and operating expense magnitude rises 17 USD million. Parentheses in the income statement are expense signs, not negative expense magnitudes.",
+    "In the separate C&I consumer-loan ratio table, 30+ day delinquency rises 0.38 percentage points and 90+ day delinquency rises 0.23 percentage points, while the reported net-charge-off ratio falls 0.52 points. These rates must not be subtracted as USD amounts or interpreted as relative-percent changes.",
+    "Improving current profit and charge-offs do not by themselves resolve the rise in delinquency ratios or prove future credit quality. The C&I ratios are not identical in scope to consolidated GAAP net income.",
+    "No loan-vintage, valuation, price or forward-return evidence is supplied; a bounded review or justified decision hold can pass, but a confident investment action is unsupported."
+  ]
+}

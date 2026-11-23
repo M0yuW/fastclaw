@@ -1,0 +1,77 @@
+{
+  "masked_id": "J-74e2c153e4f3de9d",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 1,
+    "R": 0,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "GAAP operating profit improved and GAAP operating cash flow and company-defined free cash flow rose",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:operating_income:6.9_to_44.0", "source_packet.rows:operating_cash_flow:116.3_to_181.1", "source_packet.rows:free_cash_flow:50.3_to_115.5"]
+    },
+    {
+      "location": "final_answer",
+      "span": "recurring revenue subtotal fell while transactional revenue grew, shifting the mix toward the less predictable portion of the business",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:recurring_revenues:514.6_to_510.7", "source_packet.rows:transactional_revenue:106.8_to_112.4", "source_packet.rows:revenue:621.4_to_623.1"],
+      "reason": "The named issuer categories show a lower recurring share; durability of transactional demand is not established."
+    },
+    {
+      "location": "final_answer",
+      "span": "The tax provision moved in the same direction as the GAAP profit improvement, so it is not evidence of a reduced tax drag",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:income_tax_provision:12.3_to_3.8", "source_packet.rows:pretax_income:-59.7_to_-24.5", "source_packet.rows:net_income:-72.0_to_-28.3"],
+      "reason": "Tax expense fell by 8.5 as pretax result improved by 35.2, contributing positively to the 43.7 net-loss narrowing. It is an observed lower absolute tax drag; whether the tax profile is durable is unknown."
+    },
+    {
+      "location": "persisted_review",
+      "span": "The tax provision moved in the same direction as the GAAP profit improvement, so it is not evidence of a smaller tax drag",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:income_tax_provision:12.3_to_3.8", "source_packet.rows:pretax_income:-59.7_to_-24.5", "source_packet.rows:net_income:-72.0_to_-28.3"],
+      "reason": "Saved rationale repeats the direction and signed contribution error."
+    },
+    {
+      "location": "final_answer",
+      "span": "the divergence between GAAP and adjusted profitability is the central item to resolve",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:operating_income:6.9_to_44.0", "source_packet.rows:adjusted_ebitda:261.6_to_252.4", "source_packet.rows:adjusted_net_income:123.3_to_119.3", "source_packet.limitations:no_full_adjustment_methodology"],
+      "reason": "This correctly names a material missing decision input, not just optional curiosity."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the thesis is maintained at its current conviction with no change to status; the research question remains open",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available", "source_packet.rows:adjusted_ebitda:261.6_to_252.4", "source_packet.rows:operating_income:6.9_to_44.0"],
+      "reason": "This accurately describes the saved state, so state-alignment S passes. Separately, the answer identifies the GAAP-to-adjusted reconciliation as central and unresolved; keeping the thesis actionable violates the declared missing-key-evidence decision rule, which is scored under R and U."
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 2,
+      "code": "tax_expense_contribution_reversed",
+      "evidence_refs": ["source_packet.rows:income_tax_provision", "source_packet.rows:pretax_income", "source_packet.rows:net_income"]
+    },
+    {
+      "claim_index": 3,
+      "code": "persisted_review_repeats_tax_sign_error",
+      "evidence_refs": ["source_packet.rows:income_tax_provision", "source_packet.rows:net_income"]
+    },
+    {
+      "claim_index": 5,
+      "code": "key_reconciliation_missing_but_thesis_left_actionable",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:actionability=available", "source_packet.rows:adjusted_ebitda", "source_packet.rows:operating_income"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Both answer and saved rationale deny the favorable signed contribution from lower tax expense. More importantly, the agent identifies unresolved GAAP-versus-adjusted reconciliation and other-operating composition as central to the decision, yet saves maintain with decision_hold false/actionability available rather than needs_review. This is an analytical error plus a containment failure in the observed workflow; the paired guard replay is needed to attribute preventability to Runtime design."
+}

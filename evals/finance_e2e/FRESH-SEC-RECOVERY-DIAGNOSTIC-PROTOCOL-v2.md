@@ -1,0 +1,5 @@
+# Post-hoc recovery diagnostic on the same three SEC cases
+
+This is **not** a new holdout and cannot erase or replace the frozen v1 15-observation result. It tests two general repairs identified from v1: (1) a causal-claim rejection now names the accepted target vocabulary and the empty-array recovery path; (2) the review instruction explicitly separates adjacent-quarter level comparisons from the issuers' year-over-year rates and clarifies that `statement_line=unknown` is causal classification, not uncertainty about an explicitly labeled GAAP measure.
+
+Run exactly two fresh-session observations per case (AAPL, MSFT, SBUX; six total), in a recorded randomized order. Keep the same six source files, selected fact corpus, agent policy, model and finance-tool workflow. Do not revise the facts or make the agent's investment decision for it. Stop at estimated $0.04, retaining any error or incomplete workflow. Compare descriptive F/I/R/S/U scores and mechanical state with v1, but label any improvement **in-sample repair**, not evidence of cross-issuer generalization or stable quality. The next evidentiary step is a separate, genuinely new issuer/workflow panel.

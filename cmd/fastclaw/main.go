@@ -141,6 +141,14 @@ func runGateway(port int) error {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+	ready := make(chan struct{})
+	gatewayDone := make(chan error, 1)
+	go func() { gatewayDone <- gw.RunWithReady(ready) }()
+	select {
+	case <-ready:
+	case err := <-gatewayDone:
+		return err
+	}
 	go func() {
 		if err := webSrv.Run(ctx); err != nil {
 			slog.Error("web server error", "error", err)
@@ -154,7 +162,7 @@ func runGateway(port int) error {
 		go openBrowser(url)
 	}
 
-	return gw.Run()
+	return <-gatewayDone
 }
 
 func defaultGatewayConfig(env *config.EnvConfig, port int) *config.GatewayCfg {

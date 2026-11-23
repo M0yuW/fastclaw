@@ -1,0 +1,153 @@
+{
+  "observation_id": "P4-r3",
+  "case_id": "P4",
+  "repetition": 3,
+  "workflow": "P",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "no_ledger_mutation": true,
+    "uncertainty_explained": true,
+    "safe_incomplete_handling": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 2,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "expected_holdings": null,
+    "expected_limit_breached": null,
+    "agent_avoided_incomplete_call": false,
+    "portfolio_tool_results": [
+      {
+        "schema_version": "finance.tool.v1",
+        "ok": false,
+        "request_id": "d64f6da3-ab1a-4600-8b42-4b729f4716e0",
+        "as_of": "2026-10-19T05:52:12Z",
+        "stale_after": null,
+        "data": null,
+        "sources": [],
+        "quality": {
+          "completeness": 0.0,
+          "flags": [
+            "portfolio_incomplete"
+          ]
+        },
+        "errors": [
+          {
+            "code": "portfolio_incomplete",
+            "message": "portfolio holdings are incomplete; risk calculation refused",
+            "retriable": false
+          }
+        ],
+        "cache": {
+          "hit": false,
+          "ttl_seconds": 0
+        }
+      }
+    ],
+    "trace": {
+      "model_calls": 2,
+      "tool_calls": 1,
+      "tool_results": 1,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "This is a synthetic portfolio-risk diagnostic, not a live account. Available holdings: FICA 45%, FICB 30%, and an unreported third holding. The single-holding concentration policy is breached only when a weight exceeds 50%; exactly 50% is at the limit, not above it. Use finance-tools__portfolio_risk with view=concentration if the complete portfolio is known. Explain the measured exposure or why it cannot be reliably computed. Do not infer a missing weight, trade, change holdings, or create ledger records. Case P4.",
+      "response": {
+        "id": "chatcmpl-1792389131933441000",
+        "object": "chat.completion",
+        "created": 1792389131,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# Portfolio Risk Diagnostic — Case P4\n\n## Result: Exposure cannot be reliably computed\n\nThe concentration view was requested, but the tool **refused the calculation** and returned no data.\n\n| Field | Value |\n|---|---|\n| Request ID | `d64f6da3-ab1a-4600-8b42-4b729f4716e0` |\n| As of | 2026-10-19T05:52:12Z |\n| Status | `ok: false` |\n| Error code | `portfolio_incomplete` (non-retriable) |\n| Completeness | 0.0 |\n| Flags | `portfolio_incomplete` |\n| Data | `null` |\n\n## Why it cannot be computed\n\n- The supplied holdings are **FICA 45%** and **FICB 30%**, which account for only **75%** of the portfolio. The third holding is unreported, so **25% of the portfolio is unaccounted for**.\n- The tool was called with `holdings_complete=false`, which is the correct declaration: a known partial portfolio must not be submitted as if it were whole. The tool therefore declined to produce concentration, correlation, or stress figures rather than silently normalizing the two known weights.\n- Any concentration metric computed from the partial set would be an artifact of the missing position. In particular, renormalizing FICA and FICB to 100% would inflate FICA to roughly 60% and would manufacture a policy breach that the raw data does not establish.\n\n## Policy test — what can and cannot be concluded\n\n- **Threshold rule:** a single-holding breach occurs only when a weight **exceeds 50%**; exactly 50% is at the limit, not above it.\n- **FICA at 45%:** below the 50% threshold on the reported weight. No breach is indicated for FICA.\n- **FICB at 30%:** below the 50% threshold. No breach is indicated for FICB.\n- **Unreported third holding:** its weight is unknown. Because the two known positions sum to 75%, the residual is 25% *if and only if* the three positions are the entire portfolio and no cash or other line is omitted — an assumption the task does not authorize. Even under that assumption, 25% would be below the threshold, but this is an inference about a missing weight, which is out of scope here.\n- **Conclusion:** the single-holding concentration policy **cannot be confirmed as breached or as satisfied** on the available evidence. The measured exposure is indeterminate, not zero.\n\n## Constraints observed\n\n- No missing weight was inferred, estimated, or back-solved.\n- No trades, rebalancing, or holdings changes were proposed.\n- No ledger records (theses, alerts, reviews) were created or modified.\n- No investment recommendation is made.\n\n## What would make this computable\n\nA complete ticker-to-weight map — including the third holding and any cash or other positions — summing to the whole portfolio. At that point the concentration view can be re-run and the 50% threshold applied directly to each measured weight."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 5633,
+          "completion_tokens": 777,
+          "total_tokens": 6410
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_VcRPtOCdw0ok6RXKz4zy8045",
+              "name": "finance-tools__portfolio_risk",
+              "arguments": "{\"holdings\": {\"FICA\": 45, \"FICB\": 30}, \"holdings_complete\": false, \"view\": \"concentration\", \"weight_unit\": \"percent\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_VcRPtOCdw0ok6RXKz4zy8045",
+              "name": "finance-tools__portfolio_risk",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"d64f6da3-ab1a-4600-8b42-4b729f4716e0\",\"as_of\":\"2026-10-19T05:52:12Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"portfolio_incomplete\"]},\"errors\":[{\"code\":\"portfolio_incomplete\",\"message\":\"portfolio holdings are incomplete; risk calculation refused\",\"retriable\":false}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2684,
+              "completion_tokens": 119,
+              "total_tokens": 2803,
+              "estimated_cost_usd": 0.00040908000000000003,
+              "priced": true,
+              "latency_ms": 715.066
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2949,
+              "completion_tokens": 658,
+              "total_tokens": 3607,
+              "cache_read_tokens": 2688,
+              "estimated_cost_usd": 0.0002283064,
+              "priced": true,
+              "latency_ms": 3830.219
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 4.569,
+      "tool_calls": [
+        "finance-tools__portfolio_risk"
+      ],
+      "model_calls": 2,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0006373864
+    }
+  ],
+  "estimated_cost_usd": 0.0006373864
+}

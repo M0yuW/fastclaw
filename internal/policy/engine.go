@@ -51,6 +51,10 @@ func LoadPreset(name string) *Policy {
 		return NoToolsPolicy()
 	case "delegate-only":
 		return DelegateOnlyPolicy()
+	case "finance-review-only":
+		return FinanceReviewOnlyPolicy()
+	case "finance-workflow-pilot":
+		return FinanceWorkflowPilotPolicy()
 	default:
 		return DefaultPolicy()
 	}

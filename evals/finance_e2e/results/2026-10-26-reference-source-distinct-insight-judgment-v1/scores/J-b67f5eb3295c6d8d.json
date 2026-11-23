@@ -1,0 +1,57 @@
+{
+  "masked_id": "J-b67f5eb3295c6d8d",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 2,
+    "I": 0,
+    "R": 1,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "grew its premium base on both a written and an earned basis",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:quarter_net_premiums_written:+1308", "source_packet.rows:quarter_net_premiums_earned:+539"]
+    },
+    {
+      "location": "final_answer",
+      "span": "the combined ratio rose, meaning a larger share of earned premium was consumed by losses and expenses, and GAAP net income and the per-share amount available to common fell alongside it",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:quarter_combined_ratio:86.2_to_89.5", "source_packet.rows:quarter_net_income:-560", "source_packet.rows:quarter_eps_available_common:-0.95"]
+    },
+    {
+      "location": "final_answer",
+      "span": "a growth-with-margin-erosion quarter rather than a demand problem",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:quarter_net_premiums_written:+1308", "source_packet.rows:quarter_net_premiums_earned:+539", "source_packet.limitations:policy_count_pricing_retention_not_audited"],
+      "reason": "Higher premium dollars can reflect pricing, exposure mix or policy count. Without policy/retention and rate data, the selected rows cannot exclude weakening demand."
+    },
+    {
+      "location": "final_answer",
+      "span": "the decline in pretax realized securities gains is a volatile, non-underwriting item that moved in the same direction as earnings",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:quarter_pretax_realized_gains_securities:387_to_295", "source_packet.rows:quarter_net_income:3175_to_2615"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review with status and conviction preserved pending fuller filing detail",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked", "ledger:thesis:conviction=3"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 2,
+      "code": "demand_exclusion_without_policy_data",
+      "evidence_refs": ["source_packet.rows:quarter_net_premiums_written:+1308", "source_packet.limitations:policy_count_retention_not_audited"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The ratio and earnings directions are correct and the ledger holds the thesis. However, the central growth-with-margin-erosion interpretation wrongly excludes a demand issue from premium dollars alone; higher prices or mix could mask lower policy count or retention, which the packet does not measure. That unsupported exclusion affects the declared research diagnosis despite the hold."
+}

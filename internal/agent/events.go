@@ -132,6 +132,12 @@ func (e *turnEventEmitter) fail(err error, messageID string, round int) {
 	e.emit("done", nil, messageID, round)
 }
 
+// terminal records a bounded but incomplete turn without turning the
+// user-facing response into a transport-level streaming failure.
+func (e *turnEventEmitter) terminal(code, messageID string, round int) {
+	e.emit("terminal", map[string]any{"code": code}, messageID, round)
+}
+
 func (e *turnEventEmitter) finish(messageID string, round int) {
 	e.emit("done", nil, messageID, round)
 }

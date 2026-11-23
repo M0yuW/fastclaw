@@ -1,0 +1,7 @@
+# Stage 2A project-report v2 execution protocol
+
+Date: 2026-10-10. This is a separate study version following the paused v1 attempt. The owner-reviewed SEC source/oracle packet, 24 configurations, three primary modes, three repetitions, diagnostics, all-Pro ablation, randomization seed, model allocation, and scoring rules are retained from the v1 frozen suite. The v1 result and its two timed-out observations remain immutable historical artifacts and are **not pooled** into v2 estimates.
+
+The revised treatment uses the Go runtime change recorded in `STAGE2-GO-RUNTIME-REVISION-2026-10-10.md`: team evidence is appended by the runtime to specialist requests rather than reproduced in model-generated tool arguments; invalid or truncated tool arguments fail immediately; server-side timeouts return partial telemetry when possible. The v2 suite uses a new study identifier and prompt version. The source lock and grader version remain unchanged. Every v2 artifact is written to its own directory with a freshly built executable and content-hash manifest.
+
+Execute against an isolated Gateway and database snapshot. Keep the user's regular 18953 Gateway running and unchanged. Pause on any missing or uncertain cost telemetry, a provider-error rate above 5%, an integrity mismatch, or the agreed spending limit. Estimated token cost is not the provider bill; a strict combined budget requires account-level billed usage for v1's unmetered timeout calls. Do not claim v2 success until all assigned observations and prespecified analyses are complete.

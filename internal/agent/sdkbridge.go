@@ -222,25 +222,41 @@ func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *to
 	})
 
 	// Convert FastClaw tool calls to SDK format
-	calls := make([]sdktools.ToolCallRequest, len(toolCalls))
+	calls := make([]sdktools.ToolCallRequest, 0, len(toolCalls))
+	invalid := make(map[int]toolCallResult)
 	for i, tc := range toolCalls {
 		var input map[string]interface{}
 		if err := json.Unmarshal([]byte(tc.Function.Arguments), &input); err != nil {
-			input = map[string]interface{}{"_raw": tc.Function.Arguments}
+			invalid[i] = toolCallResult{
+				toolCallID: tc.ID,
+				toolName:   tc.Function.Name,
+				result:     "invalid tool arguments JSON",
+				err:        fmt.Errorf("invalid tool arguments JSON for %s: %w", tc.Function.Name, err),
+			}
+			continue
 		}
 		if input == nil {
-			input = make(map[string]interface{})
+			invalid[i] = toolCallResult{
+				toolCallID: tc.ID,
+				toolName:   tc.Function.Name,
+				result:     "invalid tool arguments JSON: expected an object",
+				err:        fmt.Errorf("invalid tool arguments JSON for %s: expected an object", tc.Function.Name),
+			}
+			continue
 		}
 		input[toolCallIDMetadataKey] = tc.ID
-		calls[i] = sdktools.ToolCallRequest{
+		calls = append(calls, sdktools.ToolCallRequest{
 			ToolUseID: tc.ID,
 			ToolName:  tc.Function.Name,
 			Input:     input,
-		}
+		})
 	}
 
 	start := time.Now()
-	responses := executor.RunTools(ctx, calls)
+	var responses []sdktools.ToolCallResponse
+	if len(calls) > 0 {
+		responses = executor.RunTools(ctx, calls)
+	}
 	e.costTracker.AddToolDuration(time.Since(start))
 
 	// Anthropic (and OpenAI) require a tool_result for every tool_use the
@@ -265,6 +281,10 @@ func (e *sdkEngine) executeToolsConcurrently(ctx context.Context, fcRegistry *to
 	}
 	results := make([]toolCallResult, len(toolCalls))
 	for i, tc := range toolCalls {
+		if rejected, ok := invalid[i]; ok {
+			results[i] = rejected
+			continue
+		}
 		duration := timings.duration(tc.ID)
 		if tc.ID == "" {
 			results[i] = missingToolCallResult(tc, "tool_use ID is empty", duration)

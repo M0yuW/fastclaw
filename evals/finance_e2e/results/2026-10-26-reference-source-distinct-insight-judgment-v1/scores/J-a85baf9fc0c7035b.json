@@ -1,0 +1,76 @@
+{
+  "masked_id": "J-a85baf9fc0c7035b",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 1,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "both the investment banking and asset management revenue components higher and both reported segments contributing on revenue and pre-tax income",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_investment_banking_revenue:+90023", "source_packet.rows:gaap_asset_management_revenue:+27791", "source_packet.rows:wealth_segment_net_revenues:+61809", "source_packet.rows:wealth_segment_pretax_income:+36594", "source_packet.rows:institutional_segment_net_revenues:+80656", "source_packet.rows:institutional_segment_pretax_income:+28251"]
+    },
+    {
+      "location": "final_answer",
+      "span": "Period-end total and fee-based client assets also rose, which is consistent with a larger asset base in the wealth franchise, though the extract does not establish whether that reflects market appreciation, net new assets, or both",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:wealth_client_assets_end_period:+27478", "source_packet.rows:wealth_fee_based_client_assets_end_period:+12859", "source_packet.limitations:no_net_new_assets_bridge"]
+    },
+    {
+      "location": "final_answer",
+      "span": "the gap between GAAP and non-GAAP net income available to common narrowed",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:recon_total_adjustments:39892_to_12368", "source_packet.rows:gaap_net_income_common:145734_to_202051", "source_packet.rows:adjusted_net_income_common:185626_to_214419"]
+    },
+    {
+      "location": "final_answer",
+      "span": "total non-interest expense grew alongside revenue and operating leverage is not demonstrated by these rows",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_net_revenues:+145110", "source_packet.rows:gaap_total_noninterest_expense:+72884", "source_packet.rows:gaap_pretax_income:+72226", "calculation:pretax_margin:16.65pct_to_20.01pct"],
+      "reason": "Costs rose, but substantially less than net revenue. Incremental pretax profit and rising pretax margin directly demonstrate arithmetic operating leverage; they do not establish its durability or cause."
+    },
+    {
+      "location": "final_answer",
+      "span": "a higher tax burden applied to higher earnings rather than any reduction in tax drag",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_provision:58765_to_74675", "source_packet.rows:gaap_pretax_income:213820_to_286046", "calculation:effective_tax_rate:27.48pct_to_26.11pct"],
+      "reason": "Absolute tax expense rose, but the effective tax rate declined. On a rate-adjusted basis Q3 net income benefited from lower relative tax drag."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the improvement reflects a revenue-led expansion rather than cost leverage",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_net_revenues:+145110", "source_packet.rows:gaap_total_noninterest_expense:+72884", "source_packet.rows:gaap_pretax_income:+72226"],
+      "reason": "Revenue-led expansion and positive arithmetic operating leverage coexist; the statement sets up a false opposition."
+    },
+    {
+      "location": "persisted_review",
+      "span": "Research state maintained at existing conviction; no valuation, recommendation or trade implied",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:conviction=3", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 3,
+      "code": "operating_leverage_bridge_error",
+      "evidence_refs": ["source_packet.rows:gaap_net_revenues:+145110", "source_packet.rows:gaap_total_noninterest_expense:+72884"]
+    },
+    {
+      "claim_index": 4,
+      "code": "tax_rate_bridge_error",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_provision:58765_to_74675", "source_packet.rows:gaap_pretax_income:213820_to_286046"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The SEC row directions and client-asset stock caveat are largely correct. However, net revenue rose USD 145.110m versus expense growth of USD 72.884m, creating USD 72.226m more pretax income and a higher pretax margin; saying operating leverage is absent is materially wrong. The effective tax rate also fell from about 27.48% to 26.11%, so the higher absolute tax expense does not rule out a lower relative tax drag."
+}

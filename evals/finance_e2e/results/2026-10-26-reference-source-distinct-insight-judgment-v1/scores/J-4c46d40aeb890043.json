@@ -1,0 +1,63 @@
+{
+  "masked_id": "J-4c46d40aeb890043",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 1,
+    "R": 1,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "consolidated GAAP operating revenue fell while total GAAP operating expenses rose, and the GAAP operating result moved from income to a loss",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_total_operating_revenue:-9350", "source_packet.rows:gaap_total_operating_expenses:+36880", "source_packet.rows:gaap_operating_income_loss:13399_to_-32831"]
+    },
+    {
+      "location": "final_answer",
+      "span": "the operating swing cannot be cleanly split between recurring cost pressure and one-time charges",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.event_only_rows:gaap_restructuring_other_charges_event_only:19902", "source_packet.limitations:no_audited_June_restructuring_zero"]
+    },
+    {
+      "location": "final_answer",
+      "span": "The GAAP net loss narrowed and the pretax loss narrowed, but those improvements trace to a much smaller other expense, net, and to a smaller income tax benefit",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_other_expense_net:-74691_to_-1338", "source_packet.rows:gaap_pretax_loss:-62923_to_-35724", "source_packet.rows:gaap_income_tax_benefit_expense:-15898_to_-4933", "source_packet.rows:gaap_net_loss:-47025_to_-30791"],
+      "reason": "Other expense reduction improves pretax income, but the tax benefit shrank by 10,965 and therefore offset, rather than contributed to, the 16,234 narrowing of net loss. Pretax improvement +27,199 less reduced tax benefit 10,965 = net improvement +16,234."
+    },
+    {
+      "location": "persisted_review",
+      "span": "that improvement is driven by a much smaller other expense, net, and by a smaller income tax benefit",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_pretax_loss:-62923_to_-35724", "source_packet.rows:gaap_income_tax_benefit_expense:-15898_to_-4933", "source_packet.rows:gaap_net_loss:-47025_to_-30791"],
+      "reason": "Saved rationale repeats the signed-tax contribution reversal even though its next clause correctly calls the smaller benefit a reduced offset."
+    },
+    {
+      "location": "persisted_review",
+      "span": "research state is held for review rather than upgraded or invalidated",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 2,
+      "code": "signed_tax_benefit_contribution_reversed",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_benefit_expense", "source_packet.rows:gaap_pretax_loss", "source_packet.rows:gaap_net_loss"]
+    },
+    {
+      "claim_index": 3,
+      "code": "persisted_review_repeats_signed_tax_reversal",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_benefit_expense", "source_packet.rows:gaap_net_loss"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Correctly separates operating deterioration from narrower net loss and preserves the blocked ledger, but both answer and persisted review falsely count a shrinking tax benefit as a positive contributor to net-loss improvement."
+}

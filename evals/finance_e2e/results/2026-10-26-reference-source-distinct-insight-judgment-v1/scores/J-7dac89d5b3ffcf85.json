@@ -1,0 +1,58 @@
+{
+  "masked_id": "J-7dac89d5b3ffcf85",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 2,
+    "I": 2,
+    "R": 0,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "net interest income before provision rose, the credit loss provision declined, and both fee income and total noninterest income rose, leaving net interest income after provision and pretax and net income higher",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_net_interest_income_before_provision:+60456", "source_packet.rows:gaap_credit_loss_provision:-9000", "source_packet.rows:gaap_total_fee_income:+10973", "source_packet.rows:gaap_total_noninterest_income:+14339", "source_packet.rows:gaap_net_interest_income_after_provision:+69456", "source_packet.rows:gaap_pretax_income:+62892", "source_packet.rows:gaap_net_income:+58141"]
+    },
+    {
+      "location": "final_answer",
+      "span": "special mention loans declined, but classified loans and total criticized loans rose, so the lower provision is not corroborated by a broad-based reduction in criticized exposure",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:credit_special_mention_loans:-23914", "source_packet.rows:credit_classified_loans:+32340", "source_packet.rows:credit_total_criticized_loans:+8426", "source_packet.rows:gaap_credit_loss_provision:-9000"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "Attribution of the revenue and expense moves to rates, volumes, seasonality or one-off items is unresolved",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.limitations:no_average_balances_or_NIM", "source_packet.rows:gaap_total_operating_noninterest_expense:+31446", "source_packet.rows:gaap_net_interest_income_before_provision:+60456"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "A full filing review, including period-end loan balances, net charge-offs, allowance coverage and expense drivers, would be needed to change the view",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.limitations:no_full_migration_or_allowance_coverage", "source_packet.rows:credit_classified_loans:+32340", "source_packet.rows:credit_total_criticized_loans:+8426"],
+      "reason": "The missing credit inputs are central to distinguishing benign mix from reserve adequacy risk, not merely cosmetic."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the selected evidence supports maintaining the research state rather than upgrading or invalidating it",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available"],
+      "reason": "This matches actual ledger state. Under the project's missing-key-evidence default, however, leaving the thesis available while classified/criticized exposures rise and coverage/charge-off evidence is missing is an unjustified risk decision."
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 4,
+      "code": "critical_credit_evidence_missing_but_thesis_actionable",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:actionability=available", "source_packet.rows:credit_classified_loans", "source_packet.rows:credit_total_criticized_loans", "source_packet.limitations:no_full_migration_or_allowance_coverage"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Factual earnings and mixed-credit descriptions are careful, and the saved state is reported accurately. The central credit question remains unresolved without charge-off, loan-growth and allowance coverage inputs, yet the actual thesis remains actionable; this is a risk-containment decision failure, not a numerical source error."
+}

@@ -1,0 +1,58 @@
+{
+  "masked_id": "J-a43fcf41e603f011",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 1,
+    "R": 1,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "revenue growth that outran cost of revenue growth while total expenses were nearly unchanged",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_revenue:+29366", "source_packet.rows:gaap_cost_of_revenue:+4687", "source_packet.rows:gaap_total_expenses:+998"]
+    },
+    {
+      "location": "final_answer",
+      "span": "operating and pretax profit rose by more than revenue",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_operating_income:+28368", "source_packet.rows:gaap_income_before_taxes:+30369", "source_packet.rows:gaap_revenue:+29366"],
+      "reason": "Pretax income increase exceeds revenue growth, but operating income increase is USD 998 thousand less than revenue growth because total expenses rose by that amount."
+    },
+    {
+      "location": "final_answer",
+      "span": "The tax provision rose alongside pretax income, so the after-tax improvement is smaller than the pretax improvement",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_provision:+13987", "source_packet.rows:gaap_income_before_taxes:+30369", "source_packet.rows:gaap_net_income:+16382"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "operating income and pretax income rose by more than revenue",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_operating_income:+28368", "source_packet.rows:gaap_income_before_taxes:+30369", "source_packet.rows:gaap_revenue:+29366"],
+      "reason": "The incorrect operating-profit comparison is repeated in the saved research rationale."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the evidence supports maintaining the research state rather than changing conviction",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:conviction=3", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "operating_profit_bridge_arithmetic",
+      "evidence_refs": ["source_packet.rows:gaap_operating_income:+28368", "source_packet.rows:gaap_revenue:+29366", "source_packet.rows:gaap_total_expenses:+998"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The answer and persisted rationale both incorrectly say operating income grew by more than revenue; in fact revenue rose USD 29.366m, expenses rose USD 0.998m, and operating income rose USD 28.368m. The positive GAAP direction and tax bridge otherwise hold. With no defined thesis hypothesis, unchanged conviction is not itself an additional critical error, but the arithmetic mistake compromises the claimed operating-leverage magnitude."
+}

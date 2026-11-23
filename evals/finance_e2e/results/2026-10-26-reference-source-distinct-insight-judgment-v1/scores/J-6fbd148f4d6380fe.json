@@ -1,0 +1,52 @@
+{
+  "masked_id": "J-6fbd148f4d6380fe",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 2,
+    "I": 2,
+    "R": 2,
+    "S": 2,
+    "U": 2
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "adding premium volume sequentially on both a written and an earned basis, but with a weaker underwriting result and lower GAAP profitability",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:quarter_net_premiums_written:+1308", "source_packet.rows:quarter_net_premiums_earned:+539", "source_packet.rows:quarter_combined_ratio:86.2_to_89.5", "source_packet.rows:quarter_net_income:3175_to_2615", "source_packet.rows:quarter_eps_available_common:5.40_to_4.45"],
+      "reason": "Premium 'volume' is used as reported premium dollars, not a claim of higher policy count."
+    },
+    {
+      "location": "final_answer",
+      "span": "combined ratio moved adversely while GAAP net income and per-share amounts available to common shareholders fell",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:quarter_combined_ratio:86.2_to_89.5_percentage_points:+3.3", "source_packet.rows:quarter_net_income:-560", "source_packet.rows:quarter_eps_available_common:-0.95"]
+    },
+    {
+      "location": "final_answer",
+      "span": "smaller pretax realized gain on securities, an investment-result item that is not an underwriting outcome and that sits on a different subtotal than net income; it is therefore a plausible partial contributor rather than a demonstrated cause",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:quarter_pretax_realized_gains_securities:387_to_295", "source_packet.rows:quarter_net_income:3175_to_2615"],
+      "reason": "Gain remained positive but fell 92 pretax; no after-tax bridge or full earnings components are supplied, and answer correctly avoids exact attribution."
+    },
+    {
+      "location": "persisted_review",
+      "span": "The premium and underwriting-direction signals therefore point in opposite directions",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:quarter_net_premiums_written:+1308", "source_packet.rows:quarter_net_premiums_earned:+539", "source_packet.rows:quarter_combined_ratio:+3.3"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review rather than upgraded or invalidated",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [],
+  "assessable_implication": true,
+  "notes": "Correctly distinguishes premium-dollar growth from weaker reported combined ratio and GAAP earnings, treats the smaller realized gain as a bounded possible contributor rather than a proven underwriting driver, uses percentage points, and preserves the blocked research state."
+}

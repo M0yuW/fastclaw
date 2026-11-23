@@ -1,0 +1,167 @@
+{
+  "run_id": "W03-r2",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "one_complete_candidate_thesis": true,
+    "pe_persisted": true,
+    "free_cash_flow_persisted": true,
+    "roic_persisted": true,
+    "fixture_provenance_persisted": true,
+    "no_alerts": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_57660b90a0594e0e88b1",
+          "market": "US",
+          "symbol": "FICC",
+          "title": "FICC Preliminary Screen Thesis (Synthetic Fixture)",
+          "thesis": "Preliminary thesis for retained screen candidate FICC. Exact tool values: P/E (trailing) = 16.5, free cash flow = 310, ROIC = 0.13. Missingness boundary: the screen's require_complete=true policy requires pe_trailing, revenue_growth_yoy, earnings_growth_yoy, debt_to_equity, free_cash_flow, roic, and analyst_upside_pct; FICC passed with all required metrics present, while FICD was rejected for insufficient_data (missing earnings_growth_yoy). Synthetic fixture provenance: fixture_id synthetic-screen-v2, source local_evaluation_fixture (deterministic_screen), as_of 2026-10-17T06:35:09Z. This is a synthetic, non-investment research workflow (Case W03-r2); no investment recommendation or trade is implied.",
+          "status": "researching",
+          "conviction": 1,
+          "assumptions": [
+            "FICC passed the deterministic screen with all required metrics present",
+            "Screen values are synthetic fixture data, not live market data"
+          ],
+          "catalysts": [
+            "None — synthetic fixture workflow"
+          ],
+          "invalidations": [
+            "Fixture data is synthetic and not actionable"
+          ],
+          "required_event_metrics": [],
+          "evidence": [
+            {
+              "as_of": "2026-10-17T06:35:09Z",
+              "fixture_id": "synthetic-screen-v2",
+              "kind": "deterministic_screen",
+              "source": "local_evaluation_fixture"
+            }
+          ],
+          "next_review_at": null,
+          "last_review_at": null,
+          "created_at": "2026-10-17T06:35:15Z",
+          "updated_at": "2026-10-17T06:35:15Z",
+          "version": 1,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "finance-workflow-W03-r2"
+        },
+        "reviews": []
+      }
+    ],
+    "alerts": []
+  },
+  "extras": {},
+  "turns": [
+    {
+      "prompt": "This is a synthetic, non-investment research workflow using fixture tickers FICC and FICD. Call finance-tools__screen_stocks for both with require_complete=true. Read retained and rejected candidates. Create one preliminary thesis only for a retained candidate. In the persisted thesis text, include the exact P/E, free-cash-flow, and ROIC numeric values from the tool, the missingness boundary, and synthetic fixture provenance. Do not create a thesis for a rejected candidate, call live market tools, or trade. Case W03-r2.",
+      "response": {
+        "id": "chatcmpl-1792218908427978000",
+        "object": "chat.completion",
+        "created": 1792218908,
+        "model": "deepseek/deepseek-v4-pro",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Workflow complete for Case W03-r2.\n\n## Screen Results\n\n| Symbol | Outcome | Detail |\n|--------|---------|--------|\n| **FICC** | ✅ Retained (passed) | All required metrics present |\n| **FICD** | ❌ Rejected | `insufficient_data` — missing `earnings_growth_yoy` |\n\n**Missingness boundary:** `require_complete=true` requires `pe_trailing`, `revenue_growth_yoy`, `earnings_growth_yoy`, `debt_to_equity`, `free_cash_flow`, `roic`, and `analyst_upside_pct`. FICD was moved to rejected for missing `earnings_growth_yoy`.\n\n## Thesis Created (retained candidate only)\n\n- **Thesis ID:** `th_57660b90a0594e0e88b1`\n- **Symbol:** FICC (US)\n- **Status:** `researching`, conviction 1\n\nThe persisted thesis text includes the exact tool values — **P/E (trailing) = 16.5**, **free cash flow = 310**, **ROIC = 0.13** — plus the missingness boundary and synthetic fixture provenance (`fixture_id synthetic-screen-v2`, source `local_evaluation_fixture`, `as_of 2026-10-17T06:35:09Z`).\n\nNo thesis was created for the rejected candidate (FICD), no live market tools were called, and no trades were made."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 9777,
+          "completion_tokens": 988,
+          "total_tokens": 10765
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_wWj4WFKrwYRnKC6FHB679740",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"FICC\", \"FICD\"], \"require_complete\": true}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_wWj4WFKrwYRnKC6FHB679740",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"62a4416d-6ad3-4b0b-b396-a27ba0850ce1\",\"as_of\":\"2026-10-17T06:35:09Z\",\"stale_after\":\"2026-10-17T12:35:09Z\",\"data\":{\"fixture_id\":\"synthetic-screen-v2\",\"synthetic\":true,\"results\":[{\"symbol\":\"FICC\",\"valuation\":{\"pe_trailing\":16.5},\"growth\":{\"revenue_growth_yoy\":0.12,\"earnings_growth_yoy\":0.14},\"leverage\":{\"debt_to_equity\":0.22},\"cash_flow\":{\"free_cash_flow\":310},\"profitability\":{\"roic\":0.13},\"analyst_consensus\":{\"upside_pct\":0.31}}],\"rejected\":[{\"symbol\":\"FICD\",\"reason\":\"insufficient_data\",\"missing_metrics\":[\"earnings_growth_yoy\"]}],\"passed\":1,\"failed\":1,\"runtime_quality_policy\":{\"require_complete\":true,\"required_metrics\":[\"pe_trailing\",\"revenue_growth_yoy\",\"earnings_growth_yoy\",\"debt_to_equity\",\"free_cash_flow\",\"roic\",\"analyst_upside_pct\"],\"moved_to_rejected\":1}},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"incomplete_screen_candidates_rejected\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_h6BbmtQBoqKX4qpFyU5P8911",
+              "name": "finance-tools__thesis_save",
+              "arguments": "{\"title\": \"FICC Preliminary Screen Thesis (Synthetic Fixture)\", \"symbol\": \"FICC\", \"market\": \"US\", \"status\": \"researching\", \"conviction\": 1, \"thesis\": \"Preliminary thesis for retained screen candidate FICC. Exact tool values: P/E (trailing) = 16.5, free cash flow = 310, ROIC = 0.13. Missingness boundary: the screen's require_complete=true policy requires pe_trailing, revenue_growth_yoy, earnings_growth_yoy, debt_to_equity, free_cash_flow, roic, and analyst_upside_pct; FICC passed with all required metrics present, while FICD was rejected for insufficient_data (missing earnings_growth_yoy). Synthetic fixture provenance: fixture_id synthetic-screen-v2, source local_evaluation_fixture (deterministic_screen), as_of 2026-10-17T06:35:09Z. This is a synthetic, non-investment research workflow (Case W03-r2); no investment recommendation or trade is implied.\", \"assumptions\": [\"FICC passed the deterministic screen with all required metrics present\", \"Screen values are synthetic fixture data, not live market data\"], \"catalysts\": [\"None — synthetic fixture workflow\"], \"invalidations\": [\"Fixture data is synthetic and not actionable\"], \"evidence\": [{\"source\": \"local_evaluation_fixture\", \"kind\": \"deterministic_screen\", \"fixture_id\": \"synthetic-screen-v2\", \"as_of\": \"2026-10-17T06:35:09Z\"}]}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_h6BbmtQBoqKX4qpFyU5P8911",
+              "name": "finance-tools__thesis_save",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"81e67b9c-a8e6-4adc-95da-4eea8760bb67\",\"as_of\":\"2026-10-17T06:35:15Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_57660b90a0594e0e88b1\",\"market\":\"US\",\"symbol\":\"FICC\",\"title\":\"FICC Preliminary Screen Thesis (Synthetic Fixture)\",\"thesis\":\"Preliminary thesis for retained screen candidate FICC. Exact tool values: P/E (trailing) = 16.5, free cash flow = 310, ROIC = 0.13. Missingness boundary: the screen's require_complete=true policy requires pe_trailing, revenue_growth_yoy, earnings_growth_yoy, debt_to_equity, free_cash_flow, roic, and analyst_upside_pct; FICC passed with all required metrics present, while FICD was rejected for insufficient_data (missing earnings_growth_yoy). Synthetic fixture provenance: fixture_id synthetic-screen-v2, source local_evaluation_fixture (deterministic_screen), as_of 2026-10-17T06:35:09Z. This is a synthetic, non-investment research workflow (Case W03-r2); no investment recommendation or trade is implied.\",\"status\":\"researching\",\"conviction\":1,\"assumptions\":[\"FICC passed the deterministic screen with all required metrics present\",\"Screen values are synthetic fixture data, not live market data\"],\"catalysts\":[\"None — synthetic fixture workflow\"],\"invalidations\":[\"Fixture data is synthetic and not actionable\"],\"required_event_metrics\":[],\"evidence\":[{\"as_of\":\"2026-10-17T06:35:09Z\",\"fixture_id\":\"synthetic-screen-v2\",\"kind\":\"deterministic_screen\",\"source\":\"local_evaluation_fixture\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-17T06:35:15Z\",\"updated_at\":\"2026-10-17T06:35:15Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"finance-workflow-W03-r2\"},\"operation\":\"created\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.875,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 2559,
+              "completion_tokens": 103,
+              "total_tokens": 2662,
+              "estimated_cost_usd": 0.001202775,
+              "priced": true,
+              "latency_ms": 1521.565
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 3039,
+              "completion_tokens": 565,
+              "total_tokens": 3604,
+              "cache_read_tokens": 2560,
+              "estimated_cost_usd": 0.0007091949999999999,
+              "priced": true,
+              "latency_ms": 5290.923
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 4179,
+              "completion_tokens": 320,
+              "total_tokens": 4499,
+              "cache_read_tokens": 3584,
+              "estimated_cost_usd": 0.0005502169999999999,
+              "priced": true,
+              "latency_ms": 2821.709
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 9.733,
+      "tool_calls": [
+        "finance-tools__screen_stocks",
+        "finance-tools__thesis_save"
+      ],
+      "model_calls": 3,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.002462187
+    }
+  ],
+  "estimated_cost_usd": 0.002462187
+}

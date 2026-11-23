@@ -1,0 +1,76 @@
+{
+  "masked_id": "J-b0655c40da4a3704",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 1,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "the combined advisory-plus-securities-lending subtotal expanded sequentially, and GAAP operating income rose alongside total revenue",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_combined_advisory_lending_revenue:+592", "source_packet.rows:gaap_operating_income:+224", "source_packet.rows:gaap_total_revenue:+1086"]
+    },
+    {
+      "location": "final_answer",
+      "span": "Total expense grew by more than total revenue",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_total_expense:+862", "source_packet.rows:gaap_total_revenue:+1086", "source_packet.rows:gaap_operating_income:+224"],
+      "reason": "In USD millions, revenue increased 1,086 versus expense 862, leaving the 224 operating-income increase. Expense grew faster in percentage terms, but that is not what the unqualified absolute bridge says."
+    },
+    {
+      "location": "final_answer",
+      "span": "the parent-attributable decline was larger than the consolidated decline because the noncontrolling-interest share of consolidated sponsored investment products increased",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_consolidated_net_income:-138", "source_packet.rows:gaap_net_income_attributable_blackrock:-270", "source_packet.rows:gaap_nci_cip_income:72_to_134", "source_packet.event_only_rows:gaap_nci_subco_units_event_only:70"],
+      "reason": "The USD 132m widening equals a USD 62m increase in CIP attribution plus the Q3-only USD 70m Subco Units item; CIP alone does not explain it. No Q2 zero is inferred for the event-only line."
+    },
+    {
+      "location": "final_answer",
+      "span": "Lower absolute income tax expense is consistent with lower pretax income and is not evidence of a reduced tax burden",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_expense:587_to_470", "source_packet.rows:gaap_pretax_income:2252_to_1997", "calculation:effective_tax_rate:26.07pct_to_23.54pct"],
+      "reason": "Lower absolute tax expense alone would not prove a lower relative burden, but the selected pretax and tax rows do: effective rate declined by about 2.53 percentage points."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the revenue increase was accompanied by a larger increase in total expense",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue:+1086", "source_packet.rows:gaap_total_expense:+862"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "Net income attributable to the parent declined by more than consolidated net income because the noncontrolling-interest share of consolidated sponsored investment products increased",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_nci_cip_income:+62", "source_packet.event_only_rows:gaap_nci_subco_units_event_only:70", "source_packet.rows:gaap_consolidated_net_income:-138", "source_packet.rows:gaap_net_income_attributable_blackrock:-270"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the defensible research state is a preserved hold pending fuller filing evidence rather than a conviction change",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "revenue_expense_bridge_reversal",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue:+1086", "source_packet.rows:gaap_total_expense:+862"]
+    },
+    {
+      "claim_index": 2,
+      "code": "nci_attribution_incomplete",
+      "evidence_refs": ["source_packet.rows:gaap_nci_cip_income:+62", "source_packet.event_only_rows:gaap_nci_subco_units_event_only:70"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The answer correctly sees higher operating profit versus lower pretax and parent income, and blocks the thesis. Yet it reverses the absolute revenue/expense bridge (USD 1,086m versus 862m), omits the Q3-only USD 70m Subco Units NCI item from a USD 132m parent/consolidated attribution gap, and misses a calculable lower effective tax rate (26.07% to 23.54%). These errors materially mischaracterize earnings quality even though the final state is held."
+}

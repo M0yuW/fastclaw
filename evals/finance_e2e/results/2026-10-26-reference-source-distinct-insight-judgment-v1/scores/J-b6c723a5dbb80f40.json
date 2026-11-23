@@ -1,0 +1,66 @@
+{
+  "masked_id": "J-b6c723a5dbb80f40",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 1,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "fee-based revenue and company-defined adjusted operating results improved sequentially at both the consolidated and AWM segment level",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:management_advice_fees:+211", "source_packet.rows:adjusted_operating_earnings:+65", "source_packet.rows:awm_segment_advisory_fees:+147", "source_packet.rows:awm_segment_pretax_adjusted_earnings:+69"]
+    },
+    {
+      "location": "final_answer",
+      "span": "GAAP pretax and net income declined sequentially as a signed fair-value market-risk-benefit component moved from a benefit to a larger expense and total expenses grew by more than net revenues",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:pretax_income:-177", "source_packet.rows:gaap_net_income:-148", "source_packet.rows:market_risk_benefit_fair_value_expense:-10_to_302", "source_packet.rows:total_expenses:+593", "source_packet.rows:net_revenues:+416"],
+      "reason": "The arithmetic bridge is correct; this does not fully establish a causal reconciliation between GAAP and adjusted earnings."
+    },
+    {
+      "location": "final_answer",
+      "span": "AWM total client flows and wrap net flows both fell",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:awm_total_client_flows:4281_to_3442", "source_packet.rows:wrap_net_flows:5378_to_4769"],
+      "reason": "Both flows remained positive but were smaller than in the prior quarter."
+    },
+    {
+      "location": "final_answer",
+      "span": "stock growth cannot be credited to gathering",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:wrap_beginning_assets:615189", "source_packet.rows:wrap_net_flows:4769", "source_packet.rows:wrap_market_other:30344", "source_packet.rows:wrap_ending_assets:650302"],
+      "reason": "The reported wrap-assets bridge explicitly credits USD 4.769bn of the USD 35.113bn increase to net flows, with USD 30.344bn from market and other. Gathering contributes, though it is not the dominant driver."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the stock growth cannot be attributed to organic gathering on this extract",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:wrap_net_flows:4769", "source_packet.rows:wrap_market_other:30344", "source_packet.rows:wrap_ending_assets:615189_to_650302"],
+      "reason": "The source explicitly supplies the wrap-net-flow contribution; declining positive flow is not zero or a negative contribution."
+    },
+    {
+      "location": "persisted_review",
+      "span": "The research state is therefore held for review",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 3,
+      "code": "positive_flow_contribution_denied",
+      "evidence_refs": ["source_packet.rows:wrap_net_flows:4769", "source_packet.rows:wrap_market_other:30344"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The GAAP/adjusted split and lower-but-positive flow directions are recognized, and the ledger is blocked. Yet the answer and persisted rationale deny any organic-gathering contribution to wrap asset growth despite an explicit reported bridge: 615.189 + 4.769 + 30.344 = 650.302 USD bn. Market-and-other dominates, but the positive flow is real."
+}

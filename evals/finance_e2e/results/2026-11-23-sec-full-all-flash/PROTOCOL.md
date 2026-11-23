@@ -1,0 +1,1 @@
+Full SEC all-Flash comparison. Independent estimated budget USD 5. Same archived sources, three main modes and three repetitions per configuration. Original frozen pricing table. Stop on unmetered usage, model mismatch or runner checkpoint.

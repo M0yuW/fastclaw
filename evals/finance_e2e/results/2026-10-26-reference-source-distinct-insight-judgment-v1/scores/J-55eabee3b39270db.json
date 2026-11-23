@@ -1,0 +1,58 @@
+{
+  "masked_id": "J-55eabee3b39270db",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 1,
+    "R": 1,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "GAAP operating profitability and cash generation improved sequentially while the company-defined profitability measures weakened",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:operating_income:6.9_to_44.0", "source_packet.rows:operating_cash_flow:116.3_to_181.1", "source_packet.rows:free_cash_flow:50.3_to_115.5", "source_packet.rows:adjusted_ebitda:261.6_to_252.4", "source_packet.rows:adjusted_net_income:123.3_to_119.3"]
+    },
+    {
+      "location": "final_answer",
+      "span": "The GAAP operating improvement is not corroborated by the non-GAAP view and coincides with a favorable swing in a signed other-operating line and a lower tax provision",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:other_operating_expense:29.6_to_-12.8", "source_packet.rows:adjusted_ebitda:261.6_to_252.4", "source_packet.rows:adjusted_net_income:123.3_to_119.3", "source_packet.rows:income_tax_provision:12.3_to_3.8"],
+      "reason": "Non-GAAP divergence and other-operating swing are factual; tax is below the operating line and should not be treated as an operating-profit driver."
+    },
+    {
+      "location": "persisted_review",
+      "span": "GAAP operating income turned positive",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:operating_income:6.9_to_44.0"],
+      "reason": "Operating income was already positive in Q2 at 6.9; it increased to 44.0 rather than crossing from loss to profit."
+    },
+    {
+      "location": "persisted_review",
+      "span": "declined, which is directionally opposed to the GAAP operating improvement",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:adjusted_ebitda:-9.2", "source_packet.rows:adjusted_net_income:-4.0", "source_packet.rows:operating_income:+37.1"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "Research state is held for review pending the full filing, non-GAAP reconciliations, and management commentary",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 2,
+      "code": "persisted_review_false_profitability_sign_change",
+      "evidence_refs": ["source_packet.rows:operating_income:6.9_to_44.0"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The selected-source mixed GAAP/non-GAAP and cash-flow direction is largely correct and the ledger is blocked. Persisted review incorrectly says operating income turned positive when both quarters were positive; other-operating and tax contributions should be kept on their respective operating versus net-income bases."
+}

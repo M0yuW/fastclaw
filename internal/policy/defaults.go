@@ -88,3 +88,47 @@ func DelegateOnlyPolicy() *Policy {
 		},
 	}
 }
+
+// FinanceReviewOnlyPolicy permits the narrow, non-trading research review
+// workflow used by the SEC event-to-thesis integration experiment.
+func FinanceReviewOnlyPolicy() *Policy {
+	return &Policy{
+		Name:        "finance-review-only",
+		Description: "Allows only finance thesis and alert review tools",
+		Network: NetPolicy{
+			Mode: "none",
+		},
+		Tools: ToolsPolicy{
+			Allow: []string{
+				"finance-tools__thesis_get",
+				"finance-tools__thesis_match_event",
+				"finance-tools__thesis_record_review",
+				"finance-tools__alert_list",
+				"finance-tools__alert_update",
+			},
+		},
+	}
+}
+
+// FinanceWorkflowPilotPolicy permits non-trading finance workflows while
+// denying shell, network, delegation, and event ingestion from the agent.
+// Source packets are inserted by trusted fixture setup, not model calls.
+func FinanceWorkflowPilotPolicy() *Policy {
+	return &Policy{
+		Name:        "finance-workflow-pilot",
+		Description: "Allows bounded research, screening, and risk tools without trading or event ingestion",
+		Network:     NetPolicy{Mode: "none"},
+		Tools: ToolsPolicy{Allow: []string{
+			"finance-tools__screen_stocks",
+			"finance-tools__portfolio_risk",
+			"finance-tools__portfolio_policy_bound",
+			"finance-tools__thesis_save",
+			"finance-tools__thesis_get",
+			"finance-tools__thesis_list",
+			"finance-tools__thesis_match_event",
+			"finance-tools__thesis_record_review",
+			"finance-tools__alert_list",
+			"finance-tools__alert_update",
+		}},
+	}
+}

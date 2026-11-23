@@ -1,0 +1,209 @@
+{
+  "turns": [
+    {
+      "prompt": "Complete one research-state review for the newly ingested SEC event. Read the stored thesis and alert via finance tools. Compare only the supplied periods and metrics, identify support, risk, and missing evidence, and choose your own decision. Link the stored alert and source hash when recording the review with the observed thesis version; then acknowledge the alert with its observed version. A missing metric in the packet is not necessarily missing from the SEC filing. Do not trade. Case SOFI-REVENUE-BRIDGE; thesis ID th_469c2ae1fb1841f8b512; alert ID fa_46a0dddb57604d91ba51. Separate source facts, arithmetic and hypotheses; cite the fact IDs, periods, units and accounting bases for material claims. Identify one source-grounded research implication, its strongest counterpoint or unresolved input, and what evidence would change the assessment. Do not assume a decision, conviction, or that a positive change in one measure resolves contrary evidence in another. For causal_claims, use only a stored source-backed driver and supported target; omit unsupported causal claims. Do not set a past next_review_at date. Read and repair rejected tool inputs before finalizing. At the end, add exactly one line [CHECK] SOFI_Q3_GAAP_TO_ADJUSTED_REVENUE=<GAAP revenue - servicing adjustment + residual adjustment - debt-gain adjustment = adjusted revenue>, using signed arithmetic values without units in that line. The check line is not a substitute for a complete source-grounded review.",
+      "response": {
+        "id": "chatcmpl-1792738693652558000",
+        "object": "chat.completion",
+        "created": 1792738693,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# SOFI-REVENUE-BRIDGE — Research-State Review\n\n**Thesis:** `th_469c2ae1fb1841f8b512` (SOFI, US) — reviewed at observed version 1, now **version 2**\n**Alert:** `fa_46a0dddb57604d91ba51` — recorded in review `tr_bfcf98ab57a04faca72e`, then acknowledged at observed version 1 (now version 2)\n**Event source hash:** `edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032` (Q3 exhibit, as_of 2024-10-29)\n**Baseline source hash:** `6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c` (Q2 exhibit)\n\n## 1. Source facts (as supplied, USD_thousand)\n\n| Fact ID | Period | Basis | Value |\n|---|---|---|---|\n| SOFI-Q3-GAAP-REV | CY2024Q3, ended 2024-09-30 | GAAP | 697121 |\n| SOFI-Q3-ADJ-REV | CY2024Q3, ended 2024-09-30 | non-GAAP adjusted | 689445 |\n| SOFI-Q3-NETINC | CY2024Q3, ended 2024-09-30 | GAAP | 60745 |\n| SOFI-Q3-SERVICING | CY2024Q3, ended 2024-09-30 | non-GAAP adjustment | -4362 |\n| SOFI-Q3-RESIDUAL | CY2024Q3, ended 2024-09-30 | non-GAAP adjustment | 9 |\n| SOFI-Q3-DEBTGAIN | CY2024Q3, ended 2024-09-30 | non-GAAP adjustment | -3323 |\n| SOFI-Q2-GAAP-REV | CY2024Q2, ended 2024-06-30 | GAAP | 598618 |\n| SOFI-Q2-ADJ-REV | CY2024Q2, ended 2024-06-30 | non-GAAP adjusted | 596965 |\n| SOFI-Q2-NETINC | CY2024Q2, ended 2024-06-30 | GAAP | 17404 |\n\n## 2. Arithmetic (derived, same-basis only)\n- GAAP revenue sequential: 697121 − 598618 = **+98503** (+16.5%)\n- Adjusted revenue sequential: 689445 − 596965 = **+92480** (+15.5%)\n- GAAP net income sequential: 60745 − 17404 = **+43341**\n- GAAP→adjusted revenue bridge: 697121 − 4362 + 9 − 3323 = **689445**, tying exactly to reported adjusted revenue — the three supplied adjustments fully reconcile the two revenue bases for this packet, with no unexplained residual.\n\n## 3. Support\nBoth revenue bases and GAAP net income increased sequentially, and the bridge is internally consistent. On the supplied metrics alone, the packet is directionally supportive of the thesis's \"business growth / earnings quality\" catalysts.\n\n## 4. Risk and counterpoint\n- The packet is a **selected-metric extract**: no operating margin, gross margin, segment, member or deposit detail, and **no year-over-year comparative**. Only sequential same-basis comparisons are defensible.\n- **No Q2 adjustment components were supplied**, so the Q2→Q3 adjusted-revenue comparison cannot be decomposed on a like-for-like adjustment basis. The +92480 adjusted-revenue delta is not shown to be free of adjustment-timing effects.\n- The negative servicing (−4362) and debt-gain (−3323) adjustments mean adjusted revenue sits **below** GAAP revenue this quarter. That direction should not be read as quality-neutral without the underlying drivers.\n- The GAAP net income increase (+43341) is **not attributed** by any stored source-backed driver. Recorded as `unresolved` for `net_income` with no driver facts; no causal claim was asserted.\n\n## 5. Missing evidence\nFull Q3 income statement and segment results; Q2 servicing/residual/debt-gain adjustments needed for a like-for-like bridge comparison; any year-over-year period. Note: absence from this packet is not evidence of absence from the SEC filing.\n\n## 6. Decision\n**maintain** — status `active`, conviction **3** (unchanged), impact `positive`, next review 2026-11-06. The evidence is directionally supportive but too narrow to justify a conviction change, and a positive move in one measure does not resolve the contrary/unattributed items above. No trade, no recommendation.\n\n## 7. Research implication, counterpoint, and what would change it\n- **Implication:** the exact GAAP-to-adjusted revenue reconciliation (697121 − 4362 + 9 − 3323 = 689445) means the two revenue bases can be compared without an unexplained plug, so the sequential revenue expansion holds on both bases.\n- **Strongest counterpoint / unresolved input:** the absence of Q2 adjustment components and of any driver attribution for the net income jump — the adjusted-revenue gain could partly reflect adjustment timing rather than underlying revenue.\n- **What would change the assessment:** a full Q3 income statement showing margin or segment deterioration; Q2 adjustment components revealing adjustment-timing-driven growth; or a year-over-year comparison showing deceleration.\n\n[CHECK] SOFI_Q3_GAAP_TO_ADJUSTED_REVENUE=697121-4362+9-3323=689445"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 40720,
+          "completion_tokens": 6739,
+          "total_tokens": 47459
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_RWruIoO432FxrfHJAorU6650",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_469c2ae1fb1841f8b512\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_qNcwuvPjwteGsOOGx6o03030",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_RWruIoO432FxrfHJAorU6650",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"36a18802-f9d2-4891-862b-47a4f68bab34\",\"as_of\":\"2026-10-23T06:58:14Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_469c2ae1fb1841f8b512\",\"market\":\"US\",\"symbol\":\"SOFI\",\"title\":\"SOFI SEC event research thesis\",\"thesis\":\"CY2024 Q2 ended 2024-06-30 baseline: SOFI-Q2-GAAP-REV=598618 USD_thousand; SOFI-Q2-ADJ-REV=596965 USD_thousand; SOFI-Q2-NETINC=17404 USD_thousand. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[\"business growth\",\"earnings quality\"],\"invalidations\":[\"material operating deterioration\",\"weakening demand\"],\"required_event_metrics\":[\"gaap_total_net_revenue\",\"adjusted_net_revenue_non_gaap\",\"gaap_net_income_loss\",\"servicing_rights_valuation_adjustment\",\"residual_interests_valuation_adjustment\",\"gain_on_extinguishment_adjustment\"],\"evidence\":[{\"id\":\"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1818874/000181887424000169/q22024earningsrelease.htm\",\"sha256\":\"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-23T06:58:13Z\",\"updated_at\":\"2026-10-23T06:58:13Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8438,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_qNcwuvPjwteGsOOGx6o03030",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"7c7982f9-c17c-4c50-8a28-5e23c5cd0fc8\",\"as_of\":\"2026-10-23T06:58:14Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_46a0dddb57604d91ba51\",\"watchlist_id\":\"wl_4b993f17c24b43cbacff\",\"thesis_id\":\"th_469c2ae1fb1841f8b512\",\"market\":\"US\",\"symbol\":\"SOFI\",\"event_fingerprint\":\"ec377da2251f4b4347afb274b6c698fea3f4d3b15c108ab2ac0de8ba514b9aa1\",\"event\":{\"external_id\":\"SOFI-REVENUE-BRIDGE-sec-event-v1\",\"type\":\"earnings\",\"summary\":\"SOFI CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: SOFI-Q3-GAAP-REV=697121 USD_thousand; SOFI-Q3-ADJ-REV=689445 USD_thousand; SOFI-Q3-NETINC=60745 USD_thousand; SOFI-Q3-SERVICING=-4362 USD_thousand; SOFI-Q3-RESIDUAL=9 USD_thousand; SOFI-Q3-DEBTGAIN=-3323 USD_thousand. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.\",\"as_of\":\"2024-10-29\",\"sources\":[{\"id\":\"SOFI-REVENUE-BRIDGE-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1818874/000181887424000229/q32024earningsrelease.htm\",\"sha256\":\"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"}],\"observed_metrics\":{\"gaap_total_net_revenue\":{\"value\":\"697121\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-GAAP-REV\",\"statement_line\":\"revenue\"},\"adjusted_net_revenue_non_gaap\":{\"value\":\"689445\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-ADJ-REV\",\"statement_line\":\"unknown\"},\"gaap_net_income_loss\":{\"value\":\"60745\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-NETINC\",\"statement_line\":\"unknown\"},\"servicing_rights_valuation_adjustment\":{\"value\":\"-4362\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-SERVICING\",\"statement_line\":\"unknown\"},\"residual_interests_valuation_adjustment\":{\"value\":\"9\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-RESIDUAL\",\"statement_line\":\"unknown\"},\"gain_on_extinguishment_adjustment\":{\"value\":\"-3323\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-DEBTGAIN\",\"statement_line\":\"unknown\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"sofi\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-23T06:58:13Z\",\"last_seen_at\":\"2026-10-23T06:58:13Z\",\"created_at\":\"2026-10-23T06:58:13Z\",\"updated_at\":\"2026-10-23T06:58:13Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.963,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_uNo3HFym49DzXou7TRcX4079",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"SOFI\", \"event_summary\": \"SOFI CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: SOFI-Q3-GAAP-REV=697121 USD_thousand; SOFI-Q3-ADJ-REV=689445 USD_thousand; SOFI-Q3-NETINC=60745 USD_thousand; SOFI-Q3-SERVICING=-4362 USD_thousand; SOFI-Q3-RESIDUAL=9 USD_thousand; SOFI-Q3-DEBTGAIN=-3323 USD_thousand. Compare with the supplied historical baseline.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_uNo3HFym49DzXou7TRcX4079",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"65a6363c-6ee1-4a0b-b47b-1b31eabd4a13\",\"as_of\":\"2026-10-23T06:58:16Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"SOFI\",\"event_summary\":\"SOFI CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: SOFI-Q3-GAAP-REV=697121 USD_thousand; SOFI-Q3-ADJ-REV=689445 USD_thousand; SOFI-Q3-NETINC=60745 USD_thousand; SOFI-Q3-SERVICING=-4362 USD_thousand; SOFI-Q3-RESIDUAL=9 USD_thousand; SOFI-Q3-DEBTGAIN=-3323 USD_thousand. Compare with the supplied historical baseline.\",\"matches\":[{\"thesis_id\":\"th_469c2ae1fb1841f8b512\",\"title\":\"SOFI SEC event research thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_GSs0sLb9z2ZyY67gJ6lZ9861",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_469c2ae1fb1841f8b512\", \"expected_version\": 1, \"alert_id\": \"fa_46a0dddb57604d91ba51\", \"event\": {\"type\": \"earnings\", \"as_of\": \"2024-10-29\", \"summary\": \"SOFI CY2024 Q3 (period ended 2024-09-30) selected SEC exhibit packet: SOFI-Q3-GAAP-REV=697121 USD_thousand; SOFI-Q3-ADJ-REV=689445 USD_thousand; SOFI-Q3-NETINC=60745 USD_thousand; SOFI-Q3-SERVICING=-4362 USD_thousand; SOFI-Q3-RESIDUAL=9 USD_thousand; SOFI-Q3-DEBTGAIN=-3323 USD_thousand. Compared only against the supplied CY2024 Q2 baseline (SOFI-Q2-GAAP-REV=598618; SOFI-Q2-ADJ-REV=596965; SOFI-Q2-NETINC=17404 USD_thousand).\", \"sources\": [{\"id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1818874/000181887424000229/q32024earningsrelease.htm\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\", \"role\": \"event_packet\"}, {\"id\": \"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1818874/000181887424000169/q22024earningsrelease.htm\", \"sha256\": \"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\", \"role\": \"thesis_baseline\"}]}, \"impact\": \"positive\", \"decision\": \"maintain\", \"new_status\": \"active\", \"new_conviction\": 3, \"matched_terms\": [\"sofi\", \"gaap_total_net_revenue\", \"adjusted_net_revenue_non_gaap\", \"gaap_net_income_loss\", \"servicing_rights_valuation_adjustment\", \"residual_interests_valuation_adjustment\", \"gain_on_extinguishment_adjustment\"], \"next_review_at\": \"2026-11-06\", \"rationale\": \"Source facts (SEC exhibit packet, USD_thousand, period ended 2024-09-30, GAAP unless labeled non-GAAP): SOFI-Q3-GAAP-REV=697121; SOFI-Q3-ADJ-REV=689445 (non-GAAP adjusted net revenue); SOFI-Q3-NETINC=60745 (GAAP net income); SOFI-Q3-SERVICING=-4362; SOFI-Q3-RESIDUAL=9; SOFI-Q3-DEBTGAIN=-3323. Baseline (period ended 2024-06-30): SOFI-Q2-GAAP-REV=598618; SOFI-Q2-ADJ-REV=596965; SOFI-Q2-NETINC=17404. Arithmetic (sequential, same-basis only): GAAP revenue +984... precisely 697121-598618=98503 (+16.5%); adjusted revenue 689445-596965=92480 (+15.5%); GAAP net income 60745-17404=43341. Bridge check: 697121-4362+9-3323=689445, which ties exactly to the reported adjusted revenue, so the three adjustments fully reconcile GAAP to non-GAAP revenue for this packet. Support: both revenue bases and GAAP net income rose sequentially, and the GAAP-to-adjusted bridge is internally consistent with no unexplained residual. Risk/counterpoint: the packet contains only selected metrics — no operating margin, gross margin, segment or member/deposit detail, no year-over-year comparative, and no Q2 adjustment components, so the Q2-to-Q3 adjusted-revenue comparison cannot be decomposed on a like-for-like adjustment basis; the large GAAP net income increase is not attributed by any stored source-backed driver, and the negative servicing (-4362) and debt-gain (-3323) adjustments mean adjusted revenue is below GAAP revenue this quarter, a direction that should not be read as quality-neutral without the underlying drivers. Missing evidence: full income statement, segment results, and the Q2 servicing/residual/debt-gain adjustments needed for a like-for-like bridge comparison. No causal claim is recorded because no stored driver fact with source_explicit_targets exists in the packet. Decision: maintain active status and conviction 3 — the supplied evidence is directionally supportive but too narrow to justify a conviction change. Evidence that would change the assessment: a full Q3 income statement showing margin/segment deterioration, or Q2 adjustment components revealing that the sequential adjusted-revenue gain is driven by adjustment timing rather than underlying revenue, or a year-over-year comparison showing deceleration.\", \"evidence\": [{\"fact_id\": \"SOFI-Q3-GAAP-REV\", \"value\": \"697121\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"basis\": \"GAAP\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"}, {\"fact_id\": \"SOFI-Q3-ADJ-REV\", \"value\": \"689445\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"basis\": \"non-GAAP adjusted\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"}, {\"fact_id\": \"SOFI-Q3-NETINC\", \"value\": \"60745\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"basis\": \"GAAP\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"}, {\"fact_id\": \"SOFI-Q3-SERVICING\", \"value\": \"-4362\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"basis\": \"non-GAAP adjustment\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"}, {\"fact_id\": \"SOFI-Q3-RESIDUAL\", \"value\": \"9\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"basis\": \"non-GAAP adjustment\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"}, {\"fact_id\": \"SOFI-Q3-DEBTGAIN\", \"value\": \"-3323\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"basis\": \"non-GAAP adjustment\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"}, {\"fact_id\": \"SOFI-Q2-GAAP-REV\", \"value\": \"598618\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q2 ended 2024-06-30\", \"basis\": \"GAAP\", \"source_id\": \"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\", \"sha256\": \"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\"}, {\"fact_id\": \"SOFI-Q2-ADJ-REV\", \"value\": \"596965\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q2 ended 2024-06-30\", \"basis\": \"non-GAAP adjusted\", \"source_id\": \"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\", \"sha256\": \"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\"}, {\"fact_id\": \"SOFI-Q2-NETINC\", \"value\": \"17404\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q2 ended 2024-06-30\", \"basis\": \"GAAP\", \"source_id\": \"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\", \"sha256\": \"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\"}, {\"fact_id\": \"ARITH-Q3-BRIDGE\", \"value\": \"697121-4362+9-3323=689445\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"basis\": \"derived arithmetic\", \"note\": \"GAAP revenue less servicing adjustment plus residual adjustment less debt-gain adjustment equals reported adjusted revenue exactly.\"}, {\"fact_id\": \"ARITH-SEQ-DELTAS\", \"value\": \"GAAP rev +98503; adj rev +92480; GAAP net income +43341\", \"unit\": \"USD_thousand\", \"period\": \"CY2024Q3 vs CY2024Q2\", \"basis\": \"derived arithmetic, same-basis sequential\"}]}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_GSs0sLb9z2ZyY67gJ6lZ9861",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"18114166-e969-4909-b263-64f757670498\",\"as_of\":\"2026-10-23T06:58:26Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"causal_claims_required\"]},\"errors\":[{\"code\":\"causal_claims_required\",\"message\":\"this source-classified alert requires structured causal claims\",\"retriable\":true,\"details\":{\"alert_id\":\"fa_46a0dddb57604d91ba51\"}}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_OTilsD37VXv5NMPEQIUH6892",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_46a0dddb57604d91ba51\", \"causal_claims\": [{\"target_metric\": \"net_income\", \"strength\": \"unresolved\", \"driver_fact_ids\": []}], \"decision\": \"maintain\", \"event\": {\"as_of\": \"2024-10-29\", \"sources\": [{\"id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"role\": \"event_packet\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1818874/000181887424000229/q32024earningsrelease.htm\"}, {\"id\": \"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\", \"role\": \"thesis_baseline\", \"sha256\": \"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1818874/000181887424000169/q22024earningsrelease.htm\"}], \"summary\": \"SOFI CY2024 Q3 (period ended 2024-09-30) selected SEC exhibit packet: SOFI-Q3-GAAP-REV=697121 USD_thousand; SOFI-Q3-ADJ-REV=689445 USD_thousand; SOFI-Q3-NETINC=60745 USD_thousand; SOFI-Q3-SERVICING=-4362 USD_thousand; SOFI-Q3-RESIDUAL=9 USD_thousand; SOFI-Q3-DEBTGAIN=-3323 USD_thousand. Compared only against the supplied CY2024 Q2 baseline (SOFI-Q2-GAAP-REV=598618; SOFI-Q2-ADJ-REV=596965; SOFI-Q2-NETINC=17404 USD_thousand).\", \"type\": \"earnings\"}, \"evidence\": [{\"basis\": \"GAAP\", \"fact_id\": \"SOFI-Q3-GAAP-REV\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"697121\"}, {\"basis\": \"non-GAAP adjusted\", \"fact_id\": \"SOFI-Q3-ADJ-REV\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"689445\"}, {\"basis\": \"GAAP\", \"fact_id\": \"SOFI-Q3-NETINC\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"60745\"}, {\"basis\": \"non-GAAP adjustment\", \"fact_id\": \"SOFI-Q3-SERVICING\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"-4362\"}, {\"basis\": \"non-GAAP adjustment\", \"fact_id\": \"SOFI-Q3-RESIDUAL\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"9\"}, {\"basis\": \"non-GAAP adjustment\", \"fact_id\": \"SOFI-Q3-DEBTGAIN\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"sha256\": \"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\", \"source_id\": \"SOFI-REVENUE-BRIDGE-event-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"-3323\"}, {\"basis\": \"GAAP\", \"fact_id\": \"SOFI-Q2-GAAP-REV\", \"period\": \"CY2024Q2 ended 2024-06-30\", \"sha256\": \"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\", \"source_id\": \"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"598618\"}, {\"basis\": \"non-GAAP adjusted\", \"fact_id\": \"SOFI-Q2-ADJ-REV\", \"period\": \"CY2024Q2 ended 2024-06-30\", \"sha256\": \"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\", \"source_id\": \"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"596965\"}, {\"basis\": \"GAAP\", \"fact_id\": \"SOFI-Q2-NETINC\", \"period\": \"CY2024Q2 ended 2024-06-30\", \"sha256\": \"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\", \"source_id\": \"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\", \"unit\": \"USD_thousand\", \"value\": \"17404\"}, {\"basis\": \"derived arithmetic\", \"fact_id\": \"ARITH-Q3-BRIDGE\", \"note\": \"GAAP revenue less servicing adjustment plus residual adjustment less debt-gain adjustment equals reported adjusted revenue exactly.\", \"period\": \"CY2024Q3 ended 2024-09-30\", \"unit\": \"USD_thousand\", \"value\": \"697121-4362+9-3323=689445\"}, {\"basis\": \"derived arithmetic, same-basis sequential\", \"fact_id\": \"ARITH-SEQ-DELTAS\", \"period\": \"CY2024Q3 vs CY2024Q2\", \"unit\": \"USD_thousand\", \"value\": \"GAAP rev +98503; adj rev +92480; GAAP net income +43341\"}], \"impact\": \"positive\", \"matched_terms\": [\"sofi\", \"gaap_total_net_revenue\", \"adjusted_net_revenue_non_gaap\", \"gaap_net_income_loss\", \"servicing_rights_valuation_adjustment\", \"residual_interests_valuation_adjustment\", \"gain_on_extinguishment_adjustment\"], \"new_conviction\": 3, \"new_status\": \"active\", \"next_review_at\": \"2026-11-06\", \"rationale\": \"Source facts (SEC exhibit packet, USD_thousand, period ended 2024-09-30, GAAP unless labeled non-GAAP): SOFI-Q3-GAAP-REV=697121; SOFI-Q3-ADJ-REV=689445 (non-GAAP adjusted net revenue); SOFI-Q3-NETINC=60745 (GAAP net income); SOFI-Q3-SERVICING=-4362; SOFI-Q3-RESIDUAL=9; SOFI-Q3-DEBTGAIN=-3323. Baseline (period ended 2024-06-30): SOFI-Q2-GAAP-REV=598618; SOFI-Q2-ADJ-REV=596965; SOFI-Q2-NETINC=17404. Arithmetic (sequential, same-basis only): GAAP revenue 697121-598618=98503 (+16.5%); adjusted revenue 689445-596965=92480 (+15.5%); GAAP net income 60745-17404=43341. Bridge check: 697121-4362+9-3323=689445, tying exactly to reported adjusted revenue, so the three adjustments fully reconcile GAAP to non-GAAP revenue for this packet. Support: both revenue bases and GAAP net income rose sequentially, and the GAAP-to-adjusted bridge is internally consistent with no unexplained residual. Risk/counterpoint: the packet contains only selected metrics — no operating margin, gross margin, segment or member/deposit detail, no year-over-year comparative, and no Q2 adjustment components — so the Q2-to-Q3 adjusted-revenue comparison cannot be decomposed on a like-for-like adjustment basis; the GAAP net income increase is not attributed by any stored source-backed driver (recorded as unresolved), and the negative servicing (-4362) and debt-gain (-3323) adjustments mean adjusted revenue sits below GAAP revenue this quarter, a direction that should not be read as quality-neutral without the underlying drivers. Missing evidence: full income statement, segment results, and the Q2 servicing/residual/debt-gain adjustments needed for a like-for-like bridge comparison. Decision: maintain active status and conviction 3 — the supplied evidence is directionally supportive but too narrow to justify a conviction change. Evidence that would change the assessment: a full Q3 income statement showing margin or segment deterioration, Q2 adjustment components revealing that the sequential adjusted-revenue gain is driven by adjustment timing rather than underlying revenue, or a year-over-year comparison showing deceleration.\", \"thesis_id\": \"th_469c2ae1fb1841f8b512\", \"expected_version\": 1}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_OTilsD37VXv5NMPEQIUH6892",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"c8078635-cfa1-42be-9cd7-fa6dce873204\",\"as_of\":\"2026-10-23T06:58:35Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_469c2ae1fb1841f8b512\",\"market\":\"US\",\"symbol\":\"SOFI\",\"title\":\"SOFI SEC event research thesis\",\"thesis\":\"CY2024 Q2 ended 2024-06-30 baseline: SOFI-Q2-GAAP-REV=598618 USD_thousand; SOFI-Q2-ADJ-REV=596965 USD_thousand; SOFI-Q2-NETINC=17404 USD_thousand. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[\"business growth\",\"earnings quality\"],\"invalidations\":[\"material operating deterioration\",\"weakening demand\"],\"required_event_metrics\":[\"gaap_total_net_revenue\",\"adjusted_net_revenue_non_gaap\",\"gaap_net_income_loss\",\"servicing_rights_valuation_adjustment\",\"residual_interests_valuation_adjustment\",\"gain_on_extinguishment_adjustment\"],\"evidence\":[{\"id\":\"SOFI-REVENUE-BRIDGE-baseline-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1818874/000181887424000169/q22024earningsrelease.htm\",\"sha256\":\"6bb42313a17483651c22f57ebadf3a72d1fdcd31d33a18ca32c3242c229f609c\"}],\"next_review_at\":\"2026-11-06\",\"last_review_at\":\"2026-10-23T06:58:35Z\",\"created_at\":\"2026-10-23T06:58:13Z\",\"updated_at\":\"2026-10-23T06:58:35Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_bfcf98ab57a04faca72e\",\"thesis_id\":\"th_469c2ae1fb1841f8b512\",\"alert_id\":\"fa_46a0dddb57604d91ba51\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-SOFI-REVENUE-BRIDGE-r5\",\"event\":{\"type\":\"earnings\",\"summary\":\"SOFI CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: SOFI-Q3-GAAP-REV=697121 USD_thousand; SOFI-Q3-ADJ-REV=689445 USD_thousand; SOFI-Q3-NETINC=60745 USD_thousand; SOFI-Q3-SERVICING=-4362 USD_thousand; SOFI-Q3-RESIDUAL=9 USD_thousand; SOFI-Q3-DEBTGAIN=-3323 USD_thousand. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.\",\"as_of\":\"2024-10-29\",\"sources\":[{\"id\":\"SOFI-REVENUE-BRIDGE-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1818874/000181887424000229/q32024earningsrelease.htm\",\"sha256\":\"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"}]},\"impact\":\"positive\",\"decision\":\"maintain\",\"rationale\":\"Guarded review recorded decision=maintain, impact=positive. Stored event facts: adjusted_net_revenue_non_gaap=689445 USD_thousand [SOFI-Q3-ADJ-REV]; gaap_net_income_loss=60745 USD_thousand [SOFI-Q3-NETINC]; gaap_total_net_revenue=697121 USD_thousand [SOFI-Q3-GAAP-REV]; gain_on_extinguishment_adjustment=-3323 USD_thousand [SOFI-Q3-DEBTGAIN]; residual_interests_valuation_adjustment=9 USD_thousand [SOFI-Q3-RESIDUAL]; servicing_rights_valuation_adjustment=-4362 USD_thousand [SOFI-Q3-SERVICING]. Attribution for net_income is unresolved; proposed drivers: none identified. This guard validates stated causal lineage, not the investment merit of the decision.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"sofi\",\"weight\":1}],\"evidence\":[{\"type\":\"validated_accounting_lineage\",\"claims\":[{\"target_metric\":\"net_income\",\"strength\":\"unresolved\",\"driver_fact_ids\":[]}],\"source_hashes\":[\"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"]}],\"created_at\":\"2026-10-23T06:58:35Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9107,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_80Ucs9yxQzuLThHn66Eu9908",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_46a0dddb57604d91ba51\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_80Ucs9yxQzuLThHn66Eu9908",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"79583440-7a52-4acf-badf-31258fcfc3ff\",\"as_of\":\"2026-10-23T06:58:36Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_46a0dddb57604d91ba51\",\"watchlist_id\":\"wl_4b993f17c24b43cbacff\",\"thesis_id\":\"th_469c2ae1fb1841f8b512\",\"market\":\"US\",\"symbol\":\"SOFI\",\"event_fingerprint\":\"ec377da2251f4b4347afb274b6c698fea3f4d3b15c108ab2ac0de8ba514b9aa1\",\"event\":{\"external_id\":\"SOFI-REVENUE-BRIDGE-sec-event-v1\",\"type\":\"earnings\",\"summary\":\"SOFI CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: SOFI-Q3-GAAP-REV=697121 USD_thousand; SOFI-Q3-ADJ-REV=689445 USD_thousand; SOFI-Q3-NETINC=60745 USD_thousand; SOFI-Q3-SERVICING=-4362 USD_thousand; SOFI-Q3-RESIDUAL=9 USD_thousand; SOFI-Q3-DEBTGAIN=-3323 USD_thousand. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.\",\"as_of\":\"2024-10-29\",\"sources\":[{\"id\":\"SOFI-REVENUE-BRIDGE-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1818874/000181887424000229/q32024earningsrelease.htm\",\"sha256\":\"edde501b1dbd07147549bd922ce542b01dbb246f3508256fb0e42f822b000032\"}],\"observed_metrics\":{\"gaap_total_net_revenue\":{\"value\":\"697121\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-GAAP-REV\",\"statement_line\":\"revenue\"},\"adjusted_net_revenue_non_gaap\":{\"value\":\"689445\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-ADJ-REV\",\"statement_line\":\"unknown\"},\"gaap_net_income_loss\":{\"value\":\"60745\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-NETINC\",\"statement_line\":\"unknown\"},\"servicing_rights_valuation_adjustment\":{\"value\":\"-4362\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-SERVICING\",\"statement_line\":\"unknown\"},\"residual_interests_valuation_adjustment\":{\"value\":\"9\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-RESIDUAL\",\"statement_line\":\"unknown\"},\"gain_on_extinguishment_adjustment\":{\"value\":\"-3323\",\"unit\":\"USD_thousand\",\"fact_id\":\"SOFI-Q3-DEBTGAIN\",\"statement_line\":\"unknown\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"sofi\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-23T06:58:13Z\",\"last_seen_at\":\"2026-10-23T06:58:13Z\",\"created_at\":\"2026-10-23T06:58:13Z\",\"updated_at\":\"2026-10-23T06:58:36Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9623,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2308,
+              "completion_tokens": 116,
+              "total_tokens": 2424,
+              "estimated_cost_usd": 0.00035559999999999997,
+              "priced": true,
+              "latency_ms": 1193.444
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3903,
+              "completion_tokens": 211,
+              "total_tokens": 4114,
+              "cache_read_tokens": 2304,
+              "estimated_cost_usd": 0.0002893912,
+              "priced": true,
+              "latency_ms": 1401.154
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4461,
+              "completion_tokens": 2506,
+              "total_tokens": 6967,
+              "cache_read_tokens": 4096,
+              "estimated_cost_usd": 0.0007642488000000001,
+              "priced": true,
+              "latency_ms": 10355.148
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 7131,
+              "completion_tokens": 2560,
+              "total_tokens": 9691,
+              "cache_read_tokens": 6912,
+              "estimated_cost_usd": 0.0007668136000000001,
+              "priced": true,
+              "latency_ms": 8406.884
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 10948,
+              "completion_tokens": 108,
+              "total_tokens": 11056,
+              "cache_read_tokens": 9600,
+              "estimated_cost_usd": 0.00024584000000000005,
+              "priced": true,
+              "latency_ms": 1040.898
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 11969,
+              "completion_tokens": 1238,
+              "total_tokens": 13207,
+              "cache_read_tokens": 11008,
+              "estimated_cost_usd": 0.0005120024000000001,
+              "priced": true,
+              "latency_ms": 6007.033
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 28.456,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update"
+      ],
+      "model_calls": 6,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0029338960000000005
+    }
+  ],
+  "estimated_cost_usd": 0.0029338960000000005
+}

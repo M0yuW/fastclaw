@@ -1,0 +1,61 @@
+An Auditable Financial Agent Runtime | Defense script
+
+01  0:00–0:20  An Auditable Financial Agent Runtime
+【指向标题，稍停。】
+Good afternoon. I’m Wang Zheyu. I built an agent runtime for financial research. I’ll follow one request from the chat to a saved research record. Then I’ll show how I checked what the system actually did, and what changed when I gave the same task to a team of agents.
+
+02  0:20–0:50  What happens when an analyst sends a request?
+【结尾转向另一个分析师同时提问的情况。】
+Imagine an analyst asks, “How did AMD’s closing price change over five trading days? Save the evidence.” That last sentence matters. A percentage answers the first part. For the second part, the system has to keep the prices, their dates and their source so the analyst can check the calculation later. Now imagine two analysts using this gateway at the same time.
+
+03  0:50–1:35  Two analysts share a gateway. Who sees each reply?
+【先横向指上排两个 specialist 的分工，再横向指下排持仓诊断。】
+Imagine two analysts arriving at the same gateway. Follow the top row first. An equity analyst asks whether AMD’s growth was broad-based. The coordinator gives one specialist the growth question and another the risk question. Their replies return to the coordinator in that tenant. Below, a portfolio analyst asks about a position limit. The tool checks that analyst’s holdings and returns the breach to their own chat. These rows illustrate concurrent use. We can inspect the actual AMD handoff on slide five. First, what happens if two specialists need each other?
+
+04  1:35–2:40  When should the runtime refuse a handoff?
+【指 Growth → Risk，再用手反向画出拟新增的等待关系。】
+Suppose Growth is already waiting for Risk. A second request arrives, and Risk now asks Growth for help. Taken separately, both requests sound reasonable. Together, neither agent could finish. The runtime keeps a graph of who is waiting for whom. Before adding a handoff, it searches from the proposed target back to the caller. Here, starting at Growth already leads to Risk. Adding the reverse edge would close a cycle, so the runtime rejects that handoff. The check and update happen under the same lock. For an accepted handoff, a reply ID links the specialist’s answer to the waiting caller. Now let’s see an accepted handoff in the chat.
+
+05  2:40–3:35  How Solo and Team divide the work
+【指截图的 INPUT 两个分工，再指 OUTPUT 两条回复。】
+How does this change with a team? In Solo, one agent works through the stages. In Team, a coordinator can send independent questions to specialists and combine their replies. Here the question was whether AMD’s improvement was broad-based. In the chat, the user can expand the delegation entry. Under Input, one analyst is asked to check growth and the other to look for weaknesses. Under Output, total revenue rose, but Gaming revenue fell. That second result changes what the coordinator can reasonably say. It also gives the user a way to check the conclusion.
+
+06  3:35–4:10  From evidence to research records
+【上下两行各指一次，避免逐格读表。】
+Here are two jobs an analyst can give the system. After an earnings release, the analyst can ask whether the new figures change an existing thesis. The system reads the thesis and its alert, then saves a review explaining what changed. Screening starts with a different question: which companies meet my criteria? The same thresholds are applied to each candidate, and qualifying names can be saved for follow-up.
+
+07  4:10–4:45  Risk limits and evidence gaps
+【指 70% 与 50%，再指第二行的输出。】
+Two more workflows show why the output depends on the task. In the portfolio example, one holding makes up seventy percent of the portfolio against a fifty percent limit. The tool flags the breach. In the evidence example, a required figure is missing. The system keeps the existing thesis, records what needs review and blocks its use in later decisions. Now let’s look at an actual run.
+
+08  4:45–5:30  From daily prices to a saved AMD research record
+【依次指脚本参数、两个收盘价、保存记录。】
+Back to the five-day AMD request. The FinData Toolkit Skill supplied a stock-history script and instructions for using it. The first tool call ran that script and returned five dated Nasdaq price bars. Look at the first and last closes: 570.82 and 534.74. A second call calculated a decline of 6.32 percent. A third call saved the source, dates, prices and calculation together. That was one recorded session. The next example is a separate screen using historical company disclosures.
+
+09  5:30–6:10  AMD and Intel financial screening
+【介绍门槛后播放 AMD/Intel 视频。在视频约 00:15 指向展开的筛选输入和输出，约 00:24 暂停。】
+The analyst set two rules for this screen: a gross margin of at least forty percent and year-over-year revenue growth of at least zero. Watch the screening entry in the chat. Its input shows those rules. Its output shows that AMD passed both, with fifty percent margin and eighteen percent growth. Intel fell below both thresholds. Now we know which company qualified. How can we check that it was saved?
+
+10  6:10–6:50  The saved AMD research record
+【接着播放同一视频。约 00:33 暂停在读回结果，指 AMD、researching 和 version 1，留两秒再继续。】
+Here is the write. The next tool reads the record back. Look at the company, status and version: AMD, researching, version one. That is the evidence for the sentence “AMD was saved for further research.” The screening result tells us why AMD qualified. The readback tells us what the system kept. I used that same distinction when I designed the evaluation.
+
+11  6:50–7:25  Can agents find and use the right filing evidence?
+【沿任务、运行、判分三行往下指。】
+For the main experiment, I asked agents to find and use evidence in archived SEC filings. We used four companies. Tasks asked for a calculation at one date or an analysis across periods. We varied the size of the filing collection. That gives twenty-four configurations. We repeated each three times per mode and checked the figures, milestones and final evidence against the filings.
+
+12  7:25–7:55  SEC main study: how each mode performed
+【先指 55、56，再指 63 和同一行的 token 数。】
+These are the main results. Solo passed 55 of 72 assigned runs, including two timeouts in the denominator. Team passed 56 with shared evidence and 63 with the full corpus. The full-corpus team also used the most tokens. Read the timing column with the model allocation in mind. Solo used Pro, while Team used Flash for specialist work. That led to a second comparison.
+
+13  7:55–8:55  With Flash in every role, full-context Team led on passes
+【先比较两种 Team，再指独立的工作流执行检查。】
+We repeated all twenty-four configurations with Flash in every role. Shared-evidence Team finished sooner than Solo but passed fewer strict checks: 62 against 65 out of 72. Giving the team the full corpus raised the count to 69 out of 72. That mode was also fastest, at 22.60 seconds on average. The cost was more context: nearly twice as many tokens as Solo. Separately, 77 of 80 financial workflow runs passed their execution checks. That score concerns recorded actions and saved state.
+
+14  8:55–9:25  Clarification within a conversation
+【强调此处是示意对话。】
+One design question remains: what should happen before the system even starts gathering evidence? In this example, “Compare the latest results” leaves out the company and the periods. The agent asks one question and pauses. The user supplies Marqeta and the two quarters in the same chat. This illustrates how a session can pause and resume. Testing that behavior systematically is part of my next work.
+
+15  9:25–10:00  Contributions and next steps
+【收尾时看观众。】
+I built a runtime that keeps track of whose task is running, which agent owns each reply, and what evidence was saved. The AMD trace lets an analyst check the work. The SEC experiments show the price of giving every specialist more context. In the all-Flash comparison, the full-corpus team finished fastest and passed most often, while using the most tokens. My next step is to test which evidence specialists need to retain during synthesis. Thank you.

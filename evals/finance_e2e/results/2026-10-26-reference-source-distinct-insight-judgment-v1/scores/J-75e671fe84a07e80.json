@@ -1,0 +1,66 @@
+{
+  "masked_id": "J-75e671fe84a07e80",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 1,
+    "R": 1,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "Net interest income after provision rose because net interest income grew by more than the provision",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:net_interest_income:+8018", "source_packet.rows:provision:+1500", "source_packet.rows:net_interest_after_provision:+6518"]
+    },
+    {
+      "location": "final_answer",
+      "span": "the earning-asset yield and spread base expanded sequentially even though interest expense also rose",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:interest_income:+28360", "source_packet.rows:interest_expense:+20342", "source_packet.rows:net_interest_income:+8018", "source_packet.limitations:no_average_balances_or_yields"],
+      "reason": "Absolute interest income and net interest income increased; no average earning-asset denominator or yield is supplied, so earning-asset yield and interest spread cannot be inferred. The following sentence correctly says NIM is unestablished but does not undo this assertion."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the interest expense increase outpaced the interest income increase",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:interest_income:850537_to_878897", "source_packet.rows:interest_expense:383513_to_403855"],
+      "reason": "Expense rose faster proportionally (about 5.3% versus 3.3%), but less in dollars (20,342 versus 28,360); wording should specify a percentage rate to avoid a misleading arithmetic reading."
+    },
+    {
+      "location": "persisted_review",
+      "span": "early-stage and late-stage indicators diverge",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:past_due_90_days:6813_to_6131", "source_packet.rows:nonaccrual_restructured:97029_to_131965", "source_packet.rows:net_chargeoffs:15462_to_18383"],
+      "reason": "The packet gives 90-plus-day past due, nonaccrual/restructured and charge-offs; it does not supply an early-stage delinquency bucket. The observed measures diverge, but labeling the comparison early versus late stage is unsupported."
+    },
+    {
+      "location": "persisted_review",
+      "span": "no effective tax rate is in the selected rows",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:income_tax_expense:57647_to_48239", "source_packet.rows:pretax_income:275041_to_236555"],
+      "reason": "No explicit rate row appears, but effective rates are calculable at roughly 20.96% and 20.39%; why the rate moved remains unknown."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review rather than advanced; conviction and status are preserved and downstream decisions remain blocked",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:conviction=3", "ledger:thesis:status=active", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "earning_asset_yield_inferred_from_absolute_income",
+      "evidence_refs": ["source_packet.rows:interest_income", "source_packet.rows:net_interest_income", "source_packet.limitations:no_average_balances_or_yields"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Main GAAP and non-GAAP earnings deterioration and blocked state are correctly tracked, but final answer asserts improving asset yield/spread from absolute income amounts without denominators. Persisted rationale also uses ambiguous growth wording and mislabels the available credit measures as early versus late-stage."
+}

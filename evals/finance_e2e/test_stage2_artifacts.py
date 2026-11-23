@@ -74,7 +74,7 @@ class Stage2ArtifactsTest(unittest.TestCase):
             ],
         }
         write_json(self.report_path, report)
-        write_json(self.audit_summary_path, {"tasks": 98, "freeze_audit_passed": True})
+        write_json(self.audit_summary_path, {"tasks": 103, "freeze_audit_passed": True})
 
     def tearDown(self) -> None:
         self.temporary.cleanup()
@@ -133,6 +133,33 @@ class Stage2ArtifactsTest(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "filename"):
                     analyze([manifest_path], self.root / f"analysis-{label}", 10, allow_incomplete=True)
 
+    def test_combined_primary_diagnostic_batch_is_eligible(self) -> None:
+        manifest_path = self.make_manifest(
+            name="stage2a-primary-diagnostic-confirmatory.manifest.json"
+        )
+        result = analyze([manifest_path], self.root / "analysis-combined", 10, allow_incomplete=True)
+        self.assertEqual(3, result["primary_observations"])
+
+    def test_manifest_preserves_timeout_without_provider_telemetry(self) -> None:
+        report = json.loads(self.report_path.read_text(encoding="utf-8"))
+        timeout = report["cases"][0]["attempts"][0]["modes"][2]
+        timeout["error"] = "context deadline exceeded"
+        timeout["model_calls"] = []
+        timeout["passed"] = False
+        write_json(self.report_path, report)
+        manifest_path = self.make_manifest()
+        result = analyze([manifest_path], self.root / "analysis-timeout", 10, allow_incomplete=True)
+        self.assertEqual(3, result["primary_observations"])
+        summary = (self.root / "analysis-timeout" / "mode-summary.csv").read_text(encoding="utf-8")
+        self.assertIn("team_raw_context", summary)
+
+    def test_manifest_rejects_missing_telemetry_without_error(self) -> None:
+        report = json.loads(self.report_path.read_text(encoding="utf-8"))
+        report["cases"][0]["attempts"][0]["modes"][2]["model_calls"] = []
+        write_json(self.report_path, report)
+        with self.assertRaisesRegex(ValueError, "no provider model telemetry"):
+            self.make_manifest()
+
     def test_confirmatory_manifest_requires_frozen_suite(self) -> None:
         suite = json.loads(self.suite_path.read_text(encoding="utf-8"))
         suite["status"] = "draft"
@@ -179,8 +206,8 @@ class Stage2ArtifactsTest(unittest.TestCase):
                 self.agent_source_path, self.executable_path, self.report_path,
                 "confirmatory", None,
             )
-        write_json(self.audit_summary_path, {"tasks": 98, "freeze_audit_passed": False})
-        with self.assertRaisesRegex(ValueError, "all 98"):
+        write_json(self.audit_summary_path, {"tasks": 103, "freeze_audit_passed": False})
+        with self.assertRaisesRegex(ValueError, "all 103"):
             self.make_manifest()
 
 

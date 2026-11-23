@@ -16,9 +16,11 @@ Until the Markdown content is frozen, use the following evidence hierarchy:
 3. repository source and tests for implementation claims; and
 4. `build_report.py` for document-generation settings.
 
-The existing DOCX, PDF, rendered pages, and image assets are retained only as
-historical local artifacts. They have not been regenerated or revalidated after
-the current Markdown edits and must not be cited as the current submission.
+The DOCX was regenerated from the Markdown on 2026-10-23 after the preliminary
+thesis actionability correction was documented and visually checked from a
+temporary render. The PDF in this directory was not regenerated and remains historical;
+do not cite it as the current submission. The Markdown remains authoritative
+while content is being edited.
 
 ## Content Freeze Rule
 
@@ -35,8 +37,15 @@ hash, artifact hashes, build environment, and build timestamp.
   trajectory is not reproducible from the recorded HEAD alone.
 - The retained SEC retrieval result is a one-case descriptive pilot, not a
   confirmatory study.
-- Stage 2 remains proposed/draft until its implementation and freeze gates pass
-  and the protocol is explicitly changed to `frozen` before the first formal
-  provider request.
+- Stage 2A v2 main and all-Flash experiments are completed and retained in their
+  result directories; the optional 24-observation all-Pro ablation was not run.
+- The single live Nasdaq Skill-to-ledger observation is exploratory. Its raw
+  score was `needs_review` because of two scorer false negatives; the retained
+  read-only adjudication verifies the execution path, provenance, arithmetic,
+  and ledger write. It does not certify prose or investment value. The
+  price-only thesis was historically returned as available without a decision
+  hold, so it must not be treated as actionable evidence. A later deterministic
+  serializer correction returns `research_only` for preliminary theses, but
+  has not been tested in a new model-backed workflow panel.
 - No API key, benchmark-tenant credential, or local credential-file content may
   enter a thesis source, manifest, generated document, or Git commit.

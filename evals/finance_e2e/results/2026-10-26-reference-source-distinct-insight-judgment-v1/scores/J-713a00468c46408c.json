@@ -1,0 +1,76 @@
+{
+  "masked_id": "J-713a00468c46408c",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 0,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "revenue fell across every displayed component, GAAP operating income and both GAAP and company-defined non-GAAP net income fell, and operating cash flow and company-defined free cash flow fell while capital spending rose",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_onprem_saas_revenue:-5522", "source_packet.rows:gaap_professional_services_revenue:-2385", "source_packet.rows:gaap_scores_revenue:-12757", "source_packet.rows:gaap_operating_income:-25362", "source_packet.rows:gaap_net_income:-26775", "source_packet.rows:non_gaap_net_income:-23598", "source_packet.rows:cash_flow_operating:-62554", "source_packet.rows:non_gaap_free_cash_flow:-65395", "source_packet.rows:capital_expenditure_signed:-9984_to_-12825"]
+    },
+    {
+      "location": "final_answer",
+      "span": "The share-based compensation adjustment shrank, which narrows the GAAP to non-GAAP gap",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_net_income:181789_to_155014", "source_packet.rows:non_gaap_net_income:210551_to_186953", "source_packet.rows:non_gaap_share_comp_adjustment:41930_to_32379", "source_packet.event_only_rows:gaap_restructuring_charge_event_only:10922"],
+      "reason": "Observed non-GAAP less GAAP gap widened from 28,762 to 31,939 USD thousand, despite the smaller share-compensation adjustment; Q3 reconciliation includes a separately reported 10,922 restructuring amount."
+    },
+    {
+      "location": "final_answer",
+      "span": "The on-premises and SaaS and professional services components are small relative to the total",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_onprem_saas_revenue:187915_to_182393", "source_packet.rows:gaap_professional_services_revenue:24191_to_21806", "source_packet.rows:gaap_total_revenue:536415_to_515751"],
+      "reason": "On-premises/SaaS revenue is about 35% of each quarter's total and is not a small component; professional services is about 4%. The sentence wrongly groups both as small."
+    },
+    {
+      "location": "final_answer",
+      "span": "a restructuring charge appears only in the event period with no baseline comparator, so the expense increase cannot be decomposed",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_cost_of_revenue:87571_to_91176", "source_packet.rows:gaap_research_development:47212_to_50953", "source_packet.rows:gaap_sga_expense:139114_to_125544", "source_packet.event_only_rows:gaap_restructuring_charge_event_only:10922", "source_packet.rows:gaap_total_operating_expenses:273897_to_278595"],
+      "reason": "The event-quarter expense subtotal reconciles exactly: 91,176 + 50,953 + 125,544 + 10,922 = 278,595. The baseline subtotal also equals its three selected components, so the displayed +4,698 change is arithmetically bridged. Lack of a baseline named charge row prevents a separately audited charge delta or causal recurrence claim, not this accounting decomposition."
+    },
+    {
+      "location": "persisted_review",
+      "span": "a restructuring charge appears only in the event period with no baseline comparator, so the expense-side move cannot be decomposed from these rows",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_total_operating_expenses:273897_to_278595", "source_packet.rows:gaap_cost_of_revenue:87571_to_91176", "source_packet.rows:gaap_research_development:47212_to_50953", "source_packet.rows:gaap_sga_expense:139114_to_125544", "source_packet.event_only_rows:gaap_restructuring_charge_event_only:10922"],
+      "reason": "Saved rationale repeats the overdeferral: both period expense subtotals reconcile with selected components, although a separately labeled baseline restructuring row is unavailable."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review rather than upgraded or invalidated",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "nonGAAP_GAAP_gap_direction_reversed",
+      "evidence_refs": ["source_packet.rows:gaap_net_income", "source_packet.rows:non_gaap_net_income", "source_packet.event_only_rows:gaap_restructuring_charge_event_only"]
+    },
+    {
+      "claim_index": 2,
+      "code": "material_revenue_component_mischaracterized_as_small",
+      "evidence_refs": ["source_packet.rows:gaap_onprem_saas_revenue", "source_packet.rows:gaap_total_revenue"]
+    },
+    {
+      "claim_index": 3,
+      "code": "available_expense_bridge_denied",
+      "evidence_refs": ["source_packet.rows:gaap_total_operating_expenses", "source_packet.event_only_rows:gaap_restructuring_charge_event_only"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Decline directions and blocked ledger are correct, but the answer reverses the observed GAAP-to-non-GAAP gap trend, calls a roughly 35%-of-revenue line small, and incorrectly says the selected expense subtotal cannot be bridged. The persisted review repeats the last error."
+}

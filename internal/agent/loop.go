@@ -658,6 +658,9 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	consecutiveCount := 0
 	totalToolCalls := 0
 	lastRound := 0
+	malformedToolCalls := 0
+	pseudoToolCalls := 0
+	terminalCode := "tool_iteration_budget_exhausted"
 
 	// ReAct loop
 	for i := 0; i < a.maxToolIterations; i++ {
@@ -692,6 +695,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		}
 
 		var resp *provider.Response
+		malformedArgs := make(map[int]error)
 		modelCallSequence := BeginModelCall(ctx)
 		modelCallStarted := time.Now()
 		providerContext := provider.ContextWithThinkingMode(ctx, a.thinking)
@@ -715,6 +719,28 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 				err = resultErr
 			} else if resp == nil {
 				err = fmt.Errorf("LLM stream ended without a final response")
+			}
+		}
+		if err == nil && resp != nil {
+			if resp.FinishReason == "length" || resp.FinishReason == "max_tokens" || resp.FinishReason == "max_output_tokens" {
+				err = fmt.Errorf("model output truncated: finish_reason=%s", resp.FinishReason)
+			} else {
+				// A complete but malformed object can be returned as a paired tool
+				// error so the model gets one bounded correction opportunity. An
+				// unterminated JSON stream may instead be a truncated provider
+				// response; preserve the existing fail-closed behavior for it.
+				for index, toolCall := range resp.ToolCalls {
+					var arguments map[string]json.RawMessage
+					if parseErr := json.Unmarshal([]byte(toolCall.Function.Arguments), &arguments); parseErr != nil {
+						if strings.Contains(parseErr.Error(), "unexpected end of JSON input") {
+							err = fmt.Errorf("truncated %s tool arguments JSON: %w", toolCall.Function.Name, parseErr)
+							break
+						}
+						malformedArgs[index] = parseErr
+					} else if arguments == nil {
+						malformedArgs[index] = fmt.Errorf("expected an object")
+					}
+				}
 			}
 		}
 		modelCallLatency := time.Since(modelCallStarted)
@@ -746,6 +772,23 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		}
 
 		if !resp.HasToolCalls() {
+			if len(toolDefs) > 0 && containsPseudoToolCall(resp.Content) {
+				// Some models emit tool-call markup as ordinary text while the
+				// provider reports zero structured calls. Never execute markup
+				// from text or count this as a successful final response.
+				pseudoToolCalls++
+				assistantMsg := provider.Message{Role: "assistant", Content: resp.Content, Thinking: resp.Thinking, Timestamp: time.Now().UnixMilli(), RawAssistant: resp.RawAssistant}
+				sess.Append(assistantMsg)
+				messages = append(messages, assistantMsg)
+				if pseudoToolCalls >= 2 {
+					terminalCode = "pseudo_tool_calls_exhausted"
+					break
+				}
+				correction := provider.Message{Role: "system", Content: "Your previous response contained textual tool-call markup, but no structured tool call was received or executed. If a tool is needed, call an available tool through the native structured tool-call interface. Do not print tool-call markup in your response. Otherwise give a normal final answer."}
+				sess.Append(correction)
+				messages = append(messages, correction)
+				continue
+			}
 			assistantMsg := provider.Message{Role: "assistant", Content: resp.Content, Thinking: resp.Thinking, Timestamp: time.Now().UnixMilli(), RawAssistant: resp.RawAssistant}
 			sess.Append(assistantMsg)
 			messages = append(messages, assistantMsg)
@@ -805,6 +848,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			}
 		}
 		if loopDetected {
+			terminalCode = "tool_loop_detected"
 			break
 		}
 
@@ -828,7 +872,30 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			"agent", a.name,
 			"count", len(resp.ToolCalls),
 		)
-		results := a.engine.executeToolsConcurrently(ctx, turnRegistry, resp.ToolCalls, a.workspacePath)
+		var results []toolCallResult
+		if len(malformedArgs) > 0 {
+			// Do not execute the valid members of a mixed batch while another
+			// member is malformed: that could commit only half of a requested
+			// state transition before the model repairs its arguments.
+			results = make([]toolCallResult, len(resp.ToolCalls))
+			for index, tc := range resp.ToolCalls {
+				if parseErr, malformed := malformedArgs[index]; malformed {
+					results[index] = toolCallResult{
+						toolCallID: tc.ID, toolName: tc.Function.Name,
+						result: "invalid tool arguments JSON: " + parseErr.Error(),
+						err:    fmt.Errorf("invalid tool arguments JSON for %s: %w", tc.Function.Name, parseErr),
+					}
+				} else {
+					results[index] = toolCallResult{
+						toolCallID: tc.ID, toolName: tc.Function.Name,
+						result: "tool call skipped because another call in the same batch had malformed arguments",
+						err:    fmt.Errorf("tool call skipped because a batch peer had malformed arguments"),
+					}
+				}
+			}
+		} else {
+			results = a.engine.executeToolsConcurrently(ctx, turnRegistry, resp.ToolCalls, a.workspacePath)
+		}
 		// The bridge guarantees one result per original tool call and restores
 		// provider order by tool-call ID even when the SDK reorders concurrent
 		// and sequential groups.
@@ -862,6 +929,9 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		// Process results
 		for idx, r := range results {
 			totalToolCalls++
+			if r.err != nil && strings.HasPrefix(r.err.Error(), "invalid tool arguments JSON for ") {
+				malformedToolCalls++
+			}
 			tc := resp.ToolCalls[idx]
 			resultContent, meta := extractToolMeta(r.result)
 
@@ -922,9 +992,20 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 				return resultContent
 			}
 		}
+		if malformedToolCalls >= 2 {
+			terminalCode = "malformed_tool_arguments_exhausted"
+			break
+		}
 	}
 
 	final := "I've reached the maximum number of tool iterations. Here's what I have so far."
+	if terminalCode == "malformed_tool_arguments_exhausted" {
+		final = "I could not produce valid tool arguments after one correction attempt. The workflow is incomplete."
+	} else if terminalCode == "pseudo_tool_calls_exhausted" {
+		final = "I could not produce a structured tool call after one correction attempt. No textual tool-call markup was executed; the workflow is incomplete."
+	} else if terminalCode == "tool_loop_detected" {
+		final = "I stopped after repeating the same tool call. The workflow may be incomplete."
+	}
 	finalMessageID := events.messageID()
 	assistantMsg := provider.Message{Role: "assistant", Content: final, Timestamp: time.Now().UnixMilli()}
 	sess.Append(assistantMsg)
@@ -936,9 +1017,16 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		events.fail(err, finalMessageID, lastRound)
 		return "Sorry, I couldn't persist the completed response."
 	}
+	events.terminal(terminalCode, finalMessageID, lastRound)
 	events.finish(finalMessageID, lastRound)
-	slog.Warn("max tool iterations reached", "agent", a.name, "max", a.maxToolIterations)
+	slog.Warn("agent turn stopped without workflow completion", "agent", a.name,
+		"terminal_code", terminalCode, "max_tool_iterations", a.maxToolIterations)
 	return final
+}
+
+func containsPseudoToolCall(content string) bool {
+	return strings.Contains(content, "<｜｜DSML｜｜ invoke") ||
+		strings.Contains(content, "<|DSML| invoke")
 }
 
 func flushTurnSession(ctx context.Context, sess *session.Session) error {

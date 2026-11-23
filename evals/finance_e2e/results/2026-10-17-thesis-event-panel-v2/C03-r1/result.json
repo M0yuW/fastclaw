@@ -1,0 +1,288 @@
+{
+  "run_id": "C03-r1",
+  "case_id": "C03",
+  "status": "mechanical_pass",
+  "error": null,
+  "elapsed_seconds": 14.945,
+  "checks": {
+    "one_review": true,
+    "version_once": true,
+    "linked_alert": true,
+    "source_recorded": true,
+    "alert_acknowledged": true,
+    "priced_usage": true,
+    "model_matches_suite": true,
+    "decision_in_predeclared_set": true,
+    "status_in_predeclared_set": true,
+    "missing_metrics_recorded": true,
+    "no_trade_tool": true
+  },
+  "seed": {
+    "baseline_episode": "FSEC-NKE-01",
+    "event_episode": "FSEC-NKE-03",
+    "baseline_source": {
+      "id": "nike-2024-06-27-fy2024",
+      "url": "https://www.sec.gov/Archives/edgar/data/320187/000032018724000028/q4fy24exhibit991er.htm",
+      "sha256": "b67aa378e93fe9581a6c97d72eca3ed6311d7bd664e0bc4077601f1e39877be2"
+    },
+    "event_source": {
+      "id": "nike-2025-06-26-fy2025",
+      "url": "https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm",
+      "sha256": "32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8"
+    },
+    "initial_status": "active",
+    "initial_conviction": 3,
+    "initial_version": 1,
+    "required_event_metrics": [
+      "quarterly_revenue",
+      "gross_margin",
+      "nike_brand_digital_yoy"
+    ]
+  },
+  "event_packet": {
+    "external_id": "nike-2025-06-26-fy2025",
+    "type": "earnings",
+    "as_of": "2025-06-26",
+    "summary": "NKE Q4 FY2025 SEC event packet: NKE-Q4FY25-REV=11097 USD million; NKE-Q4FY25-GM=40.3 %; NKE-Q4FY25-DIGITAL=-26 %.",
+    "sources": [
+      {
+        "id": "nike-2025-06-26-fy2025",
+        "url": "https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm",
+        "sha256": "32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8"
+      }
+    ],
+    "observed_metrics": {
+      "quarterly_revenue": {
+        "value": "11097",
+        "unit": "USD_million",
+        "fact_id": "NKE-Q4FY25-REV"
+      },
+      "gross_margin": {
+        "value": "40.3",
+        "unit": "percent",
+        "fact_id": "NKE-Q4FY25-GM"
+      },
+      "nike_brand_digital_yoy": {
+        "value": "-26",
+        "unit": "percent",
+        "fact_id": "NKE-Q4FY25-DIGITAL"
+      }
+    }
+  },
+  "prompt": "Review the stored research thesis against the newly ingested SEC event packet. This is a research-state workflow, not investment advice. Use finance-tools__thesis_get and finance-tools__alert_list to read the baseline, required metrics, event observations, and source reference. Compute relevant changes using the correct periods and units; distinguish source facts, calculations, and uncertainty. Decide the impact, review decision, status, and conviction yourself from the evidence and stored thesis conditions. Record one successful review with the observed thesis version, linked alert_id, and SEC source ID/hash. If the ledger rejects a review for missing required metrics, correct the decision and retry at most once; do not claim a missing packet field is missing from the SEC filing. Then acknowledge the alert using its observed version. Do not trade or change a portfolio. Case C03; thesis ID th_b76fb2e6509a44799b3d; alert ID fa_bb2f760176eb4402ba64.",
+  "review": {
+    "id": "tr_430abe647b29491e95f9",
+    "thesis_id": "th_b76fb2e6509a44799b3d",
+    "alert_id": "fa_bb2f760176eb4402ba64",
+    "agent_id": "finance-coordinator",
+    "session_id": "finance-v2-C03-r1",
+    "event": {
+      "type": "earnings",
+      "summary": "NKE Q4 FY2025 SEC event packet: NKE-Q4FY25-REV=11097 USD million; NKE-Q4FY25-GM=40.3 %; NKE-Q4FY25-DIGITAL=-26 %.",
+      "as_of": "2025-06-26",
+      "sources": [
+        {
+          "id": "nike-2025-06-26-fy2025",
+          "url": "https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm",
+          "sha256": "32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8"
+        }
+      ]
+    },
+    "impact": "negative",
+    "decision": "invalidate",
+    "rationale": "Same fiscal quarter (Q4) YoY comparison against the Q4 FY2024 baseline. Revenue fell from 12,606 to 11,097 USD million (−1,509 USD million, −12.0%). GAAP gross margin fell from 44.7% to 40.3% (−4.4 pp). Nike Brand digital YoY worsened from −10% to −26% (−16 pp). All three required metrics deteriorated materially in the same quarter, satisfying the thesis invalidation condition (\"material same-quarter sales, margin, and digital-channel deterioration\"). The recovery hypothesis is contradicted by the evidence.",
+    "missing_metrics": [],
+    "matched_terms": [
+      "nke",
+      "digital"
+    ],
+    "evidence": [
+      {
+        "id": "nike-2025-06-26-fy2025",
+        "sha256": "32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8",
+        "url": "https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm"
+      }
+    ],
+    "created_at": "2026-10-17T05:35:03Z"
+  },
+  "after": {
+    "version": 2,
+    "status": "invalidated",
+    "conviction": 1,
+    "reviews": 1,
+    "alert_statuses": [
+      "acknowledged"
+    ]
+  },
+  "tool_calls": [
+    "finance-tools__thesis_get",
+    "finance-tools__alert_list",
+    "finance-tools__alert_list",
+    "finance-tools__thesis_record_review",
+    "finance-tools__alert_update"
+  ],
+  "model_calls": 5,
+  "estimated_cost_usd": 0.0038124849999999996,
+  "gateway_response": {
+    "id": "chatcmpl-1792215293997152000",
+    "object": "chat.completion",
+    "created": 1792215293,
+    "model": "deepseek/deepseek-v4-pro",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Review complete. Summary of the research-state workflow for Case C03:\n\n## Baseline (Q4 FY2024, SEC source `nike-2024-06-27-fy2024`)\n- Revenue: 12,606 USD million\n- Gross margin: 44.7%\n- Nike Brand digital YoY: −10%\n\n## Ingested event (Q4 FY2025, SEC source `nike-2025-06-26-fy2025`, sha256 `32e7d7c5…b7b3b8`)\n- Revenue: 11,097 USD million\n- Gross margin: 40.3%\n- Nike Brand digital YoY: −26%\n\n## Computed changes (same fiscal quarter, YoY)\n| Metric | Q4 FY24 | Q4 FY25 | Change |\n|---|---|---|---|\n| Revenue | 12,606 | 11,097 | −1,509 USD million (−12.0%) |\n| Gross margin | 44.7% | 40.3% | −4.4 pp |\n| Digital YoY | −10% | −26% | −16 pp |\n\nAll three required metrics (`quarterly_revenue`, `gross_margin`, `nike_brand_digital_yoy`) were present in the event packet, so no `needs_review` fallback was required.\n\n## Decision\n- **Impact:** negative\n- **Decision:** invalidate\n- **Status:** invalidated\n- **Conviction:** 1\n\n**Rationale:** All three required metrics deteriorated materially in the same fiscal quarter, satisfying the thesis's stated invalidation condition (\"material same-quarter sales, margin, and digital-channel deterioration\"). The recovery hypothesis is contradicted by the evidence.\n\n## Ledger results\n- Review recorded: `tr_430abe647b29491e95f9` (thesis version 1 → 2, `last_review_at` set).\n- Alert `fa_bb2f760176eb4402ba64` acknowledged (version 1 → 2).\n\nNo trades or portfolio changes were made; this is research-state only."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 19313,
+      "completion_tokens": 1707,
+      "total_tokens": 21020
+    },
+    "fastclaw": {
+      "trace": [
+        {
+          "type": "tool_call",
+          "id": "call_00_eUts9m79z5lbLQ8gYHfB4625",
+          "name": "finance-tools__thesis_get",
+          "arguments": "{\"thesis_id\": \"th_b76fb2e6509a44799b3d\"}",
+          "round": 1
+        },
+        {
+          "type": "tool_call",
+          "id": "call_01_rHKOm1sKqswvw5i51pkj2621",
+          "name": "finance-tools__alert_list",
+          "arguments": "{\"symbol\": \"th_b76fb2e6509a44799b3d\"}",
+          "round": 1
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_eUts9m79z5lbLQ8gYHfB4625",
+          "name": "finance-tools__thesis_get",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"2ffb496c-201e-414e-b9db-c36287bef443\",\"as_of\":\"2026-10-17T05:34:55Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_b76fb2e6509a44799b3d\",\"market\":\"US\",\"symbol\":\"NKE\",\"title\":\"NKE filing research thesis\",\"thesis\":\"Q4 FY2024 SEC baseline: NKE-Q4FY24-REV=12606 USD million; NKE-Q4FY24-GM=44.7 %; NKE-Q4FY24-DIGITAL=-10 %. Monitor the recovery hypothesis against matching fiscal-quarter sales, GAAP gross margin, and digital-channel trends.\",\"status\":\"active\",\"conviction\":3,\"assumptions\":[],\"catalysts\":[\"sales stabilization\",\"gross-margin resilience\",\"digital demand improvement\"],\"invalidations\":[\"material same-quarter sales, margin, and digital-channel deterioration\"],\"required_event_metrics\":[\"quarterly_revenue\",\"gross_margin\",\"nike_brand_digital_yoy\"],\"evidence\":[{\"id\":\"nike-2024-06-27-fy2024\",\"url\":\"https://www.sec.gov/Archives/edgar/data/320187/000032018724000028/q4fy24exhibit991er.htm\",\"sha256\":\"b67aa378e93fe9581a6c97d72eca3ed6311d7bd664e0bc4077601f1e39877be2\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-17T05:34:51Z\",\"updated_at\":\"2026-10-17T05:34:51Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8462,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 1
+        },
+        {
+          "type": "tool_result",
+          "id": "call_01_rHKOm1sKqswvw5i51pkj2621",
+          "name": "finance-tools__alert_list",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"599c828d-6e51-4f66-acb5-a23421ba8603\",\"as_of\":\"2026-10-17T05:34:55Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"invalid_input\"]},\"errors\":[{\"code\":\"invalid_input\",\"message\":\"invalid security symbol: 'TH_B76FB2E6509A44799B3D'\",\"retriable\":false}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 1
+        },
+        {
+          "type": "tool_call",
+          "id": "call_00_Ypdy3M1Mu4MifXMFgMFA4246",
+          "name": "finance-tools__alert_list",
+          "arguments": "{\"symbol\": \"NKE\", \"market\": \"US\"}",
+          "round": 2
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_Ypdy3M1Mu4MifXMFgMFA4246",
+          "name": "finance-tools__alert_list",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"0c5cbe56-13d8-4b69-ac77-455a2a90e084\",\"as_of\":\"2026-10-17T05:34:56Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_bb2f760176eb4402ba64\",\"watchlist_id\":\"wl_6683f4ea48dd40cbbd98\",\"thesis_id\":\"th_b76fb2e6509a44799b3d\",\"market\":\"US\",\"symbol\":\"NKE\",\"event_fingerprint\":\"4a5c76508085bd8ae984daa7cec3234bfd46cbf4de5b188374a8b12e4b69127a\",\"event\":{\"external_id\":\"nike-2025-06-26-fy2025\",\"type\":\"earnings\",\"summary\":\"NKE Q4 FY2025 SEC event packet: NKE-Q4FY25-REV=11097 USD million; NKE-Q4FY25-GM=40.3 %; NKE-Q4FY25-DIGITAL=-26 %.\",\"as_of\":\"2025-06-26\",\"sources\":[{\"id\":\"nike-2025-06-26-fy2025\",\"url\":\"https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm\",\"sha256\":\"32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8\"}],\"observed_metrics\":{\"quarterly_revenue\":{\"value\":\"11097\",\"unit\":\"USD_million\",\"fact_id\":\"NKE-Q4FY25-REV\"},\"gross_margin\":{\"value\":\"40.3\",\"unit\":\"percent\",\"fact_id\":\"NKE-Q4FY25-GM\"},\"nike_brand_digital_yoy\":{\"value\":\"-26\",\"unit\":\"percent\",\"fact_id\":\"NKE-Q4FY25-DIGITAL\"}}},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"nke\",\"weight\":1},{\"bucket\":\"catalysts\",\"term\":\"digital\",\"weight\":2}],\"match_score\":3,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-17T05:34:51Z\",\"last_seen_at\":\"2026-10-17T05:34:51Z\",\"created_at\":\"2026-10-17T05:34:51Z\",\"updated_at\":\"2026-10-17T05:34:51Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"}],\"count\":1,\"filters\":{\"limit\":50,\"market\":\"US\",\"symbol\":\"NKE\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 2
+        },
+        {
+          "type": "tool_call",
+          "id": "call_00_BUWDjWfnuqcAOUalmGlo4364",
+          "name": "finance-tools__thesis_record_review",
+          "arguments": "{\"thesis_id\": \"th_b76fb2e6509a44799b3d\", \"alert_id\": \"fa_bb2f760176eb4402ba64\", \"expected_version\": 1, \"event\": {\"type\": \"earnings\", \"summary\": \"NKE Q4 FY2025 SEC event packet: NKE-Q4FY25-REV=11097 USD million; NKE-Q4FY25-GM=40.3 %; NKE-Q4FY25-DIGITAL=-26 %.\", \"as_of\": \"2025-06-26\", \"sources\": [{\"id\": \"nike-2025-06-26-fy2025\", \"url\": \"https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm\", \"sha256\": \"32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8\"}]}, \"impact\": \"negative\", \"decision\": \"invalidate\", \"new_status\": \"invalidated\", \"new_conviction\": 1, \"rationale\": \"Same fiscal quarter (Q4) YoY comparison against the Q4 FY2024 baseline. Revenue fell from 12,606 to 11,097 USD million (−1,509 USD million, −12.0%). GAAP gross margin fell from 44.7% to 40.3% (−4.4 pp). Nike Brand digital YoY worsened from −10% to −26% (−16 pp). All three required metrics deteriorated materially in the same quarter, satisfying the thesis invalidation condition (\\\"material same-quarter sales, margin, and digital-channel deterioration\\\"). The recovery hypothesis is contradicted by the evidence.\", \"evidence\": [{\"id\": \"nike-2025-06-26-fy2025\", \"url\": \"https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm\", \"sha256\": \"32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8\"}], \"matched_terms\": [\"nke\", \"digital\"], \"next_review_at\": \"null\"}",
+          "round": 3
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_BUWDjWfnuqcAOUalmGlo4364",
+          "name": "finance-tools__thesis_record_review",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"7273e97b-783b-4695-a9c6-eb01d356eab1\",\"as_of\":\"2026-10-17T05:35:03Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_b76fb2e6509a44799b3d\",\"market\":\"US\",\"symbol\":\"NKE\",\"title\":\"NKE filing research thesis\",\"thesis\":\"Q4 FY2024 SEC baseline: NKE-Q4FY24-REV=12606 USD million; NKE-Q4FY24-GM=44.7 %; NKE-Q4FY24-DIGITAL=-10 %. Monitor the recovery hypothesis against matching fiscal-quarter sales, GAAP gross margin, and digital-channel trends.\",\"status\":\"invalidated\",\"conviction\":1,\"assumptions\":[],\"catalysts\":[\"sales stabilization\",\"gross-margin resilience\",\"digital demand improvement\"],\"invalidations\":[\"material same-quarter sales, margin, and digital-channel deterioration\"],\"required_event_metrics\":[\"quarterly_revenue\",\"gross_margin\",\"nike_brand_digital_yoy\"],\"evidence\":[{\"id\":\"nike-2024-06-27-fy2024\",\"url\":\"https://www.sec.gov/Archives/edgar/data/320187/000032018724000028/q4fy24exhibit991er.htm\",\"sha256\":\"b67aa378e93fe9581a6c97d72eca3ed6311d7bd664e0bc4077601f1e39877be2\"}],\"next_review_at\":\"null\",\"last_review_at\":\"2026-10-17T05:35:03Z\",\"created_at\":\"2026-10-17T05:34:51Z\",\"updated_at\":\"2026-10-17T05:35:03Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"},\"review\":{\"id\":\"tr_430abe647b29491e95f9\",\"thesis_id\":\"th_b76fb2e6509a44799b3d\",\"alert_id\":\"fa_bb2f760176eb4402ba64\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-v2-C03-r1\",\"event\":{\"type\":\"earnings\",\"summary\":\"NKE Q4 FY2025 SEC event packet: NKE-Q4FY25-REV=11097 USD million; NKE-Q4FY25-GM=40.3 %; NKE-Q4FY25-DIGITAL=-26 %.\",\"as_of\":\"2025-06-26\",\"sources\":[{\"id\":\"nike-2025-06-26-fy2025\",\"url\":\"https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm\",\"sha256\":\"32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8\"}]},\"impact\":\"negative\",\"decision\":\"invalidate\",\"rationale\":\"Same fiscal quarter (Q4) YoY comparison against the Q4 FY2024 baseline. Revenue fell from 12,606 to 11,097 USD million (−1,509 USD million, −12.0%). GAAP gross margin fell from 44.7% to 40.3% (−4.4 pp). Nike Brand digital YoY worsened from −10% to −26% (−16 pp). All three required metrics deteriorated materially in the same quarter, satisfying the thesis invalidation condition (\\\"material same-quarter sales, margin, and digital-channel deterioration\\\"). The recovery hypothesis is contradicted by the evidence.\",\"missing_metrics\":[],\"matched_terms\":[\"nke\",\"digital\"],\"evidence\":[{\"id\":\"nike-2025-06-26-fy2025\",\"sha256\":\"32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8\",\"url\":\"https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm\"}],\"created_at\":\"2026-10-17T05:35:03Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9565,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 3
+        },
+        {
+          "type": "tool_call",
+          "id": "call_00_NMCFKa8qta4vLxy97Z9O3241",
+          "name": "finance-tools__alert_update",
+          "arguments": "{\"alert_id\": \"fa_bb2f760176eb4402ba64\", \"status\": \"acknowledged\", \"expected_version\": 1}",
+          "round": 4
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_NMCFKa8qta4vLxy97Z9O3241",
+          "name": "finance-tools__alert_update",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"6595d884-295b-4612-acf7-2aa95051b3a5\",\"as_of\":\"2026-10-17T05:35:04Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_bb2f760176eb4402ba64\",\"watchlist_id\":\"wl_6683f4ea48dd40cbbd98\",\"thesis_id\":\"th_b76fb2e6509a44799b3d\",\"market\":\"US\",\"symbol\":\"NKE\",\"event_fingerprint\":\"4a5c76508085bd8ae984daa7cec3234bfd46cbf4de5b188374a8b12e4b69127a\",\"event\":{\"external_id\":\"nike-2025-06-26-fy2025\",\"type\":\"earnings\",\"summary\":\"NKE Q4 FY2025 SEC event packet: NKE-Q4FY25-REV=11097 USD million; NKE-Q4FY25-GM=40.3 %; NKE-Q4FY25-DIGITAL=-26 %.\",\"as_of\":\"2025-06-26\",\"sources\":[{\"id\":\"nike-2025-06-26-fy2025\",\"url\":\"https://www.sec.gov/Archives/edgar/data/320187/000032018725000034/q4fy25exhibit991er.htm\",\"sha256\":\"32e7d7c5180b2d24d0e5b83955b8a34ae69275a9c1264fc66f80639753b7b3b8\"}],\"observed_metrics\":{\"quarterly_revenue\":{\"value\":\"11097\",\"unit\":\"USD_million\",\"fact_id\":\"NKE-Q4FY25-REV\"},\"gross_margin\":{\"value\":\"40.3\",\"unit\":\"percent\",\"fact_id\":\"NKE-Q4FY25-GM\"},\"nike_brand_digital_yoy\":{\"value\":\"-26\",\"unit\":\"percent\",\"fact_id\":\"NKE-Q4FY25-DIGITAL\"}}},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"nke\",\"weight\":1},{\"bucket\":\"catalysts\",\"term\":\"digital\",\"weight\":2}],\"match_score\":3,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-17T05:34:51Z\",\"last_seen_at\":\"2026-10-17T05:34:51Z\",\"created_at\":\"2026-10-17T05:34:51Z\",\"updated_at\":\"2026-10-17T05:35:04Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 4
+        }
+      ],
+      "model_calls": [
+        {
+          "sequence": 1,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 1823,
+          "completion_tokens": 131,
+          "total_tokens": 1954,
+          "estimated_cost_usd": 0.000906975,
+          "priced": true,
+          "latency_ms": 1263.008
+        },
+        {
+          "sequence": 2,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 2596,
+          "completion_tokens": 87,
+          "total_tokens": 2683,
+          "cache_read_tokens": 1920,
+          "estimated_cost_usd": 0.00037671,
+          "priced": true,
+          "latency_ms": 1189.649
+        },
+        {
+          "sequence": 3,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 3386,
+          "completion_tokens": 913,
+          "total_tokens": 4299,
+          "cache_read_tokens": 2560,
+          "estimated_cost_usd": 0.0011629,
+          "priced": true,
+          "latency_ms": 6563.053
+        },
+        {
+          "sequence": 4,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 5344,
+          "completion_tokens": 132,
+          "total_tokens": 5476,
+          "cache_read_tokens": 4224,
+          "estimated_cost_usd": 0.0006173519999999999,
+          "priced": true,
+          "latency_ms": 1720.218
+        },
+        {
+          "sequence": 5,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 6164,
+          "completion_tokens": 444,
+          "total_tokens": 6608,
+          "cache_read_tokens": 5376,
+          "estimated_cost_usd": 0.0007485479999999999,
+          "priced": true,
+          "latency_ms": 4164.364
+        }
+      ]
+    }
+  },
+  "manual_semantic_audit_pending": true
+}

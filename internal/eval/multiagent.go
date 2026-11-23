@@ -1481,7 +1481,7 @@ var (
 	)
 	negativeAfterNumberPattern = regexp.MustCompile(
 		`(?i)^\s*(?:(?:percent|%)|(?:percentage|basis)\s+points?|\-\s*points?)?\s*` +
-			`(?:gross[-\s]+margin\s+)?(?:decline|decrease|down|loss)\b`,
+			`(?:gross[-\s]+margin\s+)?(?:decline|decrease|loss)\b`,
 	)
 )
 

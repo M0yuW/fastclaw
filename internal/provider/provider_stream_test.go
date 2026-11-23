@@ -78,6 +78,9 @@ func TestOpenAISSEStreamingResultEqualsChatResult(t *testing.T) {
 	if stream.Content != "hello" || stream.Thinking != "reason" || len(stream.ToolCalls) != 1 || stream.ToolCalls[0].Function.Arguments != `{"x":1}` {
 		t.Fatalf("unexpected result: %+v", stream)
 	}
+	if stream.FinishReason != "tool_calls" {
+		t.Fatalf("finish reason = %q, want tool_calls", stream.FinishReason)
+	}
 	if stream.Usage.PromptTokens != 120 || stream.Usage.CompletionTokens != 18 || stream.Usage.CacheReadTokens != 40 {
 		t.Fatalf("unexpected usage: %+v", stream.Usage)
 	}
@@ -86,6 +89,17 @@ func TestOpenAISSEStreamingResultEqualsChatResult(t *testing.T) {
 	}
 	if len(chunks) != 3 || !chunks[2].Done {
 		t.Fatalf("unexpected chunks: %+v", chunks)
+	}
+}
+
+func TestOpenAISSEPreservesLengthFinishReason(t *testing.T) {
+	fixture := "data: {\"choices\":[{\"delta\":{\"tool_calls\":[{\"index\":0,\"id\":\"call-1\",\"type\":\"function\",\"function\":{\"name\":\"spawn_subagent\",\"arguments\":\"{\\\"sharedContext\\\":\\\"cut off\"}}]},\"finish_reason\":\"length\"}]}\ndata: [DONE]\n"
+	response, err := parseOpenAISSE(context.Background(), strings.NewReader(fixture), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if response.FinishReason != "length" {
+		t.Fatalf("finish reason = %q, want length", response.FinishReason)
 	}
 }
 

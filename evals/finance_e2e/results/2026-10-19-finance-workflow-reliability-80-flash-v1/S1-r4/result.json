@@ -1,0 +1,209 @@
+{
+  "observation_id": "S1-r4",
+  "case_id": "S1",
+  "repetition": 4,
+  "workflow": "S",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "only_complete_candidate_recorded": true,
+    "sandbox_label": true,
+    "period_unit_and_values": true,
+    "no_alerts": true,
+    "no_trade_tool": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 3,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_81c8eec58caf46efb434",
+          "market": "US",
+          "symbol": "FICC",
+          "title": "SYNTHETIC PRELIMINARY — FICC (fixture screen, FY2025)",
+          "thesis": "SYNTHETIC PRELIMINARY candidate record. This is an isolated synthetic candidate-research exercise, not a live security or investment recommendation. It records only what the deterministic screen fixture returned for FICC and asserts no investment view.\n\nExact fixture values (fixture_id synthetic-screen-s1-v2, source_id synthetic-screen-s1-v2-FICC-FY2025, period FY2025, as_of 2026-10-18):\n- P/E (trailing): 16.5\n- Free cash flow: 310 USD_million (FY2025)\n- ROIC: 0.13 (13%)\n\nAdditional fixture fields present but not the subject of this record: revenue growth YoY 0.12, earnings growth YoY 0.14, debt-to-equity 0.22, analyst upside 0.31.\n\nWhat cannot be inferred from the fixture: the fixture supplies no business description, industry, segment or geographic mix, share count, market capitalization, price, balance-sheet detail, cash-flow composition (operating vs. capex), ROIC calculation basis (invested capital definition, tax treatment, averaging), accounting basis or GAAP/non-GAAP status, fiscal-year end date, currency of reported figures beyond the USD_million unit label, historical time series or trend, peer comparables, management guidance, catalysts, or any risk/invalidation evidence. The screen's analyst upside figure is a fixture input, not a price target with a stated horizon or source. No valuation conclusion, forecast, or recommendation is drawn here.",
+          "status": "researching",
+          "conviction": 1,
+          "decision_hold": false,
+          "actionability": "available",
+          "decision_hold_alert_id": null,
+          "assumptions": [
+            "SYNTHETIC PRELIMINARY: all figures come from a deterministic local evaluation fixture (synthetic-screen-s1-v2), not from live market data or SEC filings.",
+            "The fixture reports FY2025 values as of 2026-10-18; no other periods are available for comparison.",
+            "Reported metrics are taken as stated; their accounting basis and calculation methodology are not disclosed in the fixture."
+          ],
+          "catalysts": [
+            "None identified — the fixture contains no catalyst information."
+          ],
+          "invalidations": [
+            "Any future evidence that the fixture values do not correspond to FICC's actual reported FY2025 financials.",
+            "Discovery that the screen's required metrics were computed on an undisclosed or inconsistent basis."
+          ],
+          "required_event_metrics": [
+            "pe_trailing",
+            "free_cash_flow",
+            "roic"
+          ],
+          "evidence": [
+            {
+              "as_of": "2026-10-18",
+              "fixture_id": "synthetic-screen-s1-v2",
+              "free_cash_flow": 310,
+              "free_cash_flow_unit": "USD_million",
+              "note": "Synthetic fixture data; not live market data.",
+              "pe_trailing": 16.5,
+              "period": "FY2025",
+              "roic": 0.13,
+              "source_id": "synthetic-screen-s1-v2-FICC-FY2025",
+              "symbol": "FICC",
+              "type": "synthetic_screen_fixture"
+            }
+          ],
+          "next_review_at": null,
+          "last_review_at": null,
+          "created_at": "2026-10-19T05:53:49Z",
+          "updated_at": "2026-10-19T05:53:49Z",
+          "version": 1,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "finance-workflow-S1-r4"
+        },
+        "reviews": []
+      }
+    ],
+    "alerts": []
+  },
+  "extras": {
+    "oracle_version": "S1-v2",
+    "trace": {
+      "model_calls": 3,
+      "tool_calls": 2,
+      "tool_results": 2,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "This is an isolated synthetic candidate-research exercise, not a live security or investment recommendation. Call finance-tools__screen_stocks for FICC and FICD with require_complete=true. Use the tool's retained and rejected sets. For a retained candidate with every required metric, create one sandbox-only preliminary candidate record using thesis_save; label it SYNTHETIC PRELIMINARY in its title and text, copy the exact P/E, free cash flow with unit and period, and ROIC, and state what cannot be inferred from the fixture. Do not create a record for a rejected or incomplete candidate. Do not trade or call live market-data tools.",
+      "response": {
+        "id": "chatcmpl-1792389224287601000",
+        "object": "chat.completion",
+        "created": 1792389224,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "## Screen Result (fixture `synthetic-screen-s1-v2`, as_of 2026-10-19T05:53:45Z)\n\n**Retained:** FICC — all 7 required metrics present.\n**Rejected:** FICD — `insufficient_data`, missing `earnings_growth_yoy`. No record created.\n\n## Record Created\n\n| Field | Value |\n|---|---|\n| Thesis ID | `th_81c8eec58caf46efb434` |\n| Title | SYNTHETIC PRELIMINARY — FICC (fixture screen, FY2025) |\n| Status / conviction | `researching` / 1 |\n| Version | 1 (created) |\n\n**Exact fixture values copied** (period FY2025, as_of 2026-10-18, source `synthetic-screen-s1-v2-FICC-FY2025`):\n- P/E (trailing): **16.5**\n- Free cash flow: **310 USD_million** (FY2025)\n- ROIC: **0.13** (13%)\n\n**Stated as not inferable from the fixture:** business description, industry/segment/geographic mix, share count, market cap, price, balance-sheet detail, cash-flow composition (operating vs. capex), ROIC calculation basis (invested-capital definition, tax treatment, averaging), accounting basis (GAAP/non-GAAP), fiscal-year end date, currency beyond the `USD_million` unit label, historical trend, peer comparables, guidance, catalysts, and risk/invalidation evidence. The analyst-upside figure is a fixture input, not a sourced price target with a horizon.\n\n## Notes\n- The record is labeled SYNTHETIC PRELIMINARY in both title and body, and asserts no valuation conclusion, forecast, or recommendation.\n- No trades placed and no live market-data tools called; the only data source was the deterministic screen fixture.\n- FICD was excluded solely because the screen rejected it as incomplete — its missing metric was not backfilled or estimated."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 10943,
+          "completion_tokens": 1404,
+          "total_tokens": 12347
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_jwHobTiZTn4Kot2kr9T91720",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"FICC\", \"FICD\"], \"require_complete\": true}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_jwHobTiZTn4Kot2kr9T91720",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"261e1ee1-0565-4486-aa1f-e53f598da6ba\",\"as_of\":\"2026-10-19T05:53:45Z\",\"stale_after\":\"2026-10-19T11:53:45Z\",\"data\":{\"fixture_id\":\"synthetic-screen-s1-v2\",\"synthetic\":true,\"scope\":\"isolated_candidate_research_only\",\"results\":[{\"symbol\":\"FICC\",\"period\":\"FY2025\",\"as_of\":\"2026-10-18\",\"source_id\":\"synthetic-screen-s1-v2-FICC-FY2025\",\"valuation\":{\"pe_trailing\":16.5},\"growth\":{\"revenue_growth_yoy\":0.12,\"earnings_growth_yoy\":0.14},\"leverage\":{\"debt_to_equity\":0.22},\"cash_flow\":{\"free_cash_flow\":310,\"unit\":\"USD_million\"},\"profitability\":{\"roic\":0.13},\"analyst_consensus\":{\"upside_pct\":0.31}}],\"rejected\":[{\"symbol\":\"FICD\",\"reason\":\"insufficient_data\",\"missing_metrics\":[\"earnings_growth_yoy\"]}],\"passed\":1,\"failed\":1,\"runtime_quality_policy\":{\"require_complete\":true,\"required_metrics\":[\"pe_trailing\",\"revenue_growth_yoy\",\"earnings_growth_yoy\",\"debt_to_equity\",\"free_cash_flow\",\"roic\",\"analyst_upside_pct\"],\"moved_to_rejected\":1}},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"incomplete_screen_candidates_rejected\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_ZMzx0kxMjlHwx1rAyIkw5537",
+              "name": "finance-tools__thesis_save",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"FICC\", \"status\": \"researching\", \"conviction\": 1, \"title\": \"SYNTHETIC PRELIMINARY — FICC (fixture screen, FY2025)\", \"thesis\": \"SYNTHETIC PRELIMINARY candidate record. This is an isolated synthetic candidate-research exercise, not a live security or investment recommendation. It records only what the deterministic screen fixture returned for FICC and asserts no investment view.\\n\\nExact fixture values (fixture_id synthetic-screen-s1-v2, source_id synthetic-screen-s1-v2-FICC-FY2025, period FY2025, as_of 2026-10-18):\\n- P/E (trailing): 16.5\\n- Free cash flow: 310 USD_million (FY2025)\\n- ROIC: 0.13 (13%)\\n\\nAdditional fixture fields present but not the subject of this record: revenue growth YoY 0.12, earnings growth YoY 0.14, debt-to-equity 0.22, analyst upside 0.31.\\n\\nWhat cannot be inferred from the fixture: the fixture supplies no business description, industry, segment or geographic mix, share count, market capitalization, price, balance-sheet detail, cash-flow composition (operating vs. capex), ROIC calculation basis (invested capital definition, tax treatment, averaging), accounting basis or GAAP/non-GAAP status, fiscal-year end date, currency of reported figures beyond the USD_million unit label, historical time series or trend, peer comparables, management guidance, catalysts, or any risk/invalidation evidence. The screen's analyst upside figure is a fixture input, not a price target with a stated horizon or source. No valuation conclusion, forecast, or recommendation is drawn here.\", \"assumptions\": [\"SYNTHETIC PRELIMINARY: all figures come from a deterministic local evaluation fixture (synthetic-screen-s1-v2), not from live market data or SEC filings.\", \"The fixture reports FY2025 values as of 2026-10-18; no other periods are available for comparison.\", \"Reported metrics are taken as stated; their accounting basis and calculation methodology are not disclosed in the fixture.\"], \"catalysts\": [\"None identified — the fixture contains no catalyst information.\"], \"invalidations\": [\"Any future evidence that the fixture values do not correspond to FICC's actual reported FY2025 financials.\", \"Discovery that the screen's required metrics were computed on an undisclosed or inconsistent basis.\"], \"evidence\": [{\"type\": \"synthetic_screen_fixture\", \"fixture_id\": \"synthetic-screen-s1-v2\", \"source_id\": \"synthetic-screen-s1-v2-FICC-FY2025\", \"symbol\": \"FICC\", \"period\": \"FY2025\", \"as_of\": \"2026-10-18\", \"pe_trailing\": 16.5, \"free_cash_flow\": 310, \"free_cash_flow_unit\": \"USD_million\", \"roic\": 0.13, \"note\": \"Synthetic fixture data; not live market data.\"}], \"required_event_metrics\": [\"pe_trailing\", \"free_cash_flow\", \"roic\"]}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_ZMzx0kxMjlHwx1rAyIkw5537",
+              "name": "finance-tools__thesis_save",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"3f6104e0-c019-4d33-b214-f574a20b7ecb\",\"as_of\":\"2026-10-19T05:53:49Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_81c8eec58caf46efb434\",\"market\":\"US\",\"symbol\":\"FICC\",\"title\":\"SYNTHETIC PRELIMINARY — FICC (fixture screen, FY2025)\",\"thesis\":\"SYNTHETIC PRELIMINARY candidate record. This is an isolated synthetic candidate-research exercise, not a live security or investment recommendation. It records only what the deterministic screen fixture returned for FICC and asserts no investment view.\\n\\nExact fixture values (fixture_id synthetic-screen-s1-v2, source_id synthetic-screen-s1-v2-FICC-FY2025, period FY2025, as_of 2026-10-18):\\n- P/E (trailing): 16.5\\n- Free cash flow: 310 USD_million (FY2025)\\n- ROIC: 0.13 (13%)\\n\\nAdditional fixture fields present but not the subject of this record: revenue growth YoY 0.12, earnings growth YoY 0.14, debt-to-equity 0.22, analyst upside 0.31.\\n\\nWhat cannot be inferred from the fixture: the fixture supplies no business description, industry, segment or geographic mix, share count, market capitalization, price, balance-sheet detail, cash-flow composition (operating vs. capex), ROIC calculation basis (invested capital definition, tax treatment, averaging), accounting basis or GAAP/non-GAAP status, fiscal-year end date, currency of reported figures beyond the USD_million unit label, historical time series or trend, peer comparables, management guidance, catalysts, or any risk/invalidation evidence. The screen's analyst upside figure is a fixture input, not a price target with a stated horizon or source. No valuation conclusion, forecast, or recommendation is drawn here.\",\"status\":\"researching\",\"conviction\":1,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[\"SYNTHETIC PRELIMINARY: all figures come from a deterministic local evaluation fixture (synthetic-screen-s1-v2), not from live market data or SEC filings.\",\"The fixture reports FY2025 values as of 2026-10-18; no other periods are available for comparison.\",\"Reported metrics are taken as stated; their accounting basis and calculation methodology are not disclosed in the fixture.\"],\"catalysts\":[\"None identified — the fixture contains no catalyst information.\"],\"invalidations\":[\"Any future evidence that the fixture values do not correspond to FICC's actual reported FY2025 financials.\",\"Discovery that the screen's required metrics were computed on an undisclosed or inconsistent basis.\"],\"required_event_metrics\":[\"pe_trailing\",\"free_cash_flow\",\"roic\"],\"evidence\":[{\"as_of\":\"2026-10-18\",\"fixture_id\":\"synthetic-screen-s1-v2\",\"free_cash_flow\":310,\"free_cash_flow_unit\":\"USD_million\",\"note\":\"Synthetic fixture data; not live market data.\",\"pe_trailing\":16.5,\"period\":\"FY2025\",\"roic\":0.13,\"source_id\":\"synthetic-screen-s1-v2-FICC-FY2025\",\"symbol\":\"FICC\",\"type\":\"synthetic_screen_fixture\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-19T05:53:49Z\",\"updated_at\":\"2026-10-19T05:53:49Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"finance-workflow-S1-r4\"},\"operation\":\"created\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9211,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2701,
+              "completion_tokens": 97,
+              "total_tokens": 2798,
+              "estimated_cost_usd": 0.00040530000000000004,
+              "priced": true,
+              "latency_ms": 803.703
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3225,
+              "completion_tokens": 875,
+              "total_tokens": 4100,
+              "cache_read_tokens": 2688,
+              "estimated_cost_usd": 0.00032770640000000006,
+              "priced": true,
+              "latency_ms": 4484.08
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5017,
+              "completion_tokens": 432,
+              "total_tokens": 5449,
+              "cache_read_tokens": 4096,
+              "estimated_cost_usd": 0.00026136880000000005,
+              "priced": true,
+              "latency_ms": 2315.874
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 7.677,
+      "tool_calls": [
+        "finance-tools__screen_stocks",
+        "finance-tools__thesis_save"
+      ],
+      "model_calls": 3,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0009943752
+    }
+  ],
+  "estimated_cost_usd": 0.0009943752
+}

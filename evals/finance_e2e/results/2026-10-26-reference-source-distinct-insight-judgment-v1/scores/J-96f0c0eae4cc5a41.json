@@ -1,0 +1,52 @@
+{
+  "masked_id": "J-96f0c0eae4cc5a41",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 2,
+    "I": 1,
+    "R": 2,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "both interest and noninterest revenue rose, a credit loss provision flipped from an expense to a net benefit, and pretax, net, common-available income and diluted EPS all increased",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_net_interest_income:+33", "source_packet.rows:gaap_total_noninterest_income:+26", "source_packet.rows:gaap_credit_loss_provision:30_to_-5", "source_packet.rows:gaap_pretax_income:+35", "source_packet.rows:gaap_net_income:+22", "source_packet.rows:gaap_net_income_common:+21", "source_packet.rows:gaap_diluted_eps:+0.05"]
+    },
+    {
+      "location": "final_answer",
+      "span": "The expense side offsets much of the revenue improvement: total noninterest expense rose",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue:+59", "source_packet.rows:gaap_total_noninterest_expense:+60"],
+      "reason": "On rounded rows, the expense increase actually slightly exceeds revenue growth; pretax gain is chiefly the USD 35m provision swing."
+    },
+    {
+      "location": "final_answer",
+      "span": "the other noninterest expense line moved by more than the personnel line, which is the kind of swing that often reflects items that do not recur",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_other_noninterest_expense:+37", "source_packet.rows:gaap_personnel_expense:+14", "source_packet.limitations:expense_recurrence_unverified"],
+      "reason": "The amount comparison is correct, but the selected rows do not establish a non-recurring tendency for this expense category."
+    },
+    {
+      "location": "final_answer",
+      "span": "total nonperforming loans and the nonperforming-loan-to-loans ratio both rose, with commercial real estate and consumer real estate balances higher and commercial and industrial balances lower",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:npl_total:+12", "source_packet.rows:npl_to_loans_ratio:0.94_to_0.96", "source_packet.rows:npl_commercial_real_estate:+18", "source_packet.rows:npl_consumer_real_estate:+8", "source_packet.rows:npl_commercial_industrial:-13"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review rather than upgraded or invalidated",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [],
+  "assessable_implication": true,
+  "notes": "Correctly interprets the negative provision as a benefit and distinguishes loan-quality stocks from quarterly provision flows. It should quantify the earnings bridge more clearly: rounded revenue +59m, operating expense +60m, provision improvement +35m, pretax +35m. The suggestion that the other-expense swing often does not recur is unverified. Nevertheless, it blocks downstream action pending credit and expense detail."
+}

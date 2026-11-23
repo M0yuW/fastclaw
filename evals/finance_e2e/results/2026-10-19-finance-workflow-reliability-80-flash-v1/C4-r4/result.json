@@ -1,0 +1,332 @@
+{
+  "observation_id": "C4-r4",
+  "case_id": "C4",
+  "repetition": 4,
+  "workflow": "C",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "one_review": true,
+    "source_claims_exact": true,
+    "review_linked": true,
+    "alert_acknowledged": true,
+    "hold_policy": true,
+    "conflict_detection": true,
+    "actionability": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 5,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_4d57103499a14a96ba5a",
+          "market": "US",
+          "symbol": "FICE",
+          "title": "Synthetic capacity-plan thesis",
+          "thesis": "Review the FY2025 capex plan using attributable primary evidence.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": false,
+          "actionability": "available",
+          "decision_hold_alert_id": null,
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "capex_plan"
+          ],
+          "evidence": [],
+          "next_review_at": null,
+          "last_review_at": "2026-10-19T05:56:27Z",
+          "created_at": "2026-10-19T05:56:21Z",
+          "updated_at": "2026-10-19T05:56:27Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_234e8020420845f898ec",
+            "thesis_id": "th_4d57103499a14a96ba5a",
+            "alert_id": "fa_bdef316176714e12b5c6",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-C4-r4",
+            "event": {
+              "type": "management_update",
+              "summary": "FICE synthetic secondary summary claims a new FY2025 capex plan, but the underlying primary source is unavailable.",
+              "as_of": "2026-10-18",
+              "sources": []
+            },
+            "impact": "neutral",
+            "decision": "needs_review",
+            "rationale": "The alert (fa_bdef316176714e12b5c6, as_of 2026-10-18) is a secondary summary asserting a new FY2025 capex plan for FICE. It supplies no primary source, no source_claims, and no observed_metrics, so the required event metric 'capex_plan' is absent. No attributed management statements, speaker identities, or statement dates are available in the supplied evidence, so there is nothing to compare and no basis to treat any figure as superseding an earlier one. Deterministic matching returned only a symbol match (score 0, no term matches). The thesis (v1, active, conviction 3) has no assumptions, catalysts, or invalidations recorded, so no assumption can be confirmed or broken. Impact is therefore neutral and the decision is needs_review: status and conviction are unchanged, and the thesis remains blocked for downstream decisions pending a trusted primary source. No trade is implied.",
+            "missing_metrics": [
+              "capex_plan"
+            ],
+            "unresolved_conflicts": [],
+            "matched_terms": [],
+            "evidence": [
+              {
+                "id": "fa_bdef316176714e12b5c6",
+                "kind": "alert",
+                "note": "Secondary summary only; sources list empty, observed_metrics empty, source_claims empty, unresolved_conflicts empty."
+              },
+              {
+                "id": "th_4d57103499a14a96ba5a",
+                "kind": "thesis",
+                "note": "Active, conviction 3, required_event_metrics=['capex_plan']; no assumptions/catalysts/invalidations recorded.",
+                "version": 1
+              },
+              {
+                "kind": "deterministic_match",
+                "note": "thesis_match_event returned symbol_match only, match_score 0, matched_terms empty."
+              }
+            ],
+            "created_at": "2026-10-19T05:56:27Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_bdef316176714e12b5c6",
+        "watchlist_id": "wl_6a7200191af9458994c1",
+        "thesis_id": "th_4d57103499a14a96ba5a",
+        "market": "US",
+        "symbol": "FICE",
+        "event_fingerprint": "37f02d7310537ce7ac0605276be19c7f66fcb7edfb2980b0fca7ba3bac2c8f2a",
+        "event": {
+          "external_id": "synthetic-finance-16-C4",
+          "type": "management_update",
+          "summary": "FICE synthetic secondary summary claims a new FY2025 capex plan, but the underlying primary source is unavailable.",
+          "as_of": "2026-10-18",
+          "sources": [],
+          "observed_metrics": {},
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "fice",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-19T05:56:21Z",
+        "last_seen_at": "2026-10-19T05:56:21Z",
+        "created_at": "2026-10-19T05:56:21Z",
+        "updated_at": "2026-10-19T05:56:28Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "extras": {
+    "synthetic_documents": [],
+    "trace": {
+      "model_calls": 5,
+      "tool_calls": 5,
+      "tool_results": 5,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "This is a synthetic research-state case. Read the stored thesis and alert. Compare the attributed management statements and dates; do not assume a later number silently supersedes an earlier one. Decide what is supported and what remains uncertain. Record a version-protected linked review, then acknowledge the alert. Do not trade. Case C4; thesis ID th_4d57103499a14a96ba5a; alert ID fa_bdef316176714e12b5c6.",
+      "response": {
+        "id": "chatcmpl-1792389381840340000",
+        "object": "chat.completion",
+        "created": 1792389381,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# Case C4 — FICE Research-State Review\n\n## 1. What the stored state contained\n\n**Thesis** `th_4d57103499a14a96ba5a` (US / FICE, \"Synthetic capacity-plan thesis\")\n- Status `active`, conviction 3, version 1 at read time\n- Thesis statement: review the FY2025 capex plan using attributable primary evidence\n- `required_event_metrics`: `[\"capex_plan\"]`\n- Assumptions, catalysts, invalidations, evidence: all empty; no prior reviews\n\n**Alert** `fa_bdef316176714e12b5c6` (linked to the same thesis, status `new`, version 1)\n- Type `management_update`, `as_of` 2026-10-18, external ID `synthetic-finance-16-C4`\n- Summary: a synthetic secondary summary claims a new FY2025 capex plan, but the underlying primary source is unavailable\n- `sources`: empty · `source_claims`: empty · `observed_metrics`: empty · `unresolved_conflicts`: empty\n- `duplicate_count`: 1\n\n## 2. Comparison of attributed statements and dates\n\nThere is **nothing to compare**. The task's central instruction — compare attributed management statements and dates, and do not let a later number silently supersede an earlier one — cannot be executed on this evidence, because:\n\n- No management statement is attributed to any speaker, role, or venue.\n- No statement dates are present. The only date is the alert's own `as_of` (2026-10-18), which is the observation date of the summary, not the date of any management statement.\n- No numeric capex figure appears anywhere in the supplied evidence — not in the alert, not in the thesis, not in the deterministic match.\n\nConsequently there is no earlier figure and no later figure, and therefore no supersession question to resolve. I have not inferred, reconstructed, or assumed any capex number, and I have not treated the alert's date as evidence that a newer plan exists.\n\n## 3. What is supported\n\n- A secondary summary dated 2026-10-18 asserts that a new FY2025 capex plan exists for FICE. That assertion is recorded as a claim, not as a fact.\n- The thesis is active at conviction 3 and requires `capex_plan` as a metric before a substantive decision can be recorded.\n- Deterministic matching (`thesis_match_event`) linked the event to this thesis on **symbol match only** — match score 0, no matched terms. The link is administrative, not substantive.\n\n## 4. What remains uncertain\n\n- Whether any new FY2025 capex plan actually exists, and if so its amount, scope, and timing.\n- Who said it, in what capacity, and on what date — i.e. attribution and statement dating.\n- Whether any such statement would supersede, confirm, or contradict an earlier plan. With no earlier figure on record, supersession cannot be assessed either way.\n- Whether the secondary summary accurately reflects a primary source at all. The alert itself flags the primary source as unavailable.\n\n## 5. Review recorded\n\nVersion-protected linked review `tr_234e8020420845f898ec` written against `expected_version` 1 (thesis advanced to **version 2**):\n\n| Field | Value |\n|---|---|\n| Decision | `needs_review` |\n| Impact | `neutral` |\n| Status | unchanged (`active`) |\n| Conviction | unchanged (3) |\n| Missing metrics | `capex_plan` |\n| Unresolved conflicts | none recorded in source |\n| Alert link | `fa_bdef316176714e12b5c6` |\n\nThe `needs_review` outcome is required here: the mandatory `capex_plan` metric is absent, so no maintain/upgrade/downgrade/invalidate decision is supportable. The thesis remains blocked for downstream decisions pending a trusted primary source.\n\n## 6. Alert state\n\nAlert `fa_bdef316176714e12b5c6` acknowledged at `expected_version` 1 → now **version 2, status `acknowledged`**. Acknowledgment reflects that the event has been reviewed and dispositioned; it does not validate the underlying claim.\n\n## 7. Next step to unblock\n\nObtain the primary source for the claimed FY2025 capex plan — with speaker attribution and statement date — plus the prior plan figure for comparison. Only then can the supersession question be answered and a substantive decision recorded.\n\n**No trade was placed, and none is implied by this review.**"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 21693,
+          "completion_tokens": 1968,
+          "total_tokens": 23661
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_DhZZUKOgvdshf0c8viT08224",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_4d57103499a14a96ba5a\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_tMenW7MrJkuQAcXzFmwF2992",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_DhZZUKOgvdshf0c8viT08224",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"d37df5cd-2b2c-493e-ac87-8be23fa366a4\",\"as_of\":\"2026-10-19T05:56:23Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_4d57103499a14a96ba5a\",\"market\":\"US\",\"symbol\":\"FICE\",\"title\":\"Synthetic capacity-plan thesis\",\"thesis\":\"Review the FY2025 capex plan using attributable primary evidence.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"capex_plan\"],\"evidence\":[],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-19T05:56:21Z\",\"updated_at\":\"2026-10-19T05:56:21Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.6522,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_tMenW7MrJkuQAcXzFmwF2992",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"ffef4668-3c03-4c68-a4d8-b53e5049ef14\",\"as_of\":\"2026-10-19T05:56:23Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_bdef316176714e12b5c6\",\"watchlist_id\":\"wl_6a7200191af9458994c1\",\"thesis_id\":\"th_4d57103499a14a96ba5a\",\"market\":\"US\",\"symbol\":\"FICE\",\"event_fingerprint\":\"37f02d7310537ce7ac0605276be19c7f66fcb7edfb2980b0fca7ba3bac2c8f2a\",\"event\":{\"external_id\":\"synthetic-finance-16-C4\",\"type\":\"management_update\",\"summary\":\"FICE synthetic secondary summary claims a new FY2025 capex plan, but the underlying primary source is unavailable.\",\"as_of\":\"2026-10-18\",\"sources\":[],\"observed_metrics\":{},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"fice\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-19T05:56:21Z\",\"last_seen_at\":\"2026-10-19T05:56:21Z\",\"created_at\":\"2026-10-19T05:56:21Z\",\"updated_at\":\"2026-10-19T05:56:21Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8929,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_D6WXEQHgmhAWcEtzLAcX9342",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"FICE\", \"event_summary\": \"FICE synthetic secondary summary claims a new FY2025 capex plan, but the underlying primary source is unavailable.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_D6WXEQHgmhAWcEtzLAcX9342",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"0677c14a-0423-4104-a840-7a07b6bcc3f1\",\"as_of\":\"2026-10-19T05:56:24Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"FICE\",\"event_summary\":\"FICE synthetic secondary summary claims a new FY2025 capex plan, but the underlying primary source is unavailable.\",\"matches\":[{\"thesis_id\":\"th_4d57103499a14a96ba5a\",\"title\":\"Synthetic capacity-plan thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_sLSGki547UqcB3544szV2457",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_4d57103499a14a96ba5a\", \"expected_version\": 1, \"alert_id\": \"fa_bdef316176714e12b5c6\", \"event\": {\"summary\": \"FICE synthetic secondary summary claims a new FY2025 capex plan, but the underlying primary source is unavailable.\", \"type\": \"management_update\", \"as_of\": \"2026-10-18\", \"sources\": []}, \"impact\": \"neutral\", \"decision\": \"needs_review\", \"rationale\": \"The alert (fa_bdef316176714e12b5c6, as_of 2026-10-18) is a secondary summary asserting a new FY2025 capex plan for FICE. It supplies no primary source, no source_claims, and no observed_metrics, so the required event metric 'capex_plan' is absent. No attributed management statements, speaker identities, or statement dates are available in the supplied evidence, so there is nothing to compare and no basis to treat any figure as superseding an earlier one. Deterministic matching returned only a symbol match (score 0, no term matches). The thesis (v1, active, conviction 3) has no assumptions, catalysts, or invalidations recorded, so no assumption can be confirmed or broken. Impact is therefore neutral and the decision is needs_review: status and conviction are unchanged, and the thesis remains blocked for downstream decisions pending a trusted primary source. No trade is implied.\", \"matched_terms\": [], \"evidence\": [{\"kind\": \"alert\", \"id\": \"fa_bdef316176714e12b5c6\", \"note\": \"Secondary summary only; sources list empty, observed_metrics empty, source_claims empty, unresolved_conflicts empty.\"}, {\"kind\": \"thesis\", \"id\": \"th_4d57103499a14a96ba5a\", \"version\": 1, \"note\": \"Active, conviction 3, required_event_metrics=['capex_plan']; no assumptions/catalysts/invalidations recorded.\"}, {\"kind\": \"deterministic_match\", \"note\": \"thesis_match_event returned symbol_match only, match_score 0, matched_terms empty.\"}]}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_sLSGki547UqcB3544szV2457",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"2c078711-5257-41e1-b6c7-a49a5eab2574\",\"as_of\":\"2026-10-19T05:56:27Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_4d57103499a14a96ba5a\",\"market\":\"US\",\"symbol\":\"FICE\",\"title\":\"Synthetic capacity-plan thesis\",\"thesis\":\"Review the FY2025 capex plan using attributable primary evidence.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"capex_plan\"],\"evidence\":[],\"next_review_at\":null,\"last_review_at\":\"2026-10-19T05:56:27Z\",\"created_at\":\"2026-10-19T05:56:21Z\",\"updated_at\":\"2026-10-19T05:56:27Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_234e8020420845f898ec\",\"thesis_id\":\"th_4d57103499a14a96ba5a\",\"alert_id\":\"fa_bdef316176714e12b5c6\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-C4-r4\",\"event\":{\"type\":\"management_update\",\"summary\":\"FICE synthetic secondary summary claims a new FY2025 capex plan, but the underlying primary source is unavailable.\",\"as_of\":\"2026-10-18\",\"sources\":[]},\"impact\":\"neutral\",\"decision\":\"needs_review\",\"rationale\":\"The alert (fa_bdef316176714e12b5c6, as_of 2026-10-18) is a secondary summary asserting a new FY2025 capex plan for FICE. It supplies no primary source, no source_claims, and no observed_metrics, so the required event metric 'capex_plan' is absent. No attributed management statements, speaker identities, or statement dates are available in the supplied evidence, so there is nothing to compare and no basis to treat any figure as superseding an earlier one. Deterministic matching returned only a symbol match (score 0, no term matches). The thesis (v1, active, conviction 3) has no assumptions, catalysts, or invalidations recorded, so no assumption can be confirmed or broken. Impact is therefore neutral and the decision is needs_review: status and conviction are unchanged, and the thesis remains blocked for downstream decisions pending a trusted primary source. No trade is implied.\",\"missing_metrics\":[\"capex_plan\"],\"unresolved_conflicts\":[],\"matched_terms\":[],\"evidence\":[{\"id\":\"fa_bdef316176714e12b5c6\",\"kind\":\"alert\",\"note\":\"Secondary summary only; sources list empty, observed_metrics empty, source_claims empty, unresolved_conflicts empty.\"},{\"id\":\"th_4d57103499a14a96ba5a\",\"kind\":\"thesis\",\"note\":\"Active, conviction 3, required_event_metrics=['capex_plan']; no assumptions/catalysts/invalidations recorded.\",\"version\":1},{\"kind\":\"deterministic_match\",\"note\":\"thesis_match_event returned symbol_match only, match_score 0, matched_terms empty.\"}],\"created_at\":\"2026-10-19T05:56:27Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8085,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_CII4A8IFDPoBG8CDVlrE0347",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_bdef316176714e12b5c6\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_CII4A8IFDPoBG8CDVlrE0347",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"a41f045c-c7ba-4f3b-97ea-06d4069c45cf\",\"as_of\":\"2026-10-19T05:56:28Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_bdef316176714e12b5c6\",\"watchlist_id\":\"wl_6a7200191af9458994c1\",\"thesis_id\":\"th_4d57103499a14a96ba5a\",\"market\":\"US\",\"symbol\":\"FICE\",\"event_fingerprint\":\"37f02d7310537ce7ac0605276be19c7f66fcb7edfb2980b0fca7ba3bac2c8f2a\",\"event\":{\"external_id\":\"synthetic-finance-16-C4\",\"type\":\"management_update\",\"summary\":\"FICE synthetic secondary summary claims a new FY2025 capex plan, but the underlying primary source is unavailable.\",\"as_of\":\"2026-10-18\",\"sources\":[],\"observed_metrics\":{},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"fice\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-19T05:56:21Z\",\"last_seen_at\":\"2026-10-19T05:56:21Z\",\"created_at\":\"2026-10-19T05:56:21Z\",\"updated_at\":\"2026-10-19T05:56:28Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8889,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2665,
+              "completion_tokens": 117,
+              "total_tokens": 2782,
+              "estimated_cost_usd": 0.00040586,
+              "priced": true,
+              "latency_ms": 1231.502
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3580,
+              "completion_tokens": 143,
+              "total_tokens": 3723,
+              "cache_read_tokens": 2688,
+              "estimated_cost_usd": 0.0001724464,
+              "priced": true,
+              "latency_ms": 1497.458
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3971,
+              "completion_tokens": 623,
+              "total_tokens": 4594,
+              "cache_read_tokens": 3712,
+              "estimated_cost_usd": 0.00022109360000000002,
+              "priced": true,
+              "latency_ms": 2963.836
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5451,
+              "completion_tokens": 105,
+              "total_tokens": 5556,
+              "cache_read_tokens": 4480,
+              "estimated_cost_usd": 0.00017788400000000003,
+              "priced": true,
+              "latency_ms": 1157.705
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6026,
+              "completion_tokens": 980,
+              "total_tokens": 7006,
+              "cache_read_tokens": 5504,
+              "estimated_cost_usd": 0.0003628912000000001,
+              "priced": true,
+              "latency_ms": 5311.848
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 12.205,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update"
+      ],
+      "model_calls": 5,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0013401752000000002
+    }
+  ],
+  "estimated_cost_usd": 0.0013401752000000002
+}

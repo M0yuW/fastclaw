@@ -39,6 +39,18 @@ def write_review_page(path: Path, tasks: list[dict[str, Any]], template_path: Pa
     path.write_text(template.replace(marker, task_json), encoding="utf-8")
 
 
+def record_preview(text: str, fact: dict[str, Any], width: int = 320) -> str:
+    normalized_text = " ".join(text.split())
+    excerpt = " ".join(str(fact.get("excerpt", "")).split())
+    position = normalized_text.casefold().find(excerpt.casefold()) if excerpt else -1
+    if position < 0:
+        return normalized_text[:width]
+    start = max(0, position - 60)
+    if start + width < position + len(excerpt):
+        start = position + len(excerpt) - width
+    return normalized_text[start:start + width]
+
+
 def audit_material(
     evidence: dict[str, Any], suite: dict[str, Any], provenance: dict[str, Any]
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -131,15 +143,22 @@ def audit_material(
                     }
                 )
                 machine.append({"audit_id": audit_id, "expected": str(calculation.get("expected", ""))})
-    groups = sorted({tuple(group) for case in suite.get("cases", []) for group in case.get("gold_record_groups", [])})
-    for index, group in enumerate(groups, 1):
-        audit_id = f"ORACLE-GROUP|{index:03d}"
+    fact_groups: dict[str, tuple[str, ...]] = {}
+    for case in suite.get("cases", []):
+        for item in case.get("gold_fact_groups", []):
+            fact_id = item["fact_id"]
+            group = tuple(item["record_ids"])
+            existing = fact_groups.setdefault(fact_id, group)
+            if existing != group:
+                raise ValueError(f"inconsistent evidence group for fact: {fact_id}")
+    for fact_id, group in sorted(fact_groups.items()):
+        audit_id = f"ORACLE-GROUP|{fact_id}"
         previews = []
         for record_id in group:
             record = record_by_id.get(record_id)
             if record is None:
                 raise ValueError(f"evidence group references unknown record: {record_id}")
-            preview = " ".join(str(record.get("text", "")).split())[:320]
+            preview = record_preview(str(record.get("text", "")), fact_by_id[fact_id])
             previews.append(
                 {
                     "record_id": record_id,
@@ -153,21 +172,23 @@ def audit_material(
             {
                 "audit_id": audit_id,
                 "audit_type": "evidence_equivalence_group",
-                "item_id": audit_id,
+                "item_id": fact_id,
                 "source_id": "",
                 "locator": "",
                 "claimed_excerpt": "",
-                "input_facts": "",
+                "input_facts": json.dumps(fact_by_id[fact_id], sort_keys=True),
                 "calculation_spec": "",
                 "record_previews": json.dumps(previews, sort_keys=True),
-                "review_task": "核验以下记录编号能否作为同一必需证据组的有效替代项：" + " | ".join(group),
+                "review_task": f"核验以下记录是否包含必需事实 {fact_id}：" + " | ".join(group),
                 "review_guidance": (
-                    "比较给出的定位信息和原文预览。在 independent_result 中填写 VALID，或列出任何不等价的"
-                    "记录编号；若预览不足以判断，请检查 suite 中的完整文本。"
+                    "根据 input_facts 比较指标、期间、单位、口径、符号和原文预览。在 independent_result 中"
+                    "填写 VALID，或列出不支持目标事实的记录编号；若预览不足，请检查 suite 中的完整文本。"
                 ),
             }
         )
-        machine.append({"audit_id": audit_id, "expected": json.dumps(group)})
+        machine.append(
+            {"audit_id": audit_id, "expected": json.dumps({"fact_id": fact_id, "record_ids": group})}
+        )
     return tasks, machine
 
 

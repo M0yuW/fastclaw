@@ -1,0 +1,76 @@
+{
+  "masked_id": "J-75ec2187b18c474d",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 0,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "and net interest income after provision both rise, the credit loss provision is lower so it reinforces rather than offsets the revenue-side move, and fee and total noninterest income also rise",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_net_interest_income_before_provision:+60456", "source_packet.rows:gaap_net_interest_income_after_provision:+69456", "source_packet.rows:gaap_credit_loss_provision:-9000", "source_packet.rows:gaap_total_fee_income:+10973", "source_packet.rows:gaap_total_noninterest_income:+14339"]
+    },
+    {
+      "location": "final_answer",
+      "span": "the decline in tax credit and CRA investment amortization is a component of noninterest expense and is not treated as a driver of the profit change",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_tax_credit_cra_amortization:26236_to_15693", "source_packet.rows:gaap_total_operating_noninterest_expense:229784_to_261230", "source_packet.rows:gaap_total_noninterest_expense:256020_to_276923", "source_packet.rows:gaap_pretax_income:+62892"],
+      "reason": "The line fell 10,543 and mechanically reduced the growth in total noninterest expense from +31,446 operating expense to +20,903 total expense, thus contributing positively to pretax income. Recurrence is unproven, but the accounting contribution is not optional."
+    },
+    {
+      "location": "persisted_review",
+      "span": "Tax credit and CRA investment amortization declines, which is a component of noninterest expense and is not treated as a driver of the profit change",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_tax_credit_cra_amortization:-10543", "source_packet.rows:gaap_total_noninterest_expense:+20903", "source_packet.rows:gaap_pretax_income:+62892"],
+      "reason": "Saved rationale repeats denial of the directly visible favorable expense contribution."
+    },
+    {
+      "location": "final_answer",
+      "span": "Percent changes and percentage-point effects cannot be derived from the supplied rows",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_total_noninterest_income:86178_to_100517", "source_packet.rows:gaap_total_noninterest_expense:256020_to_276923", "source_packet.rows:credit_special_mention_loans:446665_to_422751", "source_packet.rows:credit_classified_loans:736228_to_768568"],
+      "reason": "Ordinary sequential percentage changes of these same-definition rows can be computed; an unreported NIM percentage-point change cannot. The blanket prohibition is false."
+    },
+    {
+      "location": "persisted_review",
+      "span": "special mention lower and classified higher, so the composition shifts toward the more severe bucket",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:credit_special_mention_loans:-23914", "source_packet.rows:credit_classified_loans:+32340", "source_packet.rows:credit_total_criticized_loans:+8426"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the appropriate research-state action is to maintain it at the existing conviction",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:conviction=3", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available", "source_packet.rows:credit_classified_loans:+32340"],
+      "reason": "The state claim matches the ledger, but classified and criticized loans worsened while migration and reserve coverage are missing. Whether this should trigger a decision hold is judged separately under risk and utility."
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "tax_credit_CRA_expense_contribution_denied",
+      "evidence_refs": ["source_packet.rows:gaap_tax_credit_cra_amortization", "source_packet.rows:gaap_total_noninterest_expense", "source_packet.rows:gaap_pretax_income"]
+    },
+    {
+      "claim_index": 2,
+      "code": "persisted_review_repeats_expense_bridge_denial",
+      "evidence_refs": ["source_packet.rows:gaap_tax_credit_cra_amortization", "source_packet.rows:gaap_total_noninterest_expense"]
+    },
+    {
+      "claim_index": 5,
+      "code": "mixed_credit_without_coverage_left_actionable",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:actionability=available", "source_packet.rows:credit_classified_loans", "source_packet.rows:credit_total_criticized_loans"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "Correct income-row directions and actual maintain state, but both final and saved analyses deny a visible 10,543 favorable expense component; blanket denial of calculable percent changes is also false. The model flags more severe classified-credit mix and missing migration/coverage yet leaves the thesis actionable, a risk/utility failure rather than an inaccurate description of ledger state."
+}

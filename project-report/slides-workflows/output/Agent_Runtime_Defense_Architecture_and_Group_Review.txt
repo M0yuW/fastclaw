@@ -1,0 +1,57 @@
+An Auditable Financial Agent Runtime | Defense script
+
+01  0:00–0:20  An Auditable Financial Agent Runtime
+【指向标题，稍停。】
+Good afternoon. I’m Wang Zheyu. I built an agent runtime for financial research. I’ll follow one request from the chat to a saved research record. Then I’ll show how I checked what the system actually did, and what changed when I gave the same task to a team of agents.
+
+02  0:20–1:35  How a research request moves through the system
+【先沿上排讲网关与 agent loop，再指左下角两位用户的委派路径。用共同结论引出下一页的期间核对。】
+Follow the top row from the chat to the agent loop. The gateway identifies the user and the agent. The queue keeps requests in order within each chat. The agent can call tools, and the session keeps a trace. Now look at the proposed group review in the lower left. Two analysts in the same authorized group ask whether AMD’s growth was broad-based. The equity analyst delegates the revenue check to a growth agent. The risk analyst delegates the segment check to a second agent. Both compare Q3 with Q2. Total revenue rose 16.9 percent, while Gaming revenue fell 28.7 percent. Together the analysts can defend a narrower finding: the company grew, but Gaming declined. These figures come from the recorded AMD case. The two-user workflow is a proposed extension. What happens if one member compares the wrong periods?
+
+03  1:35–2:40  Which evidence should the group request next?
+【先讲右侧错用同比的假设，再解释左侧定向补证步骤。】
+What if the risk agent returns a correct number for the wrong period? The team needs a quarter-on-quarter comparison, but the answer describes a year-on-year change. Here is my proposed algorithm. For each claim, identify its metric, period and required source. Compare each contribution against that requirement. If a check is missing or inconsistent, send one focused request back to its owner. In this example, ask Risk for Gaming revenue in Q2 and Q3. If the figures still cannot be verified, keep that part of the decision open. A future test would measure whether this recovers missing evidence at lower token cost than sending the full corpus again.
+
+04  2:40–3:35  How Solo and Team divide the work
+【切回已实现的 AMD 委派 trace，说明现场证据覆盖的是 coordinator 与 specialist。】
+Here is what the implemented runtime already shows. One coordinator sent two questions to specialists. In the expanded chat entry, Input shows the growth and risk assignments. Output shows the two replies. The growth analyst found higher total revenue. The risk analyst found lower Gaming revenue. The user can see which specialist supplied each piece of the conclusion. Solo can perform the stages in sequence. I later compare both execution modes on the same financial tasks.
+
+05  3:35–4:10  From evidence to research records
+【上下两行各指一次，避免逐格读表。】
+Here are two jobs an analyst can give the system. After an earnings release, the analyst can ask whether the new figures change an existing thesis. The system reads the thesis and its alert, then saves a review explaining what changed. Screening starts with a different question: which companies meet my criteria? The same thresholds are applied to each candidate, and qualifying names can be saved for follow-up.
+
+06  4:10–4:45  Risk limits and evidence gaps
+【指 70% 与 50%，再指第二行的输出。】
+Two more workflows show why the output depends on the task. In the portfolio example, one holding makes up seventy percent of the portfolio against a fifty percent limit. The tool flags the breach. In the evidence example, a required figure is missing. The system keeps the existing thesis, records what needs review and blocks its use in later decisions. Now let’s look at an actual run.
+
+07  4:45–5:30  From daily prices to a saved AMD research record
+【依次指脚本参数、两个收盘价、保存记录。】
+Back to the five-day AMD request. The FinData Toolkit Skill supplied a stock-history script and instructions for using it. The first tool call ran that script and returned five dated Nasdaq price bars. Look at the first and last closes: 570.82 and 534.74. A second call calculated a decline of 6.32 percent. A third call saved the source, dates, prices and calculation together. That was one recorded session. The next example is a separate screen using historical company disclosures.
+
+08  5:30–6:10  AMD and Intel financial screening
+【介绍门槛后播放 AMD/Intel 视频。在视频约 00:15 指向展开的筛选输入和输出，约 00:24 暂停。】
+The analyst set two rules for this screen: a gross margin of at least forty percent and year-over-year revenue growth of at least zero. Watch the screening entry in the chat. Its input shows those rules. Its output shows that AMD passed both, with fifty percent margin and eighteen percent growth. Intel fell below both thresholds. Now we know which company qualified. How can we check that it was saved?
+
+09  6:10–6:50  The saved AMD research record
+【接着播放同一视频。约 00:33 暂停在读回结果，指 AMD、researching 和 version 1，留两秒再继续。】
+Here is the write. The next tool reads the record back. Look at the company, status and version: AMD, researching, version one. That is the evidence for the sentence “AMD was saved for further research.” The screening result tells us why AMD qualified. The readback tells us what the system kept. I used that same distinction when I designed the evaluation.
+
+10  6:50–7:25  Can agents find and use the right filing evidence?
+【沿任务、运行、判分三行往下指。】
+For the main experiment, I asked agents to find and use evidence in archived SEC filings. We used four companies. Tasks asked for a calculation at one date or an analysis across periods. We varied the size of the filing collection. That gives twenty-four configurations. We repeated each three times per mode and checked the figures, milestones and final evidence against the filings.
+
+11  7:25–7:55  SEC main study: how each mode performed
+【先指 55、56，再指 63 和同一行的 token 数。】
+These are the main results. Solo passed 55 of 72 assigned runs, including two timeouts in the denominator. Team passed 56 with shared evidence and 63 with the full corpus. The full-corpus team also used the most tokens. Read the timing column with the model allocation in mind. Solo used Pro, while Team used Flash for specialist work. That led to a second comparison.
+
+12  7:55–8:55  With Flash in every role, full-context Team led on passes
+【先比较两种 Team，再指独立的工作流执行检查。】
+We repeated all twenty-four configurations with Flash in every role. Shared-evidence Team finished sooner than Solo but passed fewer strict checks: 62 against 65 out of 72. Giving the team the full corpus raised the count to 69 out of 72. That mode was also fastest, at 22.60 seconds on average. The cost was more context: nearly twice as many tokens as Solo. Separately, 77 of 80 financial workflow runs passed their execution checks. That score concerns recorded actions and saved state.
+
+13  8:55–9:25  Clarification within a conversation
+【强调此处是示意对话。】
+One design question remains: what should happen before the system even starts gathering evidence? In this example, “Compare the latest results” leaves out the company and the periods. The agent asks one question and pauses. The user supplies Marqeta and the two quarters in the same chat. This illustrates how a session can pause and resume. Testing that behavior systematically is part of my next work.
+
+14  9:25–10:00  Contributions and next steps
+【收尾时看观众。】
+I built a runtime that keeps track of whose task is running, which agent owns each reply, and what evidence was saved. The AMD trace lets an analyst check the work. The SEC experiments show the price of giving every specialist more context. In the all-Flash comparison, the full-corpus team finished fastest and passed most often, while using the most tokens. My next step is to test which evidence specialists need to retain during synthesis. Thank you.

@@ -1,0 +1,586 @@
+{
+  "observation_id": "FINTECH-MA-GAAP-ADJ-r5",
+  "case_id": "FINTECH-MA-GAAP-ADJ",
+  "repeat": 5,
+  "workflow": "guarded_fintech_event_review",
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "policy_tools_only": true,
+    "one_review": true,
+    "source_packet_exact": true,
+    "review_linked": true,
+    "guarded_review": true,
+    "alert_acknowledged": true,
+    "version_incremented": true,
+    "no_trade": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 8,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_e78ca09900034a4e9bfb",
+          "market": "US",
+          "symbol": "MA",
+          "title": "MA SEC event research thesis",
+          "thesis": "CY2024 Q2, ended 2024-06-30 baseline: MA-Q2-NETREV=7.0 USD_billion; MA-Q2-GAAP-OPM=58.0 percent; MA-Q2-ADJ-OPM=59.4 percent; MA-Q2-GAAP-OPEX-YOY=12 percent. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": false,
+          "actionability": "available",
+          "decision_hold_alert_id": null,
+          "assumptions": [],
+          "catalysts": [
+            "business growth",
+            "earnings quality"
+          ],
+          "invalidations": [
+            "material operating deterioration",
+            "weakening demand"
+          ],
+          "required_event_metrics": [
+            "quarterly_net_revenue",
+            "gaap_operating_margin",
+            "adjusted_operating_margin",
+            "gaap_operating_expense_growth_yoy",
+            "adjusted_operating_expense_growth_yoy"
+          ],
+          "evidence": [
+            {
+              "id": "FINTECH-MA-GAAP-ADJ-baseline-sec-exhibit",
+              "url": "https://www.sec.gov/Archives/edgar/data/1141391/000114139124000159/ma06302024-exx991xearnings.htm",
+              "sha256": "80b1cae6f2c1361da2bbdbc5063551c954742c8527cf86012f8362d226794385"
+            }
+          ],
+          "next_review_at": null,
+          "last_review_at": "2026-10-22T06:41:48Z",
+          "created_at": "2026-10-22T06:41:29Z",
+          "updated_at": "2026-10-22T06:41:48Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_4b7b5390441a4222b87d",
+            "thesis_id": "th_e78ca09900034a4e9bfb",
+            "alert_id": "fa_4331e01d13694fb186ea",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-FINTECH-MA-GAAP-ADJ-r5",
+            "event": {
+              "type": "earnings",
+              "summary": "MA CY2024 Q3, ended 2024-09-30 selected SEC exhibit packet: MA-Q3-NETREV=7.4 USD_billion; MA-Q3-GAAP-OPM=54.3 percent; MA-Q3-ADJ-OPM=59.3 percent; MA-Q3-GAAP-OPEX-YOY=25 percent; MA-Q3-ADJ-OPEX-YOY=12 percent; MA-Q3-LITIGATION=176 USD_million; MA-Q3-RESTRUCT=190 USD_million. Compare with the supplied baseline; disclosed year-over-year rates are not sequential growth calculations.",
+              "as_of": "2024-10-31",
+              "sources": [
+                {
+                  "id": "FINTECH-MA-GAAP-ADJ-event-sec-exhibit",
+                  "url": "https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm",
+                  "sha256": "a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "maintain",
+            "rationale": "Guarded review recorded decision=maintain, impact=mixed. Stored event facts: adjusted_operating_expense_growth_yoy=12 percent [MA-Q3-ADJ-OPEX-YOY]; adjusted_operating_margin=59.3 percent [MA-Q3-ADJ-OPM]; gaap_operating_expense_growth_yoy=25 percent [MA-Q3-GAAP-OPEX-YOY]; gaap_operating_margin=54.3 percent [MA-Q3-GAAP-OPM]; litigation_provision=176 USD_million [MA-Q3-LITIGATION]; quarterly_net_revenue=7.4 USD_billion [MA-Q3-NETREV]; restructuring_charge=190 USD_million [MA-Q3-RESTRUCT]. The trusted source explicitly links facts MA-Q3-LITIGATION to operating_margin; their numerical contribution is not established unless separately reconciled. The trusted source explicitly links facts MA-Q3-RESTRUCT to operating_margin; their numerical contribution is not established unless separately reconciled. This guard validates stated causal lineage, not the investment merit of the decision.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [
+              {
+                "bucket": "watchlist",
+                "term": "ma",
+                "weight": 1
+              },
+              {
+                "bucket": "catalysts",
+                "term": "growth",
+                "weight": 2
+              }
+            ],
+            "evidence": [
+              {
+                "type": "validated_accounting_lineage",
+                "claims": [
+                  {
+                    "target_metric": "operating_margin",
+                    "strength": "directly_stated",
+                    "driver_fact_ids": [
+                      "MA-Q3-LITIGATION"
+                    ]
+                  },
+                  {
+                    "target_metric": "operating_margin",
+                    "strength": "directly_stated",
+                    "driver_fact_ids": [
+                      "MA-Q3-RESTRUCT"
+                    ]
+                  }
+                ],
+                "source_hashes": [
+                  "a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6"
+                ]
+              }
+            ],
+            "created_at": "2026-10-22T06:41:48Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_4331e01d13694fb186ea",
+        "watchlist_id": "wl_4822c7f372e14f1498a5",
+        "thesis_id": "th_e78ca09900034a4e9bfb",
+        "market": "US",
+        "symbol": "MA",
+        "event_fingerprint": "83f27a543a716560fa3c413a4886f933b437d324926eff456d64e4add926f6db",
+        "event": {
+          "external_id": "FINTECH-MA-GAAP-ADJ-sec-event-v1",
+          "type": "earnings",
+          "summary": "MA CY2024 Q3, ended 2024-09-30 selected SEC exhibit packet: MA-Q3-NETREV=7.4 USD_billion; MA-Q3-GAAP-OPM=54.3 percent; MA-Q3-ADJ-OPM=59.3 percent; MA-Q3-GAAP-OPEX-YOY=25 percent; MA-Q3-ADJ-OPEX-YOY=12 percent; MA-Q3-LITIGATION=176 USD_million; MA-Q3-RESTRUCT=190 USD_million. Compare with the supplied baseline; disclosed year-over-year rates are not sequential growth calculations.",
+          "as_of": "2024-10-31",
+          "sources": [
+            {
+              "id": "FINTECH-MA-GAAP-ADJ-event-sec-exhibit",
+              "url": "https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm",
+              "sha256": "a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6"
+            }
+          ],
+          "observed_metrics": {
+            "quarterly_net_revenue": {
+              "value": "7.4",
+              "unit": "USD_billion",
+              "fact_id": "MA-Q3-NETREV",
+              "statement_line": "revenue"
+            },
+            "gaap_operating_margin": {
+              "value": "54.3",
+              "unit": "percent",
+              "fact_id": "MA-Q3-GAAP-OPM",
+              "statement_line": "unknown"
+            },
+            "adjusted_operating_margin": {
+              "value": "59.3",
+              "unit": "percent",
+              "fact_id": "MA-Q3-ADJ-OPM",
+              "statement_line": "unknown"
+            },
+            "gaap_operating_expense_growth_yoy": {
+              "value": "25",
+              "unit": "percent",
+              "fact_id": "MA-Q3-GAAP-OPEX-YOY",
+              "statement_line": "operating_expense"
+            },
+            "adjusted_operating_expense_growth_yoy": {
+              "value": "12",
+              "unit": "percent",
+              "fact_id": "MA-Q3-ADJ-OPEX-YOY",
+              "statement_line": "operating_expense"
+            },
+            "litigation_provision": {
+              "value": "176",
+              "unit": "USD_million",
+              "fact_id": "MA-Q3-LITIGATION",
+              "statement_line": "operating_expense",
+              "source_explicit_targets": [
+                "operating_margin"
+              ]
+            },
+            "restructuring_charge": {
+              "value": "190",
+              "unit": "USD_million",
+              "fact_id": "MA-Q3-RESTRUCT",
+              "statement_line": "operating_expense",
+              "source_explicit_targets": [
+                "operating_margin"
+              ]
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "ma",
+            "weight": 1
+          },
+          {
+            "bucket": "catalysts",
+            "term": "growth",
+            "weight": 2
+          }
+        ],
+        "match_score": 3,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-22T06:41:29Z",
+        "last_seen_at": "2026-10-22T06:41:29Z",
+        "created_at": "2026-10-22T06:41:29Z",
+        "updated_at": "2026-10-22T06:41:49Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "extras": {
+    "expected_event": {
+      "external_id": "FINTECH-MA-GAAP-ADJ-sec-event-v1",
+      "type": "earnings",
+      "as_of": "2024-10-31",
+      "summary": "MA CY2024 Q3, ended 2024-09-30 selected SEC exhibit packet: MA-Q3-NETREV=7.4 USD_billion; MA-Q3-GAAP-OPM=54.3 percent; MA-Q3-ADJ-OPM=59.3 percent; MA-Q3-GAAP-OPEX-YOY=25 percent; MA-Q3-ADJ-OPEX-YOY=12 percent; MA-Q3-LITIGATION=176 USD_million; MA-Q3-RESTRUCT=190 USD_million. Compare with the supplied baseline; disclosed year-over-year rates are not sequential growth calculations.",
+      "sources": [
+        {
+          "id": "FINTECH-MA-GAAP-ADJ-event-sec-exhibit",
+          "url": "https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm",
+          "sha256": "a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6"
+        }
+      ],
+      "observed_metrics": {
+        "quarterly_net_revenue": {
+          "value": "7.4",
+          "unit": "USD_billion",
+          "fact_id": "MA-Q3-NETREV",
+          "statement_line": "revenue"
+        },
+        "gaap_operating_margin": {
+          "value": "54.3",
+          "unit": "percent",
+          "fact_id": "MA-Q3-GAAP-OPM",
+          "statement_line": "unknown"
+        },
+        "adjusted_operating_margin": {
+          "value": "59.3",
+          "unit": "percent",
+          "fact_id": "MA-Q3-ADJ-OPM",
+          "statement_line": "unknown"
+        },
+        "gaap_operating_expense_growth_yoy": {
+          "value": "25",
+          "unit": "percent",
+          "fact_id": "MA-Q3-GAAP-OPEX-YOY",
+          "statement_line": "operating_expense"
+        },
+        "adjusted_operating_expense_growth_yoy": {
+          "value": "12",
+          "unit": "percent",
+          "fact_id": "MA-Q3-ADJ-OPEX-YOY",
+          "statement_line": "operating_expense"
+        },
+        "litigation_provision": {
+          "value": "176",
+          "unit": "USD_million",
+          "fact_id": "MA-Q3-LITIGATION",
+          "statement_line": "operating_expense",
+          "source_explicit_targets": [
+            "operating_margin"
+          ]
+        },
+        "restructuring_charge": {
+          "value": "190",
+          "unit": "USD_million",
+          "fact_id": "MA-Q3-RESTRUCT",
+          "statement_line": "operating_expense",
+          "source_explicit_targets": [
+            "operating_margin"
+          ]
+        }
+      }
+    },
+    "tool_calls": [
+      "finance-tools__thesis_get",
+      "finance-tools__alert_list",
+      "finance-tools__thesis_match_event",
+      "finance-tools__thesis_record_review",
+      "finance-tools__thesis_record_review",
+      "finance-tools__thesis_record_review",
+      "finance-tools__thesis_record_review",
+      "finance-tools__alert_update"
+    ],
+    "trace": {
+      "model_calls": 8,
+      "tool_calls": 8,
+      "tool_results": 8,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "Complete one research-state review for the newly ingested SEC event. Read the stored thesis and alert via finance tools. Compare only the supplied periods and metrics, identify support, risk, and missing evidence, and choose your own decision. Link the stored alert and source hash when recording the review with the observed thesis version; then acknowledge the alert with its observed version. A missing metric in the packet is not necessarily missing from the SEC filing. Do not trade. Case FINTECH-MA-GAAP-ADJ; thesis ID th_e78ca09900034a4e9bfb; alert ID fa_4331e01d13694fb186ea. Compare adjacent fiscal-quarter levels when metric, unit and accounting basis match; keep disclosed year-over-year rates separate. Distinguish GAAP and adjusted measures, and timing of recognition where the packet states it. Identify one source-grounded research implication, its strongest counterpoint or unresolved input, and what evidence would change the assessment. Do not assume a direction or conviction in advance. For causal_claims, use a stored source-backed driver fact with a supported target; a metric is not its own cause. Qualitative directly_stated links need not have a quantified contribution. If no claim qualifies, send causal_claims=[]. Do not set next_review_at to a past date; omit it unless there is a genuine future operational review date. Read tool results and correct rejected inputs before finalizing.",
+      "response": {
+        "id": "chatcmpl-1792651289754614000",
+        "object": "chat.completion",
+        "created": 1792651289,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# Research-State Review — MA, Case FINTECH-MA-GAAP-ADJ\n\n**Thesis:** `th_e78ca09900034a4e9bfb` (MA SEC event research thesis) · **Alert:** `fa_4331e01d13694fb186ea` · **Review:** `tr_4b7b5390441a4222b87d`\n\n## 1. What was compared\nOnly the two supplied periods, on matching metric, unit and accounting basis:\n\n| Metric (fact ID) | CY2024 Q2, ended 2024-06-30 (baseline) | CY2024 Q3, ended 2024-09-30 (event) |\n|---|---|---|\n| Net revenue `MA-Q3-NETREV` | 7.0 USD_billion | 7.4 USD_billion |\n| GAAP operating margin `MA-Q3-GAAP-OPM` | 58.0 percent | 54.3 percent |\n| Adjusted operating margin `MA-Q3-ADJ-OPM` | 59.4 percent | 59.3 percent |\n| GAAP operating expense growth YoY `MA-Q3-GAAP-OPEX-YOY` | 12 percent (disclosed YoY) | 25 percent (disclosed YoY) |\n| Adjusted operating expense growth YoY `MA-Q3-ADJ-OPEX-YOY` | not supplied in baseline | 12 percent (disclosed YoY) |\n| Litigation provision `MA-Q3-LITIGATION` | not supplied | 176 USD_million |\n| Restructuring charge `MA-Q3-RESTRUCT` | not supplied | 190 USD_million |\n\nThe two operating-expense figures are **disclosed year-over-year rates**, not sequential growth, and are kept separate from the adjacent-quarter level comparison. The baseline packet supplies no adjusted operating-expense growth rate, so no adjusted-basis expense comparison is possible.\n\n## 2. Support\n- Revenue rose on an adjacent-quarter basis (7.0 → 7.4 USD_billion), consistent with the \"business growth\" catalyst.\n- Adjusted operating margin was essentially unchanged (59.4 → 59.3 percent), so the adjusted-basis profitability picture did not deteriorate in the packet.\n\n## 3. Risk\n- GAAP operating margin fell 58.0 → 54.3 percent while adjusted margin held, i.e. the compression sits in GAAP-basis items.\n- GAAP operating expense growth of 25 percent YoY is disclosed against 12 percent adjusted, and the packet separately discloses a 176 USD_million litigation provision and a 190 USD_million restructuring charge, both tagged to operating expense with source-explicit operating-margin targets. This is directionally consistent with the GAAP/adjusted margin gap widening, but the packet does not quantify the contribution.\n\n## 4. Missing evidence\n- Sequential operating expense levels and sequential margin drivers (only YoY rates are supplied).\n- Adjusted-basis reconciliation detail, so the GAAP margin decline cannot be attributed quantitatively to the disclosed charges.\n- Baseline-period litigation/restructuring amounts, so no like-for-like comparison of those items is possible.\n- Note: a metric absent from this packet is not necessarily absent from the SEC filing; the packet is a selected exhibit extract.\n\n## 5. Decision\n**maintain** · impact **mixed** · status **active** · conviction **3 (unchanged)** · no `next_review_at` set (no genuine future operational review date supplied). Neither invalidation term (\"material operating deterioration\", \"weakening demand\") is established by this packet.\n\n**Causal claims recorded:** `MA-Q3-LITIGATION` → operating_margin and `MA-Q3-RESTRUCT` → operating_margin, both `directly_stated` (qualitative, no quantified contribution). No metric was used as its own cause.\n\n## 6. Research implication, counterpoint, and what would change the assessment\n- **Implication (source-grounded):** The GAAP-versus-adjusted margin divergence in Q3 CY2024 coincides with two disclosed GAAP operating-expense items (litigation 176 USD_million, restructuring 190 USD_million), so the earnings-quality question is whether the GAAP margin decline is charge-driven or reflects underlying cost growth.\n- **Strongest counterpoint / unresolved input:** The packet gives no reconciliation, so the charges may explain only part of the GAAP margin decline; the 25 percent GAAP expense growth rate is a YoY figure and cannot be decomposed sequentially from this packet. Adjusted margin stability is itself an adjusted-basis measure and does not resolve the GAAP question.\n- **What would change the assessment:** The full exhibit's GAAP-to-adjusted reconciliation and sequential operating expense detail for Q3 CY2024. If those show the margin decline is fully explained by the disclosed charges, the earnings-quality concern weakens; if a material residual decline remains after excluding them, that would move toward the \"material operating deterioration\" invalidation term.\n\n## 7. State changes\n- Thesis review persisted at expected version 1 → thesis now **version 2**, `last_review_at` 2026-10-22T06:41:48Z; event source hash `a5ccde9c…37edd6` linked alongside baseline hash `80b1cae6…794385`.\n- Alert `fa_4331e01d13694fb186ea` acknowledged at expected version 1 → now **version 2**, status `acknowledged`.\n\nNo trades were made and no investment recommendation is given; this is research-state bookkeeping only."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 54740,
+          "completion_tokens": 6583,
+          "total_tokens": 61323
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_eItse6dGCHN9I5ewjpfM4125",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_e78ca09900034a4e9bfb\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_xm1R5buZ0ug3YCAB7K6l5160",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_eItse6dGCHN9I5ewjpfM4125",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"3e64f90e-13a6-4a58-b2ee-a57ddda19fce\",\"as_of\":\"2026-10-22T06:41:30Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_e78ca09900034a4e9bfb\",\"market\":\"US\",\"symbol\":\"MA\",\"title\":\"MA SEC event research thesis\",\"thesis\":\"CY2024 Q2, ended 2024-06-30 baseline: MA-Q2-NETREV=7.0 USD_billion; MA-Q2-GAAP-OPM=58.0 percent; MA-Q2-ADJ-OPM=59.4 percent; MA-Q2-GAAP-OPEX-YOY=12 percent. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[\"business growth\",\"earnings quality\"],\"invalidations\":[\"material operating deterioration\",\"weakening demand\"],\"required_event_metrics\":[\"quarterly_net_revenue\",\"gaap_operating_margin\",\"adjusted_operating_margin\",\"gaap_operating_expense_growth_yoy\",\"adjusted_operating_expense_growth_yoy\"],\"evidence\":[{\"id\":\"FINTECH-MA-GAAP-ADJ-baseline-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000159/ma06302024-exx991xearnings.htm\",\"sha256\":\"80b1cae6f2c1361da2bbdbc5063551c954742c8527cf86012f8362d226794385\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-22T06:41:29Z\",\"updated_at\":\"2026-10-22T06:41:29Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8387,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_xm1R5buZ0ug3YCAB7K6l5160",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"0d2a9696-f527-46c3-8035-162adbfd5e7c\",\"as_of\":\"2026-10-22T06:41:30Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_4331e01d13694fb186ea\",\"watchlist_id\":\"wl_4822c7f372e14f1498a5\",\"thesis_id\":\"th_e78ca09900034a4e9bfb\",\"market\":\"US\",\"symbol\":\"MA\",\"event_fingerprint\":\"83f27a543a716560fa3c413a4886f933b437d324926eff456d64e4add926f6db\",\"event\":{\"external_id\":\"FINTECH-MA-GAAP-ADJ-sec-event-v1\",\"type\":\"earnings\",\"summary\":\"MA CY2024 Q3, ended 2024-09-30 selected SEC exhibit packet: MA-Q3-NETREV=7.4 USD_billion; MA-Q3-GAAP-OPM=54.3 percent; MA-Q3-ADJ-OPM=59.3 percent; MA-Q3-GAAP-OPEX-YOY=25 percent; MA-Q3-ADJ-OPEX-YOY=12 percent; MA-Q3-LITIGATION=176 USD_million; MA-Q3-RESTRUCT=190 USD_million. Compare with the supplied baseline; disclosed year-over-year rates are not sequential growth calculations.\",\"as_of\":\"2024-10-31\",\"sources\":[{\"id\":\"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\",\"sha256\":\"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\"}],\"observed_metrics\":{\"quarterly_net_revenue\":{\"value\":\"7.4\",\"unit\":\"USD_billion\",\"fact_id\":\"MA-Q3-NETREV\",\"statement_line\":\"revenue\"},\"gaap_operating_margin\":{\"value\":\"54.3\",\"unit\":\"percent\",\"fact_id\":\"MA-Q3-GAAP-OPM\",\"statement_line\":\"unknown\"},\"adjusted_operating_margin\":{\"value\":\"59.3\",\"unit\":\"percent\",\"fact_id\":\"MA-Q3-ADJ-OPM\",\"statement_line\":\"unknown\"},\"gaap_operating_expense_growth_yoy\":{\"value\":\"25\",\"unit\":\"percent\",\"fact_id\":\"MA-Q3-GAAP-OPEX-YOY\",\"statement_line\":\"operating_expense\"},\"adjusted_operating_expense_growth_yoy\":{\"value\":\"12\",\"unit\":\"percent\",\"fact_id\":\"MA-Q3-ADJ-OPEX-YOY\",\"statement_line\":\"operating_expense\"},\"litigation_provision\":{\"value\":\"176\",\"unit\":\"USD_million\",\"fact_id\":\"MA-Q3-LITIGATION\",\"statement_line\":\"operating_expense\",\"source_explicit_targets\":[\"operating_margin\"]},\"restructuring_charge\":{\"value\":\"190\",\"unit\":\"USD_million\",\"fact_id\":\"MA-Q3-RESTRUCT\",\"statement_line\":\"operating_expense\",\"source_explicit_targets\":[\"operating_margin\"]}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"ma\",\"weight\":1},{\"bucket\":\"catalysts\",\"term\":\"growth\",\"weight\":2}],\"match_score\":3,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-22T06:41:29Z\",\"last_seen_at\":\"2026-10-22T06:41:29Z\",\"created_at\":\"2026-10-22T06:41:29Z\",\"updated_at\":\"2026-10-22T06:41:29Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9683,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_bjMn5jK2beVfUc1AzbU28937",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"MA\", \"event_summary\": \"MA CY2024 Q3, ended 2024-09-30 selected SEC exhibit packet: MA-Q3-NETREV=7.4 USD_billion; MA-Q3-GAAP-OPM=54.3 percent; MA-Q3-ADJ-OPM=59.3 percent; MA-Q3-GAAP-OPEX-YOY=25 percent; MA-Q3-ADJ-OPEX-YOY=12 percent; MA-Q3-LITIGATION=176 USD_million; MA-Q3-RESTRUCT=190 USD_million. Compare with the supplied baseline; disclosed year-over-year rates are not sequential growth calculations.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_bjMn5jK2beVfUc1AzbU28937",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"88d13e03-2bf4-4d52-9aff-00852d62eba8\",\"as_of\":\"2026-10-22T06:41:32Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"MA\",\"event_summary\":\"MA CY2024 Q3, ended 2024-09-30 selected SEC exhibit packet: MA-Q3-NETREV=7.4 USD_billion; MA-Q3-GAAP-OPM=54.3 percent; MA-Q3-ADJ-OPM=59.3 percent; MA-Q3-GAAP-OPEX-YOY=25 percent; MA-Q3-ADJ-OPEX-YOY=12 percent; MA-Q3-LITIGATION=176 USD_million; MA-Q3-RESTRUCT=190 USD_million. Compare with the supplied baseline; disclosed year-over-year rates are not sequential growth calculations.\",\"matches\":[{\"thesis_id\":\"th_e78ca09900034a4e9bfb\",\"title\":\"MA SEC event research thesis\",\"status\":\"active\",\"version\":1,\"match_score\":2,\"matched_terms\":[{\"bucket\":\"catalysts\",\"term\":\"growth\"}],\"match_reason\":\"term_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_CUksEbYMzunK71t5Pb2n5592",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_e78ca09900034a4e9bfb\", \"expected_version\": 1, \"alert_id\": \"fa_4331e01d13694fb186ea\", \"event\": {\"summary\": \"MA CY2024 Q3 (ended 2024-09-30) selected SEC exhibit packet: net revenue 7.4 USD_billion; GAAP operating margin 54.3 percent; adjusted operating margin 59.3 percent; GAAP operating expense growth 25 percent YoY; adjusted operating expense growth 12 percent YoY; litigation provision 176 USD_million; restructuring charge 190 USD_million. Compared against the CY2024 Q2 (ended 2024-06-30) baseline in the thesis.\", \"as_of\": \"2024-10-31\", \"type\": \"earnings\", \"sources\": [{\"id\": \"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\", \"sha256\": \"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\"}]}, \"impact\": \"mixed\", \"decision\": \"maintain\", \"new_status\": \"active\", \"new_conviction\": 3, \"rationale\": \"Adjacent-quarter comparison on matching metric, unit and accounting basis: net revenue rose from 7.0 to 7.4 USD_billion (Q2 ended 2024-06-30 vs Q3 ended 2024-09-30). GAAP operating margin fell from 58.0 to 54.3 percent while adjusted operating margin was essentially flat at 59.4 to 59.3 percent, so the margin compression is concentrated in GAAP-basis items rather than the adjusted measure. The packet separately discloses GAAP operating expense growth of 25 percent YoY versus adjusted operating expense growth of 12 percent YoY; these are disclosed year-over-year rates and are not treated as sequential growth. The packet also discloses a 176 USD_million litigation provision and a 190 USD_million restructuring charge, both tagged to operating expense with source-explicit operating-margin targets, which is consistent with the GAAP-versus-adjusted margin gap widening. Revenue growth and stable adjusted margin support the business-growth catalyst; the GAAP margin decline and elevated GAAP expense growth are the principal risk. Missing from the packet: sequential operating expense levels, sequential margin drivers, and any adjusted-basis reconciliation detail, so the packet alone cannot quantify how much of the GAAP margin decline is attributable to the disclosed litigation and restructuring charges. No invalidation term (material operating deterioration, weakening demand) is established by this packet. Conviction and status unchanged pending the reconciliation detail.\", \"causal_claims\": [{\"driver_fact_id\": \"MA-Q3-LITIGATION\", \"target_metric\": \"operating_margin\", \"link_type\": \"directly_stated\", \"basis\": \"GAAP\", \"note\": \"Packet tags the 176 USD_million litigation provision to operating expense with a source-explicit operating-margin target; qualitative directly_stated link, no quantified contribution supplied.\"}, {\"driver_fact_id\": \"MA-Q3-RESTRUCT\", \"target_metric\": \"operating_margin\", \"link_type\": \"directly_stated\", \"basis\": \"GAAP\", \"note\": \"Packet tags the 190 USD_million restructuring charge to operating expense with a source-explicit operating-margin target; qualitative directly_stated link, no quantified contribution supplied.\"}], \"evidence\": [{\"id\": \"FINTECH-MA-GAAP-ADJ-baseline-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000159/ma06302024-exx991xearnings.htm\", \"sha256\": \"80b1cae6f2c1361da2bbdbc5063551c954742c8527cf86012f8362d226794385\", \"period\": \"CY2024 Q2 ended 2024-06-30\", \"role\": \"baseline\"}, {\"id\": \"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\", \"sha256\": \"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\", \"period\": \"CY2024 Q3 ended 2024-09-30\", \"role\": \"event\"}], \"matched_terms\": [\"growth\", \"earnings quality\", \"operating margin\"]}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_CUksEbYMzunK71t5Pb2n5592",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"9bc31e11-7c06-4ecd-86f1-1c5047c41798\",\"as_of\":\"2026-10-22T06:41:37Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"invalid_input\"]},\"errors\":[{\"code\":\"invalid_input\",\"message\":\"causal_claims[0].strength is required\",\"retriable\":false}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_4IAYSWN4PGmGCgEbxOZa1888",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_4331e01d13694fb186ea\", \"causal_claims\": [{\"basis\": \"GAAP\", \"driver_fact_id\": \"MA-Q3-LITIGATION\", \"link_type\": \"directly_stated\", \"note\": \"Packet tags the 176 USD_million litigation provision to operating expense with a source-explicit operating-margin target; qualitative directly_stated link, no quantified contribution supplied.\", \"strength\": \"qualitative\", \"target_metric\": \"operating_margin\"}, {\"basis\": \"GAAP\", \"driver_fact_id\": \"MA-Q3-RESTRUCT\", \"link_type\": \"directly_stated\", \"note\": \"Packet tags the 190 USD_million restructuring charge to operating expense with a source-explicit operating-margin target; qualitative directly_stated link, no quantified contribution supplied.\", \"strength\": \"qualitative\", \"target_metric\": \"operating_margin\"}], \"decision\": \"maintain\", \"event\": {\"as_of\": \"2024-10-31\", \"summary\": \"MA CY2024 Q3 (ended 2024-09-30) selected SEC exhibit packet: net revenue 7.4 USD_billion; GAAP operating margin 54.3 percent; adjusted operating margin 59.3 percent; GAAP operating expense growth 25 percent YoY; adjusted operating expense growth 12 percent YoY; litigation provision 176 USD_million; restructuring charge 190 USD_million. Compared against the CY2024 Q2 (ended 2024-06-30) baseline in the thesis.\", \"sources\": [{\"id\": \"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\", \"sha256\": \"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\"}], \"type\": \"earnings\"}, \"evidence\": [{\"id\": \"FINTECH-MA-GAAP-ADJ-baseline-sec-exhibit\", \"period\": \"CY2024 Q2 ended 2024-06-30\", \"role\": \"baseline\", \"sha256\": \"80b1cae6f2c1361da2bbdbc5063551c954742c8527cf86012f8362d226794385\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000159/ma06302024-exx991xearnings.htm\"}, {\"id\": \"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\", \"period\": \"CY2024 Q3 ended 2024-09-30\", \"role\": \"event\", \"sha256\": \"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"matched_terms\": [\"growth\", \"earnings quality\", \"operating margin\"], \"new_conviction\": 3, \"new_status\": \"active\", \"rationale\": \"Adjacent-quarter comparison on matching metric, unit and accounting basis: net revenue rose from 7.0 to 7.4 USD_billion (Q2 ended 2024-06-30 vs Q3 ended 2024-09-30). GAAP operating margin fell from 58.0 to 54.3 percent while adjusted operating margin was essentially flat at 59.4 to 59.3 percent, so the margin compression is concentrated in GAAP-basis items rather than the adjusted measure. The packet separately discloses GAAP operating expense growth of 25 percent YoY versus adjusted operating expense growth of 12 percent YoY; these are disclosed year-over-year rates and are not treated as sequential growth. The packet also discloses a 176 USD_million litigation provision and a 190 USD_million restructuring charge, both tagged to operating expense with source-explicit operating-margin targets, consistent with the GAAP-versus-adjusted margin gap widening. Revenue growth and stable adjusted margin support the business-growth catalyst; the GAAP margin decline and elevated GAAP expense growth are the principal risk. Missing from the packet: sequential operating expense levels, sequential margin drivers, and adjusted-basis reconciliation detail, so the packet alone cannot quantify how much of the GAAP margin decline is attributable to the disclosed litigation and restructuring charges. No invalidation term (material operating deterioration, weakening demand) is established by this packet. Conviction and status unchanged pending the reconciliation detail.\", \"thesis_id\": \"th_e78ca09900034a4e9bfb\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_4IAYSWN4PGmGCgEbxOZa1888",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"23463e47-85c9-4383-b02e-37af83efa903\",\"as_of\":\"2026-10-22T06:41:41Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"invalid_input\"]},\"errors\":[{\"code\":\"invalid_input\",\"message\":\"causal_claims[0].driver_fact_ids must be an array\",\"retriable\":false}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_qXolwebPp8AOxOI2zX6q9983",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_4331e01d13694fb186ea\", \"causal_claims\": [{\"basis\": \"GAAP\", \"driver_fact_ids\": [\"MA-Q3-LITIGATION\"], \"link_type\": \"directly_stated\", \"note\": \"Packet tags the 176 USD_million litigation provision to operating expense with a source-explicit operating-margin target; qualitative directly_stated link, no quantified contribution supplied.\", \"strength\": \"qualitative\", \"target_metric\": \"operating_margin\"}, {\"basis\": \"GAAP\", \"driver_fact_ids\": [\"MA-Q3-RESTRUCT\"], \"link_type\": \"directly_stated\", \"note\": \"Packet tags the 190 USD_million restructuring charge to operating expense with a source-explicit operating-margin target; qualitative directly_stated link, no quantified contribution supplied.\", \"strength\": \"qualitative\", \"target_metric\": \"operating_margin\"}], \"decision\": \"maintain\", \"event\": {\"as_of\": \"2024-10-31\", \"summary\": \"MA CY2024 Q3 (ended 2024-09-30) selected SEC exhibit packet: net revenue 7.4 USD_billion; GAAP operating margin 54.3 percent; adjusted operating margin 59.3 percent; GAAP operating expense growth 25 percent YoY; adjusted operating expense growth 12 percent YoY; litigation provision 176 USD_million; restructuring charge 190 USD_million. Compared against the CY2024 Q2 (ended 2024-06-30) baseline in the thesis.\", \"sources\": [{\"id\": \"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\", \"sha256\": \"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\"}], \"type\": \"earnings\"}, \"evidence\": [{\"id\": \"FINTECH-MA-GAAP-ADJ-baseline-sec-exhibit\", \"period\": \"CY2024 Q2 ended 2024-06-30\", \"role\": \"baseline\", \"sha256\": \"80b1cae6f2c1361da2bbdbc5063551c954742c8527cf86012f8362d226794385\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000159/ma06302024-exx991xearnings.htm\"}, {\"id\": \"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\", \"period\": \"CY2024 Q3 ended 2024-09-30\", \"role\": \"event\", \"sha256\": \"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"matched_terms\": [\"growth\", \"earnings quality\", \"operating margin\"], \"new_conviction\": 3, \"new_status\": \"active\", \"rationale\": \"Adjacent-quarter comparison on matching metric, unit and accounting basis: net revenue rose from 7.0 to 7.4 USD_billion (Q2 ended 2024-06-30 vs Q3 ended 2024-09-30). GAAP operating margin fell from 58.0 to 54.3 percent while adjusted operating margin was essentially flat at 59.4 to 59.3 percent, so the margin compression is concentrated in GAAP-basis items rather than the adjusted measure. The packet separately discloses GAAP operating expense growth of 25 percent YoY versus adjusted operating expense growth of 12 percent YoY; these are disclosed year-over-year rates and are not treated as sequential growth. The packet also discloses a 176 USD_million litigation provision and a 190 USD_million restructuring charge, both tagged to operating expense with source-explicit operating-margin targets, consistent with the GAAP-versus-adjusted margin gap widening. Revenue growth and stable adjusted margin support the business-growth catalyst; the GAAP margin decline and elevated GAAP expense growth are the principal risk. Missing from the packet: sequential operating expense levels, sequential margin drivers, and adjusted-basis reconciliation detail, so the packet alone cannot quantify how much of the GAAP margin decline is attributable to the disclosed litigation and restructuring charges. No invalidation term (material operating deterioration, weakening demand) is established by this packet. Conviction and status unchanged pending the reconciliation detail.\", \"thesis_id\": \"th_e78ca09900034a4e9bfb\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_qXolwebPp8AOxOI2zX6q9983",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"d7c62c84-60d5-4c94-ad78-19655e9e8583\",\"as_of\":\"2026-10-22T06:41:44Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"unsupported_causal_claim\"]},\"errors\":[{\"code\":\"unsupported_causal_claim\",\"message\":\"claim[0]: invalid strength\",\"retriable\":true,\"details\":{\"alert_id\":\"fa_4331e01d13694fb186ea\"}}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_lQ0Vq5NGubiuhHZrxc5x9025",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_4331e01d13694fb186ea\", \"causal_claims\": [{\"basis\": \"GAAP\", \"driver_fact_ids\": [\"MA-Q3-LITIGATION\"], \"link_type\": \"directly_stated\", \"note\": \"Packet tags the 176 USD_million litigation provision to operating expense with a source-explicit operating-margin target; qualitative directly_stated link, no quantified contribution supplied.\", \"strength\": \"directly_stated\", \"target_metric\": \"operating_margin\"}, {\"basis\": \"GAAP\", \"driver_fact_ids\": [\"MA-Q3-RESTRUCT\"], \"link_type\": \"directly_stated\", \"note\": \"Packet tags the 190 USD_million restructuring charge to operating expense with a source-explicit operating-margin target; qualitative directly_stated link, no quantified contribution supplied.\", \"strength\": \"directly_stated\", \"target_metric\": \"operating_margin\"}], \"decision\": \"maintain\", \"event\": {\"as_of\": \"2024-10-31\", \"summary\": \"MA CY2024 Q3 (ended 2024-09-30) selected SEC exhibit packet: net revenue 7.4 USD_billion; GAAP operating margin 54.3 percent; adjusted operating margin 59.3 percent; GAAP operating expense growth 25 percent YoY; adjusted operating expense growth 12 percent YoY; litigation provision 176 USD_million; restructuring charge 190 USD_million. Compared against the CY2024 Q2 (ended 2024-06-30) baseline in the thesis.\", \"sources\": [{\"id\": \"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\", \"sha256\": \"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\"}], \"type\": \"earnings\"}, \"evidence\": [{\"id\": \"FINTECH-MA-GAAP-ADJ-baseline-sec-exhibit\", \"period\": \"CY2024 Q2 ended 2024-06-30\", \"role\": \"baseline\", \"sha256\": \"80b1cae6f2c1361da2bbdbc5063551c954742c8527cf86012f8362d226794385\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000159/ma06302024-exx991xearnings.htm\"}, {\"id\": \"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\", \"period\": \"CY2024 Q3 ended 2024-09-30\", \"role\": \"event\", \"sha256\": \"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"matched_terms\": [\"growth\", \"earnings quality\", \"operating margin\"], \"new_conviction\": 3, \"new_status\": \"active\", \"rationale\": \"Adjacent-quarter comparison on matching metric, unit and accounting basis: net revenue rose from 7.0 to 7.4 USD_billion (Q2 ended 2024-06-30 vs Q3 ended 2024-09-30). GAAP operating margin fell from 58.0 to 54.3 percent while adjusted operating margin was essentially flat at 59.4 to 59.3 percent, so the margin compression is concentrated in GAAP-basis items rather than the adjusted measure. The packet separately discloses GAAP operating expense growth of 25 percent YoY versus adjusted operating expense growth of 12 percent YoY; these are disclosed year-over-year rates and are not treated as sequential growth. The packet also discloses a 176 USD_million litigation provision and a 190 USD_million restructuring charge, both tagged to operating expense with source-explicit operating-margin targets, consistent with the GAAP-versus-adjusted margin gap widening. Revenue growth and stable adjusted margin support the business-growth catalyst; the GAAP margin decline and elevated GAAP expense growth are the principal risk. Missing from the packet: sequential operating expense levels, sequential margin drivers, and adjusted-basis reconciliation detail, so the packet alone cannot quantify how much of the GAAP margin decline is attributable to the disclosed litigation and restructuring charges. No invalidation term (material operating deterioration, weakening demand) is established by this packet. Conviction and status unchanged pending the reconciliation detail.\", \"thesis_id\": \"th_e78ca09900034a4e9bfb\"}",
+              "round": 6
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_lQ0Vq5NGubiuhHZrxc5x9025",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"0cfa8d35-f127-47dd-961c-a748c68d84ea\",\"as_of\":\"2026-10-22T06:41:48Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_e78ca09900034a4e9bfb\",\"market\":\"US\",\"symbol\":\"MA\",\"title\":\"MA SEC event research thesis\",\"thesis\":\"CY2024 Q2, ended 2024-06-30 baseline: MA-Q2-NETREV=7.0 USD_billion; MA-Q2-GAAP-OPM=58.0 percent; MA-Q2-ADJ-OPM=59.4 percent; MA-Q2-GAAP-OPEX-YOY=12 percent. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[\"business growth\",\"earnings quality\"],\"invalidations\":[\"material operating deterioration\",\"weakening demand\"],\"required_event_metrics\":[\"quarterly_net_revenue\",\"gaap_operating_margin\",\"adjusted_operating_margin\",\"gaap_operating_expense_growth_yoy\",\"adjusted_operating_expense_growth_yoy\"],\"evidence\":[{\"id\":\"FINTECH-MA-GAAP-ADJ-baseline-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000159/ma06302024-exx991xearnings.htm\",\"sha256\":\"80b1cae6f2c1361da2bbdbc5063551c954742c8527cf86012f8362d226794385\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-22T06:41:48Z\",\"created_at\":\"2026-10-22T06:41:29Z\",\"updated_at\":\"2026-10-22T06:41:48Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_4b7b5390441a4222b87d\",\"thesis_id\":\"th_e78ca09900034a4e9bfb\",\"alert_id\":\"fa_4331e01d13694fb186ea\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-FINTECH-MA-GAAP-ADJ-r5\",\"event\":{\"type\":\"earnings\",\"summary\":\"MA CY2024 Q3, ended 2024-09-30 selected SEC exhibit packet: MA-Q3-NETREV=7.4 USD_billion; MA-Q3-GAAP-OPM=54.3 percent; MA-Q3-ADJ-OPM=59.3 percent; MA-Q3-GAAP-OPEX-YOY=25 percent; MA-Q3-ADJ-OPEX-YOY=12 percent; MA-Q3-LITIGATION=176 USD_million; MA-Q3-RESTRUCT=190 USD_million. Compare with the supplied baseline; disclosed year-over-year rates are not sequential growth calculations.\",\"as_of\":\"2024-10-31\",\"sources\":[{\"id\":\"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\",\"sha256\":\"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\"}]},\"impact\":\"mixed\",\"decision\":\"maintain\",\"rationale\":\"Guarded review recorded decision=maintain, impact=mixed. Stored event facts: adjusted_operating_expense_growth_yoy=12 percent [MA-Q3-ADJ-OPEX-YOY]; adjusted_operating_margin=59.3 percent [MA-Q3-ADJ-OPM]; gaap_operating_expense_growth_yoy=25 percent [MA-Q3-GAAP-OPEX-YOY]; gaap_operating_margin=54.3 percent [MA-Q3-GAAP-OPM]; litigation_provision=176 USD_million [MA-Q3-LITIGATION]; quarterly_net_revenue=7.4 USD_billion [MA-Q3-NETREV]; restructuring_charge=190 USD_million [MA-Q3-RESTRUCT]. The trusted source explicitly links facts MA-Q3-LITIGATION to operating_margin; their numerical contribution is not established unless separately reconciled. The trusted source explicitly links facts MA-Q3-RESTRUCT to operating_margin; their numerical contribution is not established unless separately reconciled. This guard validates stated causal lineage, not the investment merit of the decision.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"ma\",\"weight\":1},{\"bucket\":\"catalysts\",\"term\":\"growth\",\"weight\":2}],\"evidence\":[{\"type\":\"validated_accounting_lineage\",\"claims\":[{\"target_metric\":\"operating_margin\",\"strength\":\"directly_stated\",\"driver_fact_ids\":[\"MA-Q3-LITIGATION\"]},{\"target_metric\":\"operating_margin\",\"strength\":\"directly_stated\",\"driver_fact_ids\":[\"MA-Q3-RESTRUCT\"]}],\"source_hashes\":[\"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\"]}],\"created_at\":\"2026-10-22T06:41:48Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.918,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 6
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_oPEYOZik0ijPup99UORC1426",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_4331e01d13694fb186ea\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 7
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_oPEYOZik0ijPup99UORC1426",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"6af3e31e-1771-42ce-a499-3ecbd2d82e8d\",\"as_of\":\"2026-10-22T06:41:49Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_4331e01d13694fb186ea\",\"watchlist_id\":\"wl_4822c7f372e14f1498a5\",\"thesis_id\":\"th_e78ca09900034a4e9bfb\",\"market\":\"US\",\"symbol\":\"MA\",\"event_fingerprint\":\"83f27a543a716560fa3c413a4886f933b437d324926eff456d64e4add926f6db\",\"event\":{\"external_id\":\"FINTECH-MA-GAAP-ADJ-sec-event-v1\",\"type\":\"earnings\",\"summary\":\"MA CY2024 Q3, ended 2024-09-30 selected SEC exhibit packet: MA-Q3-NETREV=7.4 USD_billion; MA-Q3-GAAP-OPM=54.3 percent; MA-Q3-ADJ-OPM=59.3 percent; MA-Q3-GAAP-OPEX-YOY=25 percent; MA-Q3-ADJ-OPEX-YOY=12 percent; MA-Q3-LITIGATION=176 USD_million; MA-Q3-RESTRUCT=190 USD_million. Compare with the supplied baseline; disclosed year-over-year rates are not sequential growth calculations.\",\"as_of\":\"2024-10-31\",\"sources\":[{\"id\":\"FINTECH-MA-GAAP-ADJ-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm\",\"sha256\":\"a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6\"}],\"observed_metrics\":{\"quarterly_net_revenue\":{\"value\":\"7.4\",\"unit\":\"USD_billion\",\"fact_id\":\"MA-Q3-NETREV\",\"statement_line\":\"revenue\"},\"gaap_operating_margin\":{\"value\":\"54.3\",\"unit\":\"percent\",\"fact_id\":\"MA-Q3-GAAP-OPM\",\"statement_line\":\"unknown\"},\"adjusted_operating_margin\":{\"value\":\"59.3\",\"unit\":\"percent\",\"fact_id\":\"MA-Q3-ADJ-OPM\",\"statement_line\":\"unknown\"},\"gaap_operating_expense_growth_yoy\":{\"value\":\"25\",\"unit\":\"percent\",\"fact_id\":\"MA-Q3-GAAP-OPEX-YOY\",\"statement_line\":\"operating_expense\"},\"adjusted_operating_expense_growth_yoy\":{\"value\":\"12\",\"unit\":\"percent\",\"fact_id\":\"MA-Q3-ADJ-OPEX-YOY\",\"statement_line\":\"operating_expense\"},\"litigation_provision\":{\"value\":\"176\",\"unit\":\"USD_million\",\"fact_id\":\"MA-Q3-LITIGATION\",\"statement_line\":\"operating_expense\",\"source_explicit_targets\":[\"operating_margin\"]},\"restructuring_charge\":{\"value\":\"190\",\"unit\":\"USD_million\",\"fact_id\":\"MA-Q3-RESTRUCT\",\"statement_line\":\"operating_expense\",\"source_explicit_targets\":[\"operating_margin\"]}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"ma\",\"weight\":1},{\"bucket\":\"catalysts\",\"term\":\"growth\",\"weight\":2}],\"match_score\":3,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-22T06:41:29Z\",\"last_seen_at\":\"2026-10-22T06:41:29Z\",\"created_at\":\"2026-10-22T06:41:29Z\",\"updated_at\":\"2026-10-22T06:41:49Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9677,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 7
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2077,
+              "completion_tokens": 116,
+              "total_tokens": 2193,
+              "estimated_cost_usd": 0.00032326,
+              "priced": true,
+              "latency_ms": 1089.441
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3739,
+              "completion_tokens": 227,
+              "total_tokens": 3966,
+              "cache_read_tokens": 2176,
+              "estimated_cost_usd": 0.00028847280000000007,
+              "priced": true,
+              "latency_ms": 1328.393
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4333,
+              "completion_tokens": 1227,
+              "total_tokens": 5560,
+              "cache_read_tokens": 3840,
+              "estimated_cost_usd": 0.00042333200000000006,
+              "priced": true,
+              "latency_ms": 4946.252
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5706,
+              "completion_tokens": 1239,
+              "total_tokens": 6945,
+              "cache_read_tokens": 5504,
+              "estimated_cost_usd": 0.00039061120000000003,
+              "priced": true,
+              "latency_ms": 3903.539
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 7091,
+              "completion_tokens": 1239,
+              "total_tokens": 8330,
+              "cache_read_tokens": 6912,
+              "estimated_cost_usd": 0.0003913336,
+              "priced": true,
+              "latency_ms": 3812.974
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 8498,
+              "completion_tokens": 1243,
+              "total_tokens": 9741,
+              "cache_read_tokens": 8320,
+              "estimated_cost_usd": 0.00039625600000000005,
+              "priced": true,
+              "latency_ms": 3949.668
+            },
+            {
+              "sequence": 7,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 11104,
+              "completion_tokens": 107,
+              "total_tokens": 11211,
+              "cache_read_tokens": 9728,
+              "estimated_cost_usd": 0.00024983840000000003,
+              "priced": true,
+              "latency_ms": 747.995
+            },
+            {
+              "sequence": 8,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 12192,
+              "completion_tokens": 1185,
+              "total_tokens": 13377,
+              "cache_read_tokens": 11136,
+              "estimated_cost_usd": 0.0005108208,
+              "priced": true,
+              "latency_ms": 5776.073
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 25.612,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update"
+      ],
+      "model_calls": 8,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0029739248000000005
+    }
+  ],
+  "estimated_cost_usd": 0.0029739248000000005
+}

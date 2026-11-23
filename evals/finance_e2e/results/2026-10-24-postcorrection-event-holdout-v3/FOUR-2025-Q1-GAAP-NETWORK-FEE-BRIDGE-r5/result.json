@@ -1,0 +1,597 @@
+{
+  "observation_id": "FOUR-2025-Q1-GAAP-NETWORK-FEE-BRIDGE-r5",
+  "case_id": "FOUR-2025-Q1-GAAP-NETWORK-FEE-BRIDGE",
+  "repetition": 5,
+  "workflow": "sec_event_to_thesis_review",
+  "coordinator_max_tokens": 5000,
+  "status": "mechanical_pass",
+  "quality_score": null,
+  "error": null,
+  "checks": {
+    "one_thesis_and_alert": true,
+    "source_packet_exact": true,
+    "one_linked_review": true,
+    "alert_acknowledged": true,
+    "state_actionability_consistent": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 7,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_31ce3b6be1c9481a9015",
+          "market": "US",
+          "symbol": "FOUR",
+          "title": "FOUR source-bounded earnings thesis",
+          "thesis": "Baseline CY2024 Q4 ended 2024-12-31: FOUR-Q4-PAY=772.4 USD_million; FOUR-Q4-SUB=114.6 USD_million; FOUR-Q4-REV=887.0 USD_million; FOUR-Q4-NETFEES=-482.0 USD_million; FOUR-Q4-GROSS=270.8 USD_million; FOUR-Q4-GRLNF=405.0 USD_million; FOUR-Q4-OPINC=86.0 USD_million; FOUR-Q4-GAIN=45.1 USD_million; FOUR-Q4-NET=139.3 USD_million; FOUR-Q4-NCI=-23.3 USD_million; FOUR-Q4-ATTR=116.0 USD_million; FOUR-Q4-EPS=1.44 USD_per_share; FOUR-Q4-ADJEBITDA=205.9 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": true,
+          "actionability": "blocked",
+          "decision_hold_alert_id": "fa_674dca4f05a844bcbd8b",
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "gaap_class_a_diluted_eps",
+            "gaap_gain_on_investments_in_securities",
+            "gaap_gross_profit",
+            "gaap_gross_revenue",
+            "gaap_income_from_operations",
+            "gaap_net_income",
+            "gaap_net_income_attributable_to_shift4",
+            "gaap_network_fees_signed",
+            "gaap_noncontrolling_income_signed",
+            "gaap_payments_based_revenue",
+            "gaap_subscription_other_revenue",
+            "non_gaap_adjusted_ebitda",
+            "non_gaap_gross_revenue_less_network_fees"
+          ],
+          "evidence": [
+            {
+              "id": "HOLDOUT-FOUR-BASELINE-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm",
+              "sha256": "f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e"
+            }
+          ],
+          "next_review_at": "2026-11-24",
+          "last_review_at": "2026-10-24T14:29:34Z",
+          "created_at": "2026-10-24T14:29:12Z",
+          "updated_at": "2026-10-24T14:29:34Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_cb2732d2eda94921ae3f",
+            "thesis_id": "th_31ce3b6be1c9481a9015",
+            "alert_id": "fa_674dca4f05a844bcbd8b",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-FOUR-2025-Q1-GAAP-NETWORK-FEE-BRIDGE-r5",
+            "event": {
+              "type": "earnings",
+              "summary": "FOUR CY2025 Q1 ended 2025-03-31 SEC selected-fact packet: FOUR-Q1-PAY=755.7 USD_million; FOUR-Q1-SUB=92.6 USD_million; FOUR-Q1-REV=848.3 USD_million; FOUR-Q1-NETFEES=-479.8 USD_million; FOUR-Q1-GROSS=240.7 USD_million; FOUR-Q1-GRLNF=368.5 USD_million; FOUR-Q1-OPINC=25.4 USD_million; FOUR-Q1-GAIN=0.3 USD_million; FOUR-Q1-NET=19.5 USD_million; FOUR-Q1-NCI=-2.8 USD_million; FOUR-Q1-ATTR=16.7 USD_million; FOUR-Q1-EPS=0.2 USD_per_share; FOUR-Q1-ADJEBITDA=168.5 USD_million.",
+              "as_of": "2025-04-29",
+              "sources": [
+                {
+                  "id": "HOLDOUT-FOUR-EVENT-v1",
+                  "url": "https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm",
+                  "sha256": "089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "needs_review",
+            "rationale": "All 13 required event metrics are present in the stored alert packet, so the packet is complete on the thesis's own required-metric list. The review is nonetheless held at needs_review because the source packet contains only selected displayed facts: it carries no income-statement line items below operating income, no tax or interest lines, no share counts, no segment or driver disclosure, and no reconciliation of GAAP to non-GAAP measures. The largest sequential declines (GAAP net income -119.8 USD_million, -86.0% of baseline; attributable net income -99.3 USD_million, -85.6%; diluted Class A EPS -1.24 USD_per_share, -86.11%) cannot be attributed from this packet: the only listed candidate component, gain on investments in securities, fell -44.8 USD_million (-99.33%), which is far smaller than the net income decline, and no residual bridge is supplied. Income from operations fell -60.6 USD_million (-70.47%) while gross profit fell only -30.1 USD_million (-11.12%), implying a large operating-expense increase that the packet does not itemize; that implication is arithmetic on displayed rows, not a sourced cause. Revenue fell -38.7 USD_million (-4.36%) with the listed components (payments-based -16.7, subscription/other -22.0) summing exactly to the total and a stated residual of 0, so no revenue attribution gap exists at this rounding, but no volume/price/mix driver is disclosed. Network fees were roughly flat (-482.0 to -479.8, +2.2 USD_million) while gross revenue fell, so gross revenue less network fees fell -36.5 USD_million (-9.01%) and non-GAAP adjusted EBITDA fell -37.4 USD_million (-18.16%); the non-GAAP measures are a different basis from the GAAP rows and are not comparable line-for-line. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains. No valuation, durability, or trading conclusion is drawn. Status and conviction are preserved and the thesis remains blocked for downstream decisions pending a full filing with the missing reconciliations and driver disclosures.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [
+              "symbol_match:FOUR",
+              "gaap_class_a_diluted_eps",
+              "gaap_gain_on_investments_in_securities",
+              "gaap_gross_profit",
+              "gaap_gross_revenue",
+              "gaap_income_from_operations",
+              "gaap_net_income",
+              "gaap_net_income_attributable_to_shift4",
+              "gaap_network_fees_signed",
+              "gaap_noncontrolling_income_signed",
+              "gaap_payments_based_revenue",
+              "gaap_subscription_other_revenue",
+              "non_gaap_adjusted_ebitda",
+              "non_gaap_gross_revenue_less_network_fees"
+            ],
+            "evidence": [
+              {
+                "basis": "GAAP and non-GAAP selected displayed facts",
+                "id": "HOLDOUT-FOUR-EVENT-v1",
+                "kind": "sec_filing_exhibit",
+                "note": "Event packet; all 13 required metrics present.",
+                "period": "CY2025 Q1 ended 2025-03-31",
+                "sha256": "089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb",
+                "url": "https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm"
+              },
+              {
+                "basis": "GAAP and non-GAAP selected displayed facts",
+                "id": "HOLDOUT-FOUR-BASELINE-v1",
+                "kind": "sec_filing_exhibit",
+                "note": "Baseline packet used for sequential comparison.",
+                "period": "CY2024 Q4 ended 2024-12-31",
+                "sha256": "f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e",
+                "url": "https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm"
+              },
+              {
+                "basis": "GAAP Class A diluted",
+                "id": "FOUR-Q1-EPS",
+                "note": "vs FOUR-Q4-EPS=1.44; sequential change -1.24, -86.11% of baseline.",
+                "period": "CY2025 Q1",
+                "unit": "USD_per_share_reported",
+                "value": "0.2"
+              },
+              {
+                "basis": "GAAP gain on investments in securities",
+                "id": "FOUR-Q1-GAIN",
+                "note": "vs FOUR-Q4-GAIN=45.1; sequential change -44.8, -99.33% of baseline. Insufficient alone to explain the net income decline.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "0.3"
+              },
+              {
+                "basis": "GAAP gross profit",
+                "id": "FOUR-Q1-GROSS",
+                "note": "vs FOUR-Q4-GROSS=270.8; sequential change -30.1, -11.12% of baseline.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "240.7"
+              },
+              {
+                "basis": "GAAP gross revenue",
+                "id": "FOUR-Q1-REV",
+                "note": "vs FOUR-Q4-REV=887.0; sequential change -38.7, -4.36% of baseline.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "848.3"
+              },
+              {
+                "basis": "GAAP income from operations",
+                "id": "FOUR-Q1-OPINC",
+                "note": "vs FOUR-Q4-OPINC=86.0; sequential change -60.6, -70.47% of baseline.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "25.4"
+              },
+              {
+                "basis": "GAAP net income",
+                "id": "FOUR-Q1-NET",
+                "note": "vs FOUR-Q4-NET=139.3; sequential change -119.8, -86.0% of baseline.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "19.5"
+              },
+              {
+                "basis": "GAAP net income attributable to Shift4",
+                "id": "FOUR-Q1-ATTR",
+                "note": "vs FOUR-Q4-ATTR=116.0; sequential change -99.3, -85.6% of baseline.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "16.7"
+              },
+              {
+                "basis": "GAAP network fees (signed, negative)",
+                "id": "FOUR-Q1-NETFEES",
+                "note": "vs FOUR-Q4-NETFEES=-482.0; sequential change +2.2 USD_million, relative change not meaningful.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "-479.8"
+              },
+              {
+                "basis": "GAAP noncontrolling income (signed, negative)",
+                "id": "FOUR-Q1-NCI",
+                "note": "vs FOUR-Q4-NCI=-23.3; sequential change +20.5 USD_million, relative change not meaningful.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "-2.8"
+              },
+              {
+                "basis": "GAAP payments-based revenue",
+                "id": "FOUR-Q1-PAY",
+                "note": "vs FOUR-Q4-PAY=772.4; sequential change -16.7, -2.16% of baseline.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "755.7"
+              },
+              {
+                "basis": "GAAP subscription and other revenue",
+                "id": "FOUR-Q1-SUB",
+                "note": "vs FOUR-Q4-SUB=114.6; sequential change -22.0, -19.2% of baseline.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "92.6"
+              },
+              {
+                "basis": "non-GAAP adjusted EBITDA",
+                "id": "FOUR-Q1-ADJEBITDA",
+                "note": "vs FOUR-Q4-ADJEBITDA=205.9; sequential change -37.4, -18.16% of baseline. Different basis from GAAP rows.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "168.5"
+              },
+              {
+                "basis": "non-GAAP gross revenue less network fees",
+                "id": "FOUR-Q1-GRLNF",
+                "note": "vs FOUR-Q4-GRLNF=405.0; sequential change -36.5, -9.01% of baseline. Different basis from GAAP rows.",
+                "period": "CY2025 Q1",
+                "unit": "USD_million_rounded",
+                "value": "368.5"
+              },
+              {
+                "id": "MIX-REV-Q1",
+                "kind": "arithmetic_check",
+                "note": "Total GAAP gross revenue change -38.7 = payments-based -16.7 + subscription/other -22.0 + unlisted residual 0.0. Arithmetic only; not a causal explanation."
+              }
+            ],
+            "created_at": "2026-10-24T14:29:34Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_674dca4f05a844bcbd8b",
+        "watchlist_id": "wl_15fbd189e9b44f889047",
+        "thesis_id": "th_31ce3b6be1c9481a9015",
+        "market": "US",
+        "symbol": "FOUR",
+        "event_fingerprint": "10ea5b7fad7b0c54a71738ba1e522bde03c4cf550269984ccc2b15f86315c936",
+        "event": {
+          "external_id": "HOLDOUT-V2-FOUR-EVENT",
+          "type": "earnings",
+          "summary": "FOUR CY2025 Q1 ended 2025-03-31 SEC selected-fact packet: FOUR-Q1-PAY=755.7 USD_million; FOUR-Q1-SUB=92.6 USD_million; FOUR-Q1-REV=848.3 USD_million; FOUR-Q1-NETFEES=-479.8 USD_million; FOUR-Q1-GROSS=240.7 USD_million; FOUR-Q1-GRLNF=368.5 USD_million; FOUR-Q1-OPINC=25.4 USD_million; FOUR-Q1-GAIN=0.3 USD_million; FOUR-Q1-NET=19.5 USD_million; FOUR-Q1-NCI=-2.8 USD_million; FOUR-Q1-ATTR=16.7 USD_million; FOUR-Q1-EPS=0.2 USD_per_share; FOUR-Q1-ADJEBITDA=168.5 USD_million.",
+          "as_of": "2025-04-29",
+          "sources": [
+            {
+              "id": "HOLDOUT-FOUR-EVENT-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm",
+              "sha256": "089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_payments_based_revenue": {
+              "value": "755.7",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-PAY"
+            },
+            "gaap_subscription_other_revenue": {
+              "value": "92.6",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-SUB"
+            },
+            "gaap_gross_revenue": {
+              "value": "848.3",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-REV"
+            },
+            "gaap_network_fees_signed": {
+              "value": "-479.8",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-NETFEES"
+            },
+            "gaap_gross_profit": {
+              "value": "240.7",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-GROSS"
+            },
+            "non_gaap_gross_revenue_less_network_fees": {
+              "value": "368.5",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-GRLNF"
+            },
+            "gaap_income_from_operations": {
+              "value": "25.4",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-OPINC"
+            },
+            "gaap_gain_on_investments_in_securities": {
+              "value": "0.3",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-GAIN"
+            },
+            "gaap_net_income": {
+              "value": "19.5",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-NET"
+            },
+            "gaap_noncontrolling_income_signed": {
+              "value": "-2.8",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-NCI"
+            },
+            "gaap_net_income_attributable_to_shift4": {
+              "value": "16.7",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-ATTR"
+            },
+            "gaap_class_a_diluted_eps": {
+              "value": "0.2",
+              "unit": "USD_per_share",
+              "fact_id": "FOUR-Q1-EPS"
+            },
+            "non_gaap_adjusted_ebitda": {
+              "value": "168.5",
+              "unit": "USD_million",
+              "fact_id": "FOUR-Q1-ADJEBITDA"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "four",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-24T14:29:12Z",
+        "last_seen_at": "2026-10-24T14:29:12Z",
+        "created_at": "2026-10-24T14:29:12Z",
+        "updated_at": "2026-10-24T14:29:35Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "prompt": "Historical source-bounded SEC research-state replay, not a trade request. Read the stored thesis and earnings alert using finance tools. The host-checked numeric context below is arithmetic on selected source rows, not a causal explanation or complete filing. Distinguish sequential from year-over-year figures, reported from adjusted measures, and percentage points from relative percent. Independently explain a supported implication, a material counterpoint, missing evidence, and your own research-state decision. Do not infer absolute loss dollars from a rate or attribute a total to listed components when a residual remains. Persist one source-linked version-protected review, acknowledge the alert, and verify that any needs_review decision leaves the thesis blocked. Do not trade.\n\nCase: FOUR-2025-Q1-GAAP-NETWORK-FEE-BRIDGE\nBaseline SEC SHA-256: f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\nEvent SEC SHA-256: 089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\nDisplayed-value comparisons (same metric and basis):\nmetric | baseline fact/value | event fact/value | change | relative change\ngaap_class_a_diluted_eps | FOUR-Q4-EPS=1.44 USD_per_share_reported | FOUR-Q1-EPS=0.2 USD_per_share_reported | -1.24 USD_per_share | -86.11% of baseline\ngaap_gain_on_investments_in_securities | FOUR-Q4-GAIN=45.1 USD_million_rounded | FOUR-Q1-GAIN=0.3 USD_million_rounded | -44.8 USD_million | -99.33% of baseline\ngaap_gross_profit | FOUR-Q4-GROSS=270.8 USD_million_rounded | FOUR-Q1-GROSS=240.7 USD_million_rounded | -30.1 USD_million | -11.12% of baseline\ngaap_gross_revenue | FOUR-Q4-REV=887 USD_million_rounded | FOUR-Q1-REV=848.3 USD_million_rounded | -38.7 USD_million | -4.36% of baseline\ngaap_income_from_operations | FOUR-Q4-OPINC=86 USD_million_rounded | FOUR-Q1-OPINC=25.4 USD_million_rounded | -60.6 USD_million | -70.47% of baseline\ngaap_net_income | FOUR-Q4-NET=139.3 USD_million_rounded | FOUR-Q1-NET=19.5 USD_million_rounded | -119.8 USD_million | -86% of baseline\ngaap_net_income_attributable_to_shift4 | FOUR-Q4-ATTR=116 USD_million_rounded | FOUR-Q1-ATTR=16.7 USD_million_rounded | -99.3 USD_million | -85.6% of baseline\ngaap_network_fees_signed | FOUR-Q4-NETFEES=-482 USD_million_rounded | FOUR-Q1-NETFEES=-479.8 USD_million_rounded | 2.2 USD_million | n/a\ngaap_noncontrolling_income_signed | FOUR-Q4-NCI=-23.3 USD_million_rounded | FOUR-Q1-NCI=-2.8 USD_million_rounded | 20.5 USD_million | n/a\ngaap_payments_based_revenue | FOUR-Q4-PAY=772.4 USD_million_rounded | FOUR-Q1-PAY=755.7 USD_million_rounded | -16.7 USD_million | -2.16% of baseline\ngaap_subscription_other_revenue | FOUR-Q4-SUB=114.6 USD_million_rounded | FOUR-Q1-SUB=92.6 USD_million_rounded | -22 USD_million | -19.2% of baseline\nnon_gaap_adjusted_ebitda | FOUR-Q4-ADJEBITDA=205.9 USD_million_rounded | FOUR-Q1-ADJEBITDA=168.5 USD_million_rounded | -37.4 USD_million | -18.16% of baseline\nnon_gaap_gross_revenue_less_network_fees | FOUR-Q4-GRLNF=405 USD_million_rounded | FOUR-Q1-GRLNF=368.5 USD_million_rounded | -36.5 USD_million | -9.01% of baseline\nArithmetic mix for gaap_gross_revenue: total -38.7 USD_million; listed components gaap_payments_based_revenue=-16.7 USD_million, gaap_subscription_other_revenue=-22 USD_million; unlisted residual 0 USD_million. This is not a causal explanation.\nBoundary: source-selected displayed values only; no causal driver, durability, valuation, or trading conclusion is established by this table.\n\nCase FOUR-2025-Q1-GAAP-NETWORK-FEE-BRIDGE; thesis ID th_31ce3b6be1c9481a9015; alert ID fa_674dca4f05a844bcbd8b.",
+      "response": {
+        "id": "chatcmpl-1792852152471654000",
+        "object": "chat.completion",
+        "created": 1792852152,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# FOUR-2025-Q1-GAAP-NETWORK-FEE-BRIDGE — Research-State Replay\n\n**Scope note.** This is a research-state replay on selected displayed SEC facts, not a trade request and not a trade. No order was placed, no position sized, no valuation or recommendation produced. All comparisons below are **sequential (CY2024 Q4 → CY2025 Q1)**, not year-over-year; the two periods are different lengths of business cycle and the packet contains no prior-year Q1 column, so no YoY statement is possible from this evidence.\n\n**Sources used**\n- Baseline: `HOLDOUT-FOUR-BASELINE-v1`, CY2024 Q4 ended 2024-12-31, SHA-256 `f451cd81…ed5fb1e`\n- Event: `HOLDOUT-FOUR-EVENT-v1`, CY2025 Q1 ended 2025-03-31, as_of 2025-04-29, SHA-256 `089923d8…5828bfb`\n\n---\n\n## 1. Supported implication\n\nThe packet supports one narrow, well-evidenced implication: **the sequential compression was concentrated in operating profitability and below-the-line items, not in the top line.**\n\n- GAAP gross revenue fell `FOUR-Q4-REV=887.0` → `FOUR-Q1-REV=848.3` USD_million, i.e. **−38.7 USD_million, −4.36% of baseline** — a modest decline.\n- GAAP income from operations fell `FOUR-Q4-OPINC=86.0` → `FOUR-Q1-OPINC=25.4`, i.e. **−60.6 USD_million, −70.47% of baseline** — a far larger decline than revenue.\n- GAAP gross profit fell only `FOUR-Q4-GROSS=270.8` → `FOUR-Q1-GROSS=240.7`, i.e. **−30.1 USD_million, −11.12%**.\n\nBecause operating income fell roughly twice as much in dollars as gross profit, the arithmetic on these displayed rows implies a material increase in operating expense between the two periods. That is an **arithmetic implication from the displayed rows, not a sourced cause** — the packet itemizes no expense lines, so I cannot say which expense grew or why.\n\nA second supported observation: **network fees were essentially flat while gross revenue declined.** `FOUR-Q4-NETFEES=-482.0` → `FOUR-Q1-NETFEES=-479.8` USD_million, a change of **+2.2 USD_million** (relative change not meaningful on a signed negative base). Consequently the non-GAAP `gross revenue less network fees` fell `405.0` → `368.5`, i.e. **−36.5 USD_million, −9.01%** — a larger relative decline than gross revenue's −4.36%, because the fee offset did not shrink alongside revenue.\n\n## 2. Material counterpoint\n\nThe most important counterpoint is that **the headline EPS and net-income declines are not explained by the one investment-gain line the packet does expose, and the packet's own structure argues against reading them as operating deterioration alone.**\n\n- GAAP net income: `FOUR-Q4-NET=139.3` → `FOUR-Q1-NET=19.5`, **−119.8 USD_million, −86.0% of baseline**.\n- Net income attributable to Shift4: `FOUR-Q4-ATTR=116.0` → `FOUR-Q1-ATTR=16.7`, **−99.3 USD_million, −85.6%**.\n- Class A diluted EPS: `FOUR-Q4-EPS=1.44` → `FOUR-Q1-EPS=0.2` USD_per_share_reported, **−1.24, −86.11% of baseline**.\n- Gain on investments in securities: `FOUR-Q4-GAIN=45.1` → `FOUR-Q1-GAIN=0.3`, **−44.8 USD_million, −99.33%**.\n\nThe investment-gain decline (−44.8) is **less than half** the net-income decline (−119.8). A residual of roughly −75 USD_million therefore remains unattributed, and the packet supplies no bridge. I explicitly do **not** attribute the total to the listed components, and I do **not** infer absolute loss dollars from any percentage.\n\nTwo further counterpoints that cut against a simple \"operating collapse\" reading:\n\n- **Noncontrolling income moved the other way.** `FOUR-Q4-NCI=-23.3` → `FOUR-Q1-NCI=-2.8` USD_million, a **+20.5 USD_million** change (relative change not meaningful on a signed base). This partially offsets the net-income decline at the attributable line, which is why attributable net income fell −99.3 while total net income fell −119.8.\n- **The non-GAAP view is less severe than the GAAP view.** Non-GAAP adjusted EBITDA fell `205.9` → `168.5`, **−37.4 USD_million, −18.16%** — materially milder than the −70.47% operating-income decline and the −86.0% net-income decline. These are **different bases** and are not comparable line-for-line; the gap between them is itself evidence that GAAP-only rows are an incomplete lens here, not proof that one basis is \"right.\"\n\nAlso worth flagging as a genuine mixed signal: **subscription and other revenue fell proportionally much harder than payments-based revenue** — `FOUR-Q4-SUB=114.6` → `FOUR-Q1-SUB=92.6`, **−22.0 USD_million, −19.2%**, versus `FOUR-Q4-PAY=772.4` → `FOUR-Q1-PAY=755.7`, **−16.7 USD_million, −2.16%**. The smaller, higher-relative-decline segment contributed more than half of the total revenue decline in dollars.\n\n## 3. Missing evidence\n\nThe packet is complete against the thesis's own 13 required metrics (no `missing_metrics`), but it is **not sufficient for attribution**. Absent:\n\n1. **Any income-statement line below operating income** — no interest, tax, or other income/expense lines. The ~−75 USD_million net-income residual cannot be decomposed.\n2. **Operating expense detail** — no line items to explain the operating-income decline relative to gross profit.\n3. **GAAP-to-non-GAAP reconciliations** — adjusted EBITDA and gross revenue less network fees are presented without the reconciling items, so the −18.16% vs −70.47% gap is unexplained.\n4. **Share counts and share-class detail** — EPS is Class A diluted only; no diluted share count, so EPS cannot be tied back to attributable net income.\n5. **Segment, volume, pricing, and mix drivers** — no disclosure of why payments-based or subscription revenue moved.\n6. **Prior-year Q1 comparative** — no YoY column, so seasonality cannot be separated from trend.\n7. **Full filing text** — only the exhibit-level selected-fact packet is in evidence; the complete filing is not.\n\nOn the revenue mix specifically, the arithmetic is clean: total −38.7 = payments-based −16.7 + subscription/other −22.0 + **unlisted residual 0.0**. So there is **no revenue attribution gap at this rounding** — but a zero residual is an arithmetic fact, not a causal explanation, and no driver is disclosed.\n\n## 4. Research-state decision\n\n**Decision: `needs_review`. Impact: `mixed`.**\n\nRationale for holding rather than upgrading or invalidating: the packet is metric-complete but attribution-incomplete. The direction of the sequential change is unambiguous and negative on GAAP profitability, but the packet cannot distinguish an operating-expense event from a below-the-line or one-off item, and the non-GAAP measures point to a materially milder picture than the GAAP rows. Neither an upgrade nor an invalidation is supportable on this evidence.\n\n**Persisted state (verified by re-read):**\n- Review `tr_cb2732d2eda94921ae3f` written against thesis `th_31ce3b6be1c9481a9015` at expected_version 1 → thesis now at **version 2**.\n- `decision_hold: true`, `actionability: \"blocked\"`, `decision_hold_alert_id: \"fa_674dca4f05a844bcbd8b\"` — **the needs_review decision does leave the thesis blocked**, confirmed on re-read.\n- `status: \"active\"` and `conviction: 3` **preserved** (unchanged by the hold).\n- Alert `fa_674dca4f05a844bcbd8b` acknowledged at expected_version 1 → now **version 2, status `acknowledged`**.\n- `next_review_at` set to 2026-11-24 (future operational date); historical source dates 2024-12-31 and 2025-03-31 are recorded in evidence, not in the review date.\n\n**What would unblock:** a full filing containing the below-operating-income lines, operating expense detail, GAAP-to-non-GAAP reconciliations, diluted share counts, and a prior-year Q1 comparative. Until then the thesis stays blocked and no downstream decision should be recorded against it.\n\n*No trades, no orders, no position changes, and no investment recommendation were made or implied.*"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 81255,
+          "completion_tokens": 8047,
+          "total_tokens": 89302
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_XwbkfEVXRJdWJk5ZDHnN8800",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_31ce3b6be1c9481a9015\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_rGYv7qTdznQ6Xmn0YS8O9114",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"symbol\": \"FOUR\", \"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_XwbkfEVXRJdWJk5ZDHnN8800",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"7858e67f-03de-4243-8d95-031a3b84436b\",\"as_of\":\"2026-10-24T14:29:13Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_31ce3b6be1c9481a9015\",\"market\":\"US\",\"symbol\":\"FOUR\",\"title\":\"FOUR source-bounded earnings thesis\",\"thesis\":\"Baseline CY2024 Q4 ended 2024-12-31: FOUR-Q4-PAY=772.4 USD_million; FOUR-Q4-SUB=114.6 USD_million; FOUR-Q4-REV=887.0 USD_million; FOUR-Q4-NETFEES=-482.0 USD_million; FOUR-Q4-GROSS=270.8 USD_million; FOUR-Q4-GRLNF=405.0 USD_million; FOUR-Q4-OPINC=86.0 USD_million; FOUR-Q4-GAIN=45.1 USD_million; FOUR-Q4-NET=139.3 USD_million; FOUR-Q4-NCI=-23.3 USD_million; FOUR-Q4-ATTR=116.0 USD_million; FOUR-Q4-EPS=1.44 USD_per_share; FOUR-Q4-ADJEBITDA=205.9 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_class_a_diluted_eps\",\"gaap_gain_on_investments_in_securities\",\"gaap_gross_profit\",\"gaap_gross_revenue\",\"gaap_income_from_operations\",\"gaap_net_income\",\"gaap_net_income_attributable_to_shift4\",\"gaap_network_fees_signed\",\"gaap_noncontrolling_income_signed\",\"gaap_payments_based_revenue\",\"gaap_subscription_other_revenue\",\"non_gaap_adjusted_ebitda\",\"non_gaap_gross_revenue_less_network_fees\"],\"evidence\":[{\"id\":\"HOLDOUT-FOUR-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm\",\"sha256\":\"f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-24T14:29:12Z\",\"updated_at\":\"2026-10-24T14:29:12Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8108,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_rGYv7qTdznQ6Xmn0YS8O9114",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"a4a74ca5-fb1f-47cf-81f2-f3ff8199713c\",\"as_of\":\"2026-10-24T14:29:13Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_674dca4f05a844bcbd8b\",\"watchlist_id\":\"wl_15fbd189e9b44f889047\",\"thesis_id\":\"th_31ce3b6be1c9481a9015\",\"market\":\"US\",\"symbol\":\"FOUR\",\"event_fingerprint\":\"10ea5b7fad7b0c54a71738ba1e522bde03c4cf550269984ccc2b15f86315c936\",\"event\":{\"external_id\":\"HOLDOUT-V2-FOUR-EVENT\",\"type\":\"earnings\",\"summary\":\"FOUR CY2025 Q1 ended 2025-03-31 SEC selected-fact packet: FOUR-Q1-PAY=755.7 USD_million; FOUR-Q1-SUB=92.6 USD_million; FOUR-Q1-REV=848.3 USD_million; FOUR-Q1-NETFEES=-479.8 USD_million; FOUR-Q1-GROSS=240.7 USD_million; FOUR-Q1-GRLNF=368.5 USD_million; FOUR-Q1-OPINC=25.4 USD_million; FOUR-Q1-GAIN=0.3 USD_million; FOUR-Q1-NET=19.5 USD_million; FOUR-Q1-NCI=-2.8 USD_million; FOUR-Q1-ATTR=16.7 USD_million; FOUR-Q1-EPS=0.2 USD_per_share; FOUR-Q1-ADJEBITDA=168.5 USD_million.\",\"as_of\":\"2025-04-29\",\"sources\":[{\"id\":\"HOLDOUT-FOUR-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\",\"sha256\":\"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\"}],\"observed_metrics\":{\"gaap_payments_based_revenue\":{\"value\":\"755.7\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-PAY\"},\"gaap_subscription_other_revenue\":{\"value\":\"92.6\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-SUB\"},\"gaap_gross_revenue\":{\"value\":\"848.3\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-REV\"},\"gaap_network_fees_signed\":{\"value\":\"-479.8\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-NETFEES\"},\"gaap_gross_profit\":{\"value\":\"240.7\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-GROSS\"},\"non_gaap_gross_revenue_less_network_fees\":{\"value\":\"368.5\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-GRLNF\"},\"gaap_income_from_operations\":{\"value\":\"25.4\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-OPINC\"},\"gaap_gain_on_investments_in_securities\":{\"value\":\"0.3\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-GAIN\"},\"gaap_net_income\":{\"value\":\"19.5\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-NET\"},\"gaap_noncontrolling_income_signed\":{\"value\":\"-2.8\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-NCI\"},\"gaap_net_income_attributable_to_shift4\":{\"value\":\"16.7\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-ATTR\"},\"gaap_class_a_diluted_eps\":{\"value\":\"0.2\",\"unit\":\"USD_per_share\",\"fact_id\":\"FOUR-Q1-EPS\"},\"non_gaap_adjusted_ebitda\":{\"value\":\"168.5\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-ADJEBITDA\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"four\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T14:29:12Z\",\"last_seen_at\":\"2026-10-24T14:29:12Z\",\"created_at\":\"2026-10-24T14:29:12Z\",\"updated_at\":\"2026-10-24T14:29:12Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50,\"symbol\":\"FOUR\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9714,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_Q5S5paTfnHpvOSrcNK0L9430",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"FOUR\", \"event_summary\": \"FOUR CY2025 Q1 ended 2025-03-31 SEC selected-fact packet: FOUR-Q1-PAY=755.7 USD_million; FOUR-Q1-SUB=92.6 USD_million; FOUR-Q1-REV=848.3 USD_million; FOUR-Q1-NETFEES=-479.8 USD_million; FOUR-Q1-GROSS=240.7 USD_million; FOUR-Q1-GRLNF=368.5 USD_million; FOUR-Q1-OPINC=25.4 USD_million; FOUR-Q1-GAIN=0.3 USD_million; FOUR-Q1-NET=19.5 USD_million; FOUR-Q1-NCI=-2.8 USD_million; FOUR-Q1-ATTR=16.7 USD_million; FOUR-Q1-EPS=0.2 USD_per_share; FOUR-Q1-ADJEBITDA=168.5 USD_million.\", \"limit\": 20}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_Q5S5paTfnHpvOSrcNK0L9430",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"2a1db042-ca1f-4f94-9d35-aeb295600708\",\"as_of\":\"2026-10-24T14:29:15Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"FOUR\",\"event_summary\":\"FOUR CY2025 Q1 ended 2025-03-31 SEC selected-fact packet: FOUR-Q1-PAY=755.7 USD_million; FOUR-Q1-SUB=92.6 USD_million; FOUR-Q1-REV=848.3 USD_million; FOUR-Q1-NETFEES=-479.8 USD_million; FOUR-Q1-GROSS=240.7 USD_million; FOUR-Q1-GRLNF=368.5 USD_million; FOUR-Q1-OPINC=25.4 USD_million; FOUR-Q1-GAIN=0.3 USD_million; FOUR-Q1-NET=19.5 USD_million; FOUR-Q1-NCI=-2.8 USD_million; FOUR-Q1-ATTR=16.7 USD_million; FOUR-Q1-EPS=0.2 USD_per_share; FOUR-Q1-ADJEBITDA=168.5 USD_million.\",\"matches\":[{\"thesis_id\":\"th_31ce3b6be1c9481a9015\",\"title\":\"FOUR source-bounded earnings thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_HtVwDe9DfLlctlPAOONY4424",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_31ce3b6be1c9481a9015\", \"expected_version\": 1, \"alert_id\": \"fa_674dca4f05a844bcbd8b\", \"decision\": \"needs_review\", \"impact\": \"mixed\", \"event\": {\"summary\": \"FOUR CY2025 Q1 (period ended 2025-03-31, filing as_of 2025-04-29) SEC selected-fact packet HOLDOUT-FOUR-EVENT-v1 (sha256 089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb) compared against baseline CY2024 Q4 (period ended 2024-12-31) packet HOLDOUT-FOUR-BASELINE-v1 (sha256 f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e). All comparisons are sequential quarter-over-quarter on displayed rounded values, not year-over-year.\", \"as_of\": \"2025-04-29\", \"type\": \"earnings\", \"sources\": [{\"id\": \"HOLDOUT-FOUR-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\", \"sha256\": \"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\"}, {\"id\": \"HOLDOUT-FOUR-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm\", \"sha256\": \"f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\"}]}, \"matched_terms\": [\"symbol_match:FOUR\", \"gaap_class_a_diluted_eps\", \"gaap_gain_on_investments_in_securities\", \"gaap_gross_profit\", \"gaap_gross_revenue\", \"gaap_income_from_operations\", \"gaap_net_income\", \"gaap_net_income_attributable_to_shift4\", \"gaap_network_fees_signed\", \"gaap_noncontrolling_income_signed\", \"gaap_payments_based_revenue\", \"gaap_subscription_other_revenue\", \"non_gaap_adjusted_ebitda\", \"non_gaap_gross_revenue_less_network_fees\"], \"rationale\": \"All 13 required event metrics are present in the stored alert packet, so the packet is complete on the thesis's own required-metric list. The review is nonetheless held at needs_review because the source packet contains only selected displayed facts: it carries no income-statement line items below operating income, no tax or interest lines, no share counts, no segment or driver disclosure, and no reconciliation of GAAP to non-GAAP measures. The largest sequential declines (GAAP net income -119.8 USD_million, -86.0% of baseline; attributable net income -99.3 USD_million, -85.6%; diluted Class A EPS -1.24 USD_per_share, -86.11%) cannot be attributed from this packet: the only listed candidate component, gain on investments in securities, fell -44.8 USD_million (-99.33%), which is far smaller than the net income decline, and no residual bridge is supplied. Income from operations fell -60.6 USD_million (-70.47%) while gross profit fell only -30.1 USD_million (-11.12%), implying a large operating-expense increase that the packet does not itemize; that implication is arithmetic on displayed rows, not a sourced cause. Revenue fell -38.7 USD_million (-4.36%) with the listed components (payments-based -16.7, subscription/other -22.0) summing exactly to the total and a stated residual of 0, so no revenue attribution gap exists at this rounding, but no volume/price/mix driver is disclosed. Network fees were roughly flat (-482.0 to -479.8, +2.2 USD_million) while gross revenue fell, so gross revenue less network fees fell -36.5 USD_million (-9.01%) and non-GAAP adjusted EBITDA fell -37.4 USD_million (-18.16%); the non-GAAP measures are a different basis from the GAAP rows and are not comparable line-for-line. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains. No valuation, durability, or trading conclusion is drawn. Status and conviction are preserved and the thesis remains blocked for downstream decisions pending a full filing with the missing reconciliations and driver disclosures.\", \"evidence\": [{\"id\": \"HOLDOUT-FOUR-EVENT-v1\", \"kind\": \"sec_filing_exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\", \"sha256\": \"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\", \"period\": \"CY2025 Q1 ended 2025-03-31\", \"basis\": \"GAAP and non-GAAP selected displayed facts\", \"note\": \"Event packet; all 13 required metrics present.\"}, {\"id\": \"HOLDOUT-FOUR-BASELINE-v1\", \"kind\": \"sec_filing_exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm\", \"sha256\": \"f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\", \"period\": \"CY2024 Q4 ended 2024-12-31\", \"basis\": \"GAAP and non-GAAP selected displayed facts\", \"note\": \"Baseline packet used for sequential comparison.\"}, {\"id\": \"FOUR-Q1-EPS\", \"value\": \"0.2\", \"unit\": \"USD_per_share_reported\", \"basis\": \"GAAP Class A diluted\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-EPS=1.44; sequential change -1.24, -86.11% of baseline.\"}, {\"id\": \"FOUR-Q1-GAIN\", \"value\": \"0.3\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP gain on investments in securities\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-GAIN=45.1; sequential change -44.8, -99.33% of baseline. Insufficient alone to explain the net income decline.\"}, {\"id\": \"FOUR-Q1-GROSS\", \"value\": \"240.7\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP gross profit\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-GROSS=270.8; sequential change -30.1, -11.12% of baseline.\"}, {\"id\": \"FOUR-Q1-REV\", \"value\": \"848.3\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP gross revenue\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-REV=887.0; sequential change -38.7, -4.36% of baseline.\"}, {\"id\": \"FOUR-Q1-OPINC\", \"value\": \"25.4\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP income from operations\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-OPINC=86.0; sequential change -60.6, -70.47% of baseline.\"}, {\"id\": \"FOUR-Q1-NET\", \"value\": \"19.5\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP net income\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-NET=139.3; sequential change -119.8, -86.0% of baseline.\"}, {\"id\": \"FOUR-Q1-ATTR\", \"value\": \"16.7\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP net income attributable to Shift4\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-ATTR=116.0; sequential change -99.3, -85.6% of baseline.\"}, {\"id\": \"FOUR-Q1-NETFEES\", \"value\": \"-479.8\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP network fees (signed, negative)\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-NETFEES=-482.0; sequential change +2.2 USD_million, relative change not meaningful.\"}, {\"id\": \"FOUR-Q1-NCI\", \"value\": \"-2.8\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP noncontrolling income (signed, negative)\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-NCI=-23.3; sequential change +20.5 USD_million, relative change not meaningful.\"}, {\"id\": \"FOUR-Q1-PAY\", \"value\": \"755.7\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP payments-based revenue\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-PAY=772.4; sequential change -16.7, -2.16% of baseline.\"}, {\"id\": \"FOUR-Q1-SUB\", \"value\": \"92.6\", \"unit\": \"USD_million_rounded\", \"basis\": \"GAAP subscription and other revenue\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-SUB=114.6; sequential change -22.0, -19.2% of baseline.\"}, {\"id\": \"FOUR-Q1-ADJEBITDA\", \"value\": \"168.5\", \"unit\": \"USD_million_rounded\", \"basis\": \"non-GAAP adjusted EBITDA\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-ADJEBITDA=205.9; sequential change -37.4, -18.16% of baseline. Different basis from GAAP rows.\"}, {\"id\": \"FOUR-Q1-GRLNF\", \"value\": \"368.5\", \"unit\": \"USD_million_rounded\", \"basis\": \"non-GAAP gross revenue less network fees\", \"period\": \"CY2025 Q1\", \"note\": \"vs FOUR-Q4-GRLNF=405.0; sequential change -36.5, -9.01% of baseline. Different basis from GAAP rows.\"}, {\"id\": \"MIX-REV-Q1\", \"kind\": \"arithmetic_check\", \"note\": \"Total GAAP gross revenue change -38.7 = payments-based -16.7 + subscription/other -22.0 + unlisted residual 0.0. Arithmetic only; not a causal explanation.\"}], \"next_review_at\": \"2025-07-31\"}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_HtVwDe9DfLlctlPAOONY4424",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"8f7e1c08-4aec-481a-8aa8-940980cd52a1\",\"as_of\":\"2026-10-24T14:29:25Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"invalid_input\"]},\"errors\":[{\"code\":\"invalid_input\",\"message\":\"next_review_at must be in the future; historical source dates belong in evidence\",\"retriable\":false}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_tmtl7jsSZTsUtTO0FLK72397",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_674dca4f05a844bcbd8b\", \"decision\": \"needs_review\", \"event\": {\"as_of\": \"2025-04-29\", \"sources\": [{\"id\": \"HOLDOUT-FOUR-EVENT-v1\", \"sha256\": \"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\"}, {\"id\": \"HOLDOUT-FOUR-BASELINE-v1\", \"sha256\": \"f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm\"}], \"summary\": \"FOUR CY2025 Q1 (period ended 2025-03-31, filing as_of 2025-04-29) SEC selected-fact packet HOLDOUT-FOUR-EVENT-v1 (sha256 089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb) compared against baseline CY2024 Q4 (period ended 2024-12-31) packet HOLDOUT-FOUR-BASELINE-v1 (sha256 f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e). All comparisons are sequential quarter-over-quarter on displayed rounded values, not year-over-year.\", \"type\": \"earnings\"}, \"evidence\": [{\"basis\": \"GAAP and non-GAAP selected displayed facts\", \"id\": \"HOLDOUT-FOUR-EVENT-v1\", \"kind\": \"sec_filing_exhibit\", \"note\": \"Event packet; all 13 required metrics present.\", \"period\": \"CY2025 Q1 ended 2025-03-31\", \"sha256\": \"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\"}, {\"basis\": \"GAAP and non-GAAP selected displayed facts\", \"id\": \"HOLDOUT-FOUR-BASELINE-v1\", \"kind\": \"sec_filing_exhibit\", \"note\": \"Baseline packet used for sequential comparison.\", \"period\": \"CY2024 Q4 ended 2024-12-31\", \"sha256\": \"f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm\"}, {\"basis\": \"GAAP Class A diluted\", \"id\": \"FOUR-Q1-EPS\", \"note\": \"vs FOUR-Q4-EPS=1.44; sequential change -1.24, -86.11% of baseline.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_per_share_reported\", \"value\": \"0.2\"}, {\"basis\": \"GAAP gain on investments in securities\", \"id\": \"FOUR-Q1-GAIN\", \"note\": \"vs FOUR-Q4-GAIN=45.1; sequential change -44.8, -99.33% of baseline. Insufficient alone to explain the net income decline.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"0.3\"}, {\"basis\": \"GAAP gross profit\", \"id\": \"FOUR-Q1-GROSS\", \"note\": \"vs FOUR-Q4-GROSS=270.8; sequential change -30.1, -11.12% of baseline.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"240.7\"}, {\"basis\": \"GAAP gross revenue\", \"id\": \"FOUR-Q1-REV\", \"note\": \"vs FOUR-Q4-REV=887.0; sequential change -38.7, -4.36% of baseline.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"848.3\"}, {\"basis\": \"GAAP income from operations\", \"id\": \"FOUR-Q1-OPINC\", \"note\": \"vs FOUR-Q4-OPINC=86.0; sequential change -60.6, -70.47% of baseline.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"25.4\"}, {\"basis\": \"GAAP net income\", \"id\": \"FOUR-Q1-NET\", \"note\": \"vs FOUR-Q4-NET=139.3; sequential change -119.8, -86.0% of baseline.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"19.5\"}, {\"basis\": \"GAAP net income attributable to Shift4\", \"id\": \"FOUR-Q1-ATTR\", \"note\": \"vs FOUR-Q4-ATTR=116.0; sequential change -99.3, -85.6% of baseline.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"16.7\"}, {\"basis\": \"GAAP network fees (signed, negative)\", \"id\": \"FOUR-Q1-NETFEES\", \"note\": \"vs FOUR-Q4-NETFEES=-482.0; sequential change +2.2 USD_million, relative change not meaningful.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"-479.8\"}, {\"basis\": \"GAAP noncontrolling income (signed, negative)\", \"id\": \"FOUR-Q1-NCI\", \"note\": \"vs FOUR-Q4-NCI=-23.3; sequential change +20.5 USD_million, relative change not meaningful.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"-2.8\"}, {\"basis\": \"GAAP payments-based revenue\", \"id\": \"FOUR-Q1-PAY\", \"note\": \"vs FOUR-Q4-PAY=772.4; sequential change -16.7, -2.16% of baseline.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"755.7\"}, {\"basis\": \"GAAP subscription and other revenue\", \"id\": \"FOUR-Q1-SUB\", \"note\": \"vs FOUR-Q4-SUB=114.6; sequential change -22.0, -19.2% of baseline.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"92.6\"}, {\"basis\": \"non-GAAP adjusted EBITDA\", \"id\": \"FOUR-Q1-ADJEBITDA\", \"note\": \"vs FOUR-Q4-ADJEBITDA=205.9; sequential change -37.4, -18.16% of baseline. Different basis from GAAP rows.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"168.5\"}, {\"basis\": \"non-GAAP gross revenue less network fees\", \"id\": \"FOUR-Q1-GRLNF\", \"note\": \"vs FOUR-Q4-GRLNF=405.0; sequential change -36.5, -9.01% of baseline. Different basis from GAAP rows.\", \"period\": \"CY2025 Q1\", \"unit\": \"USD_million_rounded\", \"value\": \"368.5\"}, {\"id\": \"MIX-REV-Q1\", \"kind\": \"arithmetic_check\", \"note\": \"Total GAAP gross revenue change -38.7 = payments-based -16.7 + subscription/other -22.0 + unlisted residual 0.0. Arithmetic only; not a causal explanation.\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"matched_terms\": [\"symbol_match:FOUR\", \"gaap_class_a_diluted_eps\", \"gaap_gain_on_investments_in_securities\", \"gaap_gross_profit\", \"gaap_gross_revenue\", \"gaap_income_from_operations\", \"gaap_net_income\", \"gaap_net_income_attributable_to_shift4\", \"gaap_network_fees_signed\", \"gaap_noncontrolling_income_signed\", \"gaap_payments_based_revenue\", \"gaap_subscription_other_revenue\", \"non_gaap_adjusted_ebitda\", \"non_gaap_gross_revenue_less_network_fees\"], \"next_review_at\": \"2026-11-24\", \"rationale\": \"All 13 required event metrics are present in the stored alert packet, so the packet is complete on the thesis's own required-metric list. The review is nonetheless held at needs_review because the source packet contains only selected displayed facts: it carries no income-statement line items below operating income, no tax or interest lines, no share counts, no segment or driver disclosure, and no reconciliation of GAAP to non-GAAP measures. The largest sequential declines (GAAP net income -119.8 USD_million, -86.0% of baseline; attributable net income -99.3 USD_million, -85.6%; diluted Class A EPS -1.24 USD_per_share, -86.11%) cannot be attributed from this packet: the only listed candidate component, gain on investments in securities, fell -44.8 USD_million (-99.33%), which is far smaller than the net income decline, and no residual bridge is supplied. Income from operations fell -60.6 USD_million (-70.47%) while gross profit fell only -30.1 USD_million (-11.12%), implying a large operating-expense increase that the packet does not itemize; that implication is arithmetic on displayed rows, not a sourced cause. Revenue fell -38.7 USD_million (-4.36%) with the listed components (payments-based -16.7, subscription/other -22.0) summing exactly to the total and a stated residual of 0, so no revenue attribution gap exists at this rounding, but no volume/price/mix driver is disclosed. Network fees were roughly flat (-482.0 to -479.8, +2.2 USD_million) while gross revenue fell, so gross revenue less network fees fell -36.5 USD_million (-9.01%) and non-GAAP adjusted EBITDA fell -37.4 USD_million (-18.16%); the non-GAAP measures are a different basis from the GAAP rows and are not comparable line-for-line. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains. No valuation, durability, or trading conclusion is drawn. Status and conviction are preserved and the thesis remains blocked for downstream decisions pending a full filing with the missing reconciliations and driver disclosures.\", \"thesis_id\": \"th_31ce3b6be1c9481a9015\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_tmtl7jsSZTsUtTO0FLK72397",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"446b1df0-e70d-4b70-b980-a46777ea3393\",\"as_of\":\"2026-10-24T14:29:34Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_31ce3b6be1c9481a9015\",\"market\":\"US\",\"symbol\":\"FOUR\",\"title\":\"FOUR source-bounded earnings thesis\",\"thesis\":\"Baseline CY2024 Q4 ended 2024-12-31: FOUR-Q4-PAY=772.4 USD_million; FOUR-Q4-SUB=114.6 USD_million; FOUR-Q4-REV=887.0 USD_million; FOUR-Q4-NETFEES=-482.0 USD_million; FOUR-Q4-GROSS=270.8 USD_million; FOUR-Q4-GRLNF=405.0 USD_million; FOUR-Q4-OPINC=86.0 USD_million; FOUR-Q4-GAIN=45.1 USD_million; FOUR-Q4-NET=139.3 USD_million; FOUR-Q4-NCI=-23.3 USD_million; FOUR-Q4-ATTR=116.0 USD_million; FOUR-Q4-EPS=1.44 USD_per_share; FOUR-Q4-ADJEBITDA=205.9 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_674dca4f05a844bcbd8b\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_class_a_diluted_eps\",\"gaap_gain_on_investments_in_securities\",\"gaap_gross_profit\",\"gaap_gross_revenue\",\"gaap_income_from_operations\",\"gaap_net_income\",\"gaap_net_income_attributable_to_shift4\",\"gaap_network_fees_signed\",\"gaap_noncontrolling_income_signed\",\"gaap_payments_based_revenue\",\"gaap_subscription_other_revenue\",\"non_gaap_adjusted_ebitda\",\"non_gaap_gross_revenue_less_network_fees\"],\"evidence\":[{\"id\":\"HOLDOUT-FOUR-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm\",\"sha256\":\"f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\"}],\"next_review_at\":\"2026-11-24\",\"last_review_at\":\"2026-10-24T14:29:34Z\",\"created_at\":\"2026-10-24T14:29:12Z\",\"updated_at\":\"2026-10-24T14:29:34Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_cb2732d2eda94921ae3f\",\"thesis_id\":\"th_31ce3b6be1c9481a9015\",\"alert_id\":\"fa_674dca4f05a844bcbd8b\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-FOUR-2025-Q1-GAAP-NETWORK-FEE-BRIDGE-r5\",\"event\":{\"type\":\"earnings\",\"summary\":\"FOUR CY2025 Q1 ended 2025-03-31 SEC selected-fact packet: FOUR-Q1-PAY=755.7 USD_million; FOUR-Q1-SUB=92.6 USD_million; FOUR-Q1-REV=848.3 USD_million; FOUR-Q1-NETFEES=-479.8 USD_million; FOUR-Q1-GROSS=240.7 USD_million; FOUR-Q1-GRLNF=368.5 USD_million; FOUR-Q1-OPINC=25.4 USD_million; FOUR-Q1-GAIN=0.3 USD_million; FOUR-Q1-NET=19.5 USD_million; FOUR-Q1-NCI=-2.8 USD_million; FOUR-Q1-ATTR=16.7 USD_million; FOUR-Q1-EPS=0.2 USD_per_share; FOUR-Q1-ADJEBITDA=168.5 USD_million.\",\"as_of\":\"2025-04-29\",\"sources\":[{\"id\":\"HOLDOUT-FOUR-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\",\"sha256\":\"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"All 13 required event metrics are present in the stored alert packet, so the packet is complete on the thesis's own required-metric list. The review is nonetheless held at needs_review because the source packet contains only selected displayed facts: it carries no income-statement line items below operating income, no tax or interest lines, no share counts, no segment or driver disclosure, and no reconciliation of GAAP to non-GAAP measures. The largest sequential declines (GAAP net income -119.8 USD_million, -86.0% of baseline; attributable net income -99.3 USD_million, -85.6%; diluted Class A EPS -1.24 USD_per_share, -86.11%) cannot be attributed from this packet: the only listed candidate component, gain on investments in securities, fell -44.8 USD_million (-99.33%), which is far smaller than the net income decline, and no residual bridge is supplied. Income from operations fell -60.6 USD_million (-70.47%) while gross profit fell only -30.1 USD_million (-11.12%), implying a large operating-expense increase that the packet does not itemize; that implication is arithmetic on displayed rows, not a sourced cause. Revenue fell -38.7 USD_million (-4.36%) with the listed components (payments-based -16.7, subscription/other -22.0) summing exactly to the total and a stated residual of 0, so no revenue attribution gap exists at this rounding, but no volume/price/mix driver is disclosed. Network fees were roughly flat (-482.0 to -479.8, +2.2 USD_million) while gross revenue fell, so gross revenue less network fees fell -36.5 USD_million (-9.01%) and non-GAAP adjusted EBITDA fell -37.4 USD_million (-18.16%); the non-GAAP measures are a different basis from the GAAP rows and are not comparable line-for-line. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains. No valuation, durability, or trading conclusion is drawn. Status and conviction are preserved and the thesis remains blocked for downstream decisions pending a full filing with the missing reconciliations and driver disclosures.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"symbol_match:FOUR\",\"gaap_class_a_diluted_eps\",\"gaap_gain_on_investments_in_securities\",\"gaap_gross_profit\",\"gaap_gross_revenue\",\"gaap_income_from_operations\",\"gaap_net_income\",\"gaap_net_income_attributable_to_shift4\",\"gaap_network_fees_signed\",\"gaap_noncontrolling_income_signed\",\"gaap_payments_based_revenue\",\"gaap_subscription_other_revenue\",\"non_gaap_adjusted_ebitda\",\"non_gaap_gross_revenue_less_network_fees\"],\"evidence\":[{\"basis\":\"GAAP and non-GAAP selected displayed facts\",\"id\":\"HOLDOUT-FOUR-EVENT-v1\",\"kind\":\"sec_filing_exhibit\",\"note\":\"Event packet; all 13 required metrics present.\",\"period\":\"CY2025 Q1 ended 2025-03-31\",\"sha256\":\"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\"},{\"basis\":\"GAAP and non-GAAP selected displayed facts\",\"id\":\"HOLDOUT-FOUR-BASELINE-v1\",\"kind\":\"sec_filing_exhibit\",\"note\":\"Baseline packet used for sequential comparison.\",\"period\":\"CY2024 Q4 ended 2024-12-31\",\"sha256\":\"f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm\"},{\"basis\":\"GAAP Class A diluted\",\"id\":\"FOUR-Q1-EPS\",\"note\":\"vs FOUR-Q4-EPS=1.44; sequential change -1.24, -86.11% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_per_share_reported\",\"value\":\"0.2\"},{\"basis\":\"GAAP gain on investments in securities\",\"id\":\"FOUR-Q1-GAIN\",\"note\":\"vs FOUR-Q4-GAIN=45.1; sequential change -44.8, -99.33% of baseline. Insufficient alone to explain the net income decline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"0.3\"},{\"basis\":\"GAAP gross profit\",\"id\":\"FOUR-Q1-GROSS\",\"note\":\"vs FOUR-Q4-GROSS=270.8; sequential change -30.1, -11.12% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"240.7\"},{\"basis\":\"GAAP gross revenue\",\"id\":\"FOUR-Q1-REV\",\"note\":\"vs FOUR-Q4-REV=887.0; sequential change -38.7, -4.36% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"848.3\"},{\"basis\":\"GAAP income from operations\",\"id\":\"FOUR-Q1-OPINC\",\"note\":\"vs FOUR-Q4-OPINC=86.0; sequential change -60.6, -70.47% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"25.4\"},{\"basis\":\"GAAP net income\",\"id\":\"FOUR-Q1-NET\",\"note\":\"vs FOUR-Q4-NET=139.3; sequential change -119.8, -86.0% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"19.5\"},{\"basis\":\"GAAP net income attributable to Shift4\",\"id\":\"FOUR-Q1-ATTR\",\"note\":\"vs FOUR-Q4-ATTR=116.0; sequential change -99.3, -85.6% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"16.7\"},{\"basis\":\"GAAP network fees (signed, negative)\",\"id\":\"FOUR-Q1-NETFEES\",\"note\":\"vs FOUR-Q4-NETFEES=-482.0; sequential change +2.2 USD_million, relative change not meaningful.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"-479.8\"},{\"basis\":\"GAAP noncontrolling income (signed, negative)\",\"id\":\"FOUR-Q1-NCI\",\"note\":\"vs FOUR-Q4-NCI=-23.3; sequential change +20.5 USD_million, relative change not meaningful.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"-2.8\"},{\"basis\":\"GAAP payments-based revenue\",\"id\":\"FOUR-Q1-PAY\",\"note\":\"vs FOUR-Q4-PAY=772.4; sequential change -16.7, -2.16% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"755.7\"},{\"basis\":\"GAAP subscription and other revenue\",\"id\":\"FOUR-Q1-SUB\",\"note\":\"vs FOUR-Q4-SUB=114.6; sequential change -22.0, -19.2% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"92.6\"},{\"basis\":\"non-GAAP adjusted EBITDA\",\"id\":\"FOUR-Q1-ADJEBITDA\",\"note\":\"vs FOUR-Q4-ADJEBITDA=205.9; sequential change -37.4, -18.16% of baseline. Different basis from GAAP rows.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"168.5\"},{\"basis\":\"non-GAAP gross revenue less network fees\",\"id\":\"FOUR-Q1-GRLNF\",\"note\":\"vs FOUR-Q4-GRLNF=405.0; sequential change -36.5, -9.01% of baseline. Different basis from GAAP rows.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"368.5\"},{\"id\":\"MIX-REV-Q1\",\"kind\":\"arithmetic_check\",\"note\":\"Total GAAP gross revenue change -38.7 = payments-based -16.7 + subscription/other -22.0 + unlisted residual 0.0. Arithmetic only; not a causal explanation.\"}],\"created_at\":\"2026-10-24T14:29:34Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9691,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_sFz12NAQnSRJpTcahDIq9622",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_674dca4f05a844bcbd8b\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_sFz12NAQnSRJpTcahDIq9622",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"34544d0d-7bc7-4016-bc7c-7e08a4ed1ead\",\"as_of\":\"2026-10-24T14:29:35Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_674dca4f05a844bcbd8b\",\"watchlist_id\":\"wl_15fbd189e9b44f889047\",\"thesis_id\":\"th_31ce3b6be1c9481a9015\",\"market\":\"US\",\"symbol\":\"FOUR\",\"event_fingerprint\":\"10ea5b7fad7b0c54a71738ba1e522bde03c4cf550269984ccc2b15f86315c936\",\"event\":{\"external_id\":\"HOLDOUT-V2-FOUR-EVENT\",\"type\":\"earnings\",\"summary\":\"FOUR CY2025 Q1 ended 2025-03-31 SEC selected-fact packet: FOUR-Q1-PAY=755.7 USD_million; FOUR-Q1-SUB=92.6 USD_million; FOUR-Q1-REV=848.3 USD_million; FOUR-Q1-NETFEES=-479.8 USD_million; FOUR-Q1-GROSS=240.7 USD_million; FOUR-Q1-GRLNF=368.5 USD_million; FOUR-Q1-OPINC=25.4 USD_million; FOUR-Q1-GAIN=0.3 USD_million; FOUR-Q1-NET=19.5 USD_million; FOUR-Q1-NCI=-2.8 USD_million; FOUR-Q1-ATTR=16.7 USD_million; FOUR-Q1-EPS=0.2 USD_per_share; FOUR-Q1-ADJEBITDA=168.5 USD_million.\",\"as_of\":\"2025-04-29\",\"sources\":[{\"id\":\"HOLDOUT-FOUR-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\",\"sha256\":\"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\"}],\"observed_metrics\":{\"gaap_payments_based_revenue\":{\"value\":\"755.7\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-PAY\"},\"gaap_subscription_other_revenue\":{\"value\":\"92.6\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-SUB\"},\"gaap_gross_revenue\":{\"value\":\"848.3\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-REV\"},\"gaap_network_fees_signed\":{\"value\":\"-479.8\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-NETFEES\"},\"gaap_gross_profit\":{\"value\":\"240.7\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-GROSS\"},\"non_gaap_gross_revenue_less_network_fees\":{\"value\":\"368.5\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-GRLNF\"},\"gaap_income_from_operations\":{\"value\":\"25.4\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-OPINC\"},\"gaap_gain_on_investments_in_securities\":{\"value\":\"0.3\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-GAIN\"},\"gaap_net_income\":{\"value\":\"19.5\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-NET\"},\"gaap_noncontrolling_income_signed\":{\"value\":\"-2.8\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-NCI\"},\"gaap_net_income_attributable_to_shift4\":{\"value\":\"16.7\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-ATTR\"},\"gaap_class_a_diluted_eps\":{\"value\":\"0.2\",\"unit\":\"USD_per_share\",\"fact_id\":\"FOUR-Q1-EPS\"},\"non_gaap_adjusted_ebitda\":{\"value\":\"168.5\",\"unit\":\"USD_million\",\"fact_id\":\"FOUR-Q1-ADJEBITDA\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"four\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T14:29:12Z\",\"last_seen_at\":\"2026-10-24T14:29:12Z\",\"created_at\":\"2026-10-24T14:29:12Z\",\"updated_at\":\"2026-10-24T14:29:35Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9706,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_7yp92l2a3exHIH18YOr96549",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"review_limit\": 5, \"thesis_id\": \"th_31ce3b6be1c9481a9015\"}",
+              "round": 6
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_7yp92l2a3exHIH18YOr96549",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"1fc31246-7afc-48c9-bfca-3e3508a2f8f2\",\"as_of\":\"2026-10-24T14:29:37Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_31ce3b6be1c9481a9015\",\"market\":\"US\",\"symbol\":\"FOUR\",\"title\":\"FOUR source-bounded earnings thesis\",\"thesis\":\"Baseline CY2024 Q4 ended 2024-12-31: FOUR-Q4-PAY=772.4 USD_million; FOUR-Q4-SUB=114.6 USD_million; FOUR-Q4-REV=887.0 USD_million; FOUR-Q4-NETFEES=-482.0 USD_million; FOUR-Q4-GROSS=270.8 USD_million; FOUR-Q4-GRLNF=405.0 USD_million; FOUR-Q4-OPINC=86.0 USD_million; FOUR-Q4-GAIN=45.1 USD_million; FOUR-Q4-NET=139.3 USD_million; FOUR-Q4-NCI=-23.3 USD_million; FOUR-Q4-ATTR=116.0 USD_million; FOUR-Q4-EPS=1.44 USD_per_share; FOUR-Q4-ADJEBITDA=205.9 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_674dca4f05a844bcbd8b\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_class_a_diluted_eps\",\"gaap_gain_on_investments_in_securities\",\"gaap_gross_profit\",\"gaap_gross_revenue\",\"gaap_income_from_operations\",\"gaap_net_income\",\"gaap_net_income_attributable_to_shift4\",\"gaap_network_fees_signed\",\"gaap_noncontrolling_income_signed\",\"gaap_payments_based_revenue\",\"gaap_subscription_other_revenue\",\"non_gaap_adjusted_ebitda\",\"non_gaap_gross_revenue_less_network_fees\"],\"evidence\":[{\"id\":\"HOLDOUT-FOUR-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm\",\"sha256\":\"f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\"}],\"next_review_at\":\"2026-11-24\",\"last_review_at\":\"2026-10-24T14:29:34Z\",\"created_at\":\"2026-10-24T14:29:12Z\",\"updated_at\":\"2026-10-24T14:29:34Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[{\"id\":\"tr_cb2732d2eda94921ae3f\",\"thesis_id\":\"th_31ce3b6be1c9481a9015\",\"alert_id\":\"fa_674dca4f05a844bcbd8b\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-FOUR-2025-Q1-GAAP-NETWORK-FEE-BRIDGE-r5\",\"event\":{\"type\":\"earnings\",\"summary\":\"FOUR CY2025 Q1 ended 2025-03-31 SEC selected-fact packet: FOUR-Q1-PAY=755.7 USD_million; FOUR-Q1-SUB=92.6 USD_million; FOUR-Q1-REV=848.3 USD_million; FOUR-Q1-NETFEES=-479.8 USD_million; FOUR-Q1-GROSS=240.7 USD_million; FOUR-Q1-GRLNF=368.5 USD_million; FOUR-Q1-OPINC=25.4 USD_million; FOUR-Q1-GAIN=0.3 USD_million; FOUR-Q1-NET=19.5 USD_million; FOUR-Q1-NCI=-2.8 USD_million; FOUR-Q1-ATTR=16.7 USD_million; FOUR-Q1-EPS=0.2 USD_per_share; FOUR-Q1-ADJEBITDA=168.5 USD_million.\",\"as_of\":\"2025-04-29\",\"sources\":[{\"id\":\"HOLDOUT-FOUR-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\",\"sha256\":\"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"All 13 required event metrics are present in the stored alert packet, so the packet is complete on the thesis's own required-metric list. The review is nonetheless held at needs_review because the source packet contains only selected displayed facts: it carries no income-statement line items below operating income, no tax or interest lines, no share counts, no segment or driver disclosure, and no reconciliation of GAAP to non-GAAP measures. The largest sequential declines (GAAP net income -119.8 USD_million, -86.0% of baseline; attributable net income -99.3 USD_million, -85.6%; diluted Class A EPS -1.24 USD_per_share, -86.11%) cannot be attributed from this packet: the only listed candidate component, gain on investments in securities, fell -44.8 USD_million (-99.33%), which is far smaller than the net income decline, and no residual bridge is supplied. Income from operations fell -60.6 USD_million (-70.47%) while gross profit fell only -30.1 USD_million (-11.12%), implying a large operating-expense increase that the packet does not itemize; that implication is arithmetic on displayed rows, not a sourced cause. Revenue fell -38.7 USD_million (-4.36%) with the listed components (payments-based -16.7, subscription/other -22.0) summing exactly to the total and a stated residual of 0, so no revenue attribution gap exists at this rounding, but no volume/price/mix driver is disclosed. Network fees were roughly flat (-482.0 to -479.8, +2.2 USD_million) while gross revenue fell, so gross revenue less network fees fell -36.5 USD_million (-9.01%) and non-GAAP adjusted EBITDA fell -37.4 USD_million (-18.16%); the non-GAAP measures are a different basis from the GAAP rows and are not comparable line-for-line. No absolute loss dollars are inferred from any rate, and no total is attributed to listed components where a residual remains. No valuation, durability, or trading conclusion is drawn. Status and conviction are preserved and the thesis remains blocked for downstream decisions pending a full filing with the missing reconciliations and driver disclosures.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"symbol_match:FOUR\",\"gaap_class_a_diluted_eps\",\"gaap_gain_on_investments_in_securities\",\"gaap_gross_profit\",\"gaap_gross_revenue\",\"gaap_income_from_operations\",\"gaap_net_income\",\"gaap_net_income_attributable_to_shift4\",\"gaap_network_fees_signed\",\"gaap_noncontrolling_income_signed\",\"gaap_payments_based_revenue\",\"gaap_subscription_other_revenue\",\"non_gaap_adjusted_ebitda\",\"non_gaap_gross_revenue_less_network_fees\"],\"evidence\":[{\"basis\":\"GAAP and non-GAAP selected displayed facts\",\"id\":\"HOLDOUT-FOUR-EVENT-v1\",\"kind\":\"sec_filing_exhibit\",\"note\":\"Event packet; all 13 required metrics present.\",\"period\":\"CY2025 Q1 ended 2025-03-31\",\"sha256\":\"089923d8fac15f562a7751b57d94405b437815a6000666f28d35fc8535828bfb\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000017/ex991q1.htm\"},{\"basis\":\"GAAP and non-GAAP selected displayed facts\",\"id\":\"HOLDOUT-FOUR-BASELINE-v1\",\"kind\":\"sec_filing_exhibit\",\"note\":\"Baseline packet used for sequential comparison.\",\"period\":\"CY2024 Q4 ended 2024-12-31\",\"sha256\":\"f451cd8136d613feeeab16325ffce0764d249ef5b3dbd1ff2fa755030ed5fb1e\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1794669/000179466925000007/ex991q4.htm\"},{\"basis\":\"GAAP Class A diluted\",\"id\":\"FOUR-Q1-EPS\",\"note\":\"vs FOUR-Q4-EPS=1.44; sequential change -1.24, -86.11% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_per_share_reported\",\"value\":\"0.2\"},{\"basis\":\"GAAP gain on investments in securities\",\"id\":\"FOUR-Q1-GAIN\",\"note\":\"vs FOUR-Q4-GAIN=45.1; sequential change -44.8, -99.33% of baseline. Insufficient alone to explain the net income decline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"0.3\"},{\"basis\":\"GAAP gross profit\",\"id\":\"FOUR-Q1-GROSS\",\"note\":\"vs FOUR-Q4-GROSS=270.8; sequential change -30.1, -11.12% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"240.7\"},{\"basis\":\"GAAP gross revenue\",\"id\":\"FOUR-Q1-REV\",\"note\":\"vs FOUR-Q4-REV=887.0; sequential change -38.7, -4.36% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"848.3\"},{\"basis\":\"GAAP income from operations\",\"id\":\"FOUR-Q1-OPINC\",\"note\":\"vs FOUR-Q4-OPINC=86.0; sequential change -60.6, -70.47% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"25.4\"},{\"basis\":\"GAAP net income\",\"id\":\"FOUR-Q1-NET\",\"note\":\"vs FOUR-Q4-NET=139.3; sequential change -119.8, -86.0% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"19.5\"},{\"basis\":\"GAAP net income attributable to Shift4\",\"id\":\"FOUR-Q1-ATTR\",\"note\":\"vs FOUR-Q4-ATTR=116.0; sequential change -99.3, -85.6% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"16.7\"},{\"basis\":\"GAAP network fees (signed, negative)\",\"id\":\"FOUR-Q1-NETFEES\",\"note\":\"vs FOUR-Q4-NETFEES=-482.0; sequential change +2.2 USD_million, relative change not meaningful.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"-479.8\"},{\"basis\":\"GAAP noncontrolling income (signed, negative)\",\"id\":\"FOUR-Q1-NCI\",\"note\":\"vs FOUR-Q4-NCI=-23.3; sequential change +20.5 USD_million, relative change not meaningful.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"-2.8\"},{\"basis\":\"GAAP payments-based revenue\",\"id\":\"FOUR-Q1-PAY\",\"note\":\"vs FOUR-Q4-PAY=772.4; sequential change -16.7, -2.16% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"755.7\"},{\"basis\":\"GAAP subscription and other revenue\",\"id\":\"FOUR-Q1-SUB\",\"note\":\"vs FOUR-Q4-SUB=114.6; sequential change -22.0, -19.2% of baseline.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"92.6\"},{\"basis\":\"non-GAAP adjusted EBITDA\",\"id\":\"FOUR-Q1-ADJEBITDA\",\"note\":\"vs FOUR-Q4-ADJEBITDA=205.9; sequential change -37.4, -18.16% of baseline. Different basis from GAAP rows.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"168.5\"},{\"basis\":\"non-GAAP gross revenue less network fees\",\"id\":\"FOUR-Q1-GRLNF\",\"note\":\"vs FOUR-Q4-GRLNF=405.0; sequential change -36.5, -9.01% of baseline. Different basis from GAAP rows.\",\"period\":\"CY2025 Q1\",\"unit\":\"USD_million_rounded\",\"value\":\"368.5\"},{\"id\":\"MIX-REV-Q1\",\"kind\":\"arithmetic_check\",\"note\":\"Total GAAP gross revenue change -38.7 = payments-based -16.7 + subscription/other -22.0 + unlisted residual 0.0. Arithmetic only; not a causal explanation.\"}],\"created_at\":\"2026-10-24T14:29:34Z\"}]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9691,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 6
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4402,
+              "completion_tokens": 135,
+              "total_tokens": 4537,
+              "estimated_cost_usd": 0.0014826,
+              "priced": true,
+              "latency_ms": 903.794
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6458,
+              "completion_tokens": 292,
+              "total_tokens": 6750,
+              "cache_read_tokens": 4480,
+              "estimated_cost_usd": 0.0009706799999999999,
+              "priced": true,
+              "latency_ms": 1750.82
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 7176,
+              "completion_tokens": 2686,
+              "total_tokens": 9862,
+              "cache_read_tokens": 6656,
+              "estimated_cost_usd": 0.0034191359999999997,
+              "priced": true,
+              "latency_ms": 10470.322
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 10014,
+              "completion_tokens": 2671,
+              "total_tokens": 12685,
+              "cache_read_tokens": 9856,
+              "estimated_cost_usd": 0.0033117359999999996,
+              "priced": true,
+              "latency_ms": 8888.844
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 15819,
+              "completion_tokens": 101,
+              "total_tokens": 15920,
+              "cache_read_tokens": 12672,
+              "estimated_cost_usd": 0.001141332,
+              "priced": true,
+              "latency_ms": 1201.446
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 17090,
+              "completion_tokens": 75,
+              "total_tokens": 17165,
+              "cache_read_tokens": 15744,
+              "estimated_cost_usd": 0.000588264,
+              "priced": true,
+              "latency_ms": 1733.354
+            },
+            {
+              "sequence": 7,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 20296,
+              "completion_tokens": 2087,
+              "total_tokens": 22383,
+              "cache_read_tokens": 17152,
+              "estimated_cost_usd": 0.003550512,
+              "priced": true,
+              "latency_ms": 11781.855
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 36.786,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update",
+        "finance-tools__thesis_get"
+      ],
+      "model_calls": 7,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.01446426
+    }
+  ],
+  "estimated_cost_usd": 0.01446426
+}

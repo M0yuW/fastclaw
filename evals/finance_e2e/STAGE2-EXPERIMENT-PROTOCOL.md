@@ -464,7 +464,7 @@ labels and must never be pooled automatically.
 
 - [x] All 24 Stage 2A configurations regenerate without diff.
 - [x] Every local source hash matches the source lock.
-- [ ] Two-pass source and oracle audits are complete.
+- [ ] Two-pass review of all 103 source/oracle items (44 source facts, 17 calculations, and 42 fact-to-record mappings) is complete.
 - [x] Stage 2 suite uses the prespecified 90% final evidence-recall threshold.
 - [ ] Every point-in-time source has an independently audited `accepted_at` no later than its case `as_of_timestamp`.
 - [ ] Primary and diagnostic modes are final.

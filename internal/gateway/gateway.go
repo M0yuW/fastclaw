@@ -329,6 +329,17 @@ func (g *Gateway) IsCloudMode() bool { return true }
 
 // Run starts the gateway and blocks until the process gets SIGINT/SIGTERM.
 func (g *Gateway) Run() error {
+	return g.run(nil)
+}
+
+// RunWithReady closes ready after plugin startup and registration have
+// completed, before blocking for shutdown. Callers can delay accepting
+// requests until the agent tool registries are initialized.
+func (g *Gateway) RunWithReady(ready chan<- struct{}) error {
+	return g.run(ready)
+}
+
+func (g *Gateway) run(ready chan<- struct{}) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -383,6 +394,9 @@ func (g *Gateway) Run() error {
 		}
 	}
 	slog.Info("gateway started")
+	if ready != nil {
+		close(ready)
+	}
 	wg.Wait()
 	g.bus.StopInternal(fmt.Errorf("gateway stopped"))
 	if g.taskQueue != nil {

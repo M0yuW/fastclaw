@@ -1,0 +1,167 @@
+{
+  "case_id": "P03",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "screen_tool_used": true,
+    "one_thesis_created": true,
+    "complete_candidate_only": true,
+    "no_alerts": true,
+    "no_trade_tool": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_21b66b610a9b40ad8e47",
+          "market": "US",
+          "symbol": "FICA",
+          "title": "FICA Preliminary Screen Thesis (Synthetic Fixture)",
+          "thesis": "Preliminary thesis based solely on deterministic synthetic screen output. FICA passed the completeness-gated screen (require_complete=true) with all required metrics present. This is a synthetic, non-investment research workflow; no investment recommendation is implied.",
+          "status": "researching",
+          "conviction": 1,
+          "assumptions": [
+            "FICA is a synthetic fixture ticker with deterministic screen data only",
+            "Screen metrics are complete and internally consistent as of 2026-10-17"
+          ],
+          "catalysts": [
+            "Passed completeness-gated screen with all required metrics present"
+          ],
+          "invalidations": [
+            "Any required screen metric becomes missing or incomplete",
+            "Fixture provenance changes or data is superseded"
+          ],
+          "required_event_metrics": [],
+          "evidence": [
+            {
+              "as_of": "2026-10-17T06:23:02Z",
+              "fixture_id": "synthetic-screen-v1",
+              "kind": "deterministic_screen",
+              "note": "Synthetic fixture provenance; retained candidate with complete metrics",
+              "source": "local_evaluation_fixture"
+            }
+          ],
+          "next_review_at": null,
+          "last_review_at": null,
+          "created_at": "2026-10-17T06:23:06Z",
+          "updated_at": "2026-10-17T06:23:06Z",
+          "version": 1,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "finance-workflow-P03"
+        },
+        "reviews": []
+      }
+    ],
+    "alerts": []
+  },
+  "extras": {},
+  "turns": [
+    {
+      "prompt": "This is a synthetic, non-investment research workflow using fixture tickers FICA and FICB. Call finance-tools__screen_stocks for both with require_complete=true. Read the tool's retained and rejected sets. Create one preliminary thesis via finance-tools__thesis_save only for a complete retained candidate; name its key metrics, missingness boundary, and synthetic fixture provenance. Do not create a thesis for a rejected candidate. Do not trade or call external market-data tools. Case P03.",
+      "response": {
+        "id": "chatcmpl-1792218180435301000",
+        "object": "chat.completion",
+        "created": 1792218180,
+        "model": "deepseek/deepseek-v4-pro",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Workflow complete for Case P03.\n\n## Screen Results\n\n| Symbol | Outcome | Detail |\n|--------|---------|--------|\n| **FICA** | ✅ Retained | All required metrics present |\n| **FICB** | ❌ Rejected | `insufficient_data` — missing `free_cash_flow` |\n\nThe screen's `runtime_quality_policy` moved FICB to the rejected set (`moved_to_rejected: 1`) because `require_complete=true` and `free_cash_flow` was absent.\n\n## Thesis Created (FICA only)\n\n**Thesis ID:** `th_21b66b610a9b40ad8e47` — status `researching`, conviction 1.\n\n**Key metrics (retained, complete):**\n- `pe_trailing`: 14.2\n- `revenue_growth_yoy`: 0.18\n- `earnings_growth_yoy`: 0.24\n- `debt_to_equity`: 0.35\n- `free_cash_flow`: 420\n- `roic`: 0.16\n- `analyst_upside_pct`: 0.34\n\n**Missingness boundary:** The screen required all seven metrics (`pe_trailing`, `revenue_growth_yoy`, `earnings_growth_yoy`, `debt_to_equity`, `free_cash_flow`, `roic`, `analyst_upside_pct`). FICA satisfied the boundary with zero missing; FICB crossed it by lacking `free_cash_flow` and was therefore rejected.\n\n**Synthetic fixture provenance:** `fixture_id: synthetic-screen-v1`, source `local_evaluation_fixture` (deterministic screen), `as_of 2026-10-17T06:23:02Z`. This is a synthetic, non-investment workflow — no recommendation or trade is implied.\n\nNo thesis was created for FICB, per the task's instruction to exclude rejected candidates."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 9516,
+          "completion_tokens": 990,
+          "total_tokens": 10506
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_1CBO0TXzqjJ7tNM1pFsU4221",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"FICA\", \"FICB\"], \"require_complete\": true}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_1CBO0TXzqjJ7tNM1pFsU4221",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"4fd60365-eda5-468c-b6c9-c4fe45c73e2b\",\"as_of\":\"2026-10-17T06:23:02Z\",\"stale_after\":\"2026-10-17T12:23:02Z\",\"data\":{\"fixture_id\":\"synthetic-screen-v1\",\"synthetic\":true,\"results\":[{\"symbol\":\"FICA\",\"valuation\":{\"pe_trailing\":14.2},\"growth\":{\"revenue_growth_yoy\":0.18,\"earnings_growth_yoy\":0.24},\"leverage\":{\"debt_to_equity\":0.35},\"cash_flow\":{\"free_cash_flow\":420},\"profitability\":{\"roic\":0.16},\"analyst_consensus\":{\"upside_pct\":0.34}}],\"rejected\":[{\"symbol\":\"FICB\",\"reason\":\"insufficient_data\",\"missing_metrics\":[\"free_cash_flow\"]}],\"passed\":1,\"failed\":1,\"runtime_quality_policy\":{\"require_complete\":true,\"required_metrics\":[\"pe_trailing\",\"revenue_growth_yoy\",\"earnings_growth_yoy\",\"debt_to_equity\",\"free_cash_flow\",\"roic\",\"analyst_upside_pct\"],\"moved_to_rejected\":1}},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"incomplete_screen_candidates_rejected\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_wRxS5dyYNammycBzWdeO9763",
+              "name": "finance-tools__thesis_save",
+              "arguments": "{\"symbol\": \"FICA\", \"market\": \"US\", \"title\": \"FICA Preliminary Screen Thesis (Synthetic Fixture)\", \"thesis\": \"Preliminary thesis based solely on deterministic synthetic screen output. FICA passed the completeness-gated screen (require_complete=true) with all required metrics present. This is a synthetic, non-investment research workflow; no investment recommendation is implied.\", \"status\": \"researching\", \"conviction\": 1, \"assumptions\": [\"FICA is a synthetic fixture ticker with deterministic screen data only\", \"Screen metrics are complete and internally consistent as of 2026-10-17\"], \"catalysts\": [\"Passed completeness-gated screen with all required metrics present\"], \"invalidations\": [\"Any required screen metric becomes missing or incomplete\", \"Fixture provenance changes or data is superseded\"], \"evidence\": [{\"source\": \"local_evaluation_fixture\", \"kind\": \"deterministic_screen\", \"fixture_id\": \"synthetic-screen-v1\", \"as_of\": \"2026-10-17T06:23:02Z\", \"note\": \"Synthetic fixture provenance; retained candidate with complete metrics\"}]}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_wRxS5dyYNammycBzWdeO9763",
+              "name": "finance-tools__thesis_save",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"cb88e4e5-9ed1-4246-be9c-866e9460e1ec\",\"as_of\":\"2026-10-17T06:23:06Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_21b66b610a9b40ad8e47\",\"market\":\"US\",\"symbol\":\"FICA\",\"title\":\"FICA Preliminary Screen Thesis (Synthetic Fixture)\",\"thesis\":\"Preliminary thesis based solely on deterministic synthetic screen output. FICA passed the completeness-gated screen (require_complete=true) with all required metrics present. This is a synthetic, non-investment research workflow; no investment recommendation is implied.\",\"status\":\"researching\",\"conviction\":1,\"assumptions\":[\"FICA is a synthetic fixture ticker with deterministic screen data only\",\"Screen metrics are complete and internally consistent as of 2026-10-17\"],\"catalysts\":[\"Passed completeness-gated screen with all required metrics present\"],\"invalidations\":[\"Any required screen metric becomes missing or incomplete\",\"Fixture provenance changes or data is superseded\"],\"required_event_metrics\":[],\"evidence\":[{\"as_of\":\"2026-10-17T06:23:02Z\",\"fixture_id\":\"synthetic-screen-v1\",\"kind\":\"deterministic_screen\",\"note\":\"Synthetic fixture provenance; retained candidate with complete metrics\",\"source\":\"local_evaluation_fixture\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-17T06:23:06Z\",\"updated_at\":\"2026-10-17T06:23:06Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"finance-workflow-P03\"},\"operation\":\"created\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8846,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 2544,
+              "completion_tokens": 102,
+              "total_tokens": 2646,
+              "estimated_cost_usd": 0.00119538,
+              "priced": true,
+              "latency_ms": 1611.968
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 3022,
+              "completion_tokens": 458,
+              "total_tokens": 3480,
+              "cache_read_tokens": 2560,
+              "estimated_cost_usd": 0.0006087099999999999,
+              "priced": true,
+              "latency_ms": 4384.484
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 3950,
+              "completion_tokens": 430,
+              "total_tokens": 4380,
+              "cache_read_tokens": 3456,
+              "estimated_cost_usd": 0.0006015180000000001,
+              "priced": true,
+              "latency_ms": 4505.262
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 10.572,
+      "tool_calls": [
+        "finance-tools__screen_stocks",
+        "finance-tools__thesis_save"
+      ],
+      "model_calls": 3,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.002405608
+    }
+  ],
+  "estimated_cost_usd": 0.002405608
+}

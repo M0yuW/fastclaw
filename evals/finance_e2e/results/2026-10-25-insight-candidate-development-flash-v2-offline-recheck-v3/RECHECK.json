@@ -1,0 +1,478 @@
+{
+  "purpose": "offline verifier-bug diagnosis; no model requests or observation reruns",
+  "source_result_dir": "/Users/m0yuw/Downloads/fastclaw-complete-device-migration-2026-08-11/fastclaw-finance-e2e/evals/finance_e2e/results/2026-10-25-insight-candidate-development-flash-v2",
+  "observations": 8,
+  "original_candidate_count": 0,
+  "rechecked_candidate_count": 1,
+  "issue_counts": {
+    "numeric_claims_unverified_or_uncovered": 7,
+    "unstructured_numeric_prose": 1,
+    "unstructured_numeric_saved_rationale": 3
+  },
+  "quality_pass": null,
+  "rows": [
+    {
+      "observation_id": "FITB-2025-Q3-GAAP-INTEREST-CREDIT-INCOME-BRIDGE-r1",
+      "original_status": "held",
+      "rechecked_status": "candidate_for_qualitative_review",
+      "rechecked_issues": [],
+      "invalid_structured_claims": [],
+      "result_sha256": "b3fc806a613df5eaba213d23e55da3bffbd6dffc7f9761c0eb4188ddd82529b6"
+    },
+    {
+      "observation_id": "FITB-2025-Q3-GAAP-INTEREST-CREDIT-INCOME-BRIDGE-r2",
+      "original_status": "held",
+      "rechecked_status": "held",
+      "rechecked_issues": [
+        "numeric_claims_unverified_or_uncovered"
+      ],
+      "invalid_structured_claims": [
+        {
+          "claim_index": 25,
+          "claim": {
+            "op": "ratio_direction",
+            "numerator_metric": "gaap_net_income_common",
+            "denominator_metric": "gaap_net_income",
+            "relation": "gt"
+          },
+          "verdict": {
+            "status": "contradicted",
+            "op": "ratio_direction",
+            "expected": "lt"
+          }
+        }
+      ],
+      "result_sha256": "c59e00d570a7d75af8c66585f9ed26299c568a2dbdaee2377b3d63c684a9db2a"
+    },
+    {
+      "observation_id": "RELY-2025-Q3-REVENUE-MARGIN-ADJUSTED-EBITDA-MIX-r1",
+      "original_status": "held",
+      "rechecked_status": "held",
+      "rechecked_issues": [
+        "numeric_claims_unverified_or_uncovered"
+      ],
+      "invalid_structured_claims": [
+        {
+          "claim_index": 21,
+          "claim": {
+            "op": "compare_delta",
+            "left_metric": "gaap_operating_income",
+            "right_metric": "non_gaap_adjusted_ebitda",
+            "relation": "eq",
+            "magnitudes": {
+              "gaap_operating_income": -2866,
+              "non_gaap_adjusted_ebitda": -2816
+            },
+            "cross_basis_explicit": true
+          },
+          "verdict": {
+            "status": "contradicted",
+            "op": "compare_delta",
+            "expected": "lt"
+          }
+        },
+        {
+          "claim_index": 26,
+          "claim": {
+            "op": "ratio_direction",
+            "numerator_metric": "non_gaap_adjusted_ebitda",
+            "denominator_metric": "gaap_revenue",
+            "relation": "lt"
+          },
+          "verdict": {
+            "status": "invalid_or_unassessable",
+            "op": "ratio_direction",
+            "error": "ratio mixes basis without explicit label"
+          }
+        },
+        {
+          "claim_index": 32,
+          "claim": {
+            "op": "signed_delta_identity",
+            "total_metric": "gaap_total_costs_expenses",
+            "terms": [
+              {
+                "metric": "gaap_transaction_expenses",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_customer_support_operations",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_marketing",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_technology_development",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_general_administrative",
+                "sign": -1
+              },
+              {
+                "metric": "gaap_depreciation_amortization",
+                "sign": 1
+              }
+            ],
+            "value": 10508
+          },
+          "verdict": {
+            "status": "contradicted",
+            "op": "signed_delta_identity",
+            "expected": "10508"
+          }
+        },
+        {
+          "claim_index": 33,
+          "claim": {
+            "op": "signed_delta_identity",
+            "total_metric": "non_gaap_adjusted_ebitda",
+            "terms": [
+              {
+                "metric": "gaap_net_income",
+                "sign": 1
+              },
+              {
+                "metric": "non_gaap_interest_income_net_addback_signed",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_income_tax_expense",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_depreciation_amortization",
+                "sign": 1
+              },
+              {
+                "metric": "non_gaap_other_expense_addback_signed",
+                "sign": -1
+              },
+              {
+                "metric": "non_gaap_donation_addback",
+                "sign": -1
+              },
+              {
+                "metric": "non_gaap_stock_comp_addback",
+                "sign": 1
+              },
+              {
+                "metric": "non_gaap_payroll_tax_addback",
+                "sign": 1
+              },
+              {
+                "metric": "non_gaap_integration_addback",
+                "sign": -1
+              }
+            ],
+            "value": -2816
+          },
+          "verdict": {
+            "status": "contradicted",
+            "op": "signed_delta_identity",
+            "expected": "-2816"
+          }
+        }
+      ],
+      "result_sha256": "0c8fa7828c46a15ff9b3b7b614d74a030980fc4bc79fae26539f1b04e7d0c9c0"
+    },
+    {
+      "observation_id": "RELY-2025-Q3-REVENUE-MARGIN-ADJUSTED-EBITDA-MIX-r2",
+      "original_status": "held",
+      "rechecked_status": "held",
+      "rechecked_issues": [
+        "numeric_claims_unverified_or_uncovered"
+      ],
+      "invalid_structured_claims": [
+        {
+          "claim_index": 28,
+          "claim": {
+            "op": "ratio_direction",
+            "numerator_metric": "non_gaap_adjusted_ebitda",
+            "denominator_metric": "gaap_revenue",
+            "relation": "lt"
+          },
+          "verdict": {
+            "status": "invalid_or_unassessable",
+            "op": "ratio_direction",
+            "error": "ratio mixes basis without explicit label"
+          }
+        },
+        {
+          "claim_index": 33,
+          "claim": {
+            "op": "signed_delta_identity",
+            "total_metric": "gaap_total_costs_expenses",
+            "terms": [
+              {
+                "metric": "gaap_transaction_expenses",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_customer_support_operations",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_marketing",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_technology_development",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_general_administrative",
+                "sign": -1
+              },
+              {
+                "metric": "gaap_depreciation_amortization",
+                "sign": 1
+              }
+            ],
+            "value": 10508
+          },
+          "verdict": {
+            "status": "contradicted",
+            "op": "signed_delta_identity",
+            "expected": "10508"
+          }
+        },
+        {
+          "claim_index": 34,
+          "claim": {
+            "op": "signed_delta_identity",
+            "total_metric": "non_gaap_adjusted_ebitda",
+            "terms": [
+              {
+                "metric": "gaap_net_income",
+                "sign": 1
+              },
+              {
+                "metric": "non_gaap_interest_income_net_addback_signed",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_income_tax_expense",
+                "sign": 1
+              },
+              {
+                "metric": "gaap_depreciation_amortization",
+                "sign": 1
+              },
+              {
+                "metric": "non_gaap_other_expense_addback_signed",
+                "sign": -1
+              },
+              {
+                "metric": "non_gaap_donation_addback",
+                "sign": -1
+              },
+              {
+                "metric": "non_gaap_stock_comp_addback",
+                "sign": 1
+              },
+              {
+                "metric": "non_gaap_payroll_tax_addback",
+                "sign": 1
+              },
+              {
+                "metric": "non_gaap_integration_addback",
+                "sign": -1
+              }
+            ],
+            "value": -2816
+          },
+          "verdict": {
+            "status": "contradicted",
+            "op": "signed_delta_identity",
+            "expected": "-2816"
+          }
+        }
+      ],
+      "result_sha256": "ad75710493e7f6e5225185d093baa5056e3cf602b8df1708840692538db458c8"
+    },
+    {
+      "observation_id": "TFC-2025-Q3-FTE-NII-FEE-CREDIT-MIX-r1",
+      "original_status": "held",
+      "rechecked_status": "held",
+      "rechecked_issues": [
+        "numeric_claims_unverified_or_uncovered",
+        "unstructured_numeric_prose",
+        "unstructured_numeric_saved_rationale"
+      ],
+      "invalid_structured_claims": [
+        {
+          "claim_index": 14,
+          "claim": {
+            "op": "compare_delta",
+            "left_metric": "gaap_noninterest_income",
+            "right_metric": "gaap_noninterest_expense",
+            "relation": "lt"
+          },
+          "verdict": {
+            "status": "contradicted",
+            "op": "compare_delta",
+            "expected": "gt"
+          }
+        },
+        {
+          "claim_index": 16,
+          "claim": {
+            "op": "compare_delta",
+            "left_metric": "gaap_diluted_eps",
+            "right_metric": "fte_net_interest_margin_percent",
+            "relation": "gt",
+            "cross_basis_explicit": true
+          },
+          "verdict": {
+            "status": "invalid_or_unassessable",
+            "op": "compare_delta",
+            "error": "comparison mixes units"
+          }
+        },
+        {
+          "claim_index": 18,
+          "claim": {
+            "op": "gap_direction",
+            "left_metric": "gaap_diluted_eps",
+            "right_metric": "fte_net_interest_income",
+            "relation": "gt",
+            "cross_basis_explicit": true
+          },
+          "verdict": {
+            "status": "invalid_or_unassessable",
+            "op": "gap_direction",
+            "error": "gap mixes units"
+          }
+        }
+      ],
+      "result_sha256": "60cf2a67ad48416a48892ba7f4b7ae3217268630e75766ab44433775fc289619"
+    },
+    {
+      "observation_id": "TFC-2025-Q3-FTE-NII-FEE-CREDIT-MIX-r2",
+      "original_status": "held",
+      "rechecked_status": "held",
+      "rechecked_issues": [
+        "numeric_claims_unverified_or_uncovered"
+      ],
+      "invalid_structured_claims": [
+        {
+          "claim_index": 17,
+          "claim": {
+            "op": "ratio_direction",
+            "numerator_metric": "gaap_noninterest_income",
+            "denominator_metric": "average_earning_assets",
+            "relation": "up"
+          },
+          "verdict": {
+            "status": "invalid_or_unassessable",
+            "op": "ratio_direction",
+            "error": "ratio mixes basis without explicit label"
+          }
+        },
+        {
+          "claim_index": 18,
+          "claim": {
+            "op": "ratio_direction",
+            "numerator_metric": "gaap_noninterest_expense",
+            "denominator_metric": "average_earning_assets",
+            "relation": "down"
+          },
+          "verdict": {
+            "status": "invalid_or_unassessable",
+            "op": "ratio_direction",
+            "error": "ratio mixes basis without explicit label"
+          }
+        },
+        {
+          "claim_index": 19,
+          "claim": {
+            "op": "ratio_direction",
+            "numerator_metric": "reported_net_chargeoffs",
+            "denominator_metric": "average_earning_assets",
+            "relation": "down"
+          },
+          "verdict": {
+            "status": "invalid_or_unassessable",
+            "op": "ratio_direction",
+            "error": "invalid relation"
+          }
+        },
+        {
+          "claim_index": 20,
+          "claim": {
+            "op": "gap_direction",
+            "left_metric": "gaap_diluted_eps",
+            "right_metric": "rounded_net_income_available_common",
+            "relation": "gt",
+            "cross_basis_explicit": false
+          },
+          "verdict": {
+            "status": "invalid_or_unassessable",
+            "op": "gap_direction",
+            "error": "gap mixes units"
+          }
+        }
+      ],
+      "result_sha256": "33bb4e5a18464b8cd6f8938790386e30cbec29d1650f31ae76da3853a775b9a8"
+    },
+    {
+      "observation_id": "VRSK-2025-Q3-SEQUENTIAL-EARNINGS-GUIDANCE-MIX-r1",
+      "original_status": "held",
+      "rechecked_status": "held",
+      "rechecked_issues": [
+        "numeric_claims_unverified_or_uncovered",
+        "unstructured_numeric_saved_rationale"
+      ],
+      "invalid_structured_claims": [
+        {
+          "claim_index": 18,
+          "claim": {
+            "op": "gap_direction",
+            "left_metric": "non_gaap_organic_revenues",
+            "right_metric": "gaap_revenues",
+            "relation": "lt",
+            "cross_basis_explicit": true
+          },
+          "verdict": {
+            "status": "contradicted",
+            "op": "gap_direction",
+            "expected": "gt"
+          }
+        }
+      ],
+      "result_sha256": "ae5cd9cfc2b7d154676a4418a122dd21f82009f99ef2e8c7c29d1ac398052e70"
+    },
+    {
+      "observation_id": "VRSK-2025-Q3-SEQUENTIAL-EARNINGS-GUIDANCE-MIX-r2",
+      "original_status": "held",
+      "rechecked_status": "held",
+      "rechecked_issues": [
+        "numeric_claims_unverified_or_uncovered",
+        "unstructured_numeric_saved_rationale"
+      ],
+      "invalid_structured_claims": [
+        {
+          "claim_index": 16,
+          "claim": {
+            "op": "gap_direction",
+            "left_metric": "non_gaap_adjusted_ebitda",
+            "right_metric": "gaap_operating_income",
+            "relation": "gt",
+            "cross_basis_explicit": true
+          },
+          "verdict": {
+            "status": "contradicted",
+            "op": "gap_direction",
+            "expected": "lt"
+          }
+        }
+      ],
+      "result_sha256": "a3bfb3208f869379e307fb28d7d36dd7fc6d885bdf8ab27f0405347a7cc5cbbe"
+    }
+  ],
+  "checker_sha256": "98ad64424d6345f4b012643e7495b474c7ffe0fa52043869b9ead35ac2195be3",
+  "rechecker_sha256": "81415d9043d87dcb57820d76166900c2e026423ae9b9751ce7f2385bcdc022a2"
+}

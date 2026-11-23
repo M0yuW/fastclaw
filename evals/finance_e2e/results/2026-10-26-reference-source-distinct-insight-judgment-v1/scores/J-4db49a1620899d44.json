@@ -1,0 +1,63 @@
+{
+  "masked_id": "J-4db49a1620899d44",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 1,
+    "R": 1,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "consolidated revenue was broadly stable while the expense base expanded, concentrated in selling, general and administrative expense, so GAAP operating income and the GAAP pretax and parent-attributable profit subtotals compressed sequentially",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_operating_revenue:+7.9", "source_packet.rows:gaap_total_operating_expenses:+54.4", "source_packet.rows:gaap_sga_expense:+49.9", "source_packet.rows:gaap_operating_income:-46.5", "source_packet.rows:gaap_pretax_income:-46.0", "source_packet.rows:gaap_net_income_attributable_equifax:-31.1"]
+    },
+    {
+      "location": "final_answer",
+      "span": "workforce solutions segment softened on lower verification services revenue, while U.S. Information Solutions and International expanded",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:segment_workforce_solutions_revenue:-12.7", "source_packet.rows:segment_verification_services_revenue:-13.5", "source_packet.rows:segment_us_information_solutions_revenue:+8.7", "source_packet.rows:segment_international_revenue:+11.9"]
+    },
+    {
+      "location": "final_answer",
+      "span": "The tax provision moved in the same direction as pretax income, which is consistent with a lower pretax base rather than a changed tax burden, so it should not be read as either a support or a relief for the profit trend",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_pretax_income:261.3_to_215.3", "source_packet.rows:gaap_income_tax_provision:-68.7_to_-53.8", "source_packet.rows:gaap_consolidated_net_income:192.6_to_161.5"],
+      "reason": "The signed tax contribution improved +14.9 and partially offset the -46.0 pretax decline, yielding -31.1 net-income change. Effective tax rate also decreased approximately 26.3% to 25.0%; the selected rows do not establish why."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the smaller provision is consistent with a lower pretax base and is not evidence of a reduced tax burden",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_income_tax_provision:-68.7_to_-53.8", "source_packet.rows:gaap_pretax_income:261.3_to_215.3"],
+      "reason": "Tax expense fell in absolute dollars and as a share of pretax income; the reason for the rate change is unobserved, but denying the observed offset and effective-rate decline is incorrect."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review rather than upgraded or invalidated",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 2,
+      "code": "tax_provision_offset_denied",
+      "evidence_refs": ["source_packet.rows:gaap_pretax_income", "source_packet.rows:gaap_income_tax_provision", "source_packet.rows:gaap_consolidated_net_income"]
+    },
+    {
+      "claim_index": 3,
+      "code": "persisted_tax_burden_direction_denied",
+      "evidence_refs": ["source_packet.rows:gaap_pretax_income", "source_packet.rows:gaap_income_tax_provision"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The main expense-and-segment interpretation and blocked state are supported. Both final and persisted rationale misdescribe the signed tax contribution: lower tax expense partly cushions, rather than merely shadows, the pretax decline; the selected rates also fell, although cause remains unknown."
+}

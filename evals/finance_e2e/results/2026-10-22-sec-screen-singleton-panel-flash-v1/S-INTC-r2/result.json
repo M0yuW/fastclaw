@@ -1,0 +1,202 @@
+{
+  "observation_id": "S-INTC-r2",
+  "case_id": "INTC",
+  "repetition": 2,
+  "workflow": "S",
+  "offline_frozen_adapter": true,
+  "synthetic_source_data": false,
+  "status": "needs_review",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "source_locked_tool_result": true,
+    "thesis_count_and_symbol": true,
+    "source_and_period_retained": true,
+    "core_values_reported": false,
+    "historical_preliminary_label": true,
+    "valuation_boundary": true,
+    "review_date_safe": true,
+    "no_unexpected_state_or_trade": true,
+    "rejection_explained": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 2,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "screen_tool_payload": {
+      "schema_version": "finance.tool.v1",
+      "ok": true,
+      "request_id": "282dab5f-fccc-4663-9154-10ba778023e0",
+      "as_of": "2026-10-21T18:55:55Z",
+      "stale_after": "2026-10-22T00:55:55Z",
+      "data": {
+        "fixture_id": "SEC-DISCLOSURE-SINGLETON-PANEL-v1",
+        "synthetic": false,
+        "offline_frozen_adapter": true,
+        "not_live_market_data": true,
+        "scope": "historical disclosure-only single-company candidate research; source dates differ and must not be treated as a contemporaneous ranking",
+        "criteria": {
+          "gaap_gross_margin_min_percent": 40,
+          "revenue_yoy_min_percent": 0
+        },
+        "excluded_dimensions": [
+          "share_price",
+          "valuation",
+          "analyst_target",
+          "forward_return"
+        ],
+        "results": [],
+        "rejected": [
+          {
+            "symbol": "INTC",
+            "company": "Intel Corporation",
+            "period": "Q3 2024",
+            "filing_date": "2024-10-31",
+            "source_id": "intel-2024-10-31-q3",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/50863/000005086324000147/q324_earningsrelease.htm",
+            "source_sha256": "168fed7a3314be07cb5b4e6ae7f7f1b9d89e4f67fa16d4aa2432561ca6df9283",
+            "reported": {
+              "gaap_revenue_usd_million_rounded": 13300,
+              "revenue_yoy_percent": -6,
+              "gaap_gross_margin_percent": 15.0,
+              "restructuring_charges_usd_million_rounded": 2800
+            },
+            "locators": [
+              "Q3 2024 Financial Highlights",
+              "Q3 2024 Restructuring and Impairment Charges"
+            ],
+            "risk_note": "Revenue was down 6% year over year and GAAP gross margin was 15.0%; disclosed charges must not be assigned to gross margin without a line-item bridge.",
+            "reason": "disclosure_criteria_not_met",
+            "failed_criteria": [
+              "gaap_gross_margin_below_threshold",
+              "revenue_yoy_below_threshold"
+            ]
+          }
+        ],
+        "passed": 0,
+        "failed": 1
+      },
+      "sources": [
+        {
+          "name": "local_evaluation_fixture",
+          "kind": "deterministic_screen"
+        }
+      ],
+      "quality": {
+        "completeness": 0.9677,
+        "flags": []
+      },
+      "errors": [],
+      "cache": {
+        "hit": false,
+        "ttl_seconds": 21600
+      }
+    },
+    "tool_calls": [
+      "finance-tools__screen_stocks"
+    ],
+    "trace": {
+      "model_calls": 2,
+      "tool_calls": 1,
+      "tool_results": 1,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "Run a historical disclosure-only candidate-research workflow, not a live investment recommendation. Call finance-tools__screen_stocks for US symbol INTC with require_complete=false. This case's frozen offline adapter uses only the disclosed GAAP gross margin >=40% and reported revenue YoY >=0%; it does not use the seven-factor live market-data completeness gate. Read retained and rejected results, exact failed criteria, source URL and full SHA-256, filing date, reporting period, units and countervailing risks. If retained, save exactly one HISTORICAL PRELIMINARY research thesis with the full SEC URL/hash in structured evidence, material reported numbers, a risk and the missing price/valuation boundary. If rejected, save no thesis and explain why. Do not trade, call live market tools, imply these issuers were ranked on a common date, or turn a narrow screen into an investment recommendation. Omit next_review_at unless it is after the current run date.",
+      "response": {
+        "id": "chatcmpl-1792608954464101000",
+        "object": "chat.completion",
+        "created": 1792608954,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# Historical Disclosure-Only Candidate Research — INTC\n\n**Scope note:** This is a frozen, offline, disclosure-only screen of a single issuer. It is not live market data, not a ranking, and not an investment recommendation. No trades were placed and no live market tools were called.\n\n## 1. Screen configuration\n- Tool: `finance-tools__screen_stocks`, market US, symbol INTC, `require_complete=false`\n- Fixture: `SEC-DISCLOSURE-SINGLETON-PANEL-v1` (offline frozen adapter; `not_live_market_data: true`)\n- Criteria applied: GAAP gross margin ≥ 40% **and** reported revenue YoY ≥ 0%\n- Excluded dimensions: share price, valuation, analyst target, forward return\n- Run timestamp: 2026-10-21T18:55:55Z\n\n## 2. Result: REJECTED — no thesis saved\n| Field | Value |\n|---|---|\n| Symbol / company | INTC — Intel Corporation |\n| Reporting period | Q3 2024 |\n| Filing date | 2024-10-31 |\n| Source ID | `intel-2024-10-31-q3` |\n| Source URL | https://www.sec.gov/Archives/edgar/data/50863/000005086324000147/q324_earningsrelease.htm |\n| Full SHA-256 | `168fed7a3314be07cb5b4e6ae7f7f1b9d89e4f67fa16d4aa2432561ca6df9283` |\n| Locators | \"Q3 2024 Financial Highlights\"; \"Q3 2024 Restructuring and Impairment Charges\" |\n\n**Reported figures (as disclosed, USD millions rounded):**\n- GAAP revenue: 13,300\n- Revenue YoY: −6%\n- GAAP gross margin: 15.0%\n- Restructuring charges: 2,800\n\n**Failed criteria (both):**\n1. `gaap_gross_margin_below_threshold` — 15.0% vs. ≥ 40% required\n2. `revenue_yoy_below_threshold` — −6% vs. ≥ 0% required\n\n**Retained results:** none (`passed: 0`, `failed: 1`).\n\n## 3. Why no thesis was saved\nThe task instruction is conditional: save exactly one HISTORICAL PRELIMINARY thesis only if retained. INTC failed both disclosure criteria, so no thesis was created. Creating one would misrepresent a failed screen as a candidate.\n\n## 4. Countervailing risks and boundaries\n- The 2,800 restructuring charge is disclosed separately; per the source risk note it **must not** be assigned to gross margin without a line-item bridge. No such bridge is present in this evidence, so no adjusted margin is asserted here.\n- The 15.0% GAAP margin and −6% revenue decline are the only margin/growth facts in evidence; no forward guidance, segment detail, or non-GAAP reconciliation was retrieved.\n- **Missing price/valuation boundary:** the screen excludes share price, valuation multiples, and analyst targets entirely. Nothing here speaks to whether INTC is cheap or expensive, and no such inference should be drawn.\n- Single-issuer, single-period, single-filing evidence. Source dates differ across any broader panel and must not be treated as a contemporaneous cross-sectional ranking.\n- Data quality: completeness 0.9677, no flags, no errors.\n\n**Bottom line:** INTC is a disclosure-criteria failure for Q3 2024 on both the GAAP gross margin and revenue growth tests. No thesis, no ranking, and no recommendation follows from this result."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 6287,
+          "completion_tokens": 887,
+          "total_tokens": 7174
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_4ObWwb3IEz1jlihY4D300968",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"INTC\"], \"require_complete\": false}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_4ObWwb3IEz1jlihY4D300968",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"282dab5f-fccc-4663-9154-10ba778023e0\",\"as_of\":\"2026-10-21T18:55:55Z\",\"stale_after\":\"2026-10-22T00:55:55Z\",\"data\":{\"fixture_id\":\"SEC-DISCLOSURE-SINGLETON-PANEL-v1\",\"synthetic\":false,\"offline_frozen_adapter\":true,\"not_live_market_data\":true,\"scope\":\"historical disclosure-only single-company candidate research; source dates differ and must not be treated as a contemporaneous ranking\",\"criteria\":{\"gaap_gross_margin_min_percent\":40,\"revenue_yoy_min_percent\":0},\"excluded_dimensions\":[\"share_price\",\"valuation\",\"analyst_target\",\"forward_return\"],\"results\":[],\"rejected\":[{\"symbol\":\"INTC\",\"company\":\"Intel Corporation\",\"period\":\"Q3 2024\",\"filing_date\":\"2024-10-31\",\"source_id\":\"intel-2024-10-31-q3\",\"source_url\":\"https://www.sec.gov/Archives/edgar/data/50863/000005086324000147/q324_earningsrelease.htm\",\"source_sha256\":\"168fed7a3314be07cb5b4e6ae7f7f1b9d89e4f67fa16d4aa2432561ca6df9283\",\"reported\":{\"gaap_revenue_usd_million_rounded\":13300,\"revenue_yoy_percent\":-6,\"gaap_gross_margin_percent\":15.0,\"restructuring_charges_usd_million_rounded\":2800},\"locators\":[\"Q3 2024 Financial Highlights\",\"Q3 2024 Restructuring and Impairment Charges\"],\"risk_note\":\"Revenue was down 6% year over year and GAAP gross margin was 15.0%; disclosed charges must not be assigned to gross margin without a line-item bridge.\",\"reason\":\"disclosure_criteria_not_met\",\"failed_criteria\":[\"gaap_gross_margin_below_threshold\",\"revenue_yoy_below_threshold\"]}],\"passed\":0,\"failed\":1},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":0.9677,\"flags\":[]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2819,
+              "completion_tokens": 92,
+              "total_tokens": 2911,
+              "estimated_cost_usd": 0.00042042,
+              "priced": true,
+              "latency_ms": 654.921
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3468,
+              "completion_tokens": 795,
+              "total_tokens": 4263,
+              "cache_read_tokens": 2816,
+              "estimated_cost_usd": 0.00032176480000000005,
+              "priced": true,
+              "latency_ms": 3469.032
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 4.196,
+      "tool_calls": [
+        "finance-tools__screen_stocks"
+      ],
+      "model_calls": 2,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0007421848000000001
+    }
+  ],
+  "estimated_cost_usd": 0.0007421848000000001
+}

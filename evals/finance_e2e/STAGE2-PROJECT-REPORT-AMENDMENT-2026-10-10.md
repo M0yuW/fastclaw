@@ -1,0 +1,9 @@
+# Stage 2A project-report execution amendment
+
+Date: 2026-10-10. This amendment applies only to the project-report Stage 2A run. The original `STAGE2-EXPERIMENT-PROTOCOL.md` remains the historical design document (SHA-256 `b0a67e4550ebcf95aa8153fd1099c4adc4a4818f6b6c3f7485b78f6fd67676bf`). No provider request from this amended frozen study has been sent at the time of this amendment; earlier one-case calls were marked calibration and are excluded.
+
+The project owner has stated that they personally checked all 103 corrected source/oracle tasks. For this undergraduate project report, owner review is accepted as the input-audit gate. The two independent-reviewer requirement in Sections 6.1, 10.4, and 18 of the original protocol is not part of this amended run. The owner statement is an attestation, not item-level reviewer CSV evidence; the report must not describe it as independent adjudication. An additional semantic-claim audit may be reported separately if later completed, but is not a condition for the deterministic primary analysis.
+
+All 24 cases, eight company-task clusters, three primary modes, three repetitions, diagnostic modes, all-Pro ablation, model allocation, seed `20260802`, timeout, scoring thresholds, pair keys, and analysis method remain unchanged. The source lock, grader, prompts, and suite are frozen by content hash before the first confirmatory request. No calibration observation enters the confirmatory analysis. The run stops if the original protocol's integrity or provider-error limits are crossed, cumulative frozen-price estimated cost exceeds USD 10, or serial elapsed runtime exceeds twelve hours without review.
+
+This amendment changes only the audit governance requirement. The owner-reviewed oracle remains an experiment input, not evidence that a model-generated analysis is correct. Any source or oracle correction after the freeze requires a new study version.

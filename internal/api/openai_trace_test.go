@@ -46,6 +46,15 @@ func TestRequestToolRegistryUsesCannedResultsAndNormalizesSchema(t *testing.T) {
 	}
 }
 
+func TestConvertTraceEventPreservesTypedTerminal(t *testing.T) {
+	terminal, ok := convertTraceEvent(agent.ChatEvent{Type: "terminal", Data: map[string]any{
+		"code": "tool_iteration_budget_exhausted", "round": 8,
+	}})
+	if !ok || terminal.Type != "terminal" || terminal.Code != "tool_iteration_budget_exhausted" || terminal.Round != 8 {
+		t.Fatalf("terminal trace = %+v, ok=%v", terminal, ok)
+	}
+}
+
 func TestRequestToolEnvironmentMutatesAndSnapshotsState(t *testing.T) {
 	registry, snapshot, err := buildRequestToolEnvironment(
 		[]provider.Tool{

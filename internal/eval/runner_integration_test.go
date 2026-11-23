@@ -129,6 +129,39 @@ func TestIntegrationHTTPExecutorSurfacesAPIErrors(t *testing.T) {
 	}
 }
 
+func TestIntegrationHTTPExecutorSendsRuntimeEvidenceAndServerTimeout(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		var completionRequest chatCompletionRequest
+		if err := json.NewDecoder(request.Body).Decode(&completionRequest); err != nil {
+			t.Error(err)
+			http.Error(writer, err.Error(), http.StatusBadRequest)
+			return
+		}
+		if got := completionRequest.FastClaw.SubAgentSharedContext; got != "SEC record 42" {
+			t.Errorf("runtime evidence = %q", got)
+		}
+		if got := completionRequest.FastClaw.ServerTimeoutMS; got != 1200 {
+			t.Errorf("server timeout = %d", got)
+		}
+		writer.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(writer).Encode(map[string]any{
+			"model":   "fake-model",
+			"choices": []map[string]any{{"message": map[string]string{"role": "assistant", "content": "ok"}}},
+		}); err != nil {
+			t.Error(err)
+		}
+	}))
+	defer server.Close()
+
+	executor := HTTPExecutor{BaseURL: server.URL, Client: server.Client()}
+	response, err := executor.Execute(t.Context(), ExecutionRequest{
+		Prompt: "analyze", SubAgentSharedContext: "SEC record 42", ServerTimeoutMS: 1200,
+	})
+	if err != nil || response.Output != "ok" {
+		t.Fatalf("Execute() = %+v, %v", response, err)
+	}
+}
+
 func TestIntegrationHTTPExecutorSurfacesAgentTurnErrors(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
@@ -143,7 +176,7 @@ func TestIntegrationHTTPExecutorSurfacesAgentTurnErrors(t *testing.T) {
 				"model_calls": []map[string]any{{
 					"sequence": 1, "agent_id": "eval-agent", "role": "coordinator",
 					"model": "fake-model", "prompt_tokens": 4, "completion_tokens": 2,
-					"total_tokens": 6, "error": "provider read timed out",
+					"total_tokens": 6, "error": "provider read timed out", "cost_uncertain": true,
 				}},
 			},
 		}); err != nil {
@@ -157,7 +190,7 @@ func TestIntegrationHTTPExecutorSurfacesAgentTurnErrors(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "provider read timed out") {
 		t.Fatalf("Execute() error = %v", err)
 	}
-	if response.Usage.TotalTokens != 6 || len(response.ModelCalls) != 1 {
+	if response.Usage.TotalTokens != 6 || len(response.ModelCalls) != 1 || !response.ModelCalls[0].CostUncertain {
 		t.Fatalf("failed turn telemetry was discarded: %+v", response)
 	}
 }

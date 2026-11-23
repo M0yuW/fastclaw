@@ -1,0 +1,76 @@
+{
+  "blind_id": "S",
+  "source_result_sha256": "4df0927c55e2229092d104979d48a0246dc129d03c4bff0f0eb71a2303f89f54",
+  "oracle": "material_issue",
+  "checker_answer": {
+    "verdict": "material_issue",
+    "issue_type": "unsupported_causal_claim",
+    "reason": "The answer asserts that for both COIN and HOOD the crypto-sensitive revenue line grew faster than the overall top line in Q3 2024, but the supplied context provides no crypto-specific Coinbase revenue-growth rate, so the COIN half of that comparative claim is unsupported (and the answer itself concedes no matched crypto-specific Coinbase growth rate exists).",
+    "source_pointer": "Coinbase Q3 2024 selected facts: 'no matched crypto-specific Coinbase revenue-growth rate is supplied'",
+    "corrected_sentence": "For HOOD, crypto revenue grew 165% YoY versus 36% total net revenue growth, while for COIN only total revenue growth of 78.8% YoY and a 27% QoQ transaction-revenue decline are supplied, so no crypto-line-versus-total comparison can be made for COIN.",
+    "confidence": 0.82
+  },
+  "checker_text": "{\"verdict\":\"material_issue\",\"issue_type\":\"unsupported_causal_claim\",\"reason\":\"The answer asserts that for both COIN and HOOD the crypto-sensitive revenue line grew faster than the overall top line in Q3 2024, but the supplied context provides no crypto-specific Coinbase revenue-growth rate, so the COIN half of that comparative claim is unsupported (and the answer itself concedes no matched crypto-specific Coinbase growth rate exists).\",\"source_pointer\":\"Coinbase Q3 2024 selected facts: 'no matched crypto-specific Coinbase revenue-growth rate is supplied'\",\"corrected_sentence\":\"For HOOD, crypto revenue grew 165% YoY versus 36% total net revenue growth, while for COIN only total revenue growth of 78.8% YoY and a 27% QoQ transaction-revenue decline are supplied, so no crypto-line-versus-total comparison can be made for COIN.\",\"confidence\":0.82}",
+  "correct": true,
+  "no_tool_calls": true,
+  "error": null,
+  "runtime_audit": {
+    "model_calls": 1,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "turns": [
+    {
+      "prompt": "You are checking one anonymous financial-research answer against only the supplied source context. Identify whether it makes a MATERIAL factual, accounting-basis, causal, policy, or interpretation error that could change the research reading. A cautious qualification or missing detail alone is not an error. Do not infer omitted data, use outside information, call tools, or change any state. If the context cannot support a fair verdict, abstain. Return only one JSON object with keys verdict ('material_issue', 'no_material_issue', or 'not_assessable'), issue_type (short string or null), reason (one sentence), source_pointer (short phrase or null), corrected_sentence (one sentence or null), and confidence (number 0 to 1).\n\nANONYMOUS ITEM: S\n\nSOURCE CONTEXT:\nFictional long-only portfolio: final issuer-aggregated weights are COIN 40%, HOOD 30%, and a distinct unknown 30%; the unknown sleeve contains neither COIN nor HOOD. A strict single-issuer limit is >50%. Coinbase Q3 2024 selected facts include total-revenue year-over-year growth of 78.8% and transaction-revenue quarter-over-quarter decline of 27%; no matched crypto-specific Coinbase revenue-growth rate is supplied. Robinhood Q3 2024 selected facts include total-net-revenue growth of 36% year over year and crypto-revenue growth of 165% year over year. No exact HHI or portfolio crypto-factor exposure is disclosed.\n\nANSWER UNDER REVIEW:\n# Case [CASE] — Partial-Portfolio Policy Bound and Issuer Signals\n\n## 1. Policy bound result (the only portfolio arithmetic performed)\n\n`portfolio_policy_bound` returned **`policy_status: \"no_breach_proven\"`** with `policy_limit_percent: 50.0` and breach operator `>` (strictly greater than).\n\n| Issuer | Min % of total | Max % of total | Breach of >50%? |\n|---|---|---|---|\n| COIN | 40.0 | 40.0 | No — bound is fixed at 40% |\n| HOOD | 30.0 | 30.0 | No — bound is fixed at 30% |\n| Unidentified new issuer (aggregate) | 0 | 30.0 | No — 30% < 50% |\n\n**Why the bound is exact for COIN and HOOD:** the input states these are *final issuer-aggregated* weights and that the 30% remainder contains only other tickers, none of which is COIN or HOOD. With `unknown_may_overlap_known=false`, no hidden sleeve can add to either name, so each issuer's min and max collapse to its stated weight. The largest possible single-issuer weight anywhere in the portfolio is therefore 40% (COIN), which is below the 50% threshold. The result is a *proof of no breach*, not a measurement of the whole portfolio.\n\n**Assumptions the tool declares:** long-only; a common whole-portfolio denominator (the 40/30/30 percentages are of the same total economic exposure); input weights not independently verified. `quality.completeness` is 0.7 with flags `partial_holdings` and `policy_bound_only`.\n\n**What this does not say:** it is not a concentration verdict, not a risk measure, and not an HHI. The tool explicitly reports `exact_hhi_available: false` and `portfolio_risk_calculated: false`. Because 30% of exposure is unidentified, no exact HHI can be computed — the unidentified sleeve could be one issuer (HHI contribution up to 0.09) or many small ones (near zero). I did not call `portfolio_risk`, and I am not presenting the partial map as complete.\n\n## 2. Supporting signal from issuer-specific SEC facts\n\nBoth COIN and HOOD show **crypto-linked revenue scaling faster than their total top line** in the same period, Q3 2024 ended 2024-09-30, both released 2024-10-30 — but the labels and units differ and must not be ranked against each other:\n\n- **COIN** (total_revenue, USD thousands): Q3 2024 total revenue of 1,205,193 vs Q3 2023 of 674,148, a derived +78.8% YoY [COIN-Q3-TOTALREV-2024, COIN-Q3-TOTALREV-2023]. Sequentially, total revenue fell 17% QoQ and transaction revenue fell 27% QoQ [COIN-Q3-REV-QOQ, COIN-Q3-TRANREV-QOQ].\n- **HOOD** (total_net_revenues, USD millions): Q3 2024 total net revenues of 637 with +36% YoY reported [HOOD-Q3-NETREV, HOOD-Q3-NETREV-YOY]; crypto revenues were 61, up 165% YoY [HOOD-Q3-CRYPTOREV, HOOD-Q3-CRYPTOREV-YOY], inside transaction-based revenues of 319 [HOOD-Q3-TRANREV].\n\n**Useful signal:** for both issuers, the crypto-sensitive revenue line grew far faster than the overall top line in the same quarter, so the two positions share a common sensitivity to crypto activity even though their revenue bases are not comparable (COIN's total revenue vs HOOD's total net revenues; thousands vs millions). This is a *business-mix* observation only.\n\n## 3. Counterpoint (also SEC-sourced, same period)\n\n- **COIN** reported net income of ~75 (USD millions, rounded) in Q3 2024 [COIN-Q3-NETINCOME] *despite* a ~121 (USD millions, rounded) pretax loss on its crypto investment portfolio [COIN-Q3-CRYPTOLOSS] — i.e., the quarter's earnings were struck after a large mark-to-market drag, and the sequential revenue decline sits alongside the strong YoY comparison.\n- **HOOD** reported net income of 150 (USD millions) [HOOD-Q3-NETINCOME] with operating expenses down 10% YoY [HOOD-Q3-OPEX-YOY] and a regulatory accrual of 10 in Q3 2024 versus 104 in Q3 2023 [HOOD-Q3-REGACCRUAL, HOOD-Q3-PRIOR-REGACCRUAL] — so part of the year-over-year earnings improvement reflects a smaller one-off accrual and lower expense base, not only revenue growth.\n\n**Counterpoint takeaway:** the strong YoY revenue growth is not a clean read-through to earnings quality for either name — COIN's quarter absorbed a crypto-portfolio loss, and HOOD's comparison benefited from a favorable swing in a regulatory accrual. Neither fact supports a claim about future returns.\n\n## 4. Scope limits and distinctions I am preserving\n\n- **Position weight ≠ crypto-factor exposure.** COIN 40% and HOOD 30% are economic weights in two issuers with different business models and revenue labels. Their crypto-linked revenue sensitivity does not make 70% of the portfolio a \"crypto exposure,\" and the unidentified 30% could add or dilute any factor exposure in unknown ways.\n- **No return, valuation, or trade inference.** The screen's excluded dimensions are share price, valuation, analyst targets, future return, and current market data; the frozen adapter is explicitly `not_live_market_data`. Nothing here implies expected return, cheapness, or an action.\n- **The screen's 20% revenue threshold is a disclosure screen, not the portfolio policy.** COIN and HOOD passed it and SQ/Block did not (reported top-line YoY 6%, below 20% [SQ-Q3-NETREV-YOY], with revenue excluding bitcoin +11% [SQ-Q3-REV-EXBTC-YOY] and gross profit +19% [SQ-Q3-GROSSPROFIT-YOY], Q3 2024, released 2024-11-07). That pass/fail has no bearing on the 50% issuer limit, and Block is not a holding in the supplied data.\n- **Basis warning honored:** issuer top-line labels differ (total revenue vs total net revenues), so I applied only each issuer's own YoY disclosure and did not rank the 78.8% and 36% rates against each other.\n- **No ledger changes.** No thesis, alert, or review records were created or modified; this is a read-only research exercise on a fictional portfolio.",
+      "response": {
+        "id": "chatcmpl-1792688904920579000",
+        "object": "chat.completion",
+        "created": 1792688904,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "{\"verdict\":\"material_issue\",\"issue_type\":\"unsupported_causal_claim\",\"reason\":\"The answer asserts that for both COIN and HOOD the crypto-sensitive revenue line grew faster than the overall top line in Q3 2024, but the supplied context provides no crypto-specific Coinbase revenue-growth rate, so the COIN half of that comparative claim is unsupported (and the answer itself concedes no matched crypto-specific Coinbase growth rate exists).\",\"source_pointer\":\"Coinbase Q3 2024 selected facts: 'no matched crypto-specific Coinbase revenue-growth rate is supplied'\",\"corrected_sentence\":\"For HOOD, crypto revenue grew 165% YoY versus 36% total net revenue growth, while for COIN only total revenue growth of 78.8% YoY and a 27% QoQ transaction-revenue decline are supplied, so no crypto-line-versus-total comparison can be made for COIN.\",\"confidence\":0.82}"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 5015,
+          "completion_tokens": 202,
+          "total_tokens": 5217
+        },
+        "fastclaw": {
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5015,
+              "completion_tokens": 202,
+              "total_tokens": 5217,
+              "estimated_cost_usd": 0.00075866,
+              "priced": true,
+              "latency_ms": 1770.208
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 1.797,
+      "tool_calls": [],
+      "model_calls": 1,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.00075866
+    }
+  ],
+  "estimated_cost_usd": 0.00075866
+}

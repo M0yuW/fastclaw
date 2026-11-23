@@ -1,0 +1,251 @@
+{
+  "observation_id": "FS-HOOD-r2",
+  "case_id": "HOOD",
+  "repetition": 2,
+  "workflow": "S",
+  "offline_frozen_adapter": true,
+  "synthetic_source_data": false,
+  "status": "needs_review",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "source_locked_tool_result": true,
+    "thesis_count_and_symbol": false,
+    "source_and_period": false,
+    "historical_preliminary_label": false,
+    "valuation_boundary": false,
+    "review_date_safe": true,
+    "no_unexpected_state_or_trade": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 3,
+    "tool_calls_paired": true,
+    "trace_errors": [
+      "model output truncated: finish_reason=length"
+    ],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [
+      3
+    ],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": false
+  },
+  "state": {
+    "theses": [],
+    "alerts": []
+  },
+  "extras": {
+    "screen_tool_payload": {
+      "schema_version": "finance.tool.v1",
+      "ok": true,
+      "request_id": "f3c217ea-af54-46ea-9eab-cd0d10770db0",
+      "as_of": "2026-10-22T11:48:33Z",
+      "stale_after": "2026-10-22T17:48:33Z",
+      "data": {
+        "fixture_id": "FINTECH-SEC-SCREEN-HOLDOUT-v1",
+        "synthetic": false,
+        "offline_frozen_adapter": true,
+        "not_live_market_data": true,
+        "scope": "historical single-issuer disclosure screen and preliminary research; offline SEC-source adapter, not live market data or a contemporaneous peer ranking",
+        "basis_warning": "Issuer top-line labels differ (total revenue versus total net revenues). Apply only each issuer's own YoY disclosure or matched prior-year top-line calculation. Never rank issuers by these rates or substitute another metric for the threshold.",
+        "criteria": {
+          "reported_top_line_revenue_yoy_min_percent": 20.0
+        },
+        "excluded_dimensions": [
+          "share_price",
+          "valuation",
+          "analyst_target",
+          "future_return",
+          "current_market_data"
+        ],
+        "results": [
+          {
+            "symbol": "HOOD",
+            "company": "Robinhood Markets, Inc.",
+            "period": "Q3 2024 ended 2024-09-30",
+            "release_date": "2024-10-30",
+            "source_url": "https://www.sec.gov/Archives/edgar/data/1783879/000178387924000295/q32024robinhoodexhibit991.htm",
+            "source_sha256": "27ba615060da18f74984973ec4c16a5a67f6215b2d3d91648c375f1192f3c973",
+            "local_path": ".cache/sources/robinhood-q3-2024-sec.htm",
+            "reported": {
+              "top_line_label": "total_net_revenues",
+              "total_net_revenues_q3_2024_usd_million": 637,
+              "top_line_revenue_yoy_percent_reported": 36,
+              "net_income_q3_2024_usd_million": 150,
+              "transaction_based_revenues_q3_2024_usd_million": 319,
+              "crypto_revenues_q3_2024_usd_million": 61,
+              "crypto_revenues_yoy_percent_reported": 165,
+              "operating_expenses_yoy_percent_reported": -10,
+              "regulatory_accrual_q3_2024_usd_million": 10,
+              "regulatory_accrual_q3_2023_usd_million": 104
+            },
+            "fact_ids": [
+              "HOOD-Q3-NETREV",
+              "HOOD-Q3-NETREV-YOY",
+              "HOOD-Q3-NETINCOME",
+              "HOOD-Q3-TRANREV",
+              "HOOD-Q3-CRYPTOREV",
+              "HOOD-Q3-CRYPTOREV-YOY",
+              "HOOD-Q3-OPEX-YOY",
+              "HOOD-Q3-REGACCRUAL",
+              "HOOD-Q3-PRIOR-REGACCRUAL"
+            ],
+            "locators": [
+              "Third Quarter Results revenue and expense bullets"
+            ]
+          }
+        ],
+        "rejected": [],
+        "passed": 1,
+        "failed": 0
+      },
+      "sources": [
+        {
+          "name": "local_evaluation_fixture",
+          "kind": "deterministic_screen"
+        }
+      ],
+      "quality": {
+        "completeness": 0.9762,
+        "flags": []
+      },
+      "errors": [],
+      "cache": {
+        "hit": false,
+        "ttl_seconds": 21600
+      }
+    },
+    "tool_calls": [
+      "finance-tools__screen_stocks",
+      "finance-tools__thesis_list"
+    ],
+    "trace": {
+      "model_calls": 3,
+      "tool_calls": 2,
+      "tool_results": 2,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    }
+  },
+  "turns": [
+    {
+      "prompt": "Run a historical, SEC-disclosure-only candidate-research workflow for US HOOD. Call finance-tools__screen_stocks with require_complete=false. This frozen offline source adapter screens only issuer-reported top-line revenue YoY growth >=20%; it is not a live quote or a seven-factor completeness screen. Read the retained or rejected item, its reported fields, exact failed criteria, source URL and full SHA-256, release date, reporting period, units and metric basis. Independently identify the most material counterpoint from a DIFFERENT supplied field; do not merely restate the screen outcome. If retained, save exactly one HISTORICAL PRELIMINARY candidate thesis with full source URL/hash in structured evidence, key numbers, the counterpoint, a discriminating follow-up question, and an explicit missing price/valuation boundary. If rejected, save no thesis, explain the exact failed criterion and why an alternate metric cannot replace it under this rule, but note any separately useful research signal. Do not trade, use live market tools, rank these issuers on a common date, or claim that passing this one rule means an attractive investment. Do not claim packet omissions are SEC filing omissions. Omit next_review_at unless genuinely future-dated.",
+      "response": {
+        "id": "chatcmpl-1792669712194281000",
+        "object": "chat.completion",
+        "created": 1792669712,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "Sorry, I encountered an error processing your request."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 11337,
+          "completion_tokens": 2653,
+          "total_tokens": 13990
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_VDAl0yOePJrfJqtGDSU01872",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"HOOD\"], \"require_complete\": false}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_VDAl0yOePJrfJqtGDSU01872",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"f3c217ea-af54-46ea-9eab-cd0d10770db0\",\"as_of\":\"2026-10-22T11:48:33Z\",\"stale_after\":\"2026-10-22T17:48:33Z\",\"data\":{\"fixture_id\":\"FINTECH-SEC-SCREEN-HOLDOUT-v1\",\"synthetic\":false,\"offline_frozen_adapter\":true,\"not_live_market_data\":true,\"scope\":\"historical single-issuer disclosure screen and preliminary research; offline SEC-source adapter, not live market data or a contemporaneous peer ranking\",\"basis_warning\":\"Issuer top-line labels differ (total revenue versus total net revenues). Apply only each issuer's own YoY disclosure or matched prior-year top-line calculation. Never rank issuers by these rates or substitute another metric for the threshold.\",\"criteria\":{\"reported_top_line_revenue_yoy_min_percent\":20.0},\"excluded_dimensions\":[\"share_price\",\"valuation\",\"analyst_target\",\"future_return\",\"current_market_data\"],\"results\":[{\"symbol\":\"HOOD\",\"company\":\"Robinhood Markets, Inc.\",\"period\":\"Q3 2024 ended 2024-09-30\",\"release_date\":\"2024-10-30\",\"source_url\":\"https://www.sec.gov/Archives/edgar/data/1783879/000178387924000295/q32024robinhoodexhibit991.htm\",\"source_sha256\":\"27ba615060da18f74984973ec4c16a5a67f6215b2d3d91648c375f1192f3c973\",\"local_path\":\".cache/sources/robinhood-q3-2024-sec.htm\",\"reported\":{\"top_line_label\":\"total_net_revenues\",\"total_net_revenues_q3_2024_usd_million\":637,\"top_line_revenue_yoy_percent_reported\":36,\"net_income_q3_2024_usd_million\":150,\"transaction_based_revenues_q3_2024_usd_million\":319,\"crypto_revenues_q3_2024_usd_million\":61,\"crypto_revenues_yoy_percent_reported\":165,\"operating_expenses_yoy_percent_reported\":-10,\"regulatory_accrual_q3_2024_usd_million\":10,\"regulatory_accrual_q3_2023_usd_million\":104},\"fact_ids\":[\"HOOD-Q3-NETREV\",\"HOOD-Q3-NETREV-YOY\",\"HOOD-Q3-NETINCOME\",\"HOOD-Q3-TRANREV\",\"HOOD-Q3-CRYPTOREV\",\"HOOD-Q3-CRYPTOREV-YOY\",\"HOOD-Q3-OPEX-YOY\",\"HOOD-Q3-REGACCRUAL\",\"HOOD-Q3-PRIOR-REGACCRUAL\"],\"locators\":[\"Third Quarter Results revenue and expense bullets\"]}],\"rejected\":[],\"passed\":1,\"failed\":0},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":0.9762,\"flags\":[]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_x7XVqbSCELDqS4JGMzlj4799",
+              "name": "finance-tools__thesis_list",
+              "arguments": "{\"symbol\": \"HOOD\", \"market\": \"US\"}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_x7XVqbSCELDqS4JGMzlj4799",
+              "name": "finance-tools__thesis_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"8e7609fc-be11-466f-900d-ebb03f00b047\",\"as_of\":\"2026-10-22T11:48:34Z\",\"stale_after\":null,\"data\":{\"theses\":[],\"count\":0,\"filters\":{\"limit\":50,\"market\":\"US\",\"symbol\":\"HOOD\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "error",
+              "message": "model output truncated: finish_reason=length",
+              "round": 3
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3153,
+              "completion_tokens": 94,
+              "total_tokens": 3247,
+              "estimated_cost_usd": 0.00046774,
+              "priced": true,
+              "latency_ms": 976.675
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3983,
+              "completion_tokens": 59,
+              "total_tokens": 4042,
+              "cache_read_tokens": 3200,
+              "estimated_cost_usd": 0.0001351,
+              "priced": true,
+              "latency_ms": 1013.288
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4201,
+              "completion_tokens": 2500,
+              "total_tokens": 6701,
+              "cache_read_tokens": 3968,
+              "estimated_cost_usd": 0.0007437304000000001,
+              "priced": true,
+              "cost_uncertain": true,
+              "latency_ms": 10380.578,
+              "error": "model output truncated: finish_reason=length"
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 12.451,
+      "tool_calls": [
+        "finance-tools__screen_stocks",
+        "finance-tools__thesis_list"
+      ],
+      "model_calls": 3,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.0013465704000000002
+    }
+  ],
+  "estimated_cost_usd": 0.0013465704000000002
+}

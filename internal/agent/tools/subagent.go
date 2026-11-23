@@ -55,6 +55,7 @@ var subAgentCallCounter uint64
 
 type subAgentDedupKey struct{}
 type subAgentBudgetKey struct{}
+type subAgentSharedContextKey struct{}
 
 type subAgentResult struct {
 	done   chan struct{}
@@ -103,6 +104,26 @@ func ContextWithSubAgentBudget(ctx context.Context, maxTotal, maxPerTarget int) 
 		maxPerTarget: maxPerTarget,
 		perTarget:    make(map[string]int),
 	})
+}
+
+// ContextWithSubAgentSharedContext binds evidence to an eval request without
+// asking the model to reproduce that evidence in a tool-call argument.
+func ContextWithSubAgentSharedContext(ctx context.Context, sharedContext string) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	return context.WithValue(ctx, subAgentSharedContextKey{}, sharedContext)
+}
+
+func appendSubAgentSharedContext(ctx context.Context, task string) string {
+	if ctx == nil {
+		return task
+	}
+	sharedContext, _ := ctx.Value(subAgentSharedContextKey{}).(string)
+	if sharedContext == "" {
+		return task
+	}
+	return task + "\n\nRuntime-bound evidence:\n" + sharedContext
 }
 
 func contextWithSubAgentDedup(ctx context.Context, targetOnly bool) context.Context {
@@ -179,6 +200,7 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 		if args.AgentID == callerAgentID {
 			return "", fmt.Errorf("cannot spawn yourself as a sub-agent")
 		}
+		args.Task = appendSubAgentSharedContext(ctx, args.Task)
 		if budget, ok := ctx.Value(subAgentBudgetKey{}).(*subAgentBudget); ok {
 			if err := budget.reserve([]string{args.AgentID}); err != nil {
 				return "", err
@@ -242,6 +264,7 @@ func spawnSubAgentBatch(
 			if sharedContext != "" {
 				task += "\n\nShared context:\n" + sharedContext
 			}
+			task = appendSubAgentSharedContext(ctx, task)
 			args := spawnSubagentArgs{AgentID: delegation.AgentID, Task: task}
 			var result string
 			var err error

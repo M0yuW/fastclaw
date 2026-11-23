@@ -1,0 +1,38 @@
+{
+  "suite_id": "thesis-event-same-quarter-addendum-v1",
+  "reason": "The initial NKE Q4 FY2024 to Q2 FY2025 case compared nonmatching quarters; this separately frozen same-quarter case tests clear deterioration without that seasonal confounder. The earlier observation remains sealed.",
+  "model": "deepseek/deepseek-v4-pro",
+  "pricing_usd_per_million_tokens": {
+    "deepseek/deepseek-v4-pro": {
+      "input_per_million": 0.435,
+      "output_per_million": 0.87,
+      "cache_read_per_million": 0.003625
+    }
+  },
+  "estimated_spend_stop_usd": 0.10,
+  "cases": [
+    {
+      "id": "NKE-same-quarter-deterioration",
+      "scenario": "clear_deterioration_same_quarter",
+      "baseline_episode": "FSEC-NKE-01",
+      "event_episode": "FSEC-NKE-03",
+      "symbol": "NKE",
+      "baseline_label": "Q4 FY2024",
+      "event_label": "Q4 FY2025",
+      "baseline_metrics": ["NKE-Q4FY24-REV", "NKE-Q4FY24-GM", "NKE-Q4FY24-DIGITAL"],
+      "event_metrics": ["NKE-Q4FY25-REV", "NKE-Q4FY25-GM", "NKE-Q4FY25-DIGITAL"],
+      "seed_thesis": "A recovery thesis depends on stabilizing sales, GAAP gross margin, and digital-channel trends. A matching fiscal-quarter filing with lower revenue and gross margin plus deeper digital contraction would materially challenge it.",
+      "seed_catalysts": ["stabilizing sales and digital demand"],
+      "seed_invalidations": ["lower revenue and gross margin alongside a deeper digital contraction in a matching fiscal-quarter filing"],
+      "oracle": {
+        "required_fact_ids": ["NKE-Q4FY25-REV", "NKE-Q4FY25-GM", "NKE-Q4FY25-DIGITAL"],
+        "calculations": {"year_over_year_revenue_change_percent": -11.97, "gross_margin_change_pp": -4.4, "digital_yoy_rate_change_pp": -16.0},
+        "period_warning": "Q4 FY2024 to Q4 FY2025 is a matching-quarter year-over-year comparison",
+        "risk_to_identify": "same-quarter sales, margin, and digital-channel deterioration",
+        "acceptable_decisions": ["downgrade", "invalidate"],
+        "status_constraint": ["watch", "invalidated"],
+        "conviction_constraint": "lower conviction or explicitly justify invalidation"
+      }
+    }
+  ]
+}

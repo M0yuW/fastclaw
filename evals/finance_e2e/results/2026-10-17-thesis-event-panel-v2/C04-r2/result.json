@@ -1,0 +1,256 @@
+{
+  "run_id": "C04-r2",
+  "case_id": "C04",
+  "status": "mechanical_pass",
+  "error": null,
+  "elapsed_seconds": 15.838,
+  "checks": {
+    "one_review": true,
+    "version_once": true,
+    "linked_alert": true,
+    "source_recorded": true,
+    "alert_acknowledged": true,
+    "priced_usage": true,
+    "model_matches_suite": true,
+    "decision_in_predeclared_set": true,
+    "status_in_predeclared_set": true,
+    "missing_metrics_recorded": true,
+    "no_trade_tool": true
+  },
+  "seed": {
+    "baseline_episode": "FSEC-NVDA-01",
+    "event_episode": "FSEC-NVDA-02",
+    "baseline_source": {
+      "id": "nvda-2024-05-22-q1-fy2025",
+      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581024000113/q1fy25pr.htm",
+      "sha256": "1e1f8a53abed8898fd6c5519f25189bf4d78521e8da80fdcf5248d194c54a02c"
+    },
+    "event_source": {
+      "id": "nvda-2024-08-28-q2-fy2025",
+      "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm",
+      "sha256": "0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc"
+    },
+    "initial_status": "active",
+    "initial_conviction": 3,
+    "initial_version": 1,
+    "required_event_metrics": [
+      "quarterly_revenue",
+      "gross_margin",
+      "data_center_revenue"
+    ]
+  },
+  "event_packet": {
+    "external_id": "nvda-2024-08-28-q2-fy2025",
+    "type": "earnings",
+    "as_of": "2024-08-28",
+    "summary": "NVDA Q2 FY2025 SEC event packet: NVDA-Q2-REV=30040 USD million; NVDA-Q2-DC=26300 USD million.",
+    "sources": [
+      {
+        "id": "nvda-2024-08-28-q2-fy2025",
+        "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm",
+        "sha256": "0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc"
+      }
+    ],
+    "observed_metrics": {
+      "quarterly_revenue": {
+        "value": "30040",
+        "unit": "USD_million",
+        "fact_id": "NVDA-Q2-REV"
+      },
+      "data_center_revenue": {
+        "value": "26300",
+        "unit": "USD_million",
+        "fact_id": "NVDA-Q2-DC"
+      }
+    }
+  },
+  "prompt": "Review the stored research thesis against the newly ingested SEC event packet. This is a research-state workflow, not investment advice. Use finance-tools__thesis_get and finance-tools__alert_list to read the baseline, required metrics, event observations, and source reference. Compute relevant changes using the correct periods and units; distinguish source facts, calculations, and uncertainty. Decide the impact, review decision, status, and conviction yourself from the evidence and stored thesis conditions. Record one successful review with the observed thesis version, linked alert_id, and SEC source ID/hash. If the ledger rejects a review for missing required metrics, correct the decision and retry at most once; do not claim a missing packet field is missing from the SEC filing. Then acknowledge the alert using its observed version. Do not trade or change a portfolio. Case C04; thesis ID th_a8ac774d5cc24532ab5c; alert ID fa_61fc5e7d9ea043c9b9e1.",
+  "review": {
+    "id": "tr_73edf572ff3e4fad9fa8",
+    "thesis_id": "th_a8ac774d5cc24532ab5c",
+    "alert_id": "fa_61fc5e7d9ea043c9b9e1",
+    "agent_id": "finance-coordinator",
+    "session_id": "finance-v2-C04-r2",
+    "event": {
+      "type": "earnings",
+      "summary": "NVDA Q2 FY2025 SEC event packet: NVDA-Q2-REV=30040 USD million; NVDA-Q2-DC=26300 USD million.",
+      "as_of": "2024-08-28",
+      "sources": [
+        {
+          "id": "nvda-2024-08-28-q2-fy2025",
+          "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm",
+          "sha256": "0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc"
+        }
+      ]
+    },
+    "impact": "mixed",
+    "decision": "needs_review",
+    "rationale": "The Q2 FY2025 packet provides two of the three required metrics. Revenue rose to 30,040 USD million (+15.3% vs Q1 baseline of 26,044) and Data Center revenue rose to 26,300 USD million (+16.4% vs 22,600), both positive. However, the required gross_margin metric is absent from the observed metrics, so the GAAP gross-margin resilience dimension cannot be assessed. Per thesis condition, a substantive update requires evidence on all three dimensions; the review is therefore incomplete and requires follow-up evidence on gross margin.",
+    "missing_metrics": [
+      "gross_margin"
+    ],
+    "matched_terms": [
+      "nvda"
+    ],
+    "evidence": [
+      {
+        "id": "nvda-2024-08-28-q2-fy2025",
+        "sha256": "0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc",
+        "url": "https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm"
+      }
+    ],
+    "created_at": "2026-10-17T05:36:51Z"
+  },
+  "after": {
+    "version": 2,
+    "status": "active",
+    "conviction": 3,
+    "reviews": 1,
+    "alert_statuses": [
+      "acknowledged"
+    ]
+  },
+  "tool_calls": [
+    "finance-tools__thesis_get",
+    "finance-tools__alert_list",
+    "finance-tools__thesis_record_review",
+    "finance-tools__alert_update"
+  ],
+  "model_calls": 4,
+  "estimated_cost_usd": 0.003954237,
+  "gateway_response": {
+    "id": "chatcmpl-1792215402986368000",
+    "object": "chat.completion",
+    "created": 1792215402,
+    "model": "deepseek/deepseek-v4-pro",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Review complete. Here is the summary of the research-state workflow for Case C04.\n\n## Review Summary\n\n**Thesis:** `th_a8ac774d5cc24532ab5c` — NVDA filing research thesis (version 1 → 2)\n**Alert:** `fa_61fc5e7d9ea043c9b9e1` (version 1 → 2, acknowledged)\n\n### Baseline vs. Event (source facts)\n| Metric | Q1 FY2025 baseline | Q2 FY2025 event | Change |\n|---|---|---|---|\n| Revenue | 26,044 USD million | 30,040 USD million | +15.3% |\n| Data Center revenue | 22,600 USD million | 26,300 USD million | +16.4% |\n| Gross margin | 78.4% | **not in packet** | — |\n\n### Calculations (derived, not source facts)\n- Revenue growth: (30,040 − 26,044) / 26,044 = **+15.3%**\n- Data Center growth: (26,300 − 22,600) / 22,600 = **+16.4%**\n- Gross margin change: **not computable** — the `gross_margin` metric is absent from the event packet's `observed_metrics`.\n\n### Decision\n- **Impact:** `mixed` — revenue and Data Center growth are positive, but the GAAP gross-margin dimension cannot be assessed.\n- **Decision:** `needs_review` — the thesis requires evidence on all three dimensions (`quarterly_revenue`, `gross_margin`, `data_center_revenue`), and `gross_margin` is missing from the packet.\n- **Status / conviction:** unchanged (`active`, conviction 3), per the missing-metrics policy.\n- **Missing metric:** `gross_margin` (a packet field genuinely absent from the event's observed metrics — not a filing omission).\n\n### Recorded\n- Review `tr_73edf572ff3e4fad9fa8` persisted on the first attempt (no retry required), linked to alert `fa_61fc5e7d9ea043c9b9e1` and SEC source `nvda-2024-08-28-q2-fy2025` (sha256 `0ab67703…1f57dbc`).\n- Alert acknowledged at its observed version.\n\nNo trades or portfolio changes were made."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 15589,
+      "completion_tokens": 1701,
+      "total_tokens": 17290
+    },
+    "fastclaw": {
+      "trace": [
+        {
+          "type": "tool_call",
+          "id": "call_00_ogQEYDwpEnSSEWwL5HbU1514",
+          "name": "finance-tools__thesis_get",
+          "arguments": "{\"thesis_id\": \"th_a8ac774d5cc24532ab5c\"}",
+          "round": 1
+        },
+        {
+          "type": "tool_call",
+          "id": "call_01_gVilVIZgnrH2wLL90z9j1803",
+          "name": "finance-tools__alert_list",
+          "arguments": "{\"limit\": 50}",
+          "round": 1
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_ogQEYDwpEnSSEWwL5HbU1514",
+          "name": "finance-tools__thesis_get",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"ef838613-931c-4c66-a5a0-6ee93bf73083\",\"as_of\":\"2026-10-17T05:36:44Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_a8ac774d5cc24532ab5c\",\"market\":\"US\",\"symbol\":\"NVDA\",\"title\":\"NVDA filing research thesis\",\"thesis\":\"Q1 FY2025 SEC baseline: NVDA-Q1-REV=26044 USD million; NVDA-Q1-GM=78.4 %; NVDA-Q1-DC=22600 USD million. Assess total and Data Center growth together with current GAAP gross-margin resilience. A substantive update requires evidence on all three dimensions.\",\"status\":\"active\",\"conviction\":3,\"assumptions\":[],\"catalysts\":[\"revenue and Data Center growth with margin resilience\"],\"invalidations\":[\"documented material GAAP margin deterioration\"],\"required_event_metrics\":[\"quarterly_revenue\",\"gross_margin\",\"data_center_revenue\"],\"evidence\":[{\"id\":\"nvda-2024-05-22-q1-fy2025\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1045810/000104581024000113/q1fy25pr.htm\",\"sha256\":\"1e1f8a53abed8898fd6c5519f25189bf4d78521e8da80fdcf5248d194c54a02c\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-17T05:36:41Z\",\"updated_at\":\"2026-10-17T05:36:41Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8333,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 1
+        },
+        {
+          "type": "tool_result",
+          "id": "call_01_gVilVIZgnrH2wLL90z9j1803",
+          "name": "finance-tools__alert_list",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"49c67554-193b-4320-b378-f03252105733\",\"as_of\":\"2026-10-17T05:36:44Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_61fc5e7d9ea043c9b9e1\",\"watchlist_id\":\"wl_d82ec7b2193b4b4ab983\",\"thesis_id\":\"th_a8ac774d5cc24532ab5c\",\"market\":\"US\",\"symbol\":\"NVDA\",\"event_fingerprint\":\"be3bda3001192cf712e00b6cea88d666c84f3bf3714d6928fa1c68c55e29c86c\",\"event\":{\"external_id\":\"nvda-2024-08-28-q2-fy2025\",\"type\":\"earnings\",\"summary\":\"NVDA Q2 FY2025 SEC event packet: NVDA-Q2-REV=30040 USD million; NVDA-Q2-DC=26300 USD million.\",\"as_of\":\"2024-08-28\",\"sources\":[{\"id\":\"nvda-2024-08-28-q2-fy2025\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm\",\"sha256\":\"0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc\"}],\"observed_metrics\":{\"quarterly_revenue\":{\"value\":\"30040\",\"unit\":\"USD_million\",\"fact_id\":\"NVDA-Q2-REV\"},\"data_center_revenue\":{\"value\":\"26300\",\"unit\":\"USD_million\",\"fact_id\":\"NVDA-Q2-DC\"}}},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"nvda\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-17T05:36:41Z\",\"last_seen_at\":\"2026-10-17T05:36:41Z\",\"created_at\":\"2026-10-17T05:36:41Z\",\"updated_at\":\"2026-10-17T05:36:41Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"}],\"count\":1,\"filters\":{\"limit\":50}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 1
+        },
+        {
+          "type": "tool_call",
+          "id": "call_00_nFqKeyUE4QVIPinFbObf7424",
+          "name": "finance-tools__thesis_record_review",
+          "arguments": "{\"thesis_id\": \"th_a8ac774d5cc24532ab5c\", \"alert_id\": \"fa_61fc5e7d9ea043c9b9e1\", \"expected_version\": 1, \"event\": {\"type\": \"earnings\", \"summary\": \"NVDA Q2 FY2025 SEC event packet: NVDA-Q2-REV=30040 USD million; NVDA-Q2-DC=26300 USD million.\", \"as_of\": \"2024-08-28\", \"sources\": [{\"id\": \"nvda-2024-08-28-q2-fy2025\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm\", \"sha256\": \"0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc\"}]}, \"impact\": \"mixed\", \"decision\": \"needs_review\", \"rationale\": \"The Q2 FY2025 packet provides two of the three required metrics. Revenue rose to 30,040 USD million (+15.3% vs Q1 baseline of 26,044) and Data Center revenue rose to 26,300 USD million (+16.4% vs 22,600), both positive. However, the required gross_margin metric is absent from the observed metrics, so the GAAP gross-margin resilience dimension cannot be assessed. Per thesis condition, a substantive update requires evidence on all three dimensions; the review is therefore incomplete and requires follow-up evidence on gross margin.\", \"new_status\": \"active\", \"new_conviction\": 3, \"matched_terms\": [\"nvda\"], \"evidence\": [{\"id\": \"nvda-2024-08-28-q2-fy2025\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm\", \"sha256\": \"0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc\"}]}",
+          "round": 2
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_nFqKeyUE4QVIPinFbObf7424",
+          "name": "finance-tools__thesis_record_review",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"430b09ad-4c91-4833-97bd-6419c7cb2349\",\"as_of\":\"2026-10-17T05:36:51Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_a8ac774d5cc24532ab5c\",\"market\":\"US\",\"symbol\":\"NVDA\",\"title\":\"NVDA filing research thesis\",\"thesis\":\"Q1 FY2025 SEC baseline: NVDA-Q1-REV=26044 USD million; NVDA-Q1-GM=78.4 %; NVDA-Q1-DC=22600 USD million. Assess total and Data Center growth together with current GAAP gross-margin resilience. A substantive update requires evidence on all three dimensions.\",\"status\":\"active\",\"conviction\":3,\"assumptions\":[],\"catalysts\":[\"revenue and Data Center growth with margin resilience\"],\"invalidations\":[\"documented material GAAP margin deterioration\"],\"required_event_metrics\":[\"quarterly_revenue\",\"gross_margin\",\"data_center_revenue\"],\"evidence\":[{\"id\":\"nvda-2024-05-22-q1-fy2025\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1045810/000104581024000113/q1fy25pr.htm\",\"sha256\":\"1e1f8a53abed8898fd6c5519f25189bf4d78521e8da80fdcf5248d194c54a02c\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-17T05:36:51Z\",\"created_at\":\"2026-10-17T05:36:41Z\",\"updated_at\":\"2026-10-17T05:36:51Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"},\"review\":{\"id\":\"tr_73edf572ff3e4fad9fa8\",\"thesis_id\":\"th_a8ac774d5cc24532ab5c\",\"alert_id\":\"fa_61fc5e7d9ea043c9b9e1\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-v2-C04-r2\",\"event\":{\"type\":\"earnings\",\"summary\":\"NVDA Q2 FY2025 SEC event packet: NVDA-Q2-REV=30040 USD million; NVDA-Q2-DC=26300 USD million.\",\"as_of\":\"2024-08-28\",\"sources\":[{\"id\":\"nvda-2024-08-28-q2-fy2025\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm\",\"sha256\":\"0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"The Q2 FY2025 packet provides two of the three required metrics. Revenue rose to 30,040 USD million (+15.3% vs Q1 baseline of 26,044) and Data Center revenue rose to 26,300 USD million (+16.4% vs 22,600), both positive. However, the required gross_margin metric is absent from the observed metrics, so the GAAP gross-margin resilience dimension cannot be assessed. Per thesis condition, a substantive update requires evidence on all three dimensions; the review is therefore incomplete and requires follow-up evidence on gross margin.\",\"missing_metrics\":[\"gross_margin\"],\"matched_terms\":[\"nvda\"],\"evidence\":[{\"id\":\"nvda-2024-08-28-q2-fy2025\",\"sha256\":\"0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm\"}],\"created_at\":\"2026-10-17T05:36:51Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9535,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 2
+        },
+        {
+          "type": "tool_call",
+          "id": "call_00_bfgqIIRs4h6R4sDWmiDl9118",
+          "name": "finance-tools__alert_update",
+          "arguments": "{\"alert_id\": \"fa_61fc5e7d9ea043c9b9e1\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+          "round": 3
+        },
+        {
+          "type": "tool_result",
+          "id": "call_00_bfgqIIRs4h6R4sDWmiDl9118",
+          "name": "finance-tools__alert_update",
+          "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"ec284cb9-77fa-4205-9c41-2478c4ceea74\",\"as_of\":\"2026-10-17T05:36:54Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_61fc5e7d9ea043c9b9e1\",\"watchlist_id\":\"wl_d82ec7b2193b4b4ab983\",\"thesis_id\":\"th_a8ac774d5cc24532ab5c\",\"market\":\"US\",\"symbol\":\"NVDA\",\"event_fingerprint\":\"be3bda3001192cf712e00b6cea88d666c84f3bf3714d6928fa1c68c55e29c86c\",\"event\":{\"external_id\":\"nvda-2024-08-28-q2-fy2025\",\"type\":\"earnings\",\"summary\":\"NVDA Q2 FY2025 SEC event packet: NVDA-Q2-REV=30040 USD million; NVDA-Q2-DC=26300 USD million.\",\"as_of\":\"2024-08-28\",\"sources\":[{\"id\":\"nvda-2024-08-28-q2-fy2025\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1045810/000104581024000262/q2fy25pr.htm\",\"sha256\":\"0ab67703a5fb0def7eeb220475bc55e8bb8ab595c5a74103437acda3b1f57dbc\"}],\"observed_metrics\":{\"quarterly_revenue\":{\"value\":\"30040\",\"unit\":\"USD_million\",\"fact_id\":\"NVDA-Q2-REV\"},\"data_center_revenue\":{\"value\":\"26300\",\"unit\":\"USD_million\",\"fact_id\":\"NVDA-Q2-DC\"}}},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"nvda\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-17T05:36:41Z\",\"last_seen_at\":\"2026-10-17T05:36:41Z\",\"created_at\":\"2026-10-17T05:36:41Z\",\"updated_at\":\"2026-10-17T05:36:54Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"fixture-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+          "round": 3
+        }
+      ],
+      "model_calls": [
+        {
+          "sequence": 1,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 1827,
+          "completion_tokens": 111,
+          "total_tokens": 1938,
+          "estimated_cost_usd": 0.0008913150000000001,
+          "priced": true,
+          "latency_ms": 1568.196
+        },
+        {
+          "sequence": 2,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 3044,
+          "completion_tokens": 915,
+          "total_tokens": 3959,
+          "cache_read_tokens": 1920,
+          "estimated_cost_usd": 0.00129195,
+          "priced": true,
+          "latency_ms": 7425.644
+        },
+        {
+          "sequence": 3,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 4970,
+          "completion_tokens": 156,
+          "total_tokens": 5126,
+          "cache_read_tokens": 2944,
+          "estimated_cost_usd": 0.001027702,
+          "priced": true,
+          "latency_ms": 2060.533
+        },
+        {
+          "sequence": 4,
+          "agent_id": "finance-coordinator",
+          "role": "coordinator",
+          "model": "deepseek/deepseek-v4-pro",
+          "prompt_tokens": 5748,
+          "completion_tokens": 519,
+          "total_tokens": 6267,
+          "cache_read_tokens": 5120,
+          "estimated_cost_usd": 0.00074327,
+          "priced": true,
+          "latency_ms": 4748.836
+        }
+      ]
+    }
+  },
+  "manual_semantic_audit_pending": true
+}

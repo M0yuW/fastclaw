@@ -5,6 +5,7 @@ import copy
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import re
 import sqlite3
@@ -13,8 +14,27 @@ import sys
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any, Callable
+
+
+_lineage_spec = importlib.util.spec_from_file_location(
+    "finance_tools_accounting_lineage", Path(__file__).with_name("accounting_lineage.py")
+)
+if _lineage_spec is None or _lineage_spec.loader is None:
+    raise ImportError("accounting lineage validator unavailable")
+_lineage = importlib.util.module_from_spec(_lineage_spec)
+_lineage_spec.loader.exec_module(_lineage)
+
+_review_guard_spec = importlib.util.spec_from_file_location(
+    "finance_tools_review_arithmetic_guard",
+    Path(__file__).with_name("review_arithmetic_guard.py"),
+)
+if _review_guard_spec is None or _review_guard_spec.loader is None:
+    raise ImportError("review arithmetic guard unavailable")
+_review_guard = importlib.util.module_from_spec(_review_guard_spec)
+_review_guard_spec.loader.exec_module(_review_guard)
 
 
 SCHEMA_VERSION = "finance.tool.v1"
@@ -210,14 +230,24 @@ def tool_definitions() -> list[dict[str, Any]]:
         },
         {
             "name": "portfolio_risk",
-            "description": "Calculate deterministic portfolio concentration, correlation, risk, stress, or health metrics.",
+            "description": "Calculate portfolio risk only from a complete holdings set. Percentage or fractional weights must sum to the whole portfolio; explicit relative weights require holdings_complete=true. Do not submit a known partial portfolio.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "holdings": {
                         "type": "object",
                         "additionalProperties": {"type": "number"},
-                        "description": "Ticker-to-weight map. Weights may be percentages or relative weights.",
+                        "description": "Complete ticker-to-weight map. Include cash as a holding when relevant; never omit an unknown position.",
+                    },
+                    "weight_unit": {
+                        "type": "string",
+                        "enum": ["auto", "percent", "fraction", "relative"],
+                        "description": "auto accepts sums of 100 or 1; relative requires an explicit completeness confirmation.",
+                        "default": "auto",
+                    },
+                    "holdings_complete": {
+                        "type": "boolean",
+                        "description": "Set false if any holding or weight is unknown; the tool will refuse to calculate.",
                     },
                     "view": {
                         "type": "string",
@@ -227,6 +257,35 @@ def tool_definitions() -> list[dict[str, Any]]:
                     "benchmark": {"type": "string", "default": "SPY"},
                 },
                 "required": ["holdings"],
+            },
+        },
+        {
+            "name": "portfolio_policy_bound",
+            "description": "Compute only a strict single-issuer weight-limit bound from incomplete long-only percentage holdings. Requires an explicit statement of whether unknown holdings can duplicate known issuers. Does not calculate HHI, market risk, or a live-account verdict.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "known_holdings_percent": {
+                        "type": "object",
+                        "additionalProperties": {"type": "number"},
+                        "description": "Known issuer line-item weights as percentages of the same whole portfolio, not normalized to the known subtotal.",
+                    },
+                    "unknown_remainder_percent": {
+                        "type": "number",
+                        "description": "Unidentified long-only remainder as a percentage of the whole portfolio; together with known weights it must sum to 100.",
+                    },
+                    "unknown_may_overlap_known": {
+                        "type": "boolean",
+                        "description": "False only when known weights are final issuer-aggregated totals and the remainder excludes those issuers; true when an unknown sleeve may contain more of a known issuer.",
+                    },
+                    "limit_percent": {
+                        "type": "number",
+                        "description": "Single-issuer limit; breach means strictly greater than this percentage.",
+                        "default": 50,
+                    },
+                },
+                "required": ["known_holdings_percent", "unknown_remainder_percent",
+                             "unknown_may_overlap_known"],
             },
         },
         {
@@ -276,11 +335,19 @@ def tool_definitions() -> list[dict[str, Any]]:
                         "type": "array",
                         "items": {"type": "string"},
                     },
+                    "required_event_metrics": {
+                        "type": "array",
+                        "description": "Metric names that must be present in a linked event packet before a substantive research decision is recorded.",
+                        "items": {"type": "string"},
+                    },
                     "evidence": {
                         "type": "array",
                         "items": {"type": "object"},
                     },
-                    "next_review_at": {"type": "string"},
+                    "next_review_at": {
+                        "type": "string",
+                        "description": "Future ISO date or timestamp for an operational review; historical source dates belong in evidence."
+                    },
                 },
             },
         },
@@ -343,11 +410,12 @@ def tool_definitions() -> list[dict[str, Any]]:
         },
         {
             "name": "thesis_record_review",
-            "description": "Persist an evidence-backed event review and optionally update thesis status, conviction, or next review time with version protection.",
+            "description": "Persist a version-protected event review. Provide the stored alert_id for needs_review, when event metrics are required, or when decision_hold is true. Pass evidence and other fields as top-level arguments, never as JSON text inside rationale. An empty causal_claims array means no causal attribution; nonempty claims require trusted statement-line metadata. Any needs_review decision preserves status and conviction and blocks downstream decisions. A hold can be resolved only with a sourced, complete, conflict-free alert for the same event period and source continuity; a voluntary or conflict hold also needs new source evidence.",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "thesis_id": {"type": "string"},
+                    "alert_id": {"type": "string"},
                     "expected_version": {"type": "integer", "minimum": 1},
                     "event": {
                         "type": "object",
@@ -379,6 +447,56 @@ def tool_definitions() -> list[dict[str, Any]]:
                         "type": "array",
                         "items": {"type": "object"},
                     },
+                    "causal_claims": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "target_metric": {
+                                    "type": "string",
+                                    "enum": sorted(_lineage.ALLOWED_DRIVER_LINES),
+                                },
+                                "strength": {
+                                    "type": "string",
+                                    "enum": sorted(_lineage.CLAIM_STRENGTHS),
+                                    "description": (
+                                        "directly_stated is valid for an unquantified "
+                                        "source-explicit link when the stored driver fact "
+                                        "lists the target in source_explicit_targets; "
+                                        "do not invent a numerical contribution."
+                                    ),
+                                },
+                                "driver_fact_ids": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                },
+                                "attributed_change_percentage_points": {
+                                    "type": "number",
+                                    "description": (
+                                        "Only when a stored source reconciliation "
+                                        "explicitly supports this contribution."
+                                    ),
+                                },
+                            },
+                            "required": [
+                                "target_metric", "strength", "driver_fact_ids"
+                            ],
+                        },
+                        "description": (
+                            "Required when the stored alert has trusted statement_line metadata. "
+                            "target_metric must be one of "
+                            + ", ".join(sorted(_lineage.ALLOWED_DRIVER_LINES))
+                            + ". strength must be one of "
+                            + ", ".join(sorted(_lineage.CLAIM_STRENGTHS))
+                            + ". Use only stored driver_fact_ids for a genuine causal link; "
+                              "do not use an observed metric as its own cause. If no "
+                              "source-backed driver exists, send [] and discuss the "
+                              "unresolved attribution in the final answer. A trusted "
+                              "source-explicit qualitative driver can be recorded "
+                              "without a quantified bridge. The tool "
+                              "replaces draft rationale with a validated summary."
+                        ),
+                    },
                     "new_status": {
                         "type": "string",
                         "enum": sorted(THESIS_STATUSES),
@@ -388,7 +506,10 @@ def tool_definitions() -> list[dict[str, Any]]:
                         "minimum": 1,
                         "maximum": 5,
                     },
-                    "next_review_at": {"type": "string"},
+                    "next_review_at": {
+                        "type": "string",
+                        "description": "Future ISO date or timestamp for an operational review; historical source dates belong in evidence."
+                    },
                 },
                 "required": [
                     "thesis_id",
@@ -458,7 +579,7 @@ def tool_definitions() -> list[dict[str, Any]]:
         },
         {
             "name": "event_alert_ingest",
-            "description": "Match one normalized market event against active watches and persist or deduplicate tenant-isolated alerts.",
+            "description": "Match one normalized market event against active watches and persist or deduplicate tenant-isolated alerts. Trusted ingestion may supply source_claims with metric, period, value, unit, fact_id and source_sha256; incompatible values for the same metric, period, and unit are marked as unresolved conflicts, including values printed in different tables of one source.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -472,6 +593,14 @@ def tool_definitions() -> list[dict[str, Any]]:
                             "summary": {"type": "string"},
                             "as_of": {"type": "string"},
                             "sources": {
+                                "type": "array",
+                                "items": {"type": "object"},
+                            },
+                            "observed_metrics": {
+                                "type": "object",
+                                "description": "Trusted event-packet metrics keyed by canonical metric name; each entry has value, unit, and fact_id. Optional audited statement_line metadata enables guarded causal reviews.",
+                            },
+                            "source_claims": {
                                 "type": "array",
                                 "items": {"type": "object"},
                             },
@@ -524,8 +653,9 @@ def tool_definitions() -> list[dict[str, Any]]:
 
 
 class FinanceStateStore:
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, review_guard: Any = None) -> None:
         self.path = path
+        self.review_guard = review_guard
 
     def migrate(self) -> None:
         self.path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -550,6 +680,9 @@ class FinanceStateStore:
                     assumptions_json TEXT NOT NULL,
                     catalysts_json TEXT NOT NULL,
                     invalidations_json TEXT NOT NULL,
+                    required_event_metrics_json TEXT NOT NULL DEFAULT '[]',
+                    decision_hold INTEGER NOT NULL DEFAULT 0,
+                    decision_hold_alert_id TEXT,
                     evidence_json TEXT NOT NULL,
                     next_review_at TEXT,
                     last_review_at TEXT,
@@ -565,6 +698,7 @@ class FinanceStateStore:
                 CREATE TABLE IF NOT EXISTS thesis_reviews (
                     id TEXT PRIMARY KEY,
                     thesis_id TEXT NOT NULL,
+                    alert_id TEXT,
                     user_id TEXT NOT NULL,
                     agent_id TEXT NOT NULL,
                     session_id TEXT NOT NULL DEFAULT '',
@@ -575,6 +709,8 @@ class FinanceStateStore:
                     impact TEXT NOT NULL,
                     decision TEXT NOT NULL,
                     rationale TEXT NOT NULL,
+                    missing_metrics_json TEXT NOT NULL DEFAULT '[]',
+                    unresolved_conflicts_json TEXT NOT NULL DEFAULT '[]',
                     matched_terms_json TEXT NOT NULL,
                     evidence_json TEXT NOT NULL,
                     created_at TEXT NOT NULL,
@@ -621,6 +757,9 @@ class FinanceStateStore:
                     event_summary TEXT NOT NULL,
                     event_as_of TEXT,
                     event_sources_json TEXT NOT NULL,
+                    observed_metrics_json TEXT NOT NULL DEFAULT '{}',
+                    source_claims_json TEXT NOT NULL DEFAULT '[]',
+                    unresolved_conflicts_json TEXT NOT NULL DEFAULT '[]',
                     matched_terms_json TEXT NOT NULL,
                     match_score INTEGER NOT NULL,
                     status TEXT NOT NULL,
@@ -639,7 +778,36 @@ class FinanceStateStore:
                     ON event_alerts(user_id, watchlist_id, event_fingerprint, last_seen_at);
                 """
             )
-            database.execute("PRAGMA user_version = 2")
+            # Existing ledgers created before the evidence-completeness rule
+            # remain readable. Opt-in requirements default to an empty list.
+            thesis_columns = {row[1] for row in database.execute("PRAGMA table_info(theses)")}
+            if "required_event_metrics_json" not in thesis_columns:
+                database.execute(
+                    "ALTER TABLE theses ADD COLUMN required_event_metrics_json TEXT NOT NULL DEFAULT '[]'"
+                )
+            if "decision_hold" not in thesis_columns:
+                database.execute("ALTER TABLE theses ADD COLUMN decision_hold INTEGER NOT NULL DEFAULT 0")
+            if "decision_hold_alert_id" not in thesis_columns:
+                database.execute("ALTER TABLE theses ADD COLUMN decision_hold_alert_id TEXT")
+            alert_columns = {row[1] for row in database.execute("PRAGMA table_info(event_alerts)")}
+            if "observed_metrics_json" not in alert_columns:
+                database.execute(
+                    "ALTER TABLE event_alerts ADD COLUMN observed_metrics_json TEXT NOT NULL DEFAULT '{}'"
+                )
+            if "source_claims_json" not in alert_columns:
+                database.execute("ALTER TABLE event_alerts ADD COLUMN source_claims_json TEXT NOT NULL DEFAULT '[]'")
+            if "unresolved_conflicts_json" not in alert_columns:
+                database.execute("ALTER TABLE event_alerts ADD COLUMN unresolved_conflicts_json TEXT NOT NULL DEFAULT '[]'")
+            review_columns = {row[1] for row in database.execute("PRAGMA table_info(thesis_reviews)")}
+            if "alert_id" not in review_columns:
+                database.execute("ALTER TABLE thesis_reviews ADD COLUMN alert_id TEXT")
+            if "missing_metrics_json" not in review_columns:
+                database.execute(
+                    "ALTER TABLE thesis_reviews ADD COLUMN missing_metrics_json TEXT NOT NULL DEFAULT '[]'"
+                )
+            if "unresolved_conflicts_json" not in review_columns:
+                database.execute("ALTER TABLE thesis_reviews ADD COLUMN unresolved_conflicts_json TEXT NOT NULL DEFAULT '[]'")
+            database.execute("PRAGMA user_version = 4")
         try:
             os.chmod(self.path, 0o600)
         except OSError:
@@ -681,18 +849,30 @@ class FinanceStateStore:
                     "assumptions",
                     "catalysts",
                     "invalidations",
+                    "required_event_metrics",
                     "evidence",
                     "next_review_at",
                 ):
                     if key in payload:
                         merged[key] = payload[key]
+                if existing["decision_hold"] and (
+                    merged["status"] != existing["status"]
+                    or merged["conviction"] != existing["conviction"]
+                    or merged["required_event_metrics"] != existing["required_event_metrics"]
+                ):
+                    raise ToolStateError(
+                        "decision_on_hold",
+                        "pending evidence blocks status, conviction, or required-metric changes",
+                        False,
+                        {"alert_id": existing["decision_hold_alert_id"]},
+                    )
                 version = existing["version"] + 1
                 database.execute(
                     """
                     UPDATE theses
                     SET market = ?, symbol = ?, title = ?, thesis = ?, status = ?,
                         conviction = ?, assumptions_json = ?, catalysts_json = ?,
-                        invalidations_json = ?, evidence_json = ?,
+                        invalidations_json = ?, required_event_metrics_json = ?, evidence_json = ?,
                         next_review_at = ?, updated_at = ?, version = ?
                     WHERE id = ? AND user_id = ?
                     """,
@@ -706,6 +886,7 @@ class FinanceStateStore:
                         self._json(merged["assumptions"]),
                         self._json(merged["catalysts"]),
                         self._json(merged["invalidations"]),
+                        self._json(merged["required_event_metrics"]),
                         self._json(merged["evidence"]),
                         merged["next_review_at"],
                         now,
@@ -723,9 +904,10 @@ class FinanceStateStore:
                         id, user_id, created_by_agent_id, created_in_session_id,
                         market, symbol, title, thesis, status, conviction,
                         assumptions_json, catalysts_json, invalidations_json,
+                        required_event_metrics_json,
                         evidence_json, next_review_at, last_review_at,
                         created_at, updated_at, version
-                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, ?, ?)
                     """,
                     (
                         thesis_id,
@@ -741,6 +923,7 @@ class FinanceStateStore:
                         self._json(payload["assumptions"]),
                         self._json(payload["catalysts"]),
                         self._json(payload["invalidations"]),
+                        self._json(payload["required_event_metrics"]),
                         self._json(payload["evidence"]),
                         payload["next_review_at"],
                         now,
@@ -870,20 +1053,225 @@ class FinanceStateStore:
                         "actual_version": existing["version"],
                     },
                 )
+            alert_id = payload.get("alert_id")
+            if (existing["required_event_metrics"] or existing["decision_hold"]
+                    or payload["decision"] == "needs_review") and not alert_id:
+                raise ToolStateError(
+                    "alert_required",
+                    "a linked, stored alert is required to verify event metrics or resolve a decision hold",
+                    True,
+                    {"required_metrics": existing["required_event_metrics"],
+                     "decision_hold_alert_id": existing["decision_hold_alert_id"]},
+                )
             event = payload["event"]
+            missing_metrics = []
+            unresolved_conflicts = []
+            alert = None
+            if alert_id:
+                alert = self._fetch_alert_owned(database, tenant["user_id"], alert_id)
+                if alert["thesis_id"] != thesis_id:
+                    raise ToolStateError(
+                        "alert_thesis_mismatch",
+                        "alert is not linked to the reviewed thesis",
+                    )
+                # Never evaluate evidence completeness against the model's
+                # review arguments. Use only the event saved at ingestion.
+                event = alert["event"]
+                missing_metrics = sorted(
+                    set(existing["required_event_metrics"])
+                    - set(event["observed_metrics"])
+                )
+                unresolved_conflicts = event["unresolved_conflicts"]
+            review_guard_alerts = []
+            if self.review_guard is not None:
+                if not alert and payload["decision"] != "needs_review":
+                    raise ToolStateError(
+                        "review_guard_alert_required",
+                        "source-bound arithmetic review requires a stored alert",
+                        True,
+                    )
+                if alert:
+                    try:
+                        review_guard_alerts = self.review_guard.check(
+                            existing, event, payload["rationale"], payload["decision"])
+                    except _review_guard.GuardCatalogError as exc:
+                        if payload["decision"] != "needs_review":
+                            raise ToolStateError(
+                                "review_guard_source_mismatch", str(exc), False,
+                            ) from exc
+                        # A deferred review must still be able to establish a
+                        # decision hold when the catalog cannot validate it.
+                        review_guard_alerts = ["source_comparison_unavailable"]
+                if review_guard_alerts and payload["decision"] != "needs_review":
+                    raise ToolStateError(
+                        "review_arithmetic_contradiction",
+                        "proposed review contradicts the trusted source comparison; "
+                        "submit a corrected review or needs_review without changing "
+                        "status or conviction",
+                        True,
+                        {"alert_id": alert_id, "alerts": review_guard_alerts},
+                    )
+            lineage_metadata = bool(alert and any(
+                "statement_line" in metric
+                for metric in event["observed_metrics"].values()
+            ))
+            if lineage_metadata:
+                if "causal_claims" not in payload:
+                    raise ToolStateError(
+                        "causal_claims_required",
+                        "this source-classified alert requires structured causal claims",
+                        True,
+                        {"alert_id": alert_id},
+                    )
+                facts = {}
+                for metric in event["observed_metrics"].values():
+                    fact_id = metric["fact_id"]
+                    if fact_id in facts:
+                        raise ToolStateError(
+                            "duplicate_lineage_fact_id",
+                            "the stored event reuses a fact_id across metrics",
+                        )
+                    facts[fact_id] = metric
+                try:
+                    validated_claims = _lineage.validate_causal_claims(
+                        facts, payload["causal_claims"]
+                    )
+                except _lineage.ClaimValidationError as exc:
+                    raise ToolStateError(
+                        "unsupported_causal_claim", str(exc), True,
+                        {
+                            "alert_id": alert_id,
+                            "allowed_target_metrics": sorted(_lineage.ALLOWED_DRIVER_LINES),
+                            "allowed_strengths": sorted(_lineage.CLAIM_STRENGTHS),
+                            "no_supported_attribution": {
+                                "causal_claims": [],
+                                "meaning": "Record the review without a causal attribution; discuss uncertainty in the final answer.",
+                            },
+                        },
+                    ) from exc
+                payload["rationale"] = _lineage.render_guarded_rationale(
+                    payload["decision"], payload["impact"],
+                    event["observed_metrics"], validated_claims,
+                )
+                payload["matched_terms"] = alert["matched_terms"]
+                payload["evidence"] = [{
+                    "type": "validated_accounting_lineage",
+                    "claims": validated_claims,
+                    "source_hashes": [source.get("sha256") for source in event["sources"]],
+                }]
+            elif payload.get("causal_claims"):
+                raise ToolStateError(
+                    "accounting_lineage_metadata_missing",
+                    "structured causal claims require trusted statement-line metadata in the stored alert",
+                )
+            review_rationale = payload["rationale"]
+            if review_guard_alerts and payload["decision"] == "needs_review":
+                review_rationale = (
+                    "Source-bound review check flagged "
+                    + ", ".join(sorted(review_guard_alerts))
+                    + ". The proposed financial interpretation is not accepted; "
+                    "the research thesis remains on hold pending independent "
+                    "source verification and a corrected review."
+                )
+            resolving_hold = False
+            if existing["decision_hold"]:
+                if alert_id != existing["decision_hold_alert_id"]:
+                    held_alert = self._fetch_alert_owned(
+                        database, tenant["user_id"], existing["decision_hold_alert_id"]
+                    )
+                    held_event = held_alert["event"]
+                    held_missing = (
+                        set(existing["required_event_metrics"])
+                        - set(held_event["observed_metrics"])
+                    )
+                    held_hashes = {
+                        source["sha256"] for source in held_event["sources"]
+                    }
+                    new_hashes = {
+                        source["sha256"] for source in event["sources"]
+                    }
+                    resolving_hold = bool(
+                        alert
+                        and not missing_metrics
+                        and not unresolved_conflicts
+                        and new_hashes
+                        and (not held_hashes or bool(new_hashes & held_hashes))
+                        and (held_missing or bool(new_hashes - held_hashes))
+                        and event["type"] == held_event["type"]
+                        and event["as_of"] == held_event["as_of"]
+                        and alert["market"] == held_alert["market"]
+                        and alert["symbol"] == held_alert["symbol"]
+                    )
+                    if not resolving_hold:
+                        raise ToolStateError(
+                            "decision_hold_alert_mismatch",
+                            "the hold requires its original alert or a complete, conflict-free alert for the same event period with source continuity and new evidence when required",
+                            False,
+                            {"decision_hold_alert_id": existing["decision_hold_alert_id"]},
+                        )
+                if (not resolving_hold or
+                    payload["decision"] == "needs_review") and (
+                    payload["decision"] != "needs_review"
+                    or payload.get("new_status", existing["status"]) != existing["status"]
+                    or payload.get("new_conviction", existing["conviction"])
+                    != existing["conviction"]
+                ):
+                    raise ToolStateError(
+                        "decision_on_hold",
+                        "pending evidence blocks substantive reviews",
+                        False,
+                        {"alert_id": existing["decision_hold_alert_id"]},
+                    )
+            if payload["decision"] == "needs_review" and (
+                payload.get("new_status", existing["status"]) != existing["status"]
+                or payload.get("new_conviction", existing["conviction"])
+                != existing["conviction"]
+            ):
+                raise ToolStateError(
+                    "decision_on_hold",
+                    "needs_review cannot change status or conviction",
+                    False,
+                    {"alert_id": alert_id},
+                )
+            if alert_id:
+                if unresolved_conflicts and (
+                    payload["decision"] != "needs_review"
+                    or payload.get("new_status", existing["status"]) != existing["status"]
+                    or payload.get("new_conviction", existing["conviction"])
+                    != existing["conviction"]
+                ):
+                    raise ToolStateError(
+                        "source_conflict_unresolved",
+                        "conflicting source claims require needs_review without a state or conviction change",
+                        True,
+                        {"alert_id": alert_id, "unresolved_conflicts": unresolved_conflicts},
+                    )
+                if missing_metrics and (
+                    payload["decision"] != "needs_review"
+                    or payload.get("new_status", existing["status"]) != existing["status"]
+                    or payload.get("new_conviction", existing["conviction"])
+                    != existing["conviction"]
+                ):
+                    raise ToolStateError(
+                        "required_evidence_missing",
+                        "missing required event metrics require needs_review without a state or conviction change",
+                        True,
+                        {"alert_id": alert_id, "missing_metrics": missing_metrics},
+                    )
             review_id = "tr_" + uuid.uuid4().hex[:20]
             database.execute(
                 """
                 INSERT INTO thesis_reviews (
-                    id, thesis_id, user_id, agent_id, session_id,
+                    id, thesis_id, alert_id, user_id, agent_id, session_id,
                     event_type, event_summary, event_as_of, event_sources_json,
-                    impact, decision, rationale, matched_terms_json,
-                    evidence_json, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    impact, decision, rationale, missing_metrics_json, matched_terms_json,
+                    unresolved_conflicts_json, evidence_json, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     review_id,
                     thesis_id,
+                    alert_id,
                     tenant["user_id"],
                     tenant["agent_id"],
                     tenant["session_id"],
@@ -893,8 +1281,10 @@ class FinanceStateStore:
                     self._json(event["sources"]),
                     payload["impact"],
                     payload["decision"],
-                    payload["rationale"],
+                    review_rationale,
+                    self._json(missing_metrics),
                     self._json(payload["matched_terms"]),
+                    self._json(unresolved_conflicts),
                     self._json(payload["evidence"]),
                     now,
                 ),
@@ -908,11 +1298,23 @@ class FinanceStateStore:
                 "next_review_at", existing["next_review_at"]
             )
             version = existing["version"] + 1
+            decision_hold = bool(
+                (existing["decision_hold"] and
+                 not (resolving_hold and payload["decision"] != "needs_review"))
+                or unresolved_conflicts or missing_metrics
+                or payload["decision"] == "needs_review"
+            )
+            decision_hold_alert_id = (
+                (alert_id if payload["decision"] == "needs_review" else
+                 (existing["decision_hold_alert_id"] or alert_id))
+                if decision_hold else None
+            )
             database.execute(
                 """
                 UPDATE theses
                 SET status = ?, conviction = ?, next_review_at = ?,
-                    last_review_at = ?, updated_at = ?, version = ?
+                    last_review_at = ?, updated_at = ?, version = ?,
+                    decision_hold = ?, decision_hold_alert_id = ?
                 WHERE id = ? AND user_id = ?
                 """,
                 (
@@ -922,6 +1324,8 @@ class FinanceStateStore:
                     now,
                     now,
                     version,
+                    int(decision_hold),
+                    decision_hold_alert_id,
                     thesis_id,
                     tenant["user_id"],
                 ),
@@ -1182,6 +1586,8 @@ class FinanceStateStore:
                         SET duplicate_count = duplicate_count + 1,
                             last_seen_at = ?, event_summary = ?,
                             event_as_of = ?, event_sources_json = ?,
+                            observed_metrics_json = ?, source_claims_json = ?,
+                            unresolved_conflicts_json = ?,
                             matched_terms_json = ?, match_score = ?,
                             updated_at = ?, version = version + 1
                         WHERE id = ? AND user_id = ?
@@ -1191,6 +1597,9 @@ class FinanceStateStore:
                             event["summary"],
                             event["as_of"],
                             self._json(event["sources"]),
+                            self._json(event["observed_metrics"]),
+                            self._json(event["source_claims"]),
+                            self._json(event["unresolved_conflicts"]),
                             self._json(matched_terms),
                             match_score,
                             now,
@@ -1211,10 +1620,12 @@ class FinanceStateStore:
                             created_by_agent_id, created_in_session_id,
                             market, symbol, event_fingerprint, event_external_id,
                             event_type, event_summary, event_as_of,
-                            event_sources_json, matched_terms_json, match_score,
+                            event_sources_json, observed_metrics_json,
+                            source_claims_json, unresolved_conflicts_json,
+                            matched_terms_json, match_score,
                             status, duplicate_count, first_seen_at, last_seen_at,
                             created_at, updated_at, version
-                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 1)
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?, ?, 1)
                         """,
                         (
                             alert_id,
@@ -1231,6 +1642,9 @@ class FinanceStateStore:
                             event["summary"],
                             event["as_of"],
                             self._json(event["sources"]),
+                            self._json(event["observed_metrics"]),
+                            self._json(event["source_claims"]),
+                            self._json(event["unresolved_conflicts"]),
                             self._json(matched_terms),
                             match_score,
                             "new",
@@ -1244,6 +1658,26 @@ class FinanceStateStore:
                         database, tenant["user_id"], alert_id
                     )
                     action = "created"
+                if alert["thesis_id"]:
+                    thesis = self._fetch_owned(
+                        database, tenant["user_id"], alert["thesis_id"]
+                    )
+                    missing_metrics = (
+                        set(thesis["required_event_metrics"])
+                        - set(alert["event"]["observed_metrics"])
+                    )
+                    # The hold starts at stored ingestion, before a model
+                    # review can omit the alert linkage or rewrite the event.
+                    if event["unresolved_conflicts"] or missing_metrics:
+                        database.execute(
+                            """
+                            UPDATE theses SET decision_hold = 1,
+                                decision_hold_alert_id = ?, updated_at = ?,
+                                version = version + 1
+                            WHERE id = ? AND user_id = ? AND decision_hold = 0
+                            """,
+                            (alert["id"], now, alert["thesis_id"], tenant["user_id"]),
+                        )
                 results.append(
                     {
                         "action": action,
@@ -1419,6 +1853,14 @@ class FinanceStateStore:
         return self._alert_from_row(row)
 
     def _thesis_from_row(self, row: sqlite3.Row) -> dict[str, Any]:
+        if row["decision_hold"]:
+            actionability = "blocked"
+        elif row["status"] in ("researching", "watch"):
+            actionability = "research_only"
+        elif row["status"] in ("invalidated", "archived"):
+            actionability = "closed"
+        else:
+            actionability = "available"
         return {
             "id": row["id"],
             "market": row["market"],
@@ -1427,9 +1869,13 @@ class FinanceStateStore:
             "thesis": row["thesis"],
             "status": row["status"],
             "conviction": row["conviction"],
+            "decision_hold": bool(row["decision_hold"]),
+            "actionability": actionability,
+            "decision_hold_alert_id": row["decision_hold_alert_id"],
             "assumptions": json.loads(row["assumptions_json"]),
             "catalysts": json.loads(row["catalysts_json"]),
             "invalidations": json.loads(row["invalidations_json"]),
+            "required_event_metrics": json.loads(row["required_event_metrics_json"]),
             "evidence": json.loads(row["evidence_json"]),
             "next_review_at": row["next_review_at"],
             "last_review_at": row["last_review_at"],
@@ -1444,6 +1890,7 @@ class FinanceStateStore:
         return {
             "id": row["id"],
             "thesis_id": row["thesis_id"],
+            "alert_id": row["alert_id"],
             "agent_id": row["agent_id"],
             "session_id": row["session_id"],
             "event": {
@@ -1455,6 +1902,8 @@ class FinanceStateStore:
             "impact": row["impact"],
             "decision": row["decision"],
             "rationale": row["rationale"],
+            "missing_metrics": json.loads(row["missing_metrics_json"]),
+            "unresolved_conflicts": json.loads(row["unresolved_conflicts_json"]),
             "matched_terms": json.loads(row["matched_terms_json"]),
             "evidence": json.loads(row["evidence_json"]),
             "created_at": row["created_at"],
@@ -1492,6 +1941,9 @@ class FinanceStateStore:
                 "summary": row["event_summary"],
                 "as_of": row["event_as_of"],
                 "sources": json.loads(row["event_sources_json"]),
+                "observed_metrics": json.loads(row["observed_metrics_json"]),
+                "source_claims": json.loads(row["source_claims_json"]),
+                "unresolved_conflicts": json.loads(row["unresolved_conflicts_json"]),
             },
             "matched_terms": json.loads(row["matched_terms_json"]),
             "match_score": row["match_score"],
@@ -1610,7 +2062,9 @@ class FinanceToolsPlugin:
         self.state_store: FinanceStateStore | None = None
         self.python_bin = "python3"
         self.timeout_seconds = 45
+        self.evaluation_fixture = False
         self.cache: dict[str, tuple[float, dict[str, Any]]] = {}
+        self.review_guard: Any = None
 
     def _default_serenity_path(self) -> Path:
         fastclaw_home = os.environ.get("FASTCLAW_HOME")
@@ -1625,9 +2079,14 @@ class FinanceToolsPlugin:
         return fastclaw_home / "data" / "finance-tools.db"
 
     def initialize(self, config: dict[str, Any]) -> dict[str, Any]:
+        fixture_flag = config.get("evaluationFixture", False)
+        if not isinstance(fixture_flag, bool):
+            raise ToolInputError("evaluationFixture must be a boolean")
+        self.evaluation_fixture = fixture_flag
         finskills_path = str(config.get("finskillsPath") or "").strip()
         serenity_path = str(config.get("serenitySkillPath") or "").strip()
         state_db_path = str(config.get("stateDbPath") or "").strip()
+        guard_catalog_path = str(config.get("reviewArithmeticGuardCatalogPath") or "").strip()
         python_bin = str(config.get("pythonBin") or "").strip()
         if finskills_path:
             self.finskills_path = Path(finskills_path).expanduser().resolve()
@@ -1637,12 +2096,18 @@ class FinanceToolsPlugin:
             self.state_db_path = Path(state_db_path).expanduser().resolve()
         if python_bin:
             self.python_bin = python_bin
+        if guard_catalog_path:
+            try:
+                self.review_guard = _review_guard.ReviewArithmeticGuard(
+                    Path(guard_catalog_path).expanduser().resolve())
+            except _review_guard.GuardCatalogError as exc:
+                raise ToolInputError(str(exc)) from exc
         timeout = config.get("timeoutSeconds", self.timeout_seconds)
         try:
             self.timeout_seconds = max(1, min(300, int(timeout)))
         except (TypeError, ValueError) as exc:
             raise ToolInputError("timeoutSeconds must be an integer from 1 to 300") from exc
-        self.state_store = FinanceStateStore(self.state_db_path)
+        self.state_store = FinanceStateStore(self.state_db_path, self.review_guard)
         self.state_store.migrate()
         return {
             "status": "ok",
@@ -1650,6 +2115,7 @@ class FinanceToolsPlugin:
             "finskills_path": str(self.finskills_path),
             "serenity_skill_path": str(self.serenity_skill_path),
             "state_db_path": str(self.state_db_path),
+            "review_arithmetic_guard_enabled": self.review_guard is not None,
         }
 
     def execute(
@@ -1665,6 +2131,7 @@ class FinanceToolsPlugin:
             "market_events": self.market_events,
             "macro_snapshot": self.macro_snapshot,
             "portfolio_risk": self.portfolio_risk,
+            "portfolio_policy_bound": self.portfolio_policy_bound,
             "serenity_scorecard": self.serenity_scorecard,
         }
         state_handlers = {
@@ -1852,16 +2319,42 @@ class FinanceToolsPlugin:
         holdings = args.get("holdings")
         if not isinstance(holdings, dict) or not holdings:
             raise ToolInputError("holdings must be a non-empty ticker-to-weight object")
+        complete = args.get("holdings_complete")
+        if complete is not None and not isinstance(complete, bool):
+            raise ToolInputError("holdings_complete must be a boolean")
+        if complete is False:
+            raise ToolStateError("portfolio_incomplete", "portfolio holdings are incomplete; risk calculation refused")
+        weight_unit = args.get("weight_unit", "auto")
+        if weight_unit not in ("auto", "percent", "fraction", "relative"):
+            raise ToolInputError("weight_unit must be auto, percent, fraction, or relative")
         normalized_holdings: dict[str, float] = {}
         for raw_symbol, raw_weight in holdings.items():
             symbol = self._symbol(raw_symbol)
+            if isinstance(raw_weight, bool):
+                raise ToolInputError(f"weight for {symbol} must be numeric, not boolean")
             try:
                 weight = float(raw_weight)
             except (TypeError, ValueError) as exc:
                 raise ToolInputError(f"weight for {symbol} must be numeric") from exc
-            if weight <= 0:
-                raise ToolInputError(f"weight for {symbol} must be positive")
+            if not math.isfinite(weight) or weight <= 0:
+                raise ToolInputError(f"weight for {symbol} must be finite and positive")
             normalized_holdings[symbol] = weight
+        total = sum(normalized_holdings.values())
+        percent_total = math.isclose(total, 100.0, rel_tol=0, abs_tol=0.01)
+        fraction_total = math.isclose(total, 1.0, rel_tol=0, abs_tol=0.0001)
+        if weight_unit == "relative":
+            if complete is not True:
+                raise ToolStateError(
+                    "portfolio_incomplete",
+                    "relative weights require holdings_complete=true; a partial set cannot be normalized",
+                )
+        elif not ((weight_unit in ("auto", "percent") and percent_total) or
+                  (weight_unit in ("auto", "fraction") and fraction_total)):
+            raise ToolStateError(
+                "portfolio_incomplete",
+                "portfolio weights must cover the whole portfolio before risk calculation",
+                details={"weight_unit": weight_unit, "weight_total": total},
+            )
         view = str(args.get("view") or "health")
         if view not in PORTFOLIO_FLAGS:
             raise ToolInputError(f"unsupported portfolio view: {view}")
@@ -1880,17 +2373,85 @@ class FinanceToolsPlugin:
             "portfolio_risk",
             {
                 "holdings": normalized_holdings,
+                "weight_unit": weight_unit,
+                "holdings_complete": complete,
                 "view": view,
                 "benchmark": benchmark,
             },
             self._script("US", "portfolio"),
             command_args,
             3600,
-            [
-                {"name": "yfinance", "kind": "market_data"},
-                {"name": "finskills", "kind": "portfolio_analytics"},
-            ],
+            ([{"name": "local_evaluation_fixture", "kind": "portfolio_analytics"}]
+             if self.evaluation_fixture else [
+                 {"name": "yfinance", "kind": "market_data"},
+                 {"name": "finskills", "kind": "portfolio_analytics"},
+             ]),
         )
+
+    def portfolio_policy_bound(self, args: dict[str, Any]) -> dict[str, Any]:
+        """Return only conclusions proven by partial, same-denominator long-only weights."""
+        holdings = args.get("known_holdings_percent")
+        if not isinstance(holdings, dict) or not holdings:
+            raise ToolInputError("known_holdings_percent must be a non-empty issuer-to-weight object")
+        overlap = args.get("unknown_may_overlap_known")
+        if not isinstance(overlap, bool):
+            raise ToolInputError("unknown_may_overlap_known must be an explicit boolean")
+
+        def percentage(value: Any, label: str, *, positive: bool = False) -> float:
+            if isinstance(value, bool):
+                raise ToolInputError(f"{label} must be numeric, not boolean")
+            try:
+                number = float(value)
+            except (TypeError, ValueError) as exc:
+                raise ToolInputError(f"{label} must be numeric") from exc
+            if not math.isfinite(number) or number < 0 or (positive and number <= 0):
+                raise ToolInputError(f"{label} must be finite and {'positive' if positive else 'nonnegative'}")
+            return number
+
+        known: dict[str, float] = {}
+        for raw_symbol, raw_weight in holdings.items():
+            symbol = self._symbol(raw_symbol)
+            if symbol in known:
+                raise ToolInputError(f"duplicate issuer after normalization: {symbol}")
+            known[symbol] = percentage(raw_weight, f"weight for {symbol}", positive=True)
+        remainder = percentage(args.get("unknown_remainder_percent"),
+                               "unknown_remainder_percent")
+        limit = percentage(args.get("limit_percent", 50), "limit_percent", positive=True)
+        if limit >= 100:
+            raise ToolInputError("limit_percent must be below 100")
+        if not math.isclose(sum(known.values()) + remainder, 100.0,
+                            rel_tol=0, abs_tol=0.000001):
+            raise ToolInputError("known weights and unknown remainder must sum to 100 percent")
+
+        bounds = {symbol: {"min_percent": weight,
+                           "max_percent": weight + remainder if overlap else weight}
+                  for symbol, weight in known.items()}
+        breach_proven = any(weight > limit for weight in known.values())
+        no_breach_proven = (not breach_proven and remainder <= limit
+                            and all(bound["max_percent"] <= limit
+                                    for bound in bounds.values()))
+        status = ("breach_proven" if breach_proven else
+                  "no_breach_proven" if no_breach_proven else "indeterminate")
+        data = {
+            "calculation": "partial_long_only_single_issuer_bound",
+            "known_holdings_percent": known,
+            "unknown_remainder_percent": remainder,
+            "unknown_may_overlap_known": overlap,
+            "known_issuer_bounds_percent": bounds,
+            "unidentified_new_issuer_max_percent": remainder,
+            "policy_limit_percent": limit,
+            "policy_breach_operator": ">",
+            "policy_status": status,
+            "exact_hhi_available": False,
+            "portfolio_risk_calculated": False,
+            "assumptions": ["long_only", "common_whole_portfolio_denominator",
+                            "input_weights_not_independently_verified"],
+        }
+        result = self._success_envelope(
+            data, [{"name": "supplied_portfolio_weights", "kind": "user_input"}], 0,
+            ["partial_holdings", "policy_bound_only"])
+        result["quality"]["completeness"] = round(sum(known.values()) / 100.0, 6)
+        return result
 
     def serenity_scorecard(self, args: dict[str, Any]) -> dict[str, Any]:
         scorecard = args.get("scorecard")
@@ -1957,14 +2518,18 @@ class FinanceToolsPlugin:
                 payload[field] = self._string_list(args.get(field), field, 100)
             elif not is_update:
                 payload[field] = []
+        if "required_event_metrics" in args:
+            payload["required_event_metrics"] = self._metric_names(
+                args.get("required_event_metrics"), "required_event_metrics"
+            )
+        elif not is_update:
+            payload["required_event_metrics"] = []
         if "evidence" in args:
             payload["evidence"] = self._evidence_list(args.get("evidence"))
         elif not is_update:
             payload["evidence"] = []
         if "next_review_at" in args:
-            payload["next_review_at"] = self._optional_text(
-                args.get("next_review_at"), "next_review_at", 100
-            )
+            payload["next_review_at"] = self._future_review_at(args.get("next_review_at"))
         elif not is_update:
             payload["next_review_at"] = None
         if is_update and not any(
@@ -1979,6 +2544,7 @@ class FinanceToolsPlugin:
                 "assumptions",
                 "catalysts",
                 "invalidations",
+                "required_event_metrics",
                 "evidence",
                 "next_review_at",
             )
@@ -2057,6 +2623,16 @@ class FinanceToolsPlugin:
         event = args.get("event")
         if not isinstance(event, dict):
             raise ToolInputError("event must be an object")
+        rationale = self._required_text(args.get("rationale"), "rationale", 20_000)
+        if re.search(
+            r'"\s*,\s*"(?:evidence|matched_terms|causal_claims|next_review_at|new_status|new_conviction)"\s*:',
+            rationale,
+        ):
+            raise ToolStateError(
+                "malformed_review_payload",
+                "review fields appear serialized inside rationale; keep thesis_id and pass evidence, matched_terms, causal_claims and next_review_at as separate top-level arguments",
+                True,
+            )
         normalized_event = {
             "type": self._optional_text(event.get("type"), "event.type", 100)
             or "unspecified",
@@ -2075,14 +2651,14 @@ class FinanceToolsPlugin:
             "decision": self._choice(
                 args.get("decision"), "decision", REVIEW_DECISIONS
             ),
-            "rationale": self._required_text(
-                args.get("rationale"), "rationale", 20_000
-            ),
+            "rationale": rationale,
             "matched_terms": self._string_list(
                 args.get("matched_terms", []), "matched_terms", 100
             ),
             "evidence": self._evidence_list(args.get("evidence", [])),
         }
+        if args.get("alert_id"):
+            payload["alert_id"] = self._record_id(args.get("alert_id"), "fa_")
         if "expected_version" in args:
             payload["expected_version"] = self._bounded_int(
                 args.get("expected_version"), "expected_version", 1, 1_000_000
@@ -2096,9 +2672,35 @@ class FinanceToolsPlugin:
                 args.get("new_conviction"), "new_conviction", 1, 5
             )
         if "next_review_at" in args:
-            payload["next_review_at"] = self._optional_text(
-                args.get("next_review_at"), "next_review_at", 100
-            )
+            payload["next_review_at"] = self._future_review_at(args.get("next_review_at"))
+        if "causal_claims" in args:
+            raw_claims = args["causal_claims"]
+            if not isinstance(raw_claims, list) or len(raw_claims) > 20:
+                raise ToolInputError("causal_claims must be an array with at most 20 claims")
+            claims = []
+            for index, raw in enumerate(raw_claims):
+                if not isinstance(raw, dict):
+                    raise ToolInputError(f"causal_claims[{index}] must be an object")
+                target = self._required_text(
+                    raw.get("target_metric"), f"causal_claims[{index}].target_metric", 64
+                )
+                strength = self._required_text(
+                    raw.get("strength"), f"causal_claims[{index}].strength", 64
+                )
+                drivers = self._string_list(
+                    raw.get("driver_fact_ids"), f"causal_claims[{index}].driver_fact_ids", 20
+                )
+                claim = {"target_metric": target, "strength": strength,
+                         "driver_fact_ids": drivers}
+                if "attributed_change_percentage_points" in raw:
+                    value = raw["attributed_change_percentage_points"]
+                    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+                        raise ToolInputError(
+                            f"causal_claims[{index}].attributed_change_percentage_points must be finite"
+                        )
+                    claim["attributed_change_percentage_points"] = value
+                claims.append(claim)
+            payload["causal_claims"] = claims
         result = self._state().record_review(tenant, payload)
         return self._state_envelope(
             result,
@@ -2237,7 +2839,19 @@ class FinanceToolsPlugin:
             ),
             "as_of": self._optional_text(event.get("as_of"), "event.as_of", 100),
             "sources": self._evidence_list(event.get("sources", [])),
+            "observed_metrics": self._observed_metrics(event.get("observed_metrics", {})),
         }
+        normalized_event["source_claims"] = self._source_claims(
+            event.get("source_claims", []), normalized_event["sources"]
+        )
+        normalized_event["unresolved_conflicts"] = self._conflicting_claims(
+            normalized_event["source_claims"]
+        )
+        if normalized_event["observed_metrics"] and not any(
+            re.fullmatch(r"[0-9a-fA-F]{64}", str(source.get("sha256", "")))
+            for source in normalized_event["sources"]
+        ):
+            raise ToolInputError("observed_metrics require a SHA-256 source reference")
         result = self._state().ingest_event(
             tenant,
             {
@@ -2515,6 +3129,22 @@ class FinanceToolsPlugin:
             raise ToolInputError(f"{label} exceeds {max_length} characters")
         return text
 
+    def _future_review_at(self, value: Any) -> str | None:
+        text = self._optional_text(value, "next_review_at", 100)
+        if text is None:
+            return None
+        try:
+            when = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ToolInputError("next_review_at must be an ISO date or timestamp") from exc
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=timezone.utc)
+        if when.astimezone(timezone.utc) <= datetime.now(timezone.utc):
+            raise ToolInputError(
+                "next_review_at must be in the future; historical source dates belong in evidence"
+            )
+        return text
+
     def _string_list(self, value: Any, label: str, max_items: int) -> list[str]:
         if not isinstance(value, list):
             raise ToolInputError(f"{label} must be an array")
@@ -2524,6 +3154,104 @@ class FinanceToolsPlugin:
             self._required_text(item, f"{label}[{index}]", 2_000)
             for index, item in enumerate(value)
         ]
+
+    def _metric_names(self, value: Any, label: str) -> list[str]:
+        names = self._string_list(value, label, 50)
+        for name in names:
+            if not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", name):
+                raise ToolInputError(f"{label} must use canonical snake_case metric names")
+        if len(set(names)) != len(names):
+            raise ToolInputError(f"{label} contains duplicate metric names")
+        return names
+
+    def _observed_metrics(self, value: Any) -> dict[str, dict[str, Any]]:
+        if not isinstance(value, dict) or len(value) > 50:
+            raise ToolInputError("observed_metrics must be an object with at most 50 metrics")
+        self._metric_names(list(value), "observed_metrics")
+        result = {}
+        for name, item in value.items():
+            if not isinstance(item, dict):
+                raise ToolInputError(f"observed_metrics.{name} must be an object")
+            if isinstance(item.get("value"), bool) or item.get("value") is None:
+                raise ToolInputError(f"observed_metrics.{name}.value is required")
+            result[name] = {
+                "value": self._required_text(str(item["value"]), f"observed_metrics.{name}.value", 100),
+                "unit": self._required_text(item.get("unit"), f"observed_metrics.{name}.unit", 64),
+                "fact_id": self._required_text(item.get("fact_id"), f"observed_metrics.{name}.fact_id", 100),
+            }
+            if "statement_line" in item:
+                allowed_lines = set().union(*_lineage.ALLOWED_DRIVER_LINES.values()) | {
+                    "balance_sheet", "unknown"
+                }
+                result[name]["statement_line"] = self._choice(
+                    item["statement_line"], f"observed_metrics.{name}.statement_line",
+                    allowed_lines,
+                )
+                for field in ("source_explicit_targets", "reconciled_targets"):
+                    if field in item:
+                        targets = self._string_list(
+                            item[field], f"observed_metrics.{name}.{field}", 8
+                        )
+                        if any(target not in _lineage.ALLOWED_DRIVER_LINES for target in targets):
+                            raise ToolInputError(
+                                f"observed_metrics.{name}.{field} has unsupported target"
+                            )
+                        result[name][field] = targets
+        return result
+
+    def _source_claims(self, value: Any, sources: list[dict[str, Any]]) -> list[dict[str, str]]:
+        if not isinstance(value, list) or len(value) > 100:
+            raise ToolInputError("source_claims must be an array with at most 100 claims")
+        known_hashes = {
+            str(source.get("sha256", "")).lower()
+            for source in sources
+            if re.fullmatch(r"[0-9a-fA-F]{64}", str(source.get("sha256", "")))
+        }
+        claims = []
+        for index, item in enumerate(value):
+            if not isinstance(item, dict):
+                raise ToolInputError(f"source_claims[{index}] must be an object")
+            metric = self._required_text(item.get("metric"), f"source_claims[{index}].metric", 64)
+            if not re.fullmatch(r"[a-z][a-z0-9_]{0,63}", metric):
+                raise ToolInputError("source_claims metric must use canonical snake_case")
+            source_hash = self._required_text(
+                item.get("source_sha256"), f"source_claims[{index}].source_sha256", 64
+            ).lower()
+            if source_hash not in known_hashes:
+                raise ToolInputError("source_claims source_sha256 must match an event source")
+            raw_value = item.get("value")
+            if raw_value is None or isinstance(raw_value, bool):
+                raise ToolInputError("source_claims value must be numeric")
+            try:
+                numeric_value = Decimal(str(raw_value))
+            except InvalidOperation as exc:
+                raise ToolInputError("source_claims value must be numeric") from exc
+            if not numeric_value.is_finite():
+                raise ToolInputError("source_claims value must be finite")
+            claims.append({
+                "metric": metric,
+                "period": self._required_text(item.get("period"), f"source_claims[{index}].period", 100),
+                "value": str(numeric_value),
+                "unit": self._required_text(item.get("unit"), f"source_claims[{index}].unit", 64),
+                "fact_id": self._required_text(item.get("fact_id"), f"source_claims[{index}].fact_id", 100),
+                "source_sha256": source_hash,
+            })
+        return claims
+
+    @staticmethod
+    def _conflicting_claims(claims: list[dict[str, str]]) -> list[dict[str, Any]]:
+        grouped: dict[tuple[str, str, str], list[dict[str, str]]] = {}
+        for claim in claims:
+            grouped.setdefault((claim["metric"], claim["period"], claim["unit"]), []).append(claim)
+        conflicts = []
+        for (metric, period, unit), group in sorted(grouped.items()):
+            if any(
+                Decimal(left["value"]) != Decimal(right["value"])
+                for index, left in enumerate(group)
+                for right in group[index + 1:]
+            ):
+                conflicts.append({"metric": metric, "period": period, "unit": unit, "claims": group})
+        return conflicts
 
     def _evidence_list(self, value: Any) -> list[dict[str, Any]]:
         if not isinstance(value, list):
@@ -2582,8 +3310,11 @@ class FinanceToolsPlugin:
         return period
 
     def _market_sources(self, market: str, kind: str) -> list[dict[str, Any]]:
+        if self.evaluation_fixture:
+            return [{"name": "local_evaluation_fixture", "kind": kind}]
+        provider = "FRED" if market == "US" and kind == "macro" else MARKET_PROVIDERS[market]
         return [
-            {"name": MARKET_PROVIDERS[market], "kind": "market_data"},
+            {"name": provider, "kind": "market_data"},
             {"name": "finskills", "kind": kind},
         ]
 

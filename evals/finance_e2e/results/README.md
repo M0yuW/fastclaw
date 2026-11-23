@@ -25,3 +25,8 @@ inside `v9` is superseded by `v10`, which preserves batch delegation trace JSON.
 The machine-readable file mapping, checksums, replay commands, and explicit
 calibration exclusions are stored in
 `2026-08-02-retrieval-pilot-final.manifest.json`.
+
+The corrected Stage 2A engineering calibration is documented in
+`2026-09-22-stage2a-nvda-point-small-three-mode-final-calibration-summary.md`.
+It is a one-case, one-repetition pre-freeze result and must not be pooled with a
+future confirmatory run.

@@ -1,0 +1,121 @@
+{
+  "version": "1.0",
+  "status": "source_facts_frozen_before_model_runs",
+  "source_basis": "SEC-furnished Exhibit 99.1 earnings releases; selected facts, not complete filings",
+  "cases": [
+    {
+      "case_id": "FINTECH-V-SERVICE-LAG",
+      "symbol": "V",
+      "workflow": "sec_event_to_thesis_review",
+      "scenario": "rising net revenue with prior-quarter payment-volume recognition lag in service revenue",
+      "baseline": {
+        "period": "FY2024 Q3, ended 2024-06-30",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1403161/000140316124000040/q32024earningsrelease.htm",
+        "source_sha256": "f7ef7481dc84cecf09b86b9336baff997bbfb1927b918c3b5886a1234b675804",
+        "local_path": ".cache/sources/visa-2024-07-23-q3.htm",
+        "facts": [
+          {"id": "V-Q3-NETREV", "metric": "quarterly_net_revenue", "value": 8900, "unit": "USD_million", "locator": "income statement summary net revenue"},
+          {"id": "V-Q3-SERVICE", "metric": "service_revenue", "value": 3967, "unit": "USD_million", "locator": "income statement summary service revenue"},
+          {"id": "V-Q3-CURRENT-PV-YOY", "metric": "current_quarter_payments_volume_growth_yoy", "value": 7, "unit": "percent", "locator": "key business drivers, constant-dollar YoY"},
+          {"id": "V-Q3-SERVICE-BASIS-PV-YOY", "metric": "service_revenue_basis_prior_quarter_payments_volume_growth_yoy", "value": 8, "unit": "percent", "locator": "financial highlights prior-quarter payment-volume recognition sentence"}
+        ]
+      },
+      "event": {
+        "period": "FY2024 Q4, ended 2024-09-30",
+        "as_of": "2024-10-29",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1403161/000140316124000053/q42024earningsrelease.htm",
+        "source_sha256": "827cfba11f439b8342d92faadd8e220bddfe1cfffbf6d893fbb05fc735430c26",
+        "local_path": ".cache/sources/visa-2024-10-29-q4.htm",
+        "facts": [
+          {"id": "V-Q4-NETREV", "metric": "quarterly_net_revenue", "value": 9617, "unit": "USD_million", "locator": "income statement summary net revenue"},
+          {"id": "V-Q4-SERVICE", "metric": "service_revenue", "value": 4199, "unit": "USD_million", "locator": "income statement summary service revenue"},
+          {"id": "V-Q4-CURRENT-PV-YOY", "metric": "current_quarter_payments_volume_growth_yoy", "value": 8, "unit": "percent", "locator": "key business drivers, constant-dollar YoY"},
+          {"id": "V-Q4-SERVICE-BASIS-PV-YOY", "metric": "service_revenue_basis_prior_quarter_payments_volume_growth_yoy", "value": 7, "unit": "percent", "locator": "financial highlights prior-quarter payment-volume recognition sentence"},
+          {"id": "V-Q4-CROSSBORDER-YOY", "metric": "cross_border_ex_intra_europe_growth_yoy", "value": 13, "unit": "percent", "locator": "key business drivers, constant-dollar YoY"}
+        ]
+      },
+      "precommitted_checks": [
+        "Same-basis net revenue rose 717 USD million and service revenue rose 232 USD million across adjacent fiscal quarters; neither difference is the issuer-disclosed YoY rate.",
+        "Q4 service revenue is recognized on Q3 payments volume, whose YoY growth was 7%; Q4 current-quarter payments-volume growth was 8% and must not be substituted as the recognition basis.",
+        "The respective Q3 service-revenue prior-quarter payment-volume rate was 8%; lower recognition-basis growth does not prove lower service-revenue dollars or a causal amount without a bridge."
+      ]
+    },
+    {
+      "case_id": "FINTECH-PYPL-MIX",
+      "symbol": "PYPL",
+      "workflow": "sec_event_to_thesis_review",
+      "scenario": "higher payment volume and transaction-margin dollars with slower disclosed YoY growth and slightly lower net revenue",
+      "baseline": {
+        "period": "CY2024 Q2, ended 2024-06-30",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1633917/000163391724000096/pypl2q-24earningsrelease.htm",
+        "source_sha256": "8c0e9967efac9c4f6ccf9d5716a21f73638ec976119a7372d3c5906b61d15746",
+        "local_path": ".cache/sources/paypal-2024-07-30-q2.htm",
+        "facts": [
+          {"id": "PYPL-Q2-TPV", "metric": "total_payment_volume", "value": 416814, "unit": "USD_million", "locator": "2Q financial-results table"},
+          {"id": "PYPL-Q2-TPV-YOY", "metric": "total_payment_volume_growth_yoy", "value": 11, "unit": "percent", "locator": "2Q financial-results table"},
+          {"id": "PYPL-Q2-NETREV", "metric": "quarterly_net_revenue", "value": 7885, "unit": "USD_million", "locator": "2Q GAAP financial-results table"},
+          {"id": "PYPL-Q2-TMD", "metric": "transaction_margin_dollars", "value": 3608, "unit": "USD_million", "locator": "2Q GAAP financial-results table"},
+          {"id": "PYPL-Q2-GAAP-OPM", "metric": "gaap_operating_margin", "value": 16.8, "unit": "percent", "locator": "2Q GAAP financial-results table"}
+        ]
+      },
+      "event": {
+        "period": "CY2024 Q3, ended 2024-09-30",
+        "as_of": "2024-10-29",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1633917/000163391724000108/pypl3q-24earningsrelease.htm",
+        "source_sha256": "550e76640eeeb3d72b3f293034bf8fa5edaaed629a6868a337d53879a61e1c49",
+        "local_path": ".cache/sources/paypal-2024-10-29-q3.htm",
+        "facts": [
+          {"id": "PYPL-Q3-TPV", "metric": "total_payment_volume", "value": 422641, "unit": "USD_million", "locator": "3Q financial-results table"},
+          {"id": "PYPL-Q3-TPV-YOY", "metric": "total_payment_volume_growth_yoy", "value": 9, "unit": "percent", "locator": "3Q financial-results table"},
+          {"id": "PYPL-Q3-NETREV", "metric": "quarterly_net_revenue", "value": 7847, "unit": "USD_million", "locator": "3Q GAAP financial-results table"},
+          {"id": "PYPL-Q3-TMD", "metric": "transaction_margin_dollars", "value": 3654, "unit": "USD_million", "locator": "3Q GAAP financial-results table"},
+          {"id": "PYPL-Q3-GAAP-OPM", "metric": "gaap_operating_margin", "value": 17.7, "unit": "percent", "locator": "3Q GAAP financial-results table"}
+        ]
+      },
+      "precommitted_checks": [
+        "Adjacent-quarter TPV level rose 5,827 USD million while its disclosed YoY growth rate fell from 11% to 9%; level change and growth-rate change are different comparisons.",
+        "Net revenue fell 38 USD million, transaction-margin dollars rose 46 USD million, and GAAP operating-margin level rose 0.9 percentage points between the supplied quarters.",
+        "The packet does not establish a causal bridge from TPV or transaction-margin dollars to GAAP margin; a mixed, qualified research update is supportable, not an asserted causal decomposition."
+      ]
+    },
+    {
+      "case_id": "FINTECH-MA-GAAP-ADJ",
+      "symbol": "MA",
+      "workflow": "sec_event_to_thesis_review",
+      "scenario": "reported operating-margin decline with much smaller adjusted-margin change and disclosed special items",
+      "baseline": {
+        "period": "CY2024 Q2, ended 2024-06-30",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1141391/000114139124000159/ma06302024-exx991xearnings.htm",
+        "source_sha256": "80b1cae6f2c1361da2bbdbc5063551c954742c8527cf86012f8362d226794385",
+        "local_path": ".cache/sources/mastercard-2024-07-31-q2.htm",
+        "facts": [
+          {"id": "MA-Q2-NETREV", "metric": "quarterly_net_revenue", "value": 7.0, "unit": "USD_billion", "locator": "Q2 operating-results table"},
+          {"id": "MA-Q2-GAAP-OPM", "metric": "gaap_operating_margin", "value": 58.0, "unit": "percent", "locator": "Q2 operating-results table"},
+          {"id": "MA-Q2-ADJ-OPM", "metric": "adjusted_operating_margin", "value": 59.4, "unit": "percent", "basis": "non_GAAP", "locator": "Q2 non-GAAP results table"},
+          {"id": "MA-Q2-GAAP-OPEX-YOY", "metric": "gaap_operating_expense_growth_yoy", "value": 12, "unit": "percent", "locator": "Q2 operating-results table"}
+        ]
+      },
+      "event": {
+        "period": "CY2024 Q3, ended 2024-09-30",
+        "as_of": "2024-10-31",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/1141391/000114139124000200/ma09302024-exx991xearnings.htm",
+        "source_sha256": "a5ccde9c9eb6734b8d990357bdf7ae34cc4577614e076ba697c7ef880837edd6",
+        "local_path": ".cache/sources/mastercard-2024-10-31-q3.htm",
+        "facts": [
+          {"id": "MA-Q3-NETREV", "metric": "quarterly_net_revenue", "value": 7.4, "unit": "USD_billion", "locator": "Q3 operating-results table"},
+          {"id": "MA-Q3-GAAP-OPM", "metric": "gaap_operating_margin", "value": 54.3, "unit": "percent", "locator": "Q3 operating-results table"},
+          {"id": "MA-Q3-ADJ-OPM", "metric": "adjusted_operating_margin", "value": 59.3, "unit": "percent", "basis": "non_GAAP", "locator": "Q3 non-GAAP results table"},
+          {"id": "MA-Q3-GAAP-OPEX-YOY", "metric": "gaap_operating_expense_growth_yoy", "value": 25, "unit": "percent", "locator": "Q3 operating-results table"},
+          {"id": "MA-Q3-ADJ-OPEX-YOY", "metric": "adjusted_operating_expense_growth_yoy", "value": 12, "unit": "percent", "basis": "non_GAAP", "locator": "Q3 non-GAAP results table"},
+          {"id": "MA-Q3-LITIGATION", "metric": "litigation_provision", "value": 176, "unit": "USD_million", "statement_line": "operating_expense", "source_explicit_targets": ["operating_margin"], "locator": "Q3 special-items reconciliation"},
+          {"id": "MA-Q3-RESTRUCT", "metric": "restructuring_charge", "value": 190, "unit": "USD_million", "statement_line": "operating_expense", "source_explicit_targets": ["operating_margin"], "locator": "Q3 special-items reconciliation"}
+        ]
+      },
+      "precommitted_checks": [
+        "Net revenue rose by about 0.4 USD billion, but GAAP operating-margin level fell 3.7 percentage points while adjusted operating margin fell only 0.1 point across adjacent quarters.",
+        "The Q3 release reports GAAP operating-expense YoY growth of 25%, adjusted expense YoY growth of 12%, and separately reconciles 176 USD million litigation provision and 190 USD million restructuring charge.",
+        "Those special items are source-linked operating-margin drivers but do not establish that all GAAP deterioration is nonrecurring or that adjusted profitability improved sequentially; the model must not mix GAAP and adjusted bases."
+      ]
+    }
+  ]
+}

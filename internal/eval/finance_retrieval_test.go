@@ -10,8 +10,9 @@ import (
 )
 
 type financeRetrievalExecutorStub struct {
-	requests []ExecutionRequest
-	failOn   string
+	requests     []ExecutionRequest
+	failOn       string
+	failSubagent bool
 }
 
 func (s *financeRetrievalExecutorStub) Execute(_ context.Context, request ExecutionRequest) (ExecutionResponse, error) {
@@ -41,6 +42,11 @@ func (s *financeRetrievalExecutorStub) Execute(_ context.Context, request Execut
 		response.Output = "Verified fact [REC-A] and [REC-B]. Calculation is bounded; limitation is explicit."
 	case strings.Contains(request.Prompt, "Coordinate a financial research team"):
 		response.Output = financeRetrievalPassingOutput()
+		if s.failSubagent {
+			response.ModelCalls = append(response.ModelCalls, ModelCallUsage{
+				AgentID: "finance-trend", Role: "subagent", Model: "provider/model", Error: "connection reset by peer",
+			})
+		}
 		response.Trace = []TraceEvent{
 			{Type: "tool_call", ID: "call-trend", Name: "spawn_subagent", Arguments: `{"agentId":"finance-trend","task":"CASE trend"}`},
 			{Type: "tool_result", ID: "call-trend", Name: "spawn_subagent", Result: "Verified fact [REC-A] and [REC-B]."},
@@ -138,6 +144,39 @@ func TestFinanceRetrievalRunnerExecutesFairPipelines(t *testing.T) {
 	}
 }
 
+func TestFinanceRetrievalTeamEvidenceIsRuntimeBound(t *testing.T) {
+	executor := &financeRetrievalExecutorStub{}
+	suite := financeRetrievalTestSuite()
+	_, err := (FinanceRetrievalRunner{Executor: executor}).Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var raw, shared *ExecutionRequest
+	for index := range executor.requests {
+		request := &executor.requests[index]
+		switch {
+		case strings.Contains(request.Prompt, "Raw locked SEC corpus:") && strings.Contains(request.Prompt, "Coordinate a financial research team"):
+			raw = request
+		case strings.Contains(request.Prompt, "Shared retriever Evidence Bundle:") && strings.Contains(request.Prompt, "Coordinate a financial research team"):
+			shared = request
+		}
+	}
+	if raw == nil || shared == nil {
+		t.Fatalf("missing team requests: raw=%v shared=%v", raw != nil, shared != nil)
+	}
+	if raw.SubAgentSharedContext != renderFinanceCorpus(suite.Cases[0].Records) {
+		t.Fatal("raw team did not bind the exact locked corpus")
+	}
+	if shared.SubAgentSharedContext != "Evidence Bundle: [REC-A] revenue evidence; [REC-B] margin evidence." {
+		t.Fatal("shared team did not bind the retrieved evidence bundle")
+	}
+	for _, request := range []*ExecutionRequest{raw, shared} {
+		if !strings.Contains(request.Prompt, "Never copy evidence text into") {
+			t.Fatal("team prompt does not constrain model-emitted tool arguments")
+		}
+	}
+}
+
 func TestFinanceRetrievalRunnerExcludesErroredModesFromSuccessDenominator(t *testing.T) {
 	suite := financeRetrievalTestSuite()
 	suite.Modes = []string{FinanceRetrievalModeTeamShared}
@@ -149,6 +188,36 @@ func TestFinanceRetrievalRunnerExcludesErroredModesFromSuccessDenominator(t *tes
 	team := report.Metrics.Modes[FinanceRetrievalModeTeamShared]
 	if team.Attempts != 1 || team.Errored != 1 || team.Evaluated != 0 || team.SuccessRate != 0 {
 		t.Fatalf("team metrics = %+v", team)
+	}
+}
+
+func TestFinanceRetrievalRunnerClassifiesUnrecoveredSubagentProviderError(t *testing.T) {
+	suite := financeRetrievalTestSuite()
+	suite.Modes = []string{FinanceRetrievalModeTeamShared}
+	report, err := (FinanceRetrievalRunner{
+		Executor: &financeRetrievalExecutorStub{failSubagent: true},
+	}).Run(t.Context(), suite)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mode := report.Cases[0].Attempts[0].Modes[0]
+	if !strings.Contains(mode.Error, "finance-trend") || mode.Passed {
+		t.Fatalf("mode = %+v, want infrastructure error", mode)
+	}
+	team := report.Metrics.Modes[FinanceRetrievalModeTeamShared]
+	if team.Attempts != 1 || team.Errored != 1 || team.Evaluated != 0 {
+		t.Fatalf("team metrics = %+v", team)
+	}
+}
+
+func TestFinanceUnrecoveredSubagentErrorAllowsRecovery(t *testing.T) {
+	analysts := []FinanceRetrievalAnalyst{{AgentID: "finance-trend"}}
+	calls := []ModelCallUsage{
+		{AgentID: "finance-trend", Role: "subagent", Error: "temporary network failure"},
+		{AgentID: "finance-trend", Role: "subagent"},
+	}
+	if err := financeUnrecoveredSubagentError(calls, analysts); err != nil {
+		t.Fatalf("recovered specialist should not mark mode errored: %v", err)
 	}
 }
 

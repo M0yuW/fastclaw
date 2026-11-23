@@ -1,0 +1,65 @@
+{
+  "masked_id": "J-abd7f58e96c50b2c",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 1,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "a revenue-led improvement in GAAP profitability with operating expenses nearly unchanged, so the operating margin expanded through the revenue line rather than through cost reduction",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:net_revenues:+170.2", "source_packet.rows:operating_expenses:+5.3", "source_packet.rows:operating_income:+164.9"]
+    },
+    {
+      "location": "final_answer",
+      "span": "the largest single revenue swing came from a capital allocation line",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:investment_advisory_fees:+131.1", "source_packet.rows:capital_allocation_income:+42.4", "source_packet.rows:net_revenues:+170.2"],
+      "reason": "Investment advisory fees rose USD 131.1m, over three times the capital-allocation swing of USD 42.4m. The latter is meaningful but not the largest single contributor."
+    },
+    {
+      "location": "final_answer",
+      "span": "asset growth was market-driven rather than organic",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:aum_net_cash_flows:-7.9", "source_packet.rows:aum_market_appreciation:89.1", "source_packet.event_only_rows:q3_model_delivery_assets_added:9.2"],
+      "reason": "The bridge supports market appreciation as the dominant positive component, while the separate USD 9.2bn scope addition also contributes and net flow is negative."
+    },
+    {
+      "location": "final_answer",
+      "span": "The capital allocation-based income swing is the least persistent-looking element of the revenue increase",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:capital_allocation_income:-0.4_to_42.0", "source_packet.limitations:recurrence_not_audited"],
+      "reason": "A signed quarterly swing warrants scrutiny, but persistence cannot be ranked against the other revenue components from these selected rows."
+    },
+    {
+      "location": "persisted_review",
+      "span": "The revenue increase is concentrated in investment advisory fees and a swing in capital allocation-based income",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:investment_advisory_fees:+131.1", "source_packet.rows:capital_allocation_income:+42.4", "source_packet.rows:net_revenues:+170.2"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review pending fuller filing evidence",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "largest_revenue_contributor_wrong",
+      "evidence_refs": ["source_packet.rows:investment_advisory_fees:+131.1", "source_packet.rows:capital_allocation_income:+42.4"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The answer correctly recognizes operating margin expansion and negative organic net flows, and its saved review has the right two-contributor wording. But the user-facing implication falsely calls the USD 42.4m capital-allocation swing the largest single revenue swing; advisory fees rose USD 131.1m. It then infers relative non-persistence from an unexplained line. The blocked ledger is aligned, but the financial interpretation is materially distorted."
+}

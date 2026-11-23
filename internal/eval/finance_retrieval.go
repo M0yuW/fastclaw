@@ -77,33 +77,43 @@ type FinanceRetrievalAnalyst struct {
 	Instruction string `json:"instruction" yaml:"instruction"`
 }
 
+// FinanceRetrievalFactGroup preserves the audited semantic identity behind a
+// retrieval gold group. Runtime scoring continues to consume GoldRecordGroups;
+// this parallel metadata lets the freeze audit bind each record set to the
+// intended metric, period, unit, basis, and sign.
+type FinanceRetrievalFactGroup struct {
+	FactID    string   `json:"fact_id" yaml:"fact_id"`
+	RecordIDs []string `json:"record_ids" yaml:"record_ids"`
+}
+
 type FinanceRetrievalCase struct {
-	ID                       string                   `json:"id" yaml:"id"`
-	Company                  string                   `json:"company,omitempty" yaml:"company,omitempty"`
-	TaskFamily               string                   `json:"task_family,omitempty" yaml:"task_family,omitempty"`
-	ClusterID                string                   `json:"cluster_id,omitempty" yaml:"cluster_id,omitempty"`
-	AsOfTimestamp            string                   `json:"as_of_timestamp,omitempty" yaml:"as_of_timestamp,omitempty"`
-	AcceptedAtVerified       bool                     `json:"accepted_at_verified,omitempty" yaml:"accepted_at_verified,omitempty"`
-	TemporalVerificationNote string                   `json:"temporal_verification_note,omitempty" yaml:"temporal_verification_note,omitempty"`
-	ExcludedFutureSourceIDs  []string                 `json:"excluded_future_source_ids,omitempty" yaml:"excluded_future_source_ids,omitempty"`
-	Description              string                   `json:"description,omitempty" yaml:"description,omitempty"`
-	Question                 string                   `json:"question" yaml:"question"`
-	AnalysisProtocol         string                   `json:"analysis_protocol" yaml:"analysis_protocol"`
-	CorpusLoad               string                   `json:"corpus_load" yaml:"corpus_load"`
-	Tags                     []string                 `json:"tags,omitempty" yaml:"tags,omitempty"`
-	Records                  []FinanceRetrievalRecord `json:"records" yaml:"records"`
-	GoldRecordIDs            []string                 `json:"gold_record_ids" yaml:"gold_record_ids"`
-	GoldRecordGroups         [][]string               `json:"gold_record_groups,omitempty" yaml:"gold_record_groups,omitempty"`
-	OracleEvidence           string                   `json:"oracle_evidence" yaml:"oracle_evidence"`
-	Milestones               []MultiAgentMilestone    `json:"milestones" yaml:"milestones"`
-	ForbiddenOutputValues    []string                 `json:"forbidden_output_values,omitempty" yaml:"forbidden_output_values,omitempty"`
-	AuthorizedNumericValues  []string                 `json:"authorized_numeric_values,omitempty" yaml:"authorized_numeric_values,omitempty"`
-	Repetitions              int                      `json:"repetitions,omitempty" yaml:"repetitions,omitempty"`
-	Timeout                  Duration                 `json:"timeout,omitempty" yaml:"timeout,omitempty"`
-	MinRetrievalRecall       float64                  `json:"min_retrieval_recall,omitempty" yaml:"min_retrieval_recall,omitempty"`
-	MinSummaryRetention      float64                  `json:"min_summary_retention,omitempty" yaml:"min_summary_retention,omitempty"`
-	MinFinalEvidenceRecall   float64                  `json:"min_final_evidence_recall,omitempty" yaml:"min_final_evidence_recall,omitempty"`
-	MinGroundingAccuracy     float64                  `json:"min_grounding_accuracy,omitempty" yaml:"min_grounding_accuracy,omitempty"`
+	ID                       string                      `json:"id" yaml:"id"`
+	Company                  string                      `json:"company,omitempty" yaml:"company,omitempty"`
+	TaskFamily               string                      `json:"task_family,omitempty" yaml:"task_family,omitempty"`
+	ClusterID                string                      `json:"cluster_id,omitempty" yaml:"cluster_id,omitempty"`
+	AsOfTimestamp            string                      `json:"as_of_timestamp,omitempty" yaml:"as_of_timestamp,omitempty"`
+	AcceptedAtVerified       bool                        `json:"accepted_at_verified,omitempty" yaml:"accepted_at_verified,omitempty"`
+	TemporalVerificationNote string                      `json:"temporal_verification_note,omitempty" yaml:"temporal_verification_note,omitempty"`
+	ExcludedFutureSourceIDs  []string                    `json:"excluded_future_source_ids,omitempty" yaml:"excluded_future_source_ids,omitempty"`
+	Description              string                      `json:"description,omitempty" yaml:"description,omitempty"`
+	Question                 string                      `json:"question" yaml:"question"`
+	AnalysisProtocol         string                      `json:"analysis_protocol" yaml:"analysis_protocol"`
+	CorpusLoad               string                      `json:"corpus_load" yaml:"corpus_load"`
+	Tags                     []string                    `json:"tags,omitempty" yaml:"tags,omitempty"`
+	Records                  []FinanceRetrievalRecord    `json:"records" yaml:"records"`
+	GoldRecordIDs            []string                    `json:"gold_record_ids" yaml:"gold_record_ids"`
+	GoldRecordGroups         [][]string                  `json:"gold_record_groups,omitempty" yaml:"gold_record_groups,omitempty"`
+	GoldFactGroups           []FinanceRetrievalFactGroup `json:"gold_fact_groups,omitempty" yaml:"gold_fact_groups,omitempty"`
+	OracleEvidence           string                      `json:"oracle_evidence" yaml:"oracle_evidence"`
+	Milestones               []MultiAgentMilestone       `json:"milestones" yaml:"milestones"`
+	ForbiddenOutputValues    []string                    `json:"forbidden_output_values,omitempty" yaml:"forbidden_output_values,omitempty"`
+	AuthorizedNumericValues  []string                    `json:"authorized_numeric_values,omitempty" yaml:"authorized_numeric_values,omitempty"`
+	Repetitions              int                         `json:"repetitions,omitempty" yaml:"repetitions,omitempty"`
+	Timeout                  Duration                    `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	MinRetrievalRecall       float64                     `json:"min_retrieval_recall,omitempty" yaml:"min_retrieval_recall,omitempty"`
+	MinSummaryRetention      float64                     `json:"min_summary_retention,omitempty" yaml:"min_summary_retention,omitempty"`
+	MinFinalEvidenceRecall   float64                     `json:"min_final_evidence_recall,omitempty" yaml:"min_final_evidence_recall,omitempty"`
+	MinGroundingAccuracy     float64                     `json:"min_grounding_accuracy,omitempty" yaml:"min_grounding_accuracy,omitempty"`
 }
 
 type FinanceRetrievalRecord struct {
@@ -741,8 +751,9 @@ func (r FinanceRetrievalRunner) runMode(
 	case FinanceRetrievalModeTeamShared, FinanceRetrievalModeTeamSharedAllPro:
 		r.runTeamShared(modeContext, suite, evalCase, coordinatorID, model, sessionBase, &result)
 	case FinanceRetrievalModeTeamRawContext:
+		evidence := renderFinanceCorpus(evalCase.Records)
 		response, latency, err := r.executeFinanceStage(modeContext, ExecutionRequest{
-			Prompt:                    financeTeamPrompt(evalCase, suite.Defaults.Analysts, renderFinanceCorpus(evalCase.Records), false),
+			Prompt:                    financeTeamPrompt(evalCase, suite.Defaults.Analysts, evidence, false),
 			AgentID:                   coordinatorID,
 			Model:                     model,
 			SessionKey:                sessionBase,
@@ -750,6 +761,7 @@ func (r FinanceRetrievalRunner) runMode(
 			Pricing:                   suite.Pricing,
 			SubAgentMaxCalls:          len(suite.Defaults.Analysts),
 			SubAgentMaxCallsPerTarget: 1,
+			SubAgentSharedContext:     evidence,
 		}, mode+"/collaboration")
 		result.Stages.CollaborationLatencyMS = latency
 		r.consumeFinanceResponse(&result, response)
@@ -758,6 +770,7 @@ func (r FinanceRetrievalRunner) runMode(
 		result.Trace = response.Trace
 		result.AnalystOutputs = financeAnalystOutputs(response.Trace, suite.Defaults.Analysts)
 		setFinanceModeError(&result, err)
+		setFinanceModeError(&result, financeUnrecoveredSubagentError(response.ModelCalls, suite.Defaults.Analysts))
 	case FinanceRetrievalModeOracleEvidence:
 		response, latency, err := r.executeFinanceStage(modeContext, ExecutionRequest{
 			Prompt:       financeOraclePrompt(evalCase),
@@ -853,6 +866,7 @@ func (r FinanceRetrievalRunner) runTeamShared(ctx context.Context, suite Finance
 		Pricing:                   suite.Pricing,
 		SubAgentMaxCalls:          len(suite.Defaults.Analysts),
 		SubAgentMaxCallsPerTarget: 1,
+		SubAgentSharedContext:     retrieval.Output,
 	}, result.Mode+"/collaboration")
 	result.Stages.CollaborationLatencyMS = latency
 	r.consumeFinanceResponse(result, response)
@@ -861,10 +875,54 @@ func (r FinanceRetrievalRunner) runTeamShared(ctx context.Context, suite Finance
 	result.Trace = response.Trace
 	result.AnalystOutputs = financeAnalystOutputs(response.Trace, suite.Defaults.Analysts)
 	setFinanceModeError(result, err)
+	setFinanceModeError(result, financeUnrecoveredSubagentError(response.ModelCalls, suite.Defaults.Analysts))
+}
+
+// A coordinator may still produce text after a delegated provider call fails.
+// Such an attempt is an infrastructure error unless that specialist later
+// completed a model call in the same collaboration stage.
+func financeUnrecoveredSubagentError(calls []ModelCallUsage, analysts []FinanceRetrievalAnalyst) error {
+	expected := make(map[string]struct{}, len(analysts))
+	for _, analyst := range analysts {
+		expected[analyst.AgentID] = struct{}{}
+	}
+	failed := make(map[string]bool)
+	recovered := make(map[string]bool)
+	for _, call := range calls {
+		if call.Role != "subagent" {
+			continue
+		}
+		if _, ok := expected[call.AgentID]; !ok {
+			continue
+		}
+		if call.Error != "" {
+			failed[call.AgentID] = true
+		} else {
+			recovered[call.AgentID] = true
+		}
+	}
+	var unrecovered []string
+	for agentID := range failed {
+		if !recovered[agentID] {
+			unrecovered = append(unrecovered, agentID)
+		}
+	}
+	if len(unrecovered) == 0 {
+		return nil
+	}
+	sort.Strings(unrecovered)
+	return fmt.Errorf("unrecovered subagent provider error: %s", strings.Join(unrecovered, ", "))
 }
 
 func (r FinanceRetrievalRunner) executeFinanceStage(ctx context.Context, request ExecutionRequest, phase string) (ExecutionResponse, float64, error) {
 	startedAt := time.Now()
+	if deadline, hasDeadline := ctx.Deadline(); hasDeadline {
+		remaining := time.Until(deadline)
+		if remaining > time.Second {
+			grace := min(30*time.Second, remaining/10)
+			request.ServerTimeoutMS = int((remaining - grace) / time.Millisecond)
+		}
+	}
 	response, err := r.Executor.Execute(ctx, request)
 	latency := milliseconds(time.Since(startedAt))
 	response.ModelCalls = appendModelCallPhase(nil, response.ModelCalls, phase)
@@ -1231,11 +1289,11 @@ func financeTeamPrompt(evalCase FinanceRetrievalCase, analysts []FinanceRetrieva
 		fmt.Fprintf(&roles, "- %s (%s): %s\n", analyst.AgentID, analyst.Perspective, analyst.Instruction)
 	}
 	return fmt.Sprintf(`Coordinate a financial research team. Issue exactly one batch spawn_subagent
-call: put the research question, common analysis protocol, and supplied evidence
-in sharedContext once, and put one concise agentId/task item containing only the
-assigned perspective in delegations. The runtime will append sharedContext to
-every focused task and execute distinct targets concurrently. Do not copy any
-shared material into individual tasks.
+call: use a short sharedContext containing only the research question and common
+analysis protocol, and put one concise agentId/task item containing only the
+assigned perspective in delegations. The runtime independently appends the
+supplied evidence to every specialist task. Never copy evidence text into
+sharedContext or individual tasks; keep tool arguments short.
 Then synthesize their reports. Use no outside knowledge, preserve
 bracketed record IDs, distinguish facts from calculations and decisions, state
 uncertainty, and do not recommend or authorize a trade. Return Chronology,

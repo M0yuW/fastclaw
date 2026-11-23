@@ -44,6 +44,9 @@ class FinanceRetrievalSuiteTest(unittest.TestCase):
         self.assertNotIn("15.3 percent", nvda["analysis_protocol"])
         self.assertNotIn("86.8 percent", nvda["analysis_protocol"])
         self.assertNotIn("Predeclared deterministic calculation ledger", nvda["oracle_evidence"])
+        declared = next(item for item in nvda["milestones"] if item["id"] == "declared-calculations")
+        self.assertTrue(any("percentage_point" in value for value in declared["values"]))
+        self.assertTrue(any("+30.9%" in value for value in declared["values"]))
 
     def test_context_loads_increase_without_changing_gold(self) -> None:
         cases = {
@@ -58,6 +61,37 @@ class FinanceRetrievalSuiteTest(unittest.TestCase):
         self.assertLess(len(medium["records"]), len(large["records"]))
         self.assertEqual(small["gold_record_ids"], medium["gold_record_ids"])
         self.assertEqual(medium["gold_record_ids"], large["gold_record_ids"])
+
+    def test_gold_equivalence_groups_never_cross_source_or_locator(self) -> None:
+        for case in self.suite["cases"]:
+            records = {record["id"]: record for record in case["records"]}
+            for group in case["gold_record_groups"]:
+                self.assertEqual(1, len({records[record_id]["source_id"] for record_id in group}))
+                self.assertEqual(1, len({records[record_id]["locator"] for record_id in group}))
+
+    def test_same_number_different_periods_remain_distinct(self) -> None:
+        case = next(case for case in self.suite["cases"] if case["id"] == "FRET-INTC-LONG-LARGE")
+        groups = [set(group) for group in case["gold_record_groups"]]
+        q2_headcount = next(group for group in groups if "REC-INTC-02-04" in group)
+        q3_margin = next(group for group in groups if "REC-INTC-03-02" in group)
+        self.assertNotEqual(q2_headcount, q3_margin)
+        self.assertNotIn("REC-INTC-03-02", q2_headcount)
+        self.assertNotIn("REC-INTC-02-04", q3_margin)
+
+    def test_intel_impairment_group_requires_full_charge_context(self) -> None:
+        case = next(case for case in self.suite["cases"] if case["id"] == "FRET-INTC-LONG-LARGE")
+        group = next(item for item in case["gold_fact_groups"] if item["fact_id"] == "INTC-Q3-IMPAIR")
+        records = {record["id"]: record for record in case["records"]}
+        self.assertTrue(group["record_ids"])
+        for record_id in group["record_ids"]:
+            record = records[record_id]
+            self.assertIn("accelerated depreciation", record["text"].lower())
+            self.assertEqual("Q3 2024 Restructuring and Impairment Charges", record["locator"])
+
+    def test_intel_restructuring_record_uses_declared_detail_section(self) -> None:
+        case = next(case for case in self.suite["cases"] if case["id"] == "FRET-INTC-LONG-LARGE")
+        record = next(record for record in case["records"] if record["id"] == "REC-INTC-03-03")
+        self.assertIn("recognized $2.8 billion in restructuring charges in q3 2024", record["text"].lower())
 
 
 if __name__ == "__main__":

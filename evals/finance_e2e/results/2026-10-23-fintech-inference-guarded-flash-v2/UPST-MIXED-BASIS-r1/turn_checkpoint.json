@@ -1,0 +1,209 @@
+{
+  "turns": [
+    {
+      "prompt": "Complete one research-state review for the newly ingested SEC event. Read the stored thesis and alert via finance tools. Compare only the supplied periods and metrics, identify support, risk, and missing evidence, and choose your own decision. Link the stored alert and source hash when recording the review with the observed thesis version; then acknowledge the alert with its observed version. A missing metric in the packet is not necessarily missing from the SEC filing. Do not trade. Case UPST-MIXED-BASIS; thesis ID th_bd558d37a68644eb84a8; alert ID fa_6fc9767eb97946dcbc1a. Separate source facts, arithmetic and hypotheses; cite the fact IDs, periods, units and accounting bases for material claims. Identify one source-grounded research implication, its strongest counterpoint or unresolved input, and what evidence would change the assessment. Do not assume a decision, conviction, or that a positive change in one measure resolves contrary evidence in another. For causal_claims, use only a stored source-backed driver and supported target; omit unsupported causal claims. Do not set a past next_review_at date. Read and repair rejected tool inputs before finalizing. At the end, add exactly one line [CHECK] UPST_ADJUSTED_NET_LOSS_YOY=<WIDER or NARROWER>, comparing Q3 2024 with Q3 2023 on the stated non-GAAP basis. The check line is not a substitute for a complete source-grounded review.",
+      "response": {
+        "id": "chatcmpl-1792738912658830000",
+        "object": "chat.completion",
+        "created": 1792738912,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# UPST-MIXED-BASIS — Research-State Review\n\n**Thesis** `th_bd558d37a68644eb84a8` (observed version 1 → recorded at version 2) · **Alert** `fa_6fc9767eb97946dcbc1a` (observed version 1 → acknowledged at version 2) · **Review** `tr_c5502f586b5f4e6193c0`\n\n**Decision: maintain · impact: mixed · status: active · conviction 3 (unchanged) · next review 2026-11-06.** No trade.\n\n## 1. Source facts (as supplied, no outside data)\n\nEvent packet — CY2024 Q3, period ended 2024-09-30, as_of 2024-11-07, source `UPST-MIXED-BASIS-event-sec-exhibit`, sha256 `a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45`:\n\n| Fact ID | Metric | Value | Unit | Basis |\n|---|---|---|---|---|\n| UPST-Q3-REV | Total revenue | 162140 | USD_thousand | GAAP |\n| UPST-Q3-OPLOSS | Operating income (loss) | -45152 | USD_thousand | GAAP |\n| UPST-Q3-NETLOSS | Net income (loss) | -6758 | USD_thousand | GAAP |\n| UPST-Q3-DEBTGAIN | Gain on debt extinguishment | 33361 | USD_thousand | GAAP, nonoperating |\n| UPST-Q3-ADJ-NETLOSS | Adjusted net income (loss) | -5.3 | USD_million_rounded | non-GAAP |\n| UPST-Q3-CONTRIB | Contribution profit | 102.4 | USD_million_rounded | non-GAAP |\n| UPST-Q3-ADJ-EBITDA | Adjusted EBITDA | 1.4 | USD_million_rounded | non-GAAP |\n| UPST-Q3-PRIOR-OPLOSS | Operating loss, prior-year same quarter | -43845 | USD_thousand | GAAP |\n| UPST-Q3-PRIOR-ADJ-NETLOSS | Adjusted net loss, prior-year same quarter | -3.9 | USD_million_rounded | non-GAAP |\n\nBaseline packet — CY2024 Q2, period ended 2024-06-30, source `UPST-MIXED-BASIS-baseline-sec-exhibit`, sha256 `212f471f0522e46f10d405ed96658aa5b3c211ef86a3b6fe8d2db30e55b93e13`: UPST-Q2-REV=127630 USD_thousand; UPST-Q2-OPLOSS=-55486 USD_thousand; UPST-Q2-NETLOSS=-54470 USD_thousand; UPST-Q2-ADJ-NETLOSS=-15282 USD_thousand; UPST-Q2-CONTRIB=76.1 USD_million_rounded; UPST-Q2-ADJ-EBITDA=-9.3 USD_million_rounded.\n\n## 2. Arithmetic (derived, on stated bases only)\n\n- **Sequential (Q3 vs Q2 CY2024, GAAP USD_thousand):** revenue +34510; operating loss narrower by 10334 (-45152 vs -55486); net loss narrower by 47712 (-6758 vs -54470).\n- **Sequential (non-GAAP, rounded USD_million):** contribution profit +26.3; adjusted EBITDA +10.7 (from -9.3 to 1.4); adjusted net loss narrower by 9.982 (-5.3 vs -15.282).\n- **Year-over-year (Q3 CY2024 vs Q3 CY2023, GAAP USD_thousand):** operating loss **wider** by 1307 (-45152 vs -43845).\n- **Year-over-year (non-GAAP, rounded USD_million):** adjusted net loss **wider** by 1.4 (-5.3 vs -3.9).\n- **GAAP net loss vs operating loss (Q3 CY2024):** net loss is 38394 USD_thousand smaller than the operating loss; the only nonoperating item identified in the packet is the 33361 USD_thousand debt-extinguishment gain. The gap is not fully explained by that single item, and no reconciliation is supplied.\n\n## 3. Support, risk, missing evidence\n\n**Support (source facts):** sequential revenue growth, narrower sequential GAAP operating loss, higher contribution profit, and adjusted EBITDA crossing from -9.3 to +1.4 USD_million_rounded. These are consistent with the thesis catalysts \"business growth\" and \"earnings quality\" — but consistency is not attribution.\n\n**Risk / contrary evidence:** on the year-over-year basis the packet supplies, both the GAAP operating loss and the non-GAAP adjusted net loss widened. The GAAP net-loss improvement is not an operating result: it sits alongside a nonoperating debt-extinguishment gain (UPST-Q3-DEBTGAIN) and a GAAP operating loss that widened YoY. A positive change in one measure (net loss) does not resolve contrary evidence in another (operating loss, adjusted net loss).\n\n**Missing evidence:** no Q3 CY2024 gross margin, diluted EPS, pretax income, or cash flow; no Q2 CY2024 prior-year comparatives (so no YoY read on the baseline quarter); no GAAP-to-non-GAAP reconciliation; no statement-line attribution for the operating loss, net loss, or non-GAAP lines; no source-stated driver facts. A metric absent from this packet is not necessarily absent from the SEC filing — the filing itself would need to be read to close these gaps.\n\n## 4. Research implication, counterpoint, and what would change the assessment\n\n- **Implication (source-grounded):** the sequential improvement in contribution profit and adjusted EBITDA, set against a YoY-widening operating loss, means the packet supports a *sequential* operating trajectory but not a *year-over-year* one; the two bases point in opposite directions and should be tracked separately.\n- **Strongest counterpoint / unresolved input:** the YoY widening of both GAAP operating loss and non-GAAP adjusted net loss, plus the absence of any source-backed driver, leaves open that the sequential gain reflects mix, timing, or cost phasing rather than durable operating leverage. Attribution is recorded as unresolved — no causal claim was entered.\n- **What would change the assessment:** a Q3 CY2024 filing reconciliation bridging GAAP net loss to non-GAAP adjusted net loss; gross margin, pretax income, and diluted EPS for the same period; Q3 CY2023 contribution profit and adjusted EBITDA for a like-for-like YoY non-GAAP comparison; and source-stated driver facts. Evidence of a second consecutive quarter of narrowing YoY operating loss would support an upgrade; a YoY-widening operating loss alongside weakening contribution profit would bear on the \"material operating deterioration\" invalidation.\n\n[CHECK] UPST_ADJUSTED_NET_LOSS_YOY=WIDER"
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 40960,
+          "completion_tokens": 6150,
+          "total_tokens": 47110
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_ZR7V3JOgsRewevZu6eHH8930",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_bd558d37a68644eb84a8\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_K9ggzUBEa3bOFEZ0U3Rn1472",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_ZR7V3JOgsRewevZu6eHH8930",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"f5813f16-a5d7-495c-8565-ff7be6806e29\",\"as_of\":\"2026-10-23T07:01:53Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_bd558d37a68644eb84a8\",\"market\":\"US\",\"symbol\":\"UPST\",\"title\":\"UPST SEC event research thesis\",\"thesis\":\"CY2024 Q2 ended 2024-06-30 baseline: UPST-Q2-REV=127630 USD_thousand; UPST-Q2-OPLOSS=-55486 USD_thousand; UPST-Q2-NETLOSS=-54470 USD_thousand; UPST-Q2-ADJ-NETLOSS=-15282 USD_thousand; UPST-Q2-CONTRIB=76.1 USD_million_rounded; UPST-Q2-ADJ-EBITDA=-9.3 USD_million_rounded. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[\"business growth\",\"earnings quality\"],\"invalidations\":[\"material operating deterioration\",\"weakening demand\"],\"required_event_metrics\":[\"gaap_total_revenue\",\"gaap_operating_income_loss\",\"gaap_net_income_loss\",\"gain_on_debt_extinguishment\",\"adjusted_net_income_loss_non_gaap\",\"contribution_profit_non_gaap\",\"adjusted_ebitda_non_gaap\",\"gaap_operating_income_loss_prior_year_same_quarter\",\"adjusted_net_income_loss_prior_year_same_quarter_non_gaap\"],\"evidence\":[{\"id\":\"UPST-MIXED-BASIS-baseline-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000032/upst991prq22024.htm\",\"sha256\":\"212f471f0522e46f10d405ed96658aa5b3c211ef86a3b6fe8d2db30e55b93e13\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-23T07:01:52Z\",\"updated_at\":\"2026-10-23T07:01:52Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8571,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_K9ggzUBEa3bOFEZ0U3Rn1472",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"e4b5c607-eb3b-451f-a797-f9b65446b053\",\"as_of\":\"2026-10-23T07:01:53Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_6fc9767eb97946dcbc1a\",\"watchlist_id\":\"wl_d01a762471b64bae9157\",\"thesis_id\":\"th_bd558d37a68644eb84a8\",\"market\":\"US\",\"symbol\":\"UPST\",\"event_fingerprint\":\"9ac34f5a48d212ae5fe53357503d628e64c6cd965787498f7200684d04e4827c\",\"event\":{\"external_id\":\"UPST-MIXED-BASIS-sec-event-v1\",\"type\":\"earnings\",\"summary\":\"UPST CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: UPST-Q3-REV=162140 USD_thousand; UPST-Q3-OPLOSS=-45152 USD_thousand; UPST-Q3-NETLOSS=-6758 USD_thousand; UPST-Q3-DEBTGAIN=33361 USD_thousand; UPST-Q3-ADJ-NETLOSS=-5.3 USD_million_rounded; UPST-Q3-CONTRIB=102.4 USD_million_rounded; UPST-Q3-ADJ-EBITDA=1.4 USD_million_rounded; UPST-Q3-PRIOR-OPLOSS=-43845 USD_thousand; UPST-Q3-PRIOR-ADJ-NETLOSS=-3.9 USD_million_rounded. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.\",\"as_of\":\"2024-11-07\",\"sources\":[{\"id\":\"UPST-MIXED-BASIS-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000045/upst991prq32024.htm\",\"sha256\":\"a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45\"}],\"observed_metrics\":{\"gaap_total_revenue\":{\"value\":\"162140\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-REV\",\"statement_line\":\"revenue\"},\"gaap_operating_income_loss\":{\"value\":\"-45152\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-OPLOSS\",\"statement_line\":\"unknown\"},\"gaap_net_income_loss\":{\"value\":\"-6758\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-NETLOSS\",\"statement_line\":\"unknown\"},\"gain_on_debt_extinguishment\":{\"value\":\"33361\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-DEBTGAIN\",\"statement_line\":\"nonoperating\"},\"adjusted_net_income_loss_non_gaap\":{\"value\":\"-5.3\",\"unit\":\"USD_million_rounded\",\"fact_id\":\"UPST-Q3-ADJ-NETLOSS\",\"statement_line\":\"unknown\"},\"contribution_profit_non_gaap\":{\"value\":\"102.4\",\"unit\":\"USD_million_rounded\",\"fact_id\":\"UPST-Q3-CONTRIB\",\"statement_line\":\"unknown\"},\"adjusted_ebitda_non_gaap\":{\"value\":\"1.4\",\"unit\":\"USD_million_rounded\",\"fact_id\":\"UPST-Q3-ADJ-EBITDA\",\"statement_line\":\"unknown\"},\"gaap_operating_income_loss_prior_year_same_quarter\":{\"value\":\"-43845\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-PRIOR-OPLOSS\",\"statement_line\":\"unknown\"},\"adjusted_net_income_loss_prior_year_same_quarter_non_gaap\":{\"value\":\"-3.9\",\"unit\":\"USD_million_rounded\",\"fact_id\":\"UPST-Q3-PRIOR-ADJ-NETLOSS\",\"statement_line\":\"unknown\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"upst\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-23T07:01:52Z\",\"last_seen_at\":\"2026-10-23T07:01:52Z\",\"created_at\":\"2026-10-23T07:01:52Z\",\"updated_at\":\"2026-10-23T07:01:52Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9697,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_9nKvUSyjXLJVvLYtpkRM6336",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"UPST\", \"event_summary\": \"UPST CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: UPST-Q3-REV=162140 USD_thousand; UPST-Q3-OPLOSS=-45152 USD_thousand; UPST-Q3-NETLOSS=-6758 USD_thousand; UPST-Q3-DEBTGAIN=33361 USD_thousand; UPST-Q3-ADJ-NETLOSS=-5.3 USD_million_rounded; UPST-Q3-CONTRIB=102.4 USD_million_rounded; UPST-Q3-ADJ-EBITDA=1.4 USD_million_rounded; UPST-Q3-PRIOR-OPLOSS=-43845 USD_thousand; UPST-Q3-PRIOR-ADJ-NETLOSS=-3.9 USD_million_rounded.\"}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_9nKvUSyjXLJVvLYtpkRM6336",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"c15325bd-219c-4cbc-b674-a46dc5ab3e89\",\"as_of\":\"2026-10-23T07:01:55Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"UPST\",\"event_summary\":\"UPST CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: UPST-Q3-REV=162140 USD_thousand; UPST-Q3-OPLOSS=-45152 USD_thousand; UPST-Q3-NETLOSS=-6758 USD_thousand; UPST-Q3-DEBTGAIN=33361 USD_thousand; UPST-Q3-ADJ-NETLOSS=-5.3 USD_million_rounded; UPST-Q3-CONTRIB=102.4 USD_million_rounded; UPST-Q3-ADJ-EBITDA=1.4 USD_million_rounded; UPST-Q3-PRIOR-OPLOSS=-43845 USD_thousand; UPST-Q3-PRIOR-ADJ-NETLOSS=-3.9 USD_million_rounded.\",\"matches\":[{\"thesis_id\":\"th_bd558d37a68644eb84a8\",\"title\":\"UPST SEC event research thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_nbmgb9UFJKkOhtuN8tup6267",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_bd558d37a68644eb84a8\", \"expected_version\": 1, \"alert_id\": \"fa_6fc9767eb97946dcbc1a\", \"event\": {\"type\": \"earnings\", \"as_of\": \"2024-11-07\", \"summary\": \"UPST CY2024 Q3 (period ended 2024-09-30) selected SEC exhibit packet, alert fa_6fc9767eb97946dcbc1a, source UPST-MIXED-BASIS-event-sec-exhibit sha256 a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45. GAAP: revenue 162140 USD_thousand (UPST-Q3-REV); operating loss -45152 USD_thousand (UPST-Q3-OPLOSS); net loss -6758 USD_thousand (UPST-Q3-NETLOSS); gain on debt extinguishment 33361 USD_thousand (UPST-Q3-DEBTGAIN, nonoperating); prior-year same-quarter operating loss -43845 USD_thousand (UPST-Q3-PRIOR-OPLOSS). Non-GAAP (rounded USD_million): adjusted net loss -5.3 (UPST-Q3-ADJ-NETLOSS); contribution profit 102.4 (UPST-Q3-CONTRIB); adjusted EBITDA 1.4 (UPST-Q3-ADJ-EBITDA); prior-year same-quarter adjusted net loss -3.9 (UPST-Q3-PRIOR-ADJ-NETLOSS).\", \"sources\": [{\"id\": \"UPST-MIXED-BASIS-event-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000045/upst991prq32024.htm\", \"sha256\": \"a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45\"}, {\"id\": \"UPST-MIXED-BASIS-baseline-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000032/upst991prq22024.htm\", \"sha256\": \"212f471f0522e46f10d405ed96658aa5b3c211ef86a3b6fe8d2db30e55b93e13\"}]}, \"impact\": \"mixed\", \"decision\": \"maintain\", \"new_status\": \"active\", \"new_conviction\": 3, \"next_review_at\": \"2026-11-06\", \"matched_terms\": [\"upst\", \"earnings\", \"gaap_operating_income_loss\", \"adjusted_net_income_loss_non_gaap\", \"gain_on_debt_extinguishment\"], \"rationale\": \"Source facts (Q3 CY2024, period ended 2024-09-30, alert fa_6fc9767eb97946dcbc1a, sha256 a86e6ffc...4b45): GAAP revenue 162140 USD_thousand (UPST-Q3-REV); GAAP operating loss -45152 USD_thousand (UPST-Q3-OPLOSS); GAAP net loss -6758 USD_thousand (UPST-Q3-NETLOSS); gain on debt extinguishment 33361 USD_thousand, nonoperating (UPST-Q3-DEBTGAIN); prior-year same-quarter GAAP operating loss -43845 USD_thousand (UPST-Q3-PRIOR-OPLOSS). Non-GAAP rounded USD_million: adjusted net loss -5.3 (UPST-Q3-ADJ-NETLOSS); contribution profit 102.4 (UPST-Q3-CONTRIB); adjusted EBITDA 1.4 (UPST-Q3-ADJ-EBITDA); prior-year same-quarter adjusted net loss -3.9 (UPST-Q3-PRIOR-ADJ-NETLOSS). Arithmetic on stated bases: GAAP operating loss widened 1307 USD_thousand YoY (-45152 vs -43845); non-GAAP adjusted net loss widened 1.4 USD_million YoY (-5.3 vs -3.9); GAAP net loss of -6758 USD_thousand is smaller than the GAAP operating loss by 38394 USD_thousand, and the packet's only identified nonoperating item is the 33361 USD_thousand debt-extinguishment gain, so the GAAP net-loss improvement is not attributable to operations. Sequential comparison to the Q2 CY2024 baseline (UPST-Q2-REV=127630, UPST-Q2-OPLOSS=-55486, UPST-Q2-NETLOSS=-54470, UPST-Q2-ADJ-NETLOSS=-15282 USD_thousand; UPST-Q2-CONTRIB=76.1, UPST-Q2-ADJ-EBITDA=-9.3 USD_million_rounded, baseline sha256 212f471f...3e13) shows revenue up 34510 USD_thousand, operating loss narrower by 10334 USD_thousand, contribution profit up 26.3 USD_million and adjusted EBITDA up 10.7 USD_million, while adjusted net loss narrowed 9.982 USD_million. Hypothesis (not source-stated): the sequential operating and contribution improvement is consistent with the thesis catalysts 'business growth' and 'earnings quality', but the packet contains no source-backed driver linking any fact to operating margin, net income, pretax income, gross margin or diluted EPS, so no causal claim is recorded. Contrary evidence: the YoY operating loss widened and the YoY non-GAAP adjusted net loss widened, so the sequential improvement does not resolve the year-over-year deterioration. Missing evidence: no Q3 CY2024 gross margin, diluted EPS, pretax income, or operating cash flow; no Q2 CY2024 prior-year comparatives; no reconciliation bridging GAAP net loss to non-GAAP adjusted net loss; no statement-line attribution for the operating loss, net loss, or non-GAAP lines; and no source-stated driver facts. Decision maintain at conviction 3 with status active: the packet is internally consistent and shows sequential improvement but does not establish a durable trend, and the YoY non-GAAP deterioration plus the nonoperating nature of the GAAP net-loss improvement argue against an upgrade. No trade.\", \"evidence\": [{\"id\": \"UPST-MIXED-BASIS-event-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000045/upst991prq32024.htm\", \"sha256\": \"a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45\", \"fact_ids\": [\"UPST-Q3-REV\", \"UPST-Q3-OPLOSS\", \"UPST-Q3-NETLOSS\", \"UPST-Q3-DEBTGAIN\", \"UPST-Q3-ADJ-NETLOSS\", \"UPST-Q3-CONTRIB\", \"UPST-Q3-ADJ-EBITDA\", \"UPST-Q3-PRIOR-OPLOSS\", \"UPST-Q3-PRIOR-ADJ-NETLOSS\"], \"period\": \"CY2024 Q3 ended 2024-09-30\", \"basis\": \"GAAP USD_thousand and non-GAAP rounded USD_million\"}, {\"id\": \"UPST-MIXED-BASIS-baseline-sec-exhibit\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000032/upst991prq22024.htm\", \"sha256\": \"212f471f0522e46f10d405ed96658aa5b3c211ef86a3b6fe8d2db30e55b93e13\", \"fact_ids\": [\"UPST-Q2-REV\", \"UPST-Q2-OPLOSS\", \"UPST-Q2-NETLOSS\", \"UPST-Q2-ADJ-NETLOSS\", \"UPST-Q2-CONTRIB\", \"UPST-Q2-ADJ-EBITDA\"], \"period\": \"CY2024 Q2 ended 2024-06-30\", \"basis\": \"GAAP USD_thousand and non-GAAP rounded USD_million\"}]}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_nbmgb9UFJKkOhtuN8tup6267",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"55bab93d-b879-45ce-b394-22a705052b2a\",\"as_of\":\"2026-10-23T07:02:03Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"causal_claims_required\"]},\"errors\":[{\"code\":\"causal_claims_required\",\"message\":\"this source-classified alert requires structured causal claims\",\"retriable\":true,\"details\":{\"alert_id\":\"fa_6fc9767eb97946dcbc1a\"}}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_qrZrXOgMn9YNMCV1Pt1v3108",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_6fc9767eb97946dcbc1a\", \"causal_claims\": [], \"decision\": \"maintain\", \"event\": {\"as_of\": \"2024-11-07\", \"summary\": \"UPST CY2024 Q3 (period ended 2024-09-30) selected SEC exhibit packet, alert fa_6fc9767eb97946dcbc1a, source UPST-MIXED-BASIS-event-sec-exhibit sha256 a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45. GAAP: revenue 162140 USD_thousand (UPST-Q3-REV); operating loss -45152 USD_thousand (UPST-Q3-OPLOSS); net loss -6758 USD_thousand (UPST-Q3-NETLOSS); gain on debt extinguishment 33361 USD_thousand (UPST-Q3-DEBTGAIN, nonoperating); prior-year same-quarter operating loss -43845 USD_thousand (UPST-Q3-PRIOR-OPLOSS). Non-GAAP (rounded USD_million): adjusted net loss -5.3 (UPST-Q3-ADJ-NETLOSS); contribution profit 102.4 (UPST-Q3-CONTRIB); adjusted EBITDA 1.4 (UPST-Q3-ADJ-EBITDA); prior-year same-quarter adjusted net loss -3.9 (UPST-Q3-PRIOR-ADJ-NETLOSS).\", \"sources\": [{\"id\": \"UPST-MIXED-BASIS-event-sec-exhibit\", \"sha256\": \"a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000045/upst991prq32024.htm\"}, {\"id\": \"UPST-MIXED-BASIS-baseline-sec-exhibit\", \"sha256\": \"212f471f0522e46f10d405ed96658aa5b3c211ef86a3b6fe8d2db30e55b93e13\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000032/upst991prq22024.htm\"}], \"type\": \"earnings\"}, \"evidence\": [{\"basis\": \"GAAP USD_thousand and non-GAAP rounded USD_million\", \"fact_ids\": [\"UPST-Q3-REV\", \"UPST-Q3-OPLOSS\", \"UPST-Q3-NETLOSS\", \"UPST-Q3-DEBTGAIN\", \"UPST-Q3-ADJ-NETLOSS\", \"UPST-Q3-CONTRIB\", \"UPST-Q3-ADJ-EBITDA\", \"UPST-Q3-PRIOR-OPLOSS\", \"UPST-Q3-PRIOR-ADJ-NETLOSS\"], \"id\": \"UPST-MIXED-BASIS-event-sec-exhibit\", \"period\": \"CY2024 Q3 ended 2024-09-30\", \"sha256\": \"a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000045/upst991prq32024.htm\"}, {\"basis\": \"GAAP USD_thousand and non-GAAP rounded USD_million\", \"fact_ids\": [\"UPST-Q2-REV\", \"UPST-Q2-OPLOSS\", \"UPST-Q2-NETLOSS\", \"UPST-Q2-ADJ-NETLOSS\", \"UPST-Q2-CONTRIB\", \"UPST-Q2-ADJ-EBITDA\"], \"id\": \"UPST-MIXED-BASIS-baseline-sec-exhibit\", \"period\": \"CY2024 Q2 ended 2024-06-30\", \"sha256\": \"212f471f0522e46f10d405ed96658aa5b3c211ef86a3b6fe8d2db30e55b93e13\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000032/upst991prq22024.htm\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"matched_terms\": [\"upst\", \"earnings\", \"gaap_operating_income_loss\", \"adjusted_net_income_loss_non_gaap\", \"gain_on_debt_extinguishment\"], \"new_conviction\": 3, \"new_status\": \"active\", \"next_review_at\": \"2026-11-06\", \"rationale\": \"Source facts (Q3 CY2024, period ended 2024-09-30, alert fa_6fc9767eb97946dcbc1a, sha256 a86e6ffc...4b45): GAAP revenue 162140 USD_thousand (UPST-Q3-REV); GAAP operating loss -45152 USD_thousand (UPST-Q3-OPLOSS); GAAP net loss -6758 USD_thousand (UPST-Q3-NETLOSS); gain on debt extinguishment 33361 USD_thousand, nonoperating (UPST-Q3-DEBTGAIN); prior-year same-quarter GAAP operating loss -43845 USD_thousand (UPST-Q3-PRIOR-OPLOSS). Non-GAAP rounded USD_million: adjusted net loss -5.3 (UPST-Q3-ADJ-NETLOSS); contribution profit 102.4 (UPST-Q3-CONTRIB); adjusted EBITDA 1.4 (UPST-Q3-ADJ-EBITDA); prior-year same-quarter adjusted net loss -3.9 (UPST-Q3-PRIOR-ADJ-NETLOSS). Arithmetic on stated bases: GAAP operating loss widened 1307 USD_thousand YoY (-45152 vs -43845); non-GAAP adjusted net loss widened 1.4 USD_million YoY (-5.3 vs -3.9); GAAP net loss of -6758 USD_thousand is smaller than the GAAP operating loss by 38394 USD_thousand, and the packet's only identified nonoperating item is the 33361 USD_thousand debt-extinguishment gain, so the GAAP net-loss improvement is not attributable to operations. Sequential comparison to the Q2 CY2024 baseline (UPST-Q2-REV=127630, UPST-Q2-OPLOSS=-55486, UPST-Q2-NETLOSS=-54470, UPST-Q2-ADJ-NETLOSS=-15282 USD_thousand; UPST-Q2-CONTRIB=76.1, UPST-Q2-ADJ-EBITDA=-9.3 USD_million_rounded, baseline sha256 212f471f...3e13) shows revenue up 34510 USD_thousand, operating loss narrower by 10334 USD_thousand, contribution profit up 26.3 USD_million and adjusted EBITDA up 10.7 USD_million, while adjusted net loss narrowed 9.982 USD_million. Hypothesis (not source-stated): the sequential operating and contribution improvement is consistent with the thesis catalysts 'business growth' and 'earnings quality', but the packet contains no source-backed driver fact linking any input to operating margin, net income, pretax income, gross margin or diluted EPS, so no causal claim is recorded and attribution remains unresolved. Contrary evidence: the YoY operating loss widened and the YoY non-GAAP adjusted net loss widened, so the sequential improvement does not resolve the year-over-year deterioration. Missing evidence: no Q3 CY2024 gross margin, diluted EPS, pretax income, or operating cash flow; no Q2 CY2024 prior-year comparatives; no reconciliation bridging GAAP net loss to non-GAAP adjusted net loss; no statement-line attribution for the operating loss, net loss, or non-GAAP lines; and no source-stated driver facts. Decision maintain at conviction 3 with status active: the packet is internally consistent and shows sequential improvement but does not establish a durable trend, and the YoY non-GAAP deterioration plus the nonoperating nature of the GAAP net-loss improvement argue against an upgrade. No trade.\", \"thesis_id\": \"th_bd558d37a68644eb84a8\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_qrZrXOgMn9YNMCV1Pt1v3108",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"e2ac51a1-1680-432f-9852-f86a8e22503a\",\"as_of\":\"2026-10-23T07:02:11Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_bd558d37a68644eb84a8\",\"market\":\"US\",\"symbol\":\"UPST\",\"title\":\"UPST SEC event research thesis\",\"thesis\":\"CY2024 Q2 ended 2024-06-30 baseline: UPST-Q2-REV=127630 USD_thousand; UPST-Q2-OPLOSS=-55486 USD_thousand; UPST-Q2-NETLOSS=-54470 USD_thousand; UPST-Q2-ADJ-NETLOSS=-15282 USD_thousand; UPST-Q2-CONTRIB=76.1 USD_million_rounded; UPST-Q2-ADJ-EBITDA=-9.3 USD_million_rounded. Track the stated business thesis and compare only the supplied periods; keep GAAP/non-GAAP and comparison bases distinct.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[\"business growth\",\"earnings quality\"],\"invalidations\":[\"material operating deterioration\",\"weakening demand\"],\"required_event_metrics\":[\"gaap_total_revenue\",\"gaap_operating_income_loss\",\"gaap_net_income_loss\",\"gain_on_debt_extinguishment\",\"adjusted_net_income_loss_non_gaap\",\"contribution_profit_non_gaap\",\"adjusted_ebitda_non_gaap\",\"gaap_operating_income_loss_prior_year_same_quarter\",\"adjusted_net_income_loss_prior_year_same_quarter_non_gaap\"],\"evidence\":[{\"id\":\"UPST-MIXED-BASIS-baseline-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000032/upst991prq22024.htm\",\"sha256\":\"212f471f0522e46f10d405ed96658aa5b3c211ef86a3b6fe8d2db30e55b93e13\"}],\"next_review_at\":\"2026-11-06\",\"last_review_at\":\"2026-10-23T07:02:11Z\",\"created_at\":\"2026-10-23T07:01:52Z\",\"updated_at\":\"2026-10-23T07:02:11Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_c5502f586b5f4e6193c0\",\"thesis_id\":\"th_bd558d37a68644eb84a8\",\"alert_id\":\"fa_6fc9767eb97946dcbc1a\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-UPST-MIXED-BASIS-r1\",\"event\":{\"type\":\"earnings\",\"summary\":\"UPST CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: UPST-Q3-REV=162140 USD_thousand; UPST-Q3-OPLOSS=-45152 USD_thousand; UPST-Q3-NETLOSS=-6758 USD_thousand; UPST-Q3-DEBTGAIN=33361 USD_thousand; UPST-Q3-ADJ-NETLOSS=-5.3 USD_million_rounded; UPST-Q3-CONTRIB=102.4 USD_million_rounded; UPST-Q3-ADJ-EBITDA=1.4 USD_million_rounded; UPST-Q3-PRIOR-OPLOSS=-43845 USD_thousand; UPST-Q3-PRIOR-ADJ-NETLOSS=-3.9 USD_million_rounded. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.\",\"as_of\":\"2024-11-07\",\"sources\":[{\"id\":\"UPST-MIXED-BASIS-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000045/upst991prq32024.htm\",\"sha256\":\"a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45\"}]},\"impact\":\"mixed\",\"decision\":\"maintain\",\"rationale\":\"Guarded review recorded decision=maintain, impact=mixed. Stored event facts: adjusted_ebitda_non_gaap=1.4 USD_million_rounded [UPST-Q3-ADJ-EBITDA]; adjusted_net_income_loss_non_gaap=-5.3 USD_million_rounded [UPST-Q3-ADJ-NETLOSS]; adjusted_net_income_loss_prior_year_same_quarter_non_gaap=-3.9 USD_million_rounded [UPST-Q3-PRIOR-ADJ-NETLOSS]; contribution_profit_non_gaap=102.4 USD_million_rounded [UPST-Q3-CONTRIB]; gaap_net_income_loss=-6758 USD_thousand [UPST-Q3-NETLOSS]; gaap_operating_income_loss=-45152 USD_thousand [UPST-Q3-OPLOSS]; gaap_operating_income_loss_prior_year_same_quarter=-43845 USD_thousand [UPST-Q3-PRIOR-OPLOSS]; gaap_total_revenue=162140 USD_thousand [UPST-Q3-REV]; gain_on_debt_extinguishment=33361 USD_thousand [UPST-Q3-DEBTGAIN]. No source-backed causal attribution was recorded. This guard validates stated causal lineage, not the investment merit of the decision.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"upst\",\"weight\":1}],\"evidence\":[{\"type\":\"validated_accounting_lineage\",\"claims\":[],\"source_hashes\":[\"a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45\"]}],\"created_at\":\"2026-10-23T07:02:11Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9123,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_XlcdTL3SIGJSSudzTjAu2151",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_6fc9767eb97946dcbc1a\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_XlcdTL3SIGJSSudzTjAu2151",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"21b32b4d-b3b8-4b25-98e4-a0ad2f3a35a9\",\"as_of\":\"2026-10-23T07:02:12Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_6fc9767eb97946dcbc1a\",\"watchlist_id\":\"wl_d01a762471b64bae9157\",\"thesis_id\":\"th_bd558d37a68644eb84a8\",\"market\":\"US\",\"symbol\":\"UPST\",\"event_fingerprint\":\"9ac34f5a48d212ae5fe53357503d628e64c6cd965787498f7200684d04e4827c\",\"event\":{\"external_id\":\"UPST-MIXED-BASIS-sec-event-v1\",\"type\":\"earnings\",\"summary\":\"UPST CY2024 Q3 ended 2024-09-30 selected SEC exhibit packet: UPST-Q3-REV=162140 USD_thousand; UPST-Q3-OPLOSS=-45152 USD_thousand; UPST-Q3-NETLOSS=-6758 USD_thousand; UPST-Q3-DEBTGAIN=33361 USD_thousand; UPST-Q3-ADJ-NETLOSS=-5.3 USD_million_rounded; UPST-Q3-CONTRIB=102.4 USD_million_rounded; UPST-Q3-ADJ-EBITDA=1.4 USD_million_rounded; UPST-Q3-PRIOR-OPLOSS=-43845 USD_thousand; UPST-Q3-PRIOR-ADJ-NETLOSS=-3.9 USD_million_rounded. Compare with the supplied historical baseline. Keep sequential, year-over-year, GAAP and non-GAAP comparisons on their stated bases.\",\"as_of\":\"2024-11-07\",\"sources\":[{\"id\":\"UPST-MIXED-BASIS-event-sec-exhibit\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1647639/000164763924000045/upst991prq32024.htm\",\"sha256\":\"a86e6ffcd9520f35c8dba80b439b7a8ff21eae5ba90d3afe22bd62d1173a4b45\"}],\"observed_metrics\":{\"gaap_total_revenue\":{\"value\":\"162140\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-REV\",\"statement_line\":\"revenue\"},\"gaap_operating_income_loss\":{\"value\":\"-45152\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-OPLOSS\",\"statement_line\":\"unknown\"},\"gaap_net_income_loss\":{\"value\":\"-6758\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-NETLOSS\",\"statement_line\":\"unknown\"},\"gain_on_debt_extinguishment\":{\"value\":\"33361\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-DEBTGAIN\",\"statement_line\":\"nonoperating\"},\"adjusted_net_income_loss_non_gaap\":{\"value\":\"-5.3\",\"unit\":\"USD_million_rounded\",\"fact_id\":\"UPST-Q3-ADJ-NETLOSS\",\"statement_line\":\"unknown\"},\"contribution_profit_non_gaap\":{\"value\":\"102.4\",\"unit\":\"USD_million_rounded\",\"fact_id\":\"UPST-Q3-CONTRIB\",\"statement_line\":\"unknown\"},\"adjusted_ebitda_non_gaap\":{\"value\":\"1.4\",\"unit\":\"USD_million_rounded\",\"fact_id\":\"UPST-Q3-ADJ-EBITDA\",\"statement_line\":\"unknown\"},\"gaap_operating_income_loss_prior_year_same_quarter\":{\"value\":\"-43845\",\"unit\":\"USD_thousand\",\"fact_id\":\"UPST-Q3-PRIOR-OPLOSS\",\"statement_line\":\"unknown\"},\"adjusted_net_income_loss_prior_year_same_quarter_non_gaap\":{\"value\":\"-3.9\",\"unit\":\"USD_million_rounded\",\"fact_id\":\"UPST-Q3-PRIOR-ADJ-NETLOSS\",\"statement_line\":\"unknown\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"upst\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-23T07:01:52Z\",\"last_seen_at\":\"2026-10-23T07:01:52Z\",\"created_at\":\"2026-10-23T07:01:52Z\",\"updated_at\":\"2026-10-23T07:02:12Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9692,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2301,
+              "completion_tokens": 98,
+              "total_tokens": 2399,
+              "estimated_cost_usd": 0.00034958000000000005,
+              "priced": true,
+              "latency_ms": 1161.7
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4190,
+              "completion_tokens": 256,
+              "total_tokens": 4446,
+              "cache_read_tokens": 2304,
+              "estimated_cost_usd": 0.0003421712,
+              "priced": true,
+              "latency_ms": 1187.708
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4848,
+              "completion_tokens": 2036,
+              "total_tokens": 6884,
+              "cache_read_tokens": 4352,
+              "estimated_cost_usd": 0.0006517056000000001,
+              "priced": true,
+              "latency_ms": 8917.214
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 7051,
+              "completion_tokens": 2092,
+              "total_tokens": 9143,
+              "cache_read_tokens": 6784,
+              "estimated_cost_usd": 0.0006421352000000001,
+              "priced": true,
+              "latency_ms": 7078.336
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 10661,
+              "completion_tokens": 107,
+              "total_tokens": 10768,
+              "cache_read_tokens": 9088,
+              "estimated_cost_usd": 0.00027562640000000003,
+              "priced": true,
+              "latency_ms": 995.99
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 11909,
+              "completion_tokens": 1561,
+              "total_tokens": 13470,
+              "cache_read_tokens": 10752,
+              "estimated_cost_usd": 0.0006291656000000001,
+              "priced": true,
+              "latency_ms": 8024.299
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 27.417,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update"
+      ],
+      "model_calls": 6,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.002890384
+    }
+  ],
+  "estimated_cost_usd": 0.002890384
+}

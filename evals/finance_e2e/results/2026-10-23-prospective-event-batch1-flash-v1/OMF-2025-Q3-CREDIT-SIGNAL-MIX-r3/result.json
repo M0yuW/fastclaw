@@ -1,0 +1,409 @@
+{
+  "observation_id": "OMF-2025-Q3-CREDIT-SIGNAL-MIX-r3",
+  "case_id": "OMF-2025-Q3-CREDIT-SIGNAL-MIX",
+  "repetition": 3,
+  "workflow": "sec_event_to_thesis_review",
+  "status": "mechanical_pass",
+  "quality_score": null,
+  "error": null,
+  "checks": {
+    "one_thesis_and_alert": true,
+    "source_packet_exact": true,
+    "one_linked_review": true,
+    "alert_acknowledged": true,
+    "state_actionability_consistent": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "startup": {
+    "gateway_started": true,
+    "finance_plugin_seen": true
+  },
+  "runtime_audit": {
+    "model_calls": 6,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_31bff8f2a4db48fa8849",
+          "market": "US",
+          "symbol": "OMF",
+          "title": "OMF source-bounded earnings thesis",
+          "thesis": "Baseline CY2025 Q2 ended 2025-06-30: OMF-Q2-NII=1022 USD_million; OMF-Q2-NETINC=167 USD_million; OMF-Q2-PROV=511 USD_million; OMF-Q2-OPEX=419 USD_million; OMF-Q2-D30=5.17 percent; OMF-Q2-D90=2.12 percent; OMF-Q2-NCO=7.19 percent. Review the next filing for changes, contrary evidence, and missing context. No valuation or trading conclusion has been established.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": false,
+          "actionability": "available",
+          "decision_hold_alert_id": null,
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "ci_consumer_30_plus_delinquency_ratio",
+            "ci_consumer_90_plus_delinquency_ratio",
+            "ci_consumer_net_charge_off_ratio",
+            "gaap_net_income",
+            "gaap_net_interest_income",
+            "gaap_operating_expense_magnitude",
+            "gaap_provision_expense_magnitude"
+          ],
+          "evidence": [
+            {
+              "id": "HOLDOUT-OMF-BASELINE-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1584207/000158420725000033/exhibit991earningsreleaseo.htm",
+              "sha256": "f0077b50f5b65d60eace82ea31080ce2a9844417283e236adef0659b81cfc4d2"
+            }
+          ],
+          "next_review_at": "2026-11-20",
+          "last_review_at": "2026-10-23T13:11:44Z",
+          "created_at": "2026-10-23T13:11:30Z",
+          "updated_at": "2026-10-23T13:11:44Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_b6c661269b9c498288af",
+            "thesis_id": "th_31bff8f2a4db48fa8849",
+            "alert_id": "fa_b3df2eae9bad4207aeba",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-OMF-2025-Q3-CREDIT-SIGNAL-MIX-r3",
+            "event": {
+              "type": "earnings",
+              "summary": "OMF CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: OMF-Q3-NII=1072 USD_million; OMF-Q3-NETINC=199 USD_million; OMF-Q3-PROV=488 USD_million; OMF-Q3-OPEX=436 USD_million; OMF-Q3-D30=5.55 percent; OMF-Q3-D90=2.35 percent; OMF-Q3-NCO=6.67 percent.",
+              "as_of": "2025-10-31",
+              "sources": [
+                {
+                  "id": "HOLDOUT-OMF-EVENT-v1",
+                  "url": "https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm",
+                  "sha256": "1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "maintain",
+            "rationale": "Adjacent-quarter comparison of stored selected facts, Q2 CY2025 (ended 2025-06-30) vs Q3 CY2025 (ended 2025-09-30); dollar items in USD_million, ratio items in percent. Dollar items: NII 1022 -> 1072 (+50, about +4.9 percent relative); NETINC 167 -> 199 (+32, about +19.2 percent relative); PROV 511 -> 488 (-23, about -4.5 percent relative); OPEX 419 -> 436 (+17, about +4.1 percent relative). Ratio items are levels, so their changes are percentage points, not relative percent: D30 5.17 -> 5.55 (+0.38 pp); D90 2.12 -> 2.35 (+0.23 pp); NCO 7.19 -> 6.67 (-0.52 pp). Supported implication: the packet is internally mixed rather than uniformly deteriorating or improving. Net income rose while provision expense fell and the net charge-off ratio declined, consistent with lower realized credit losses in the quarter; simultaneously both consumer delinquency ratios rose, consistent with earlier-stage credit stress building even as charge-offs fell. NII growth outpaced opex growth in this packet. Material counterpoint: delinquency increases and the charge-off decline point in opposite directions, so neither a 'credit improving' nor a 'credit worsening' reading is supported; the charge-off ratio is a lagging realized-loss measure while delinquency is earlier-stage, and the packet does not establish which dominates or whether moves are seasonal, mix-driven, or one-off. The net income increase is also unexplained by the selected facts: no tax, fee-income, gain/loss, or reserve-build detail is present, and no causal attribution is asserted. Evidence still needed: full filing context (segment and product mix, allowance coverage and build/release, net charge-offs in dollars alongside the ratio, period-end vs average balance denominators, prior-year and linked-quarter seasonality, any restatement or basis change), plus confirmation the selected facts are complete and on a consistent accounting basis across both quarters. No valuation, recommendation, or trade conclusion is drawn. Thesis maintained at conviction 3, status active, because the packet is a genuine update but does not resolve the credit-signal conflict.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [
+              "omf",
+              "symbol_match"
+            ],
+            "evidence": [
+              {
+                "id": "HOLDOUT-OMF-EVENT-v1",
+                "note": "Q3 CY2025 selected-fact packet, as_of 2025-10-31; source hash recorded for this review",
+                "sha256": "1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c",
+                "url": "https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm"
+              },
+              {
+                "id": "HOLDOUT-OMF-BASELINE-v1",
+                "note": "Q2 CY2025 baseline selected facts used as the comparison quarter",
+                "sha256": "f0077b50f5b65d60eace82ea31080ce2a9844417283e236adef0659b81cfc4d2",
+                "url": "https://www.sec.gov/Archives/edgar/data/1584207/000158420725000033/exhibit991earningsreleaseo.htm"
+              }
+            ],
+            "created_at": "2026-10-23T13:11:44Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_b3df2eae9bad4207aeba",
+        "watchlist_id": "wl_5297bb58274c47458d63",
+        "thesis_id": "th_31bff8f2a4db48fa8849",
+        "market": "US",
+        "symbol": "OMF",
+        "event_fingerprint": "ce92f36ffc3da27b894f0a9e4fb92f20f51f315308c8e97ba9c3f0351f16bfb6",
+        "event": {
+          "external_id": "HOLDOUT-OMF-EVENT-v1",
+          "type": "earnings",
+          "summary": "OMF CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: OMF-Q3-NII=1072 USD_million; OMF-Q3-NETINC=199 USD_million; OMF-Q3-PROV=488 USD_million; OMF-Q3-OPEX=436 USD_million; OMF-Q3-D30=5.55 percent; OMF-Q3-D90=2.35 percent; OMF-Q3-NCO=6.67 percent.",
+          "as_of": "2025-10-31",
+          "sources": [
+            {
+              "id": "HOLDOUT-OMF-EVENT-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm",
+              "sha256": "1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_net_interest_income": {
+              "value": "1072",
+              "unit": "USD_million",
+              "fact_id": "OMF-Q3-NII"
+            },
+            "gaap_net_income": {
+              "value": "199",
+              "unit": "USD_million",
+              "fact_id": "OMF-Q3-NETINC"
+            },
+            "gaap_provision_expense_magnitude": {
+              "value": "488",
+              "unit": "USD_million",
+              "fact_id": "OMF-Q3-PROV"
+            },
+            "gaap_operating_expense_magnitude": {
+              "value": "436",
+              "unit": "USD_million",
+              "fact_id": "OMF-Q3-OPEX"
+            },
+            "ci_consumer_30_plus_delinquency_ratio": {
+              "value": "5.55",
+              "unit": "percent",
+              "fact_id": "OMF-Q3-D30"
+            },
+            "ci_consumer_90_plus_delinquency_ratio": {
+              "value": "2.35",
+              "unit": "percent",
+              "fact_id": "OMF-Q3-D90"
+            },
+            "ci_consumer_net_charge_off_ratio": {
+              "value": "6.67",
+              "unit": "percent",
+              "fact_id": "OMF-Q3-NCO"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "omf",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-23T13:11:30Z",
+        "last_seen_at": "2026-10-23T13:11:30Z",
+        "created_at": "2026-10-23T13:11:30Z",
+        "updated_at": "2026-10-23T13:11:45Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "prompt": "This is a historical SEC research-state replay, not a trade request. Read the stored thesis and earnings alert using finance tools. Compare the selected adjacent-quarter facts with correct units and basis; for percent metrics, distinguish percentage-point from relative-percent changes. Explain a supported implication, a material counterpoint, and evidence still needed. Do not assume the selected facts exhaust the filing or establish a causal explanation. Choose your own thesis-review decision. Record a version-protected review linked to the alert and its source hash, then acknowledge the alert using its observed version. Do not trade. Case OMF-2025-Q3-CREDIT-SIGNAL-MIX; thesis ID th_31bff8f2a4db48fa8849; alert ID fa_b3df2eae9bad4207aeba.",
+      "response": {
+        "id": "chatcmpl-1792761090561853000",
+        "object": "chat.completion",
+        "created": 1792761090,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# OMF-2025-Q3-CREDIT-SIGNAL-MIX — Research-State Replay\n\n**Records used:** thesis `th_31bff8f2a4db48fa8849` (v1 → v2), alert `fa_b3df2eae9bad4207aeba` (v1 → v2, acknowledged), event source `HOLDOUT-OMF-EVENT-v1` (sha256 `1b2b2c9b…d5eba3c`, as_of 2025-10-31), baseline source `HOLDOUT-OMF-BASELINE-v1` (sha256 `f0077b50…1cfc4d2`).\n\n## 1. Adjacent-quarter comparison (units and basis checked)\n\nBoth packets are labeled USD_million for dollar items and percent for ratio items; Q2 = period ended 2025-06-30, Q3 = period ended 2025-09-30. No basis change is disclosed in either packet.\n\n| Fact ID | Q2 | Q3 | Change | Change type |\n|---|---|---|---|---|\n| OMF-NII | 1022 | 1072 | +50 | +4.9% relative |\n| OMF-NETINC | 167 | 199 | +32 | +19.2% relative |\n| OMF-PROV | 511 | 488 | −23 | −4.5% relative |\n| OMF-OPEX | 419 | 436 | +17 | +4.1% relative |\n| OMF-D30 | 5.17% | 5.55% | +0.38 | **percentage points** |\n| OMF-D90 | 2.12% | 2.35% | +0.23 | **percentage points** |\n| OMF-NCO | 7.19% | 6.67% | −0.52 | **percentage points** |\n\nThe three credit ratios are already levels, so their moves are percentage-point changes, not relative-percent changes. (For reference only, the same moves expressed relatively would be roughly +7.4%, +10.8%, and −7.2% — a different and easily conflated framing.) Dollar items are additive differences; the relative figures are simple ratios of the stored values, not derived from any filing detail.\n\n## 2. Supported implication\n\nThe packet is **internally mixed**, not uniformly improving or deteriorating. Net income rose while provision expense fell and the net charge-off ratio declined — a combination consistent with lower *realized* credit losses in the quarter. Simultaneously, both consumer delinquency ratios rose, consistent with earlier-stage credit stress building. On the revenue side, NII growth (+4.9%) outpaced opex growth (+4.1%) in this packet.\n\n## 3. Material counterpoint\n\nThe delinquency increases and the charge-off decline **point in opposite directions**, so neither a \"credit improving\" nor a \"credit worsening\" reading is supported by these facts alone. The charge-off ratio is a lagging realized-loss measure; delinquency is earlier-stage. The packet does not establish which signal dominates, nor whether the moves are seasonal, mix-driven, or one-off. Separately, the net income increase is **not explained** by the selected facts: there is no tax, fee-income, gain/loss, or reserve-build detail, and no causal attribution is asserted. The deterministic thesis match was symbol-only (`match_score` 0, no assumptions/catalysts/invalidations defined), so nothing in the thesis itself adjudicates these signals.\n\n## 4. Evidence still needed\n\n- Full filing context: segment and product mix, allowance coverage and reserve build/release.\n- Net charge-offs in dollars alongside the ratio, and whether ratio denominators are period-end or average balances.\n- Prior-year and linked-quarter seasonality to test whether the delinquency rise is normal Q3 pattern.\n- Any restatement, reclassification, or accounting-basis change between the two packets.\n- Confirmation that the selected facts are complete and comparable across both quarters — the packets are explicitly *selected* facts and do not exhaust the filings.\n\n## 5. Decision recorded\n\n- **Decision:** `maintain` · **Impact:** `mixed` · **Status:** `active` · **Conviction:** 3 (unchanged) · **Next review:** 2026-11-20\n- **Review ID:** `tr_b6c661269b9c498288af`, linked to alert `fa_b3df2eae9bad4207aeba` and source hash `1b2b2c9b…d5eba3c`; written under optimistic version check (expected v1 → v2). All seven required event metrics were present; no missing metrics or unresolved source conflicts.\n- **Alert:** acknowledged at observed version 1 → now version 2.\n\nNo valuation, recommendation, or trade was made, and no trade action was taken."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 41961,
+          "completion_tokens": 4051,
+          "total_tokens": 46012
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_YAqdqKOGxUMmvSm3zFjk9436",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_31bff8f2a4db48fa8849\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_ElG8M1RUPpgjW8tKvZJi3946",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"limit\": 50}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_YAqdqKOGxUMmvSm3zFjk9436",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"4602c621-9c89-4ae0-bb37-09926ef2b5a8\",\"as_of\":\"2026-10-23T13:11:31Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_31bff8f2a4db48fa8849\",\"market\":\"US\",\"symbol\":\"OMF\",\"title\":\"OMF source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: OMF-Q2-NII=1022 USD_million; OMF-Q2-NETINC=167 USD_million; OMF-Q2-PROV=511 USD_million; OMF-Q2-OPEX=419 USD_million; OMF-Q2-D30=5.17 percent; OMF-Q2-D90=2.12 percent; OMF-Q2-NCO=7.19 percent. Review the next filing for changes, contrary evidence, and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"ci_consumer_30_plus_delinquency_ratio\",\"ci_consumer_90_plus_delinquency_ratio\",\"ci_consumer_net_charge_off_ratio\",\"gaap_net_income\",\"gaap_net_interest_income\",\"gaap_operating_expense_magnitude\",\"gaap_provision_expense_magnitude\"],\"evidence\":[{\"id\":\"HOLDOUT-OMF-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000033/exhibit991earningsreleaseo.htm\",\"sha256\":\"f0077b50f5b65d60eace82ea31080ce2a9844417283e236adef0659b81cfc4d2\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-23T13:11:30Z\",\"updated_at\":\"2026-10-23T13:11:30Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.7742,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_ElG8M1RUPpgjW8tKvZJi3946",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"99da29bf-381b-47b7-89de-3cf5b7e715be\",\"as_of\":\"2026-10-23T13:11:31Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_b3df2eae9bad4207aeba\",\"watchlist_id\":\"wl_5297bb58274c47458d63\",\"thesis_id\":\"th_31bff8f2a4db48fa8849\",\"market\":\"US\",\"symbol\":\"OMF\",\"event_fingerprint\":\"ce92f36ffc3da27b894f0a9e4fb92f20f51f315308c8e97ba9c3f0351f16bfb6\",\"event\":{\"external_id\":\"HOLDOUT-OMF-EVENT-v1\",\"type\":\"earnings\",\"summary\":\"OMF CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: OMF-Q3-NII=1072 USD_million; OMF-Q3-NETINC=199 USD_million; OMF-Q3-PROV=488 USD_million; OMF-Q3-OPEX=436 USD_million; OMF-Q3-D30=5.55 percent; OMF-Q3-D90=2.35 percent; OMF-Q3-NCO=6.67 percent.\",\"as_of\":\"2025-10-31\",\"sources\":[{\"id\":\"HOLDOUT-OMF-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm\",\"sha256\":\"1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c\"}],\"observed_metrics\":{\"gaap_net_interest_income\":{\"value\":\"1072\",\"unit\":\"USD_million\",\"fact_id\":\"OMF-Q3-NII\"},\"gaap_net_income\":{\"value\":\"199\",\"unit\":\"USD_million\",\"fact_id\":\"OMF-Q3-NETINC\"},\"gaap_provision_expense_magnitude\":{\"value\":\"488\",\"unit\":\"USD_million\",\"fact_id\":\"OMF-Q3-PROV\"},\"gaap_operating_expense_magnitude\":{\"value\":\"436\",\"unit\":\"USD_million\",\"fact_id\":\"OMF-Q3-OPEX\"},\"ci_consumer_30_plus_delinquency_ratio\":{\"value\":\"5.55\",\"unit\":\"percent\",\"fact_id\":\"OMF-Q3-D30\"},\"ci_consumer_90_plus_delinquency_ratio\":{\"value\":\"2.35\",\"unit\":\"percent\",\"fact_id\":\"OMF-Q3-D90\"},\"ci_consumer_net_charge_off_ratio\":{\"value\":\"6.67\",\"unit\":\"percent\",\"fact_id\":\"OMF-Q3-NCO\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"omf\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-23T13:11:30Z\",\"last_seen_at\":\"2026-10-23T13:11:30Z\",\"created_at\":\"2026-10-23T13:11:30Z\",\"updated_at\":\"2026-10-23T13:11:30Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":50}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9608,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_Z8W764crEbgVtCq8zDyq0904",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"OMF\", \"event_summary\": \"OMF CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: OMF-Q3-NII=1072 USD_million; OMF-Q3-NETINC=199 USD_million; OMF-Q3-PROV=488 USD_million; OMF-Q3-OPEX=436 USD_million; OMF-Q3-D30=5.55 percent; OMF-Q3-D90=2.35 percent; OMF-Q3-NCO=6.67 percent.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_Z8W764crEbgVtCq8zDyq0904",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"605d4fd1-0c23-4648-940b-bed03d9ca441\",\"as_of\":\"2026-10-23T13:11:32Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"OMF\",\"event_summary\":\"OMF CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: OMF-Q3-NII=1072 USD_million; OMF-Q3-NETINC=199 USD_million; OMF-Q3-PROV=488 USD_million; OMF-Q3-OPEX=436 USD_million; OMF-Q3-D30=5.55 percent; OMF-Q3-D90=2.35 percent; OMF-Q3-NCO=6.67 percent.\",\"matches\":[{\"thesis_id\":\"th_31bff8f2a4db48fa8849\",\"title\":\"OMF source-bounded earnings thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_ZQ7yDQAReZ4Xdoik27K37331",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_31bff8f2a4db48fa8849\", \"expected_version\": 1, \"alert_id\": \"fa_b3df2eae9bad4207aeba\", \"event\": {\"summary\": \"OMF CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: OMF-Q3-NII=1072 USD_million; OMF-Q3-NETINC=199 USD_million; OMF-Q3-PROV=488 USD_million; OMF-Q3-OPEX=436 USD_million; OMF-Q3-D30=5.55 percent; OMF-Q3-D90=2.35 percent; OMF-Q3-NCO=6.67 percent.\", \"as_of\": \"2025-10-31\", \"type\": \"earnings\", \"sources\": [{\"id\": \"HOLDOUT-OMF-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm\", \"sha256\": \"1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c\"}]}, \"impact\": \"mixed\", \"decision\": \"maintain\", \"new_status\": \"active\", \"new_conviction\": 3, \"matched_terms\": [\"omf\", \"symbol_match\"], \"rationale\": \"Adjacent-quarter comparison of stored selected facts, Q2 CY2025 (ended 2025-06-30) vs Q3 CY2025 (ended 2025-09-30), all USD_million for dollar items and percent for ratio items. Dollar items: NII 1022 -> 1072 (+50, about +4.9 percent relative); NETINC 167 -> 199 (+32, about +19.2 percent relative); PROV 511 -> 488 (-23, about -4.5 percent relative); OPEX 419 -> 436 (+17, about +4.1 percent relative). Percent items are ratio levels, so changes are percentage points, not relative percent: D30 5.17 -> 5.55 (+0.38 pp); D90 2.12 -> 2.35 (+0.23 pp); NCO 7.19 -> 6.67 (-0.52 pp). Supported implication: the packet is internally mixed rather than uniformly deteriorating or improving. Net income rose while provision expense fell, and the net charge-off ratio declined, which is consistent with lower realized credit losses in the quarter; at the same time both consumer delinquency ratios rose, which is consistent with earlier-stage credit stress building even as charge-offs fell. Revenue-side NII growth outpaced opex growth in this packet. Material counterpoint: the delinquency increases and the charge-off decline point in opposite directions, so a single 'credit improving' or 'credit worsening' reading is not supported; the charge-off ratio is a lagging realized-loss measure while delinquency is an earlier-stage indicator, and the packet does not establish which dominates or whether the moves are seasonal, mix-driven, or one-off. Also, the net income increase is not explained by the selected facts: the packet contains no tax, fee-income, gain/loss, or reserve-build detail, and no causal attribution is asserted. Evidence still needed: full filing context (segment and product mix, reserve coverage and allowance build/release, net charge-offs in dollars alongside the ratio, period-end vs average balances used as ratio denominators, prior-year and linked-quarter seasonality, any restatement or basis change), plus confirmation that the selected facts are complete and on a consistent accounting basis across both quarters. No valuation, recommendation, or trade conclusion is drawn. Thesis maintained at conviction 3 with status active because the packet is a genuine update but does not resolve the credit-signal conflict.\", \"evidence\": [{\"id\": \"HOLDOUT-OMF-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm\", \"sha256\": \"1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c\", \"note\": \"Q3 CY2025 selected-fact packet, as_of 2025-10-31; source hash recorded for this review\"}, {\"id\": \"HOLDOUT-OMF-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000033/exhibit991earningsreleaseo.htm\", \"sha256\": \"f0077b50f5b65d60eace82ea31080ce2a9844417283e236adef0659b81cfc4d2\", \"note\": \"Q2 CY2025 baseline selected facts used as the comparison quarter\"}], \"next_review_at\": \"2026-01-30\"}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_ZQ7yDQAReZ4Xdoik27K37331",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"b980c978-19ff-4722-b8f5-7374246a4922\",\"as_of\":\"2026-10-23T13:11:39Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"invalid_input\"]},\"errors\":[{\"code\":\"invalid_input\",\"message\":\"next_review_at must be in the future; historical source dates belong in evidence\",\"retriable\":false}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_VsOTXtYAyiLTbzTXys6A7093",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_b3df2eae9bad4207aeba\", \"decision\": \"maintain\", \"event\": {\"as_of\": \"2025-10-31\", \"sources\": [{\"id\": \"HOLDOUT-OMF-EVENT-v1\", \"sha256\": \"1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm\"}], \"summary\": \"OMF CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: OMF-Q3-NII=1072 USD_million; OMF-Q3-NETINC=199 USD_million; OMF-Q3-PROV=488 USD_million; OMF-Q3-OPEX=436 USD_million; OMF-Q3-D30=5.55 percent; OMF-Q3-D90=2.35 percent; OMF-Q3-NCO=6.67 percent.\", \"type\": \"earnings\"}, \"evidence\": [{\"id\": \"HOLDOUT-OMF-EVENT-v1\", \"note\": \"Q3 CY2025 selected-fact packet, as_of 2025-10-31; source hash recorded for this review\", \"sha256\": \"1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm\"}, {\"id\": \"HOLDOUT-OMF-BASELINE-v1\", \"note\": \"Q2 CY2025 baseline selected facts used as the comparison quarter\", \"sha256\": \"f0077b50f5b65d60eace82ea31080ce2a9844417283e236adef0659b81cfc4d2\", \"url\": \"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000033/exhibit991earningsreleaseo.htm\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"matched_terms\": [\"omf\", \"symbol_match\"], \"new_conviction\": 3, \"new_status\": \"active\", \"next_review_at\": \"2026-11-20\", \"rationale\": \"Adjacent-quarter comparison of stored selected facts, Q2 CY2025 (ended 2025-06-30) vs Q3 CY2025 (ended 2025-09-30); dollar items in USD_million, ratio items in percent. Dollar items: NII 1022 -> 1072 (+50, about +4.9 percent relative); NETINC 167 -> 199 (+32, about +19.2 percent relative); PROV 511 -> 488 (-23, about -4.5 percent relative); OPEX 419 -> 436 (+17, about +4.1 percent relative). Ratio items are levels, so their changes are percentage points, not relative percent: D30 5.17 -> 5.55 (+0.38 pp); D90 2.12 -> 2.35 (+0.23 pp); NCO 7.19 -> 6.67 (-0.52 pp). Supported implication: the packet is internally mixed rather than uniformly deteriorating or improving. Net income rose while provision expense fell and the net charge-off ratio declined, consistent with lower realized credit losses in the quarter; simultaneously both consumer delinquency ratios rose, consistent with earlier-stage credit stress building even as charge-offs fell. NII growth outpaced opex growth in this packet. Material counterpoint: delinquency increases and the charge-off decline point in opposite directions, so neither a 'credit improving' nor a 'credit worsening' reading is supported; the charge-off ratio is a lagging realized-loss measure while delinquency is earlier-stage, and the packet does not establish which dominates or whether moves are seasonal, mix-driven, or one-off. The net income increase is also unexplained by the selected facts: no tax, fee-income, gain/loss, or reserve-build detail is present, and no causal attribution is asserted. Evidence still needed: full filing context (segment and product mix, allowance coverage and build/release, net charge-offs in dollars alongside the ratio, period-end vs average balance denominators, prior-year and linked-quarter seasonality, any restatement or basis change), plus confirmation the selected facts are complete and on a consistent accounting basis across both quarters. No valuation, recommendation, or trade conclusion is drawn. Thesis maintained at conviction 3, status active, because the packet is a genuine update but does not resolve the credit-signal conflict.\", \"thesis_id\": \"th_31bff8f2a4db48fa8849\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_VsOTXtYAyiLTbzTXys6A7093",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"7bf0ecf0-0148-40ed-8978-75a45f8b06ac\",\"as_of\":\"2026-10-23T13:11:44Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_31bff8f2a4db48fa8849\",\"market\":\"US\",\"symbol\":\"OMF\",\"title\":\"OMF source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: OMF-Q2-NII=1022 USD_million; OMF-Q2-NETINC=167 USD_million; OMF-Q2-PROV=511 USD_million; OMF-Q2-OPEX=419 USD_million; OMF-Q2-D30=5.17 percent; OMF-Q2-D90=2.12 percent; OMF-Q2-NCO=7.19 percent. Review the next filing for changes, contrary evidence, and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"ci_consumer_30_plus_delinquency_ratio\",\"ci_consumer_90_plus_delinquency_ratio\",\"ci_consumer_net_charge_off_ratio\",\"gaap_net_income\",\"gaap_net_interest_income\",\"gaap_operating_expense_magnitude\",\"gaap_provision_expense_magnitude\"],\"evidence\":[{\"id\":\"HOLDOUT-OMF-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000033/exhibit991earningsreleaseo.htm\",\"sha256\":\"f0077b50f5b65d60eace82ea31080ce2a9844417283e236adef0659b81cfc4d2\"}],\"next_review_at\":\"2026-11-20\",\"last_review_at\":\"2026-10-23T13:11:44Z\",\"created_at\":\"2026-10-23T13:11:30Z\",\"updated_at\":\"2026-10-23T13:11:44Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_b6c661269b9c498288af\",\"thesis_id\":\"th_31bff8f2a4db48fa8849\",\"alert_id\":\"fa_b3df2eae9bad4207aeba\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-OMF-2025-Q3-CREDIT-SIGNAL-MIX-r3\",\"event\":{\"type\":\"earnings\",\"summary\":\"OMF CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: OMF-Q3-NII=1072 USD_million; OMF-Q3-NETINC=199 USD_million; OMF-Q3-PROV=488 USD_million; OMF-Q3-OPEX=436 USD_million; OMF-Q3-D30=5.55 percent; OMF-Q3-D90=2.35 percent; OMF-Q3-NCO=6.67 percent.\",\"as_of\":\"2025-10-31\",\"sources\":[{\"id\":\"HOLDOUT-OMF-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm\",\"sha256\":\"1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c\"}]},\"impact\":\"mixed\",\"decision\":\"maintain\",\"rationale\":\"Adjacent-quarter comparison of stored selected facts, Q2 CY2025 (ended 2025-06-30) vs Q3 CY2025 (ended 2025-09-30); dollar items in USD_million, ratio items in percent. Dollar items: NII 1022 -> 1072 (+50, about +4.9 percent relative); NETINC 167 -> 199 (+32, about +19.2 percent relative); PROV 511 -> 488 (-23, about -4.5 percent relative); OPEX 419 -> 436 (+17, about +4.1 percent relative). Ratio items are levels, so their changes are percentage points, not relative percent: D30 5.17 -> 5.55 (+0.38 pp); D90 2.12 -> 2.35 (+0.23 pp); NCO 7.19 -> 6.67 (-0.52 pp). Supported implication: the packet is internally mixed rather than uniformly deteriorating or improving. Net income rose while provision expense fell and the net charge-off ratio declined, consistent with lower realized credit losses in the quarter; simultaneously both consumer delinquency ratios rose, consistent with earlier-stage credit stress building even as charge-offs fell. NII growth outpaced opex growth in this packet. Material counterpoint: delinquency increases and the charge-off decline point in opposite directions, so neither a 'credit improving' nor a 'credit worsening' reading is supported; the charge-off ratio is a lagging realized-loss measure while delinquency is earlier-stage, and the packet does not establish which dominates or whether moves are seasonal, mix-driven, or one-off. The net income increase is also unexplained by the selected facts: no tax, fee-income, gain/loss, or reserve-build detail is present, and no causal attribution is asserted. Evidence still needed: full filing context (segment and product mix, allowance coverage and build/release, net charge-offs in dollars alongside the ratio, period-end vs average balance denominators, prior-year and linked-quarter seasonality, any restatement or basis change), plus confirmation the selected facts are complete and on a consistent accounting basis across both quarters. No valuation, recommendation, or trade conclusion is drawn. Thesis maintained at conviction 3, status active, because the packet is a genuine update but does not resolve the credit-signal conflict.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"omf\",\"symbol_match\"],\"evidence\":[{\"id\":\"HOLDOUT-OMF-EVENT-v1\",\"note\":\"Q3 CY2025 selected-fact packet, as_of 2025-10-31; source hash recorded for this review\",\"sha256\":\"1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm\"},{\"id\":\"HOLDOUT-OMF-BASELINE-v1\",\"note\":\"Q2 CY2025 baseline selected facts used as the comparison quarter\",\"sha256\":\"f0077b50f5b65d60eace82ea31080ce2a9844417283e236adef0659b81cfc4d2\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000033/exhibit991earningsreleaseo.htm\"}],\"created_at\":\"2026-10-23T13:11:44Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.8947,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_OksxC69YE0akEpOfyWJa0830",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_b3df2eae9bad4207aeba\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_OksxC69YE0akEpOfyWJa0830",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"5dedef1d-3489-416a-9989-26834b4753b0\",\"as_of\":\"2026-10-23T13:11:45Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_b3df2eae9bad4207aeba\",\"watchlist_id\":\"wl_5297bb58274c47458d63\",\"thesis_id\":\"th_31bff8f2a4db48fa8849\",\"market\":\"US\",\"symbol\":\"OMF\",\"event_fingerprint\":\"ce92f36ffc3da27b894f0a9e4fb92f20f51f315308c8e97ba9c3f0351f16bfb6\",\"event\":{\"external_id\":\"HOLDOUT-OMF-EVENT-v1\",\"type\":\"earnings\",\"summary\":\"OMF CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: OMF-Q3-NII=1072 USD_million; OMF-Q3-NETINC=199 USD_million; OMF-Q3-PROV=488 USD_million; OMF-Q3-OPEX=436 USD_million; OMF-Q3-D30=5.55 percent; OMF-Q3-D90=2.35 percent; OMF-Q3-NCO=6.67 percent.\",\"as_of\":\"2025-10-31\",\"sources\":[{\"id\":\"HOLDOUT-OMF-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/1584207/000158420725000044/exhibit991earningsreleaseo.htm\",\"sha256\":\"1b2b2c9b477b92138f751c9238d225247810c4038d5fc99eb9a480397d5eba3c\"}],\"observed_metrics\":{\"gaap_net_interest_income\":{\"value\":\"1072\",\"unit\":\"USD_million\",\"fact_id\":\"OMF-Q3-NII\"},\"gaap_net_income\":{\"value\":\"199\",\"unit\":\"USD_million\",\"fact_id\":\"OMF-Q3-NETINC\"},\"gaap_provision_expense_magnitude\":{\"value\":\"488\",\"unit\":\"USD_million\",\"fact_id\":\"OMF-Q3-PROV\"},\"gaap_operating_expense_magnitude\":{\"value\":\"436\",\"unit\":\"USD_million\",\"fact_id\":\"OMF-Q3-OPEX\"},\"ci_consumer_30_plus_delinquency_ratio\":{\"value\":\"5.55\",\"unit\":\"percent\",\"fact_id\":\"OMF-Q3-D30\"},\"ci_consumer_90_plus_delinquency_ratio\":{\"value\":\"2.35\",\"unit\":\"percent\",\"fact_id\":\"OMF-Q3-D90\"},\"ci_consumer_net_charge_off_ratio\":{\"value\":\"6.67\",\"unit\":\"percent\",\"fact_id\":\"OMF-Q3-NCO\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"omf\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-23T13:11:30Z\",\"last_seen_at\":\"2026-10-23T13:11:30Z\",\"created_at\":\"2026-10-23T13:11:30Z\",\"updated_at\":\"2026-10-23T13:11:45Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.96,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3406,
+              "completion_tokens": 118,
+              "total_tokens": 3524,
+              "estimated_cost_usd": 0.0011634,
+              "priced": true,
+              "latency_ms": 843.511
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5014,
+              "completion_tokens": 219,
+              "total_tokens": 5233,
+              "cache_read_tokens": 3456,
+              "estimated_cost_usd": 0.000750936,
+              "priced": true,
+              "latency_ms": 1118.279
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5567,
+              "completion_tokens": 1289,
+              "total_tokens": 6856,
+              "cache_read_tokens": 5120,
+              "estimated_cost_usd": 0.0017116199999999999,
+              "priced": true,
+              "latency_ms": 6886.975
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 7004,
+              "completion_tokens": 1259,
+              "total_tokens": 8263,
+              "cache_read_tokens": 6784,
+              "estimated_cost_usd": 0.0016175039999999999,
+              "priced": true,
+              "latency_ms": 4997.242
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 9984,
+              "completion_tokens": 125,
+              "total_tokens": 10109,
+              "cache_read_tokens": 8192,
+              "estimated_cost_usd": 0.000736752,
+              "priced": true,
+              "latency_ms": 1007.022
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 10986,
+              "completion_tokens": 1041,
+              "total_tokens": 12027,
+              "cache_read_tokens": 9856,
+              "estimated_cost_usd": 0.0016473360000000001,
+              "priced": true,
+              "latency_ms": 5884.896
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 20.784,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update"
+      ],
+      "model_calls": 6,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.007627548
+    }
+  ],
+  "estimated_cost_usd": 0.007627548
+}

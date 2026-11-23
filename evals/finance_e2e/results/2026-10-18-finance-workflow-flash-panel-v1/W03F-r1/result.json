@@ -1,0 +1,209 @@
+{
+  "run_id": "W03F-r1",
+  "workflow": "W03",
+  "synthetic_tool_fixture": true,
+  "status": "mechanical_pass",
+  "error": null,
+  "checks": {
+    "screen_called": true,
+    "one_complete_candidate_thesis": true,
+    "pe_persisted": true,
+    "free_cash_flow_persisted": true,
+    "roic_persisted": true,
+    "fixture_provenance_persisted": true,
+    "no_alerts": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_a16cb75ac32241d6b88c",
+          "market": "US",
+          "symbol": "FICC",
+          "title": "FICC — preliminary screen-derived thesis (synthetic fixture, Case W03F-r1)",
+          "thesis": "PRELIMINARY / RESEARCHING — not an investment recommendation. Case W03F-r1.\n\nProvenance: all figures below come from a single deterministic screen run against the local evaluation fixture `fixture_id=synthetic-screen-v2` (`synthetic: true`, source kind `deterministic_screen`, as_of 2026-10-18T13:11:10Z, stale_after 2026-10-18T19:11:10Z). FICC and FICD are synthetic fixture tickers, not real issuers; no live market data, filings, or third-party estimates were consulted.\n\nScreen outcome: FICC was the sole retained candidate (passed=1) under `require_complete=true`. Exact metric values as returned by the tool: P/E trailing = 16.5; free cash flow = 310; ROIC = 0.13. Supporting screen values: revenue growth YoY = 0.12; earnings growth YoY = 0.14; debt/equity = 0.22; analyst upside = 0.31.\n\nMissingness boundary: FICD was rejected with reason `insufficient_data` and missing_metrics = [\"earnings_growth_yoy\"]; it was moved to rejected rather than passed on partial data (runtime_quality_policy.moved_to_rejected = 1, quality flag `incomplete_screen_candidates_rejected`). No thesis is created for FICD. For FICC, the screen reports completeness 1.0 against the required metric set (pe_trailing, revenue_growth_yoy, earnings_growth_yoy, debt_to_equity, free_cash_flow, roic, analyst_upside_pct), but completeness here means only that these seven screen fields were populated — it does not establish that any figure is audited, period-matched, or independently verified. Units are as returned by the fixture (free cash flow 310 is unlabeled as to currency/scale; ROIC 0.13 and growth rates are decimals). No filing dates, fiscal period labels, or accounting-basis disclosures were supplied, so none are asserted.\n\nWorking hypothesis (to be tested, not established): a fixture profile of moderate trailing valuation (P/E 16.5), positive free cash flow (310), and ROIC of 0.13 with low leverage (debt/equity 0.22) would be consistent with a cash-generative, conservatively financed business. This is a description of the fixture inputs, not a validated finding.\n\nOpen items before any substantive decision: confirm real-issuer identity and provenance; obtain period-labeled, accounting-basis-disclosed financials; reconcile free-cash-flow definition and units; verify ROIC calculation basis; and re-screen FICD once earnings_growth_yoy is available. Fixture data is stale after 2026-10-18T19:11:10Z.",
+          "status": "researching",
+          "conviction": 1,
+          "decision_hold": false,
+          "actionability": "available",
+          "decision_hold_alert_id": null,
+          "assumptions": [
+            "Screen inputs are synthetic fixture values (fixture_id=synthetic-screen-v2) and describe no real issuer.",
+            "The seven required screen metrics for FICC were all populated in this run (completeness 1.0).",
+            "Free cash flow of 310 and ROIC of 0.13 are taken as returned, without independent verification of definition, units, or period."
+          ],
+          "catalysts": [
+            "Availability of period-labeled, accounting-basis-disclosed financials for the underlying issuer (if any) to replace fixture inputs.",
+            "Re-screening FICD once earnings_growth_yoy is populated, to complete the candidate comparison."
+          ],
+          "invalidations": [
+            "Any indication that FICC's screen metrics are not reproducible from the stated fixture, or that the fixture is being treated as real market data.",
+            "Discovery that free cash flow (310) or ROIC (0.13) is defined or scaled differently than assumed, materially changing the profile.",
+            "A re-run showing FICC missing any required metric under require_complete=true."
+          ],
+          "required_event_metrics": [],
+          "evidence": [
+            {
+              "analyst_upside_pct": 0.31,
+              "as_of": "2026-10-18T13:11:10Z",
+              "debt_to_equity": 0.22,
+              "earnings_growth_yoy": 0.14,
+              "fixture_id": "synthetic-screen-v2",
+              "free_cash_flow": 310,
+              "note": "Values as returned by finance-tools__screen_stocks; no live market data used.",
+              "pe_trailing": 16.5,
+              "revenue_growth_yoy": 0.12,
+              "roic": 0.13,
+              "symbol": "FICC",
+              "synthetic": true,
+              "type": "deterministic_screen"
+            },
+            {
+              "fixture_id": "synthetic-screen-v2",
+              "missing_metrics": [
+                "earnings_growth_yoy"
+              ],
+              "note": "Rejected under require_complete=true; no thesis created.",
+              "reason": "insufficient_data",
+              "symbol": "FICD",
+              "synthetic": true,
+              "type": "screen_rejection"
+            }
+          ],
+          "next_review_at": "2026-10-18T19:11:10Z",
+          "last_review_at": null,
+          "created_at": "2026-10-18T13:11:16Z",
+          "updated_at": "2026-10-18T13:11:16Z",
+          "version": 1,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "finance-workflow-W03F-r1"
+        },
+        "reviews": []
+      }
+    ],
+    "alerts": []
+  },
+  "extras": {
+    "trace": {
+      "model_calls": 3,
+      "tool_calls": 2,
+      "tool_results": 2,
+      "models": [
+        "deepseek/deepseek-v4-flash"
+      ]
+    },
+    "source_audit": {}
+  },
+  "turns": [
+    {
+      "prompt": "This is a synthetic, non-investment research workflow using fixture tickers FICC and FICD. Call finance-tools__screen_stocks for both with require_complete=true. Read retained and rejected candidates. Create one preliminary thesis only for a retained candidate. In the persisted thesis text, include the exact P/E, free-cash-flow, and ROIC numeric values from the tool, the missingness boundary, and synthetic fixture provenance. Do not create a thesis for a rejected candidate, call live market tools, or trade. Case W03F-r1.",
+      "response": {
+        "id": "chatcmpl-1792329069370355000",
+        "object": "chat.completion",
+        "created": 1792329069,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "## Case W03F-r1 — Complete\n\n**Screen (single call, `require_complete=true`, fixture `synthetic-screen-v2`, `synthetic: true`, as_of 2026-10-18T13:11:10Z):**\n\n| Ticker | Outcome | Detail |\n|---|---|---|\n| FICC | **Retained** (passed=1) | P/E trailing **16.5**, free cash flow **310**, ROIC **0.13**; also rev growth 0.12, EPS growth 0.14, D/E 0.22, upside 0.31 |\n| FICD | **Rejected** (failed=1) | `insufficient_data`, missing `earnings_growth_yoy` |\n\n**Thesis created — FICC only:** `th_a16cb75ac32241d6b88c`, status `researching`, conviction 1, version 1.\n\nThe persisted thesis text contains, verbatim from the tool output:\n- **Exact numerics:** P/E trailing = 16.5, free cash flow = 310, ROIC = 0.13 (plus the supporting screen fields).\n- **Missingness boundary:** FICD rejected for missing `earnings_growth_yoy` and moved to rejected rather than passed on partial data; FICC's completeness 1.0 is explicitly scoped to mean only that the seven required screen fields were populated — not that figures are audited, period-matched, or independently verified. Units/period/accounting-basis gaps are stated as absent rather than assumed.\n- **Synthetic fixture provenance:** `fixture_id=synthetic-screen-v2`, `synthetic: true`, source kind `deterministic_screen`, with an explicit statement that FICC/FICD are not real issuers and no live market data was consulted.\n\n**Boundaries honored:** no thesis for FICD; no live market tools called; no trades or investment recommendations. The thesis is framed as a preliminary working hypothesis with open verification items and a review date tied to the fixture's staleness (2026-10-18T19:11:10Z)."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 11473,
+          "completion_tokens": 2010,
+          "total_tokens": 13483
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_faX7diAJzhn00OaMtUiX8457",
+              "name": "finance-tools__screen_stocks",
+              "arguments": "{\"market\": \"US\", \"symbols\": [\"FICC\", \"FICD\"], \"require_complete\": true}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_faX7diAJzhn00OaMtUiX8457",
+              "name": "finance-tools__screen_stocks",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"6db2b3d5-72e7-4c3b-ad52-da28ef95e5ad\",\"as_of\":\"2026-10-18T13:11:10Z\",\"stale_after\":\"2026-10-18T19:11:10Z\",\"data\":{\"fixture_id\":\"synthetic-screen-v2\",\"synthetic\":true,\"results\":[{\"symbol\":\"FICC\",\"valuation\":{\"pe_trailing\":16.5},\"growth\":{\"revenue_growth_yoy\":0.12,\"earnings_growth_yoy\":0.14},\"leverage\":{\"debt_to_equity\":0.22},\"cash_flow\":{\"free_cash_flow\":310},\"profitability\":{\"roic\":0.13},\"analyst_consensus\":{\"upside_pct\":0.31}}],\"rejected\":[{\"symbol\":\"FICD\",\"reason\":\"insufficient_data\",\"missing_metrics\":[\"earnings_growth_yoy\"]}],\"passed\":1,\"failed\":1,\"runtime_quality_policy\":{\"require_complete\":true,\"required_metrics\":[\"pe_trailing\",\"revenue_growth_yoy\",\"earnings_growth_yoy\",\"debt_to_equity\",\"free_cash_flow\",\"roic\",\"analyst_upside_pct\"],\"moved_to_rejected\":1}},\"sources\":[{\"name\":\"local_evaluation_fixture\",\"kind\":\"deterministic_screen\"}],\"quality\":{\"completeness\":1.0,\"flags\":[\"incomplete_screen_candidates_rejected\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":21600}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_IszA18lVlASOVf976MCY0854",
+              "name": "finance-tools__thesis_save",
+              "arguments": "{\"symbol\": \"FICC\", \"market\": \"US\", \"title\": \"FICC — preliminary screen-derived thesis (synthetic fixture, Case W03F-r1)\", \"thesis\": \"PRELIMINARY / RESEARCHING — not an investment recommendation. Case W03F-r1.\\n\\nProvenance: all figures below come from a single deterministic screen run against the local evaluation fixture `fixture_id=synthetic-screen-v2` (`synthetic: true`, source kind `deterministic_screen`, as_of 2026-10-18T13:11:10Z, stale_after 2026-10-18T19:11:10Z). FICC and FICD are synthetic fixture tickers, not real issuers; no live market data, filings, or third-party estimates were consulted.\\n\\nScreen outcome: FICC was the sole retained candidate (passed=1) under `require_complete=true`. Exact metric values as returned by the tool: P/E trailing = 16.5; free cash flow = 310; ROIC = 0.13. Supporting screen values: revenue growth YoY = 0.12; earnings growth YoY = 0.14; debt/equity = 0.22; analyst upside = 0.31.\\n\\nMissingness boundary: FICD was rejected with reason `insufficient_data` and missing_metrics = [\\\"earnings_growth_yoy\\\"]; it was moved to rejected rather than passed on partial data (runtime_quality_policy.moved_to_rejected = 1, quality flag `incomplete_screen_candidates_rejected`). No thesis is created for FICD. For FICC, the screen reports completeness 1.0 against the required metric set (pe_trailing, revenue_growth_yoy, earnings_growth_yoy, debt_to_equity, free_cash_flow, roic, analyst_upside_pct), but completeness here means only that these seven screen fields were populated — it does not establish that any figure is audited, period-matched, or independently verified. Units are as returned by the fixture (free cash flow 310 is unlabeled as to currency/scale; ROIC 0.13 and growth rates are decimals). No filing dates, fiscal period labels, or accounting-basis disclosures were supplied, so none are asserted.\\n\\nWorking hypothesis (to be tested, not established): a fixture profile of moderate trailing valuation (P/E 16.5), positive free cash flow (310), and ROIC of 0.13 with low leverage (debt/equity 0.22) would be consistent with a cash-generative, conservatively financed business. This is a description of the fixture inputs, not a validated finding.\\n\\nOpen items before any substantive decision: confirm real-issuer identity and provenance; obtain period-labeled, accounting-basis-disclosed financials; reconcile free-cash-flow definition and units; verify ROIC calculation basis; and re-screen FICD once earnings_growth_yoy is available. Fixture data is stale after 2026-10-18T19:11:10Z.\", \"status\": \"researching\", \"conviction\": 1, \"assumptions\": [\"Screen inputs are synthetic fixture values (fixture_id=synthetic-screen-v2) and describe no real issuer.\", \"The seven required screen metrics for FICC were all populated in this run (completeness 1.0).\", \"Free cash flow of 310 and ROIC of 0.13 are taken as returned, without independent verification of definition, units, or period.\"], \"catalysts\": [\"Availability of period-labeled, accounting-basis-disclosed financials for the underlying issuer (if any) to replace fixture inputs.\", \"Re-screening FICD once earnings_growth_yoy is populated, to complete the candidate comparison.\"], \"invalidations\": [\"Any indication that FICC's screen metrics are not reproducible from the stated fixture, or that the fixture is being treated as real market data.\", \"Discovery that free cash flow (310) or ROIC (0.13) is defined or scaled differently than assumed, materially changing the profile.\", \"A re-run showing FICC missing any required metric under require_complete=true.\"], \"evidence\": [{\"type\": \"deterministic_screen\", \"fixture_id\": \"synthetic-screen-v2\", \"synthetic\": true, \"as_of\": \"2026-10-18T13:11:10Z\", \"symbol\": \"FICC\", \"pe_trailing\": 16.5, \"free_cash_flow\": 310, \"roic\": 0.13, \"revenue_growth_yoy\": 0.12, \"earnings_growth_yoy\": 0.14, \"debt_to_equity\": 0.22, \"analyst_upside_pct\": 0.31, \"note\": \"Values as returned by finance-tools__screen_stocks; no live market data used.\"}, {\"type\": \"screen_rejection\", \"fixture_id\": \"synthetic-screen-v2\", \"synthetic\": true, \"symbol\": \"FICD\", \"reason\": \"insufficient_data\", \"missing_metrics\": [\"earnings_growth_yoy\"], \"note\": \"Rejected under require_complete=true; no thesis created.\"}], \"next_review_at\": \"2026-10-18T19:11:10Z\"}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_IszA18lVlASOVf976MCY0854",
+              "name": "finance-tools__thesis_save",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"722f049e-6a25-417f-8408-f45b07c9474f\",\"as_of\":\"2026-10-18T13:11:16Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_a16cb75ac32241d6b88c\",\"market\":\"US\",\"symbol\":\"FICC\",\"title\":\"FICC — preliminary screen-derived thesis (synthetic fixture, Case W03F-r1)\",\"thesis\":\"PRELIMINARY / RESEARCHING — not an investment recommendation. Case W03F-r1.\\n\\nProvenance: all figures below come from a single deterministic screen run against the local evaluation fixture `fixture_id=synthetic-screen-v2` (`synthetic: true`, source kind `deterministic_screen`, as_of 2026-10-18T13:11:10Z, stale_after 2026-10-18T19:11:10Z). FICC and FICD are synthetic fixture tickers, not real issuers; no live market data, filings, or third-party estimates were consulted.\\n\\nScreen outcome: FICC was the sole retained candidate (passed=1) under `require_complete=true`. Exact metric values as returned by the tool: P/E trailing = 16.5; free cash flow = 310; ROIC = 0.13. Supporting screen values: revenue growth YoY = 0.12; earnings growth YoY = 0.14; debt/equity = 0.22; analyst upside = 0.31.\\n\\nMissingness boundary: FICD was rejected with reason `insufficient_data` and missing_metrics = [\\\"earnings_growth_yoy\\\"]; it was moved to rejected rather than passed on partial data (runtime_quality_policy.moved_to_rejected = 1, quality flag `incomplete_screen_candidates_rejected`). No thesis is created for FICD. For FICC, the screen reports completeness 1.0 against the required metric set (pe_trailing, revenue_growth_yoy, earnings_growth_yoy, debt_to_equity, free_cash_flow, roic, analyst_upside_pct), but completeness here means only that these seven screen fields were populated — it does not establish that any figure is audited, period-matched, or independently verified. Units are as returned by the fixture (free cash flow 310 is unlabeled as to currency/scale; ROIC 0.13 and growth rates are decimals). No filing dates, fiscal period labels, or accounting-basis disclosures were supplied, so none are asserted.\\n\\nWorking hypothesis (to be tested, not established): a fixture profile of moderate trailing valuation (P/E 16.5), positive free cash flow (310), and ROIC of 0.13 with low leverage (debt/equity 0.22) would be consistent with a cash-generative, conservatively financed business. This is a description of the fixture inputs, not a validated finding.\\n\\nOpen items before any substantive decision: confirm real-issuer identity and provenance; obtain period-labeled, accounting-basis-disclosed financials; reconcile free-cash-flow definition and units; verify ROIC calculation basis; and re-screen FICD once earnings_growth_yoy is available. Fixture data is stale after 2026-10-18T19:11:10Z.\",\"status\":\"researching\",\"conviction\":1,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[\"Screen inputs are synthetic fixture values (fixture_id=synthetic-screen-v2) and describe no real issuer.\",\"The seven required screen metrics for FICC were all populated in this run (completeness 1.0).\",\"Free cash flow of 310 and ROIC of 0.13 are taken as returned, without independent verification of definition, units, or period.\"],\"catalysts\":[\"Availability of period-labeled, accounting-basis-disclosed financials for the underlying issuer (if any) to replace fixture inputs.\",\"Re-screening FICD once earnings_growth_yoy is populated, to complete the candidate comparison.\"],\"invalidations\":[\"Any indication that FICC's screen metrics are not reproducible from the stated fixture, or that the fixture is being treated as real market data.\",\"Discovery that free cash flow (310) or ROIC (0.13) is defined or scaled differently than assumed, materially changing the profile.\",\"A re-run showing FICC missing any required metric under require_complete=true.\"],\"required_event_metrics\":[],\"evidence\":[{\"analyst_upside_pct\":0.31,\"as_of\":\"2026-10-18T13:11:10Z\",\"debt_to_equity\":0.22,\"earnings_growth_yoy\":0.14,\"fixture_id\":\"synthetic-screen-v2\",\"free_cash_flow\":310,\"note\":\"Values as returned by finance-tools__screen_stocks; no live market data used.\",\"pe_trailing\":16.5,\"revenue_growth_yoy\":0.12,\"roic\":0.13,\"symbol\":\"FICC\",\"synthetic\":true,\"type\":\"deterministic_screen\"},{\"fixture_id\":\"synthetic-screen-v2\",\"missing_metrics\":[\"earnings_growth_yoy\"],\"note\":\"Rejected under require_complete=true; no thesis created.\",\"reason\":\"insufficient_data\",\"symbol\":\"FICD\",\"synthetic\":true,\"type\":\"screen_rejection\"}],\"next_review_at\":\"2026-10-18T19:11:10Z\",\"last_review_at\":null,\"created_at\":\"2026-10-18T13:11:16Z\",\"updated_at\":\"2026-10-18T13:11:16Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"finance-workflow-W03F-r1\"},\"operation\":\"created\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9362,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 2566,
+              "completion_tokens": 99,
+              "total_tokens": 2665,
+              "estimated_cost_usd": 0.00038696,
+              "priced": true,
+              "latency_ms": 813.237
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 3044,
+              "completion_tokens": 1461,
+              "total_tokens": 4505,
+              "cache_read_tokens": 2560,
+              "estimated_cost_usd": 0.000484008,
+              "priced": true,
+              "latency_ms": 6573.477
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 5863,
+              "completion_tokens": 450,
+              "total_tokens": 6313,
+              "cache_read_tokens": 4480,
+              "estimated_cost_usd": 0.0003321640000000001,
+              "priced": true,
+              "latency_ms": 2388.47
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 9.847,
+      "tool_calls": [
+        "finance-tools__screen_stocks",
+        "finance-tools__thesis_save"
+      ],
+      "model_calls": 3,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.001203132
+    }
+  ],
+  "estimated_cost_usd": 0.001203132
+}

@@ -1,0 +1,65 @@
+{
+  "masked_id": "J-524d62b933f61fdd",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 0,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "profit expansion came from a revenue-mix rotation toward license revenue plus a lower total operating-expense base, not from broad-based recurring-revenue growth",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_license_revenue:+105246", "source_packet.rows:gaap_saas_paas_revenue:-24342", "source_packet.rows:gaap_total_revenue:+81101", "source_packet.rows:gaap_total_operating_expenses:-11747", "source_packet.rows:gaap_operating_income:+92848"],
+      "reason": "The signed income-statement bridge is +81,101 revenue and -11,747 expense = +92,848 operating income. This is an accounting decomposition, not a business-cause claim."
+    },
+    {
+      "location": "final_answer",
+      "span": "the license line that drove the total is the least recurring component",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_license_revenue:56711_to_161957", "source_packet.limitations:license_contract_duration_not_in_selected_rows"],
+      "reason": "The selected GAAP row identifies license revenue but not perpetual-versus-term contract mix, renewals or timing; relative recurrence is not established."
+    },
+    {
+      "location": "final_answer",
+      "span": "nothing here establishes year-over-year direction, percentage-point margin effects, or any causal link",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue:401258_to_482359", "source_packet.rows:gaap_operating_income:34858_to_127706"],
+      "reason": "Year-over-year direction and causes are unavailable, but sequential operating margin is calculable: about 8.69% to 26.47%, an improvement of approximately 17.78 percentage points."
+    },
+    {
+      "location": "final_answer",
+      "span": "Tax expense also rose alongside pretax income, which is consistent with a higher pretax base rather than any improvement in the tax profile, and it does not offset the profit step",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:gaap_income_before_income_taxes:+100250", "source_packet.rows:gaap_income_tax_expense:+21202", "source_packet.rows:gaap_net_income:+79048"],
+      "reason": "The tax expense increase partially offsets pretax improvement by 21,202; it does not erase the profit step. The wording is imprecise if read as no offset."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the durability of the sequential profit step is unresolved and the thesis requires review before any research-state change",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_saas_paas_revenue:-24342", "source_packet.rows:gaap_license_revenue:+105246", "ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "license_recurrence_asserted_without_contract_evidence",
+      "evidence_refs": ["source_packet.rows:gaap_license_revenue", "source_packet.limitations:license_contract_duration_not_in_selected_rows"]
+    },
+    {
+      "claim_index": 2,
+      "code": "calculable_operating_margin_change_denied",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue", "source_packet.rows:gaap_operating_income"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The displayed revenue-and-expense bridge and blocked ledger are right, but the final answer labels license the least recurring without contract evidence and incorrectly denies a directly calculable 17.78-point sequential operating-margin increase. Durability still cannot be established."
+}

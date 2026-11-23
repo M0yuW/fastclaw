@@ -1,0 +1,60 @@
+{
+  "masked_id": "J-986c1e9f6edb2b5e",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 1,
+    "I": 1,
+    "R": 1,
+    "S": 2,
+    "U": 1
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "revenue and gross profit both rose while the operating loss and the net loss narrowed",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue:+12392", "source_packet.rows:gaap_gross_profit:+8977", "source_packet.rows:gaap_operating_loss:-22250_to_-20719", "source_packet.rows:gaap_net_income_loss_statement_of_operations:-7074_to_-2962"]
+    },
+    {
+      "location": "final_answer",
+      "span": "revenue growth outrunning growth in cost of revenue and operating expenses rather than as cost contraction",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue:+12392", "source_packet.rows:gaap_total_cost_revenue:+3415", "source_packet.rows:gaap_total_operating_expenses:+7446", "source_packet.rows:gaap_operating_loss:+1531"],
+      "reason": "Revenue increase exceeds the combined cost and operating-expense increase by USD 1.531m, exactly the operating-loss improvement."
+    },
+    {
+      "location": "final_answer",
+      "span": "nothing here identifies which revenue line or cost component drove the change",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_subscription_transaction_fees:+12058", "source_packet.rows:gaap_interest_customer_funds:+334", "source_packet.rows:gaap_total_revenue:+12392"],
+      "reason": "The selected rows identify the arithmetic revenue contributor: subscription and transaction fees account for USD 12.058m of the USD 12.392m revenue increase. They do not identify the economic cause or detailed cost components."
+    },
+    {
+      "location": "final_answer",
+      "span": "The larger credit-loss provision is a caution on the credit-quality side of the customer-funds and payments exposure",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_expected_credit_loss_provision:15785_to_16096", "source_packet.limitations:credit_exposure_not_audited"],
+      "reason": "The provision increase is real, but the packet does not link that provision specifically to customer funds or payments exposure."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the split between subscription and transaction fees and interest on customer funds",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_subscription_transaction_fees:+12058", "source_packet.rows:gaap_interest_customer_funds:+334"],
+      "reason": "The numerical split is present and reconciles; only its underlying drivers are not explained."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is maintained at the existing conviction with no change to status",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=maintain", "ledger:thesis:conviction=3", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available"]
+    }
+  ],
+  "critical_errors": [],
+  "assessable_implication": true,
+  "notes": "Arithmetic operating bridge is sound, but the answer misses the explicit revenue-line decomposition and assigns the provision to a specific exposure without source support. Its generic baseline thesis has no stated testable assumptions; maintaining unchanged conviction without an investment recommendation is not, by itself, a proven violation of the critical-evidence hold rule. The available ledger state warrants caution, so R and U are partial rather than high. S reflects accurate state alignment only."
+}

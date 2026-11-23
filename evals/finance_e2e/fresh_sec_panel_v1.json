@@ -1,0 +1,111 @@
+{
+  "version": "1.0",
+  "status": "source_facts_frozen_before_model_runs",
+  "source_basis": "SEC-furnished Exhibit 99.1 earnings releases; selected facts, not complete filings",
+  "cases": [
+    {
+      "case_id": "FRESH-AAPL-TAX",
+      "symbol": "AAPL",
+      "workflow": "sec_event_to_thesis_review",
+      "scenario": "positive revenue and mixed earnings caused by a tax-line event",
+      "baseline": {
+        "period": "FY2024 Q3, ended 2024-06-29",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019324000080/a8-kex991q3202406292024.htm",
+        "source_sha256": "c569f3ee34b7a62ddbd0ba769719105a516c96b44b5832829310fb19a78ead74",
+        "local_path": ".cache/sources/apple-2024-08-01-q3.htm",
+        "facts": [
+          {"id": "AAPL-Q3-REV", "metric": "quarterly_revenue", "value": 85.8, "unit": "USD_billion", "locator": "opening results paragraph"},
+          {"id": "AAPL-Q3-GAAP-EPS", "metric": "diluted_eps_gaap", "value": 1.40, "unit": "USD_per_share", "locator": "opening results paragraph"}
+        ]
+      },
+      "event": {
+        "period": "FY2024 Q4, ended 2024-09-28",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/320193/000032019324000120/a8-kex991q4202409282024.htm",
+        "source_sha256": "719bd99ffef311326d3c5f21b4980fd8fba4bb1d35daa696f7372708ad041196",
+        "local_path": ".cache/sources/apple-2024-10-31-q4.htm",
+        "facts": [
+          {"id": "AAPL-Q4-REV", "metric": "quarterly_revenue", "value": 94.9, "unit": "USD_billion", "locator": "opening results paragraph"},
+          {"id": "AAPL-Q4-GAAP-EPS", "metric": "diluted_eps_gaap", "value": 0.97, "unit": "USD_per_share", "locator": "opening results paragraph"},
+          {"id": "AAPL-Q4-EX-TAX-EPS", "metric": "diluted_eps_excluding_one_time_tax_charge", "value": 1.64, "unit": "USD_per_share", "basis": "non_GAAP", "locator": "opening results paragraph and note 1"},
+          {"id": "AAPL-Q4-TAX-CAUSE", "metric": "tax_charge_driver", "value": "EU_state_aid_decision_reversal", "unit": "qualitative", "statement_line": "income_tax", "locator": "opening results paragraph"}
+        ]
+      },
+      "precommitted_checks": [
+        "Q3 and Q4 are adjacent fiscal quarters; USD 94.9bn minus USD 85.8bn is USD 9.1bn, but the releases' 5% and 6% growth figures are year-over-year, not quarter-over-quarter.",
+        "Q4 GAAP EPS is USD 0.97, not USD 1.64; USD 1.64 is the explicitly labeled non-GAAP tax-adjusted figure.",
+        "The reported tax charge is not, by itself, evidence of a gross-margin or operating-line deterioration; no precise EPS contribution should be inferred merely by subtracting two differently based figures without citing reconciliation."
+      ]
+    },
+    {
+      "case_id": "FRESH-MSFT-CLOUD",
+      "symbol": "MSFT",
+      "workflow": "sec_event_to_thesis_review",
+      "scenario": "higher absolute cloud sales with lower year-over-year cloud growth percentage",
+      "baseline": {
+        "period": "FY2025 Q1, ended 2024-09-30",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/789019/000095017024118955/msft-ex99_1.htm",
+        "source_sha256": "ea8bc94f7677d015265507c0ebbe4e899448954dd3ee8c75ddc512ab7ace2403",
+        "local_path": ".cache/sources/microsoft-2024-10-30-q1-fy2025.htm",
+        "facts": [
+          {"id": "MSFT-Q1-REV", "metric": "quarterly_revenue", "value": 65.6, "unit": "USD_billion", "locator": "opening bullet list"},
+          {"id": "MSFT-Q1-CLOUD", "metric": "microsoft_cloud_revenue", "value": 38.9, "unit": "USD_billion", "locator": "CFO opening remarks"},
+          {"id": "MSFT-Q1-CLOUD-YOY", "metric": "microsoft_cloud_revenue_growth_yoy", "value": 22, "unit": "percent", "locator": "CFO opening remarks"},
+          {"id": "MSFT-Q1-AZURE-YOY", "metric": "azure_and_other_cloud_services_growth_yoy", "value": 33, "unit": "percent", "locator": "Intelligent Cloud business highlights"}
+        ]
+      },
+      "event": {
+        "period": "FY2025 Q2, ended 2024-12-31",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/789019/000095017025010484/msft-ex99_1.htm",
+        "source_sha256": "221a6bbe1b7f3f59483ea6320a2089f4eac956525582d7023781ee41d2284b73",
+        "local_path": ".cache/sources/microsoft-2025-01-29-q2-fy2025.htm",
+        "facts": [
+          {"id": "MSFT-Q2-REV", "metric": "quarterly_revenue", "value": 69.6, "unit": "USD_billion", "locator": "opening bullet list"},
+          {"id": "MSFT-Q2-CLOUD", "metric": "microsoft_cloud_revenue", "value": 40.9, "unit": "USD_billion", "locator": "CFO opening remarks"},
+          {"id": "MSFT-Q2-CLOUD-YOY", "metric": "microsoft_cloud_revenue_growth_yoy", "value": 21, "unit": "percent", "locator": "CFO opening remarks"},
+          {"id": "MSFT-Q2-AZURE-YOY", "metric": "azure_and_other_cloud_services_growth_yoy", "value": 31, "unit": "percent", "locator": "Intelligent Cloud business highlights"}
+        ]
+      },
+      "precommitted_checks": [
+        "Absolute Microsoft Cloud revenue rose by USD 2.0bn across the sampled adjacent quarters; its disclosed year-over-year growth rate fell from 22% to 21%.",
+        "Azure and other cloud services year-over-year growth rate fell from 33% to 31%, but this is not evidence that its absolute revenue fell; the source packet provides no Azure revenue dollars.",
+        "Avoid calling Microsoft Cloud and Azure identical measures or adding them together."
+      ]
+    },
+    {
+      "case_id": "FRESH-SBUX-TRAFFIC",
+      "symbol": "SBUX",
+      "workflow": "sec_event_to_thesis_review",
+      "scenario": "worsening comparable-store sales and transactions despite management's turnaround plan",
+      "baseline": {
+        "period": "FY2024 Q3, ended 2024-06-30",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/829224/000082922424000041/sbux-6302024xexhibit991.htm",
+        "source_sha256": "c3287262521ce82bc24c91992f1bd4a14716b8064576118ac422c9367ff20840",
+        "local_path": ".cache/sources/starbucks-2024-07-30-q3.htm",
+        "facts": [
+          {"id": "SBUX-Q3-COMP", "metric": "global_comp_sales_growth_yoy", "value": -3, "unit": "percent", "locator": "Q3 highlights"},
+          {"id": "SBUX-Q3-TRANS", "metric": "global_comp_transactions_growth_yoy", "value": -5, "unit": "percent", "locator": "Q3 highlights"},
+          {"id": "SBUX-Q3-TICKET", "metric": "global_comp_ticket_growth_yoy", "value": 2, "unit": "percent", "locator": "Q3 highlights"},
+          {"id": "SBUX-Q3-OPM", "metric": "gaap_operating_margin", "value": 16.7, "unit": "percent", "locator": "Q3 highlights"}
+        ]
+      },
+      "event": {
+        "period": "FY2024 Q4, ended 2024-09-29",
+        "source_url": "https://www.sec.gov/Archives/edgar/data/829224/000082922424000051/sbux-9292024xexhibit991.htm",
+        "source_sha256": "f4fa81ca7c080d565db74aebc49eb1f373fa0f1ccdb5c4f3833964635c767eb7",
+        "local_path": ".cache/sources/starbucks-2024-10-30-q4.htm",
+        "facts": [
+          {"id": "SBUX-Q4-COMP", "metric": "global_comp_sales_growth_yoy", "value": -7, "unit": "percent", "locator": "Q4 highlights"},
+          {"id": "SBUX-Q4-TRANS", "metric": "global_comp_transactions_growth_yoy", "value": -8, "unit": "percent", "locator": "Q4 highlights"},
+          {"id": "SBUX-Q4-TICKET", "metric": "global_comp_ticket_growth_yoy", "value": 2, "unit": "percent", "locator": "Q4 highlights"},
+          {"id": "SBUX-Q4-OPM", "metric": "gaap_operating_margin", "value": 14.4, "unit": "percent", "locator": "Q4 highlights"}
+        ]
+      },
+      "precommitted_checks": [
+        "Q3 and Q4 are adjacent fiscal quarters, but the disclosed comparable-sales and transaction percentages are each relative to the corresponding prior-year quarter.",
+        "The year-over-year comp-sales growth rate worsened by 4 percentage points and transaction growth by 3 percentage points; neither percentage is an absolute sequential sales change.",
+        "GAAP operating-margin level fell from 16.7% to 14.4% across the sampled quarters (2.3 percentage points); the release's 60-bp and 380-bp contractions are separate year-over-year comparisons.",
+        "Management's turnaround plan is not proof of a turnaround in these data."
+      ]
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "masked_id": "J-4b517350b557d9e2",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 0,
+    "I": 0,
+    "R": 1,
+    "S": 2,
+    "U": 0
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "core subscription and transaction fees rose, total revenue rose, and gross profit rose by more than total cost of revenue",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_subscription_transaction_fees:+12058", "source_packet.rows:gaap_total_revenue:+12392", "source_packet.rows:gaap_gross_profit:+8977", "source_packet.rows:gaap_total_cost_revenue:+3415"],
+      "reason": "These are absolute changes in USD thousands, not margin changes."
+    },
+    {
+      "location": "final_answer",
+      "span": "so the gross margin identity moved favorably",
+      "verdict": "contradicted",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue:383349_to_395741", "source_packet.rows:gaap_gross_profit:309761_to_318738"],
+      "reason": "Gross margin fell from about 80.80% (309761/383349) to 80.54% (318738/395741); larger absolute gross profit does not imply a higher margin."
+    },
+    {
+      "location": "final_answer",
+      "span": "total operating expenses rose by less than gross profit, the GAAP operating loss narrowed",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_total_operating_expenses:+7446", "source_packet.rows:gaap_gross_profit:+8977", "source_packet.rows:gaap_operating_loss:-22250_to_-20719"]
+    },
+    {
+      "location": "final_answer",
+      "span": "The expected credit loss provision also rose, indicating that part of the revenue-side expansion is accompanied by greater credit exposure",
+      "verdict": "unsupported",
+      "evidence_refs": ["source_packet.rows:gaap_expected_credit_loss_provision:15785_to_16096", "source_packet.limitations:no_credit_volume_or_loss_driver"],
+      "reason": "A higher provision establishes a higher accounting credit-loss expense, not necessarily greater credit exposure; balance, loss-rate and model-assumption data are absent."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the expected credit loss provision also rose, so part of the revenue-side expansion carries a credit-cost dimension",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:gaap_expected_credit_loss_provision:15785_to_16096"],
+      "reason": "Higher credit-loss expense is factual, but linking it to revenue expansion is not established by these rows."
+    },
+    {
+      "location": "persisted_review",
+      "span": "The thesis remains active with unchanged conviction",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:thesis:status=active", "ledger:thesis:conviction=3", "ledger:review:decision=maintain", "ledger:thesis:decision_hold=false", "ledger:thesis:actionability=available"]
+    }
+  ],
+  "critical_errors": [
+    {
+      "claim_index": 1,
+      "code": "gross_margin_direction_reversed",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenue", "source_packet.rows:gaap_gross_profit"]
+    },
+    {
+      "claim_index": 3,
+      "code": "credit_exposure_inferred_from_provision_alone",
+      "evidence_refs": ["source_packet.rows:gaap_expected_credit_loss_provision", "source_packet.limitations:no_credit_volume_or_loss_driver"]
+    }
+  ],
+  "assessable_implication": true,
+  "notes": "The final answer reverses the calculable gross-margin direction and treats a higher provision as proof of greater credit exposure. The persisted rationale does not repeat the gross-margin reversal, but remains weak on the credit-cost linkage. Ledger state and narrower operating loss are accurately represented."
+}

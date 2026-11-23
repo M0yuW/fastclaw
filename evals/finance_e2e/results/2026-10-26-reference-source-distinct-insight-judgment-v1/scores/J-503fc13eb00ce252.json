@@ -1,0 +1,51 @@
+{
+  "masked_id": "J-503fc13eb00ce252",
+  "reviewer": "Codex diagnostic claim review v1",
+  "coverage": {
+    "final_answer": true,
+    "persisted_review": true
+  },
+  "scores": {
+    "F": 1,
+    "I": 2,
+    "R": 2,
+    "S": 2,
+    "U": 2
+  },
+  "claim_adjudications": [
+    {
+      "location": "final_answer",
+      "span": "sequential profitability improved on both a revenue increase and an expense decrease",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenues:+48.4", "source_packet.rows:gaap_total_expenses:-56", "source_packet.rows:gaap_earnings_before_income_taxes:+116.9", "source_packet.rows:gaap_net_earnings:+102.4"]
+    },
+    {
+      "location": "final_answer",
+      "span": "GAAP interest on funds held for clients moved lower sequentially, which is the one displayed revenue component that worked against the profit improvement",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_interest_on_client_funds:307.8_to_286.8"]
+    },
+    {
+      "location": "final_answer",
+      "span": "The accounting identity linking revenue, expenses and pretax earnings is arithmetic, not causal",
+      "verdict": "bounded_hypothesis",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenues:5126.8_to_5175.2", "source_packet.rows:gaap_total_expenses:4033.8_to_3977.8", "source_packet.rows:gaap_earnings_before_income_taxes:1190.6_to_1307.5"],
+      "reason": "The general accounting point is sound, but these selected rows are not a complete pretax bridge: revenue less total expense rises 104.4 whereas pretax earnings rise 116.9, leaving other items outside the extract."
+    },
+    {
+      "location": "persisted_review",
+      "span": "the expense decline and revenue increase are displayed arithmetic only and are not established drivers",
+      "verdict": "supported",
+      "evidence_refs": ["source_packet.rows:gaap_total_revenues:+48.4", "source_packet.rows:gaap_total_expenses:-56", "source_packet.limitations:no_causal_explanation"]
+    },
+    {
+      "location": "persisted_review",
+      "span": "the research state is held for review rather than upgraded or downgraded",
+      "verdict": "supported",
+      "evidence_refs": ["ledger:review:decision=needs_review", "ledger:thesis:decision_hold=true", "ledger:thesis:actionability=blocked", "ledger:thesis:conviction=3"]
+    }
+  ],
+  "critical_errors": [],
+  "assessable_implication": true,
+  "notes": "Directionally sound source-bounded interpretation and aligned blocked state. The selected revenue/expense subtotals alone do not exactly reconcile to pretax income, so the final answer's accounting-identity wording is slightly imprecise; it does not claim an invented causal driver."
+}

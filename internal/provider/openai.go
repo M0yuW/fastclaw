@@ -333,6 +333,7 @@ func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk
 	toolCalls := make(map[int]*ToolCall)
 	var usage Usage
 	complete := false
+	finishReason := ""
 
 	for scanner.Scan() {
 		if err := ctx.Err(); err != nil {
@@ -362,6 +363,9 @@ func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk
 		}
 		if len(chunk.Choices) == 0 {
 			continue
+		}
+		if chunk.Choices[0].FinishReason != "" {
+			finishReason = chunk.Choices[0].FinishReason
 		}
 
 		delta := chunk.Choices[0].Delta
@@ -410,7 +414,7 @@ func parseOpenAISSE(ctx context.Context, source io.Reader, emit func(StreamChunk
 		return nil, io.ErrUnexpectedEOF
 	}
 
-	result := &Response{Content: contentBuilder.String(), Thinking: thinkingBuilder.String(), Usage: usage}
+	result := &Response{Content: contentBuilder.String(), Thinking: thinkingBuilder.String(), Usage: usage, FinishReason: finishReason}
 	for i := 0; i < len(toolCalls); i++ {
 		if tc, ok := toolCalls[i]; ok {
 			result.ToolCalls = append(result.ToolCalls, *tc)

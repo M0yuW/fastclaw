@@ -13,6 +13,12 @@ class FinanceEvidenceAuditTest(unittest.TestCase):
         self.assertEqual((False, ["10"]), fact_is_present("Digital increased 10 percent.", fact))
         self.assertEqual((True, ["10"]), fact_is_present("Digital declined 10 percent.", fact))
 
+    def test_numeric_candidates_do_not_match_inside_other_numbers(self) -> None:
+        integer_fact = {"value": 10, "unit": "percent", "precision": "exact"}
+        decimal_fact = {"value": 2.8, "unit": "percent", "precision": "exact"}
+        self.assertEqual((False, ["10"]), fact_is_present("Margin increased 110 basis points.", integer_fact))
+        self.assertEqual((False, ["2.8"]), fact_is_present("Revenue was 12.8 billion.", decimal_fact))
+
     def test_matches_categorical_filing_actions(self) -> None:
         fact = {"value": "suspending dividend", "unit": "categorical", "precision": "exact"}
         self.assertEqual(

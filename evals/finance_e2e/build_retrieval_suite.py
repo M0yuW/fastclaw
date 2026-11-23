@@ -47,13 +47,25 @@ def normalized_words(value: str) -> set[str]:
     return {word.lower() for word in WORD_PATTERN.findall(value)}
 
 
+def has_required_record_context(text: str, fact: dict[str, Any]) -> bool:
+    normalized_text = " ".join(text.casefold().split())
+    return all(
+        " ".join(str(phrase).casefold().split()) in normalized_text
+        for phrase in fact.get("record_required_phrases", [])
+    )
+
+
 def best_source_window(source_text: str, fact: dict[str, Any], radius: int = 650) -> str:
     present, _ = fact_is_present(source_text, fact)
     if not present:
         raise ValueError(f"{fact['id']}: fact is absent from the locked source")
-    windows = matching_windows(source_text, value_candidates(fact), radius=radius)
+    windows = [
+        window
+        for window in matching_windows(source_text, value_candidates(fact), radius=radius)
+        if has_required_record_context(window, fact)
+    ]
     if not windows:
-        raise ValueError(f"{fact['id']}: no source window found")
+        raise ValueError(f"{fact['id']}: no source window contains the required fact context")
     excerpt_words = normalized_words(str(fact["excerpt"]))
 
     def score(window: str) -> tuple[int, int]:
@@ -64,6 +76,8 @@ def best_source_window(source_text: str, fact: dict[str, Any], radius: int = 650
     selected = re.sub(r"\s+", " ", selected)
     if len(selected) > radius * 2:
         selected = selected[: radius * 2].rstrip()
+    if not has_required_record_context(selected, fact):
+        raise ValueError(f"{fact['id']}: required fact context was truncated from the record")
     return selected
 
 
@@ -83,6 +97,7 @@ def build_records(
     records: list[dict[str, Any]] = []
     fact_to_record: dict[str, str] = {}
     fact_index: dict[str, dict[str, Any]] = {}
+    source_facts: list[tuple[str, dict[str, Any]]] = []
     source_texts: dict[str, str] = {}
     for episode in evidence["episodes"]:
         source = sources[episode["source_id"]]
@@ -93,6 +108,7 @@ def build_records(
             current_record_id = record_id(episode["symbol"], episode["sequence"], index)
             fact_to_record[fact["id"]] = current_record_id
             fact_index[fact["id"]] = fact
+            source_facts.append((source.id, fact))
             records.append(
                 {
                     "id": current_record_id,
@@ -108,6 +124,21 @@ def build_records(
                     "_sequence": episode["sequence"],
                 }
             )
+    # Preserve semantic fact identity internally. A bounded record can cover
+    # more than the fact that selected its source window, but an alternative is
+    # eligible only when it comes from the same locked filing and declared
+    # locator. Numeric occurrence alone is not a gold-label definition.
+    for record in records:
+        record["_fact_ids"] = sorted(
+            fact["id"]
+            for source_id, fact in source_facts
+            if source_id == record["source_id"]
+            and fact["locator"] == record["locator"]
+            and fact_is_present(record["text"], fact)[0]
+            and has_required_record_context(record["text"], fact)
+        )
+        if record["_fact_id"] not in record["_fact_ids"]:
+            raise ValueError(f"{record['id']}: canonical fact is absent from its generated record")
     return records, fact_to_record, fact_index
 
 
@@ -134,13 +165,29 @@ def calculation_assertions(episodes: list[dict[str, Any]]) -> list[str]:
     for episode in episodes:
         for comparison in episode.get("comparisons", []):
             expected = str(comparison["expected"])
+            positive = Decimal(expected) >= 0
             if comparison["unit"] == "percentage_point":
-                assertions.append(f"{expected} percentage points || {expected} pp")
+                alternatives = [
+                    f"{expected} percentage points",
+                    f"{expected} percentage point",
+                    f"{expected} percentage_points",
+                    f"{expected} percentage_point",
+                    f"{expected} pp",
+                ]
+                if positive:
+                    alternatives.extend(alternative.replace(expected, f"+{expected}", 1) for alternative in list(alternatives))
+                assertions.append(" || ".join(alternatives))
             else:
-                assertions.append(f"{expected} percent || {expected}%")
+                alternatives = [f"{expected} percent", f"{expected}%"]
+                if positive:
+                    alternatives.extend([f"+{expected} percent", f"+{expected}%"])
+                assertions.append(" || ".join(alternatives))
         for calculation in episode.get("calculations", []):
             expected = str(calculation["expected"])
-            assertions.append(f"{expected} percent || {expected}%")
+            alternatives = [f"{expected} percent", f"{expected}%"]
+            if Decimal(expected) >= 0:
+                alternatives.extend([f"+{expected} percent", f"+{expected}%"])
+            assertions.append(" || ".join(alternatives))
     return assertions
 
 
@@ -270,11 +317,10 @@ def gold_record_groups(
 ) -> list[list[str]]:
     groups: list[list[str]] = []
     for fact_id in required_fact_ids:
-        fact = fact_index[fact_id]
         alternatives = [
             record["id"]
             for record in records
-            if record["symbol"] == symbol and fact_is_present(record["text"], fact)[0]
+            if record["symbol"] == symbol and fact_id in record.get("_fact_ids", [])
         ]
         if not alternatives:
             raise ValueError(f"{symbol}: no record covers required fact {fact_id}")
@@ -333,6 +379,7 @@ def build_suite(evidence_path: Path, sources_path: Path, lock_path: Path) -> dic
             gold_record_ids = {fact_to_record[fact_id] for fact_id in required}
             for load in LOADS:
                 records = corpus_for_load(all_records, symbol, gold_record_ids, load)
+                record_groups = gold_record_groups(records, symbol, required, fact_index)
                 case_id = f"FRET-{symbol}-{'POINT' if task_type == 'point' else 'LONG'}-{load.upper()}"
                 cases.append(
                     {
@@ -346,7 +393,11 @@ def build_suite(evidence_path: Path, sources_path: Path, lock_path: Path) -> dic
                         "tags": ["finance", "sec", "retrieval", task_type, load, symbol.lower()],
                         "records": [public_record(record) for record in records],
                         "gold_record_ids": sorted(gold_record_ids),
-                        "gold_record_groups": gold_record_groups(records, symbol, required, fact_index),
+                        "gold_record_groups": record_groups,
+                        "gold_fact_groups": [
+                            {"fact_id": fact_id, "record_ids": record_group}
+                            for fact_id, record_group in zip(required, record_groups)
+                        ],
                         "oracle_evidence": oracle_packet(records, gold_record_ids, episodes, task_type),
                         "milestones": task_milestones(episodes, task_type),
                         "forbidden_output_values": [

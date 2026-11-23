@@ -1,0 +1,451 @@
+{
+  "observation_id": "BAC-2025-Q3-REVENUE-TO-COMMON-EARNINGS-BRIDGE-r1",
+  "case_id": "BAC-2025-Q3-REVENUE-TO-COMMON-EARNINGS-BRIDGE",
+  "repetition": 1,
+  "workflow": "sec_event_to_thesis_review",
+  "status": "mechanical_pass",
+  "quality_score": null,
+  "error": null,
+  "checks": {
+    "one_thesis_and_alert": true,
+    "source_packet_exact": true,
+    "one_linked_review": true,
+    "alert_acknowledged": true,
+    "state_actionability_consistent": true,
+    "flash_only": true,
+    "tool_trace_complete": true,
+    "usage_priced": true,
+    "cost_positive": true
+  },
+  "runtime_audit": {
+    "model_calls": 7,
+    "tool_calls_paired": true,
+    "trace_errors": [],
+    "terminal_codes": [],
+    "cost_uncertain_sequences": [],
+    "unpriced_sequences": [],
+    "request_errors": [],
+    "clean_completion": true
+  },
+  "state": {
+    "theses": [
+      {
+        "thesis": {
+          "id": "th_cb21b27931874d288d7c",
+          "market": "US",
+          "symbol": "BAC",
+          "title": "BAC source-bounded earnings thesis",
+          "thesis": "Baseline CY2025 Q2 ended 2025-06-30: BAC-Q2-NII=14670 USD_million; BAC-Q2-NONINTINC=11793 USD_million; BAC-Q2-REV=26463 USD_million; BAC-Q2-PROV=1592 USD_million; BAC-Q2-OPEX=17183 USD_million; BAC-Q2-PRETAX=7688 USD_million; BAC-Q2-TAX=572 USD_million; BAC-Q2-NET=7116 USD_million; BAC-Q2-PREF=291 USD_million; BAC-Q2-COMMON=6825 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.",
+          "status": "active",
+          "conviction": 3,
+          "decision_hold": true,
+          "actionability": "blocked",
+          "decision_hold_alert_id": "fa_c98706d4f501444d941b",
+          "assumptions": [],
+          "catalysts": [],
+          "invalidations": [],
+          "required_event_metrics": [
+            "gaap_income_before_income_taxes",
+            "gaap_income_tax_expense",
+            "gaap_net_income",
+            "gaap_net_income_applicable_to_common",
+            "gaap_net_interest_income",
+            "gaap_noninterest_expense",
+            "gaap_noninterest_income",
+            "gaap_preferred_stock_dividends",
+            "gaap_provision_for_credit_losses",
+            "gaap_total_revenue_net_of_interest_expense"
+          ],
+          "evidence": [
+            {
+              "id": "HOLDOUT-BAC-BASELINE-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm",
+              "sha256": "e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c"
+            }
+          ],
+          "next_review_at": null,
+          "last_review_at": "2026-10-24T09:27:19Z",
+          "created_at": "2026-10-24T09:27:04Z",
+          "updated_at": "2026-10-24T09:27:19Z",
+          "version": 2,
+          "created_by_agent_id": "finance-coordinator",
+          "created_in_session_id": "panel-seed"
+        },
+        "reviews": [
+          {
+            "id": "tr_71d5c681af384f998e84",
+            "thesis_id": "th_cb21b27931874d288d7c",
+            "alert_id": "fa_c98706d4f501444d941b",
+            "agent_id": "finance-coordinator",
+            "session_id": "finance-workflow-BAC-2025-Q3-REVENUE-TO-COMMON-EARNINGS-BRIDGE-r1",
+            "event": {
+              "type": "earnings",
+              "summary": "BAC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: BAC-Q3-NII=15233 USD_million; BAC-Q3-NONINTINC=12855 USD_million; BAC-Q3-REV=28088 USD_million; BAC-Q3-PROV=1295 USD_million; BAC-Q3-OPEX=17337 USD_million; BAC-Q3-PRETAX=9456 USD_million; BAC-Q3-TAX=987 USD_million; BAC-Q3-NET=8469 USD_million; BAC-Q3-PREF=429 USD_million; BAC-Q3-COMMON=8040 USD_million.",
+              "as_of": "2025-10-15",
+              "sources": [
+                {
+                  "id": "HOLDOUT-BAC-EVENT-v1",
+                  "url": "https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm",
+                  "sha256": "851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a"
+                }
+              ]
+            },
+            "impact": "mixed",
+            "decision": "needs_review",
+            "rationale": "Source-bounded replay of the Q3 packet against the Q2 baseline. All ten required event metrics are present in the stored alert, so the packet is complete on the thesis's own metric list, but it is a selected-fact extract with no causal attribution, no year-over-year comparator, no adjusted measures, and no segment or rate/volume detail. Supported implication (arithmetic only): sequential GAAP revenue rose 1625 USD_million, fully accounted for by NII (+563) and noninterest income (+1062) with a zero unlisted residual, and sequential GAAP net income applicable to common rose 1215 USD_million while the provision for credit losses fell 297 USD_million and noninterest expense rose only 154 USD_million. Material counterpoints: the tax line rose 415 USD_million (+72.55% of its baseline) and preferred dividends rose 138 USD_million (+47.42%), so the common-attributable increase (+1215) is smaller than the net income increase (+1353) and the pretax increase (+1768); the effective tax rate implied by the displayed rows (987/9456 versus 572/7688) is higher, which is a percentage-point shift, not a relative-percent statement about earnings quality. The revenue-to-common-earnings bridge is therefore not a clean pass-through and the packet does not explain why tax and preferred dividends moved. Missing evidence: no year-over-year figures, no adjusted/non-GAAP reconciliation, no net interest margin, deposit or loan balances, no segment (consumer, wealth, global markets, global banking) detail, no credit quality metrics beyond the single provision line, no share count or buyback data, and no management commentary. Because attribution of the revenue and earnings changes to any driver is unresolved in the supplied evidence, the review is recorded as needs_review: status and conviction are preserved and the thesis remains blocked from downstream decisions pending a sourced, complete, conflict-free follow-up for the same event period.",
+            "missing_metrics": [],
+            "unresolved_conflicts": [],
+            "matched_terms": [
+              "bac",
+              "symbol_match"
+            ],
+            "evidence": [
+              {
+                "id": "HOLDOUT-BAC-EVENT-v1",
+                "note": "Event packet, CY2025 Q3 ended 2025-09-30, GAAP selected facts, USD_million_rounded.",
+                "sha256": "851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a",
+                "url": "https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm"
+              },
+              {
+                "id": "HOLDOUT-BAC-BASELINE-v1",
+                "note": "Baseline packet, CY2025 Q2 ended 2025-06-30, GAAP selected facts, USD_million_rounded.",
+                "sha256": "e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c",
+                "url": "https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm"
+              }
+            ],
+            "created_at": "2026-10-24T09:27:19Z"
+          }
+        ]
+      }
+    ],
+    "alerts": [
+      {
+        "id": "fa_c98706d4f501444d941b",
+        "watchlist_id": "wl_638846c8ca644d6384c3",
+        "thesis_id": "th_cb21b27931874d288d7c",
+        "market": "US",
+        "symbol": "BAC",
+        "event_fingerprint": "a36e8fc15b8683c214cb6d219292805c7e755b598fbf7b14b5d48a25ebd25399",
+        "event": {
+          "external_id": "HOLDOUT-V2-BAC-EVENT",
+          "type": "earnings",
+          "summary": "BAC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: BAC-Q3-NII=15233 USD_million; BAC-Q3-NONINTINC=12855 USD_million; BAC-Q3-REV=28088 USD_million; BAC-Q3-PROV=1295 USD_million; BAC-Q3-OPEX=17337 USD_million; BAC-Q3-PRETAX=9456 USD_million; BAC-Q3-TAX=987 USD_million; BAC-Q3-NET=8469 USD_million; BAC-Q3-PREF=429 USD_million; BAC-Q3-COMMON=8040 USD_million.",
+          "as_of": "2025-10-15",
+          "sources": [
+            {
+              "id": "HOLDOUT-BAC-EVENT-v1",
+              "url": "https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm",
+              "sha256": "851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a"
+            }
+          ],
+          "observed_metrics": {
+            "gaap_net_interest_income": {
+              "value": "15233",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-NII"
+            },
+            "gaap_noninterest_income": {
+              "value": "12855",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-NONINTINC"
+            },
+            "gaap_total_revenue_net_of_interest_expense": {
+              "value": "28088",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-REV"
+            },
+            "gaap_provision_for_credit_losses": {
+              "value": "1295",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-PROV"
+            },
+            "gaap_noninterest_expense": {
+              "value": "17337",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-OPEX"
+            },
+            "gaap_income_before_income_taxes": {
+              "value": "9456",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-PRETAX"
+            },
+            "gaap_income_tax_expense": {
+              "value": "987",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-TAX"
+            },
+            "gaap_net_income": {
+              "value": "8469",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-NET"
+            },
+            "gaap_preferred_stock_dividends": {
+              "value": "429",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-PREF"
+            },
+            "gaap_net_income_applicable_to_common": {
+              "value": "8040",
+              "unit": "USD_million",
+              "fact_id": "BAC-Q3-COMMON"
+            }
+          },
+          "source_claims": [],
+          "unresolved_conflicts": []
+        },
+        "matched_terms": [
+          {
+            "bucket": "watchlist",
+            "term": "bac",
+            "weight": 1
+          }
+        ],
+        "match_score": 1,
+        "status": "acknowledged",
+        "duplicate_count": 1,
+        "first_seen_at": "2026-10-24T09:27:04Z",
+        "last_seen_at": "2026-10-24T09:27:04Z",
+        "created_at": "2026-10-24T09:27:04Z",
+        "updated_at": "2026-10-24T09:27:20Z",
+        "version": 2,
+        "created_by_agent_id": "finance-coordinator",
+        "created_in_session_id": "panel-seed"
+      }
+    ]
+  },
+  "turns": [
+    {
+      "prompt": "Historical source-bounded SEC research-state replay, not a trade request. Read the stored thesis and earnings alert using finance tools. The host-checked numeric context below is arithmetic on selected source rows, not a causal explanation or complete filing. Distinguish sequential from year-over-year figures, reported from adjusted measures, and percentage points from relative percent. Independently explain a supported implication, a material counterpoint, missing evidence, and your own research-state decision. Do not infer absolute loss dollars from a rate or attribute a total to listed components when a residual remains. Persist one source-linked version-protected review, acknowledge the alert, and verify that any needs_review decision leaves the thesis blocked. Do not trade.\n\nCase: BAC-2025-Q3-REVENUE-TO-COMMON-EARNINGS-BRIDGE\nBaseline SEC SHA-256: e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\nEvent SEC SHA-256: 851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\nDisplayed-value comparisons (same metric and basis):\nmetric | baseline fact/value | event fact/value | change | relative change\ngaap_income_before_income_taxes | BAC-Q2-PRETAX=7688 USD_million_rounded | BAC-Q3-PRETAX=9456 USD_million_rounded | 1768 USD_million | 23% of baseline\ngaap_income_tax_expense | BAC-Q2-TAX=572 USD_million_rounded | BAC-Q3-TAX=987 USD_million_rounded | 415 USD_million | 72.55% of baseline\ngaap_net_income | BAC-Q2-NET=7116 USD_million_rounded | BAC-Q3-NET=8469 USD_million_rounded | 1353 USD_million | 19.01% of baseline\ngaap_net_income_applicable_to_common | BAC-Q2-COMMON=6825 USD_million_rounded | BAC-Q3-COMMON=8040 USD_million_rounded | 1215 USD_million | 17.8% of baseline\ngaap_net_interest_income | BAC-Q2-NII=14670 USD_million_rounded | BAC-Q3-NII=15233 USD_million_rounded | 563 USD_million | 3.84% of baseline\ngaap_noninterest_expense | BAC-Q2-OPEX=17183 USD_million_rounded | BAC-Q3-OPEX=17337 USD_million_rounded | 154 USD_million | 0.9% of baseline\ngaap_noninterest_income | BAC-Q2-NONINTINC=11793 USD_million_rounded | BAC-Q3-NONINTINC=12855 USD_million_rounded | 1062 USD_million | 9.01% of baseline\ngaap_preferred_stock_dividends | BAC-Q2-PREF=291 USD_million_rounded | BAC-Q3-PREF=429 USD_million_rounded | 138 USD_million | 47.42% of baseline\ngaap_provision_for_credit_losses | BAC-Q2-PROV=1592 USD_million_rounded | BAC-Q3-PROV=1295 USD_million_rounded | -297 USD_million | -18.66% of baseline\ngaap_total_revenue_net_of_interest_expense | BAC-Q2-REV=26463 USD_million_rounded | BAC-Q3-REV=28088 USD_million_rounded | 1625 USD_million | 6.14% of baseline\nArithmetic mix for gaap_total_revenue_net_of_interest_expense: total 1625 USD_million; listed components gaap_net_interest_income=563 USD_million, gaap_noninterest_income=1062 USD_million; unlisted residual 0 USD_million. This is not a causal explanation.\nBoundary: source-selected displayed values only; no causal driver, durability, valuation, or trading conclusion is established by this table.\n\nCase BAC-2025-Q3-REVENUE-TO-COMMON-EARNINGS-BRIDGE; thesis ID th_cb21b27931874d288d7c; alert ID fa_c98706d4f501444d941b.",
+      "response": {
+        "id": "chatcmpl-1792834024670015000",
+        "object": "chat.completion",
+        "created": 1792834024,
+        "model": "deepseek/deepseek-v4-flash",
+        "choices": [
+          {
+            "index": 0,
+            "message": {
+              "role": "assistant",
+              "content": "# BAC-2025-Q3-REVENUE-TO-COMMON-EARNINGS-BRIDGE — research-state replay\n\n**Scope note.** This is a historical, source-bounded replay of stored research state. No trade was placed, no valuation or recommendation is made, and nothing below adds facts beyond the two SEC packets and the arithmetic supplied. All figures are GAAP, `USD_million_rounded`, and the comparison is **sequential (CY2025 Q2 → CY2025 Q3)**, not year-over-year.\n\n**Sources used**\n- Baseline: `HOLDOUT-BAC-BASELINE-v1`, period ended 2025-06-30, SHA-256 `e1766549…79d2c`\n- Event: `HOLDOUT-BAC-EVENT-v1`, period ended 2025-09-30, as_of 2025-10-15, SHA-256 `851bae63…0aa7a`\n\n**Stored state before review:** thesis `th_cb21b27931874d288d7c`, status `active`, conviction 3, version 1, no prior reviews. Alert `fa_c98706d4f501444d941b`, status `new`, version 1, duplicate_count 1, no `source_claims`, no `unresolved_conflicts`.\n\n---\n\n## 1. Supported implication (arithmetic only)\n\nThe sequential revenue increase is fully accounted for by the two listed components with **zero unlisted residual**: NII +563 and noninterest income +1,062 sum to the +1,625 total revenue change. On the same sequential basis, net income applicable to common rose +1,215, the provision for credit losses fell 297, and noninterest expense rose only 154. So the packet is internally consistent with a quarter in which both revenue lines grew and the two largest below-revenue drags (provision, opex) did not offset that growth.\n\nThis is a statement about displayed rows reconciling, **not** a causal explanation of why any line moved.\n\n## 2. Material counterpoint\n\nThe revenue-to-common-earnings bridge is **not a clean pass-through**, and the packet itself contains the reason to be cautious:\n\n- Pretax income rose +1,768, but net income rose only +1,353 and common-attributable income only +1,215.\n- The tax line rose +415 (+72.55% of its baseline) and preferred dividends rose +138 (+47.42% of baseline) — the two largest *relative* moves in the table.\n- The effective tax rate implied by the displayed rows (987/9,456 vs 572/7,688) is higher. That is a **percentage-point** shift in the ratio, not a relative-percent statement about earnings quality, and the packet does not say whether it reflects a discrete item, a change in the mix of pretax income, or something else.\n- Preferred dividends are a financing/capital-structure line, not an operating one; their +47% move is unexplained by the supplied rows.\n\nNet: the headline common-earnings gain is real in the arithmetic, but a meaningful share of the pretax improvement did not reach common shareholders, and the packet offers no attribution for that leakage.\n\n## 3. Missing evidence\n\n- **No year-over-year comparator** — only Q2→Q3 sequential; seasonality cannot be separated from trend.\n- **No adjusted / non-GAAP measures or reconciliation** — reported vs adjusted cannot be distinguished here.\n- **No causal driver** — no rate/volume decomposition, no net interest margin, no deposit or loan balances, no segment (consumer, wealth, global markets, global banking) detail.\n- **No credit quality beyond the single provision line** — no net charge-offs, nonperforming, or reserve coverage.\n- **No share count or buyback data**, so per-share and capital-return effects on common earnings are unknown.\n- **No management commentary or filing narrative** — the packets are selected-fact extracts, not complete filings.\n- **No absolute loss dollars** are inferable from any rate in this packet, and none are asserted.\n\n## 4. Research-state decision\n\n**Decision: `needs_review`; impact: `mixed`.** All ten metrics on the thesis's `required_event_metrics` list are present in the alert (`missing_metrics: []`, `unresolved_conflicts: []`), so the packet is complete on the thesis's own metric list — but completeness of the metric list is not the same as sufficiency for a substantive decision. Attribution of the revenue and earnings changes to any driver is unresolved in the supplied evidence, and the tax and preferred-dividend moves are unexplained. I therefore did not upgrade, downgrade, or invalidate.\n\n**Persisted:** review `tr_71d5c681af384f998e84` on thesis version 1 → thesis now **version 2**, `status: active` and `conviction: 3` **preserved**, `decision_hold: true`, `actionability: blocked`, `decision_hold_alert_id: fa_c98706d4f501444d941b`, `last_review_at: 2026-10-24T09:27:19Z`. Evidence on the review carries both packet IDs with their SHA-256 hashes.\n\n**Alert:** `fa_c98706d4f501444d941b` acknowledged, version 1 → 2.\n\n**Block verification:** re-read the thesis after the review — `decision_hold: true` and `actionability: blocked` are confirmed on the stored record, so the needs_review decision does leave the thesis blocked from downstream decisions. Resolution requires a sourced, complete, conflict-free follow-up for the same event period with source continuity; a voluntary or conflict hold would additionally require new source evidence.\n\n**Note on tooling:** my first attempt passed structured `causal_claims` and was rejected with `accounting_lineage_metadata_missing` — the stored alert has no trusted statement-line metadata. I resubmitted with `causal_claims: []`, which is the correct representation: no source-backed driver exists in this packet, so the revenue-to-earnings attribution remains explicitly unresolved rather than asserted."
+            },
+            "finish_reason": "stop"
+          }
+        ],
+        "usage": {
+          "prompt_tokens": 62980,
+          "completion_tokens": 4673,
+          "total_tokens": 67653
+        },
+        "fastclaw": {
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_mOwFzncykXnCUEnVVHPt1091",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"thesis_id\": \"th_cb21b27931874d288d7c\", \"review_limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_khiHIlZW31fkdkxbggN44905",
+              "name": "finance-tools__alert_list",
+              "arguments": "{\"symbol\": \"BAC\", \"market\": \"US\", \"limit\": 20}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_mOwFzncykXnCUEnVVHPt1091",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"8ba5c05a-b8c5-447a-bea9-c097445cdc87\",\"as_of\":\"2026-10-24T09:27:05Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_cb21b27931874d288d7c\",\"market\":\"US\",\"symbol\":\"BAC\",\"title\":\"BAC source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: BAC-Q2-NII=14670 USD_million; BAC-Q2-NONINTINC=11793 USD_million; BAC-Q2-REV=26463 USD_million; BAC-Q2-PROV=1592 USD_million; BAC-Q2-OPEX=17183 USD_million; BAC-Q2-PRETAX=7688 USD_million; BAC-Q2-TAX=572 USD_million; BAC-Q2-NET=7116 USD_million; BAC-Q2-PREF=291 USD_million; BAC-Q2-COMMON=6825 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":false,\"actionability\":\"available\",\"decision_hold_alert_id\":null,\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_income_before_income_taxes\",\"gaap_income_tax_expense\",\"gaap_net_income\",\"gaap_net_income_applicable_to_common\",\"gaap_net_interest_income\",\"gaap_noninterest_expense\",\"gaap_noninterest_income\",\"gaap_preferred_stock_dividends\",\"gaap_provision_for_credit_losses\",\"gaap_total_revenue_net_of_interest_expense\"],\"evidence\":[{\"id\":\"HOLDOUT-BAC-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm\",\"sha256\":\"e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\"}],\"next_review_at\":null,\"last_review_at\":null,\"created_at\":\"2026-10-24T09:27:04Z\",\"updated_at\":\"2026-10-24T09:27:04Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.7941,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_khiHIlZW31fkdkxbggN44905",
+              "name": "finance-tools__alert_list",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"05b31e26-70a9-499e-9bad-e85c33e41d02\",\"as_of\":\"2026-10-24T09:27:05Z\",\"stale_after\":null,\"data\":{\"alerts\":[{\"id\":\"fa_c98706d4f501444d941b\",\"watchlist_id\":\"wl_638846c8ca644d6384c3\",\"thesis_id\":\"th_cb21b27931874d288d7c\",\"market\":\"US\",\"symbol\":\"BAC\",\"event_fingerprint\":\"a36e8fc15b8683c214cb6d219292805c7e755b598fbf7b14b5d48a25ebd25399\",\"event\":{\"external_id\":\"HOLDOUT-V2-BAC-EVENT\",\"type\":\"earnings\",\"summary\":\"BAC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: BAC-Q3-NII=15233 USD_million; BAC-Q3-NONINTINC=12855 USD_million; BAC-Q3-REV=28088 USD_million; BAC-Q3-PROV=1295 USD_million; BAC-Q3-OPEX=17337 USD_million; BAC-Q3-PRETAX=9456 USD_million; BAC-Q3-TAX=987 USD_million; BAC-Q3-NET=8469 USD_million; BAC-Q3-PREF=429 USD_million; BAC-Q3-COMMON=8040 USD_million.\",\"as_of\":\"2025-10-15\",\"sources\":[{\"id\":\"HOLDOUT-BAC-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\",\"sha256\":\"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\"}],\"observed_metrics\":{\"gaap_net_interest_income\":{\"value\":\"15233\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-NII\"},\"gaap_noninterest_income\":{\"value\":\"12855\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-NONINTINC\"},\"gaap_total_revenue_net_of_interest_expense\":{\"value\":\"28088\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-REV\"},\"gaap_provision_for_credit_losses\":{\"value\":\"1295\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-PROV\"},\"gaap_noninterest_expense\":{\"value\":\"17337\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-OPEX\"},\"gaap_income_before_income_taxes\":{\"value\":\"9456\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-PRETAX\"},\"gaap_income_tax_expense\":{\"value\":\"987\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-TAX\"},\"gaap_net_income\":{\"value\":\"8469\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-NET\"},\"gaap_preferred_stock_dividends\":{\"value\":\"429\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-PREF\"},\"gaap_net_income_applicable_to_common\":{\"value\":\"8040\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-COMMON\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"bac\",\"weight\":1}],\"match_score\":1,\"status\":\"new\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T09:27:04Z\",\"last_seen_at\":\"2026-10-24T09:27:04Z\",\"created_at\":\"2026-10-24T09:27:04Z\",\"updated_at\":\"2026-10-24T09:27:04Z\",\"version\":1,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"}],\"count\":1,\"filters\":{\"limit\":20,\"market\":\"US\",\"symbol\":\"BAC\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9677,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_P60lcUPMOFHQFRYf4vru3676",
+              "name": "finance-tools__thesis_match_event",
+              "arguments": "{\"market\": \"US\", \"symbol\": \"BAC\", \"event_summary\": \"BAC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: BAC-Q3-NII=15233 USD_million; BAC-Q3-NONINTINC=12855 USD_million; BAC-Q3-REV=28088 USD_million; BAC-Q3-PROV=1295 USD_million; BAC-Q3-OPEX=17337 USD_million; BAC-Q3-PRETAX=9456 USD_million; BAC-Q3-TAX=987 USD_million; BAC-Q3-NET=8469 USD_million; BAC-Q3-PREF=429 USD_million; BAC-Q3-COMMON=8040 USD_million.\", \"limit\": 10}",
+              "round": 2
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_P60lcUPMOFHQFRYf4vru3676",
+              "name": "finance-tools__thesis_match_event",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"aa8bae27-a36b-4487-a4bf-b6ac240e7e0c\",\"as_of\":\"2026-10-24T09:27:07Z\",\"stale_after\":null,\"data\":{\"market\":\"US\",\"symbol\":\"BAC\",\"event_summary\":\"BAC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: BAC-Q3-NII=15233 USD_million; BAC-Q3-NONINTINC=12855 USD_million; BAC-Q3-REV=28088 USD_million; BAC-Q3-PROV=1295 USD_million; BAC-Q3-OPEX=17337 USD_million; BAC-Q3-PRETAX=9456 USD_million; BAC-Q3-TAX=987 USD_million; BAC-Q3-NET=8469 USD_million; BAC-Q3-PREF=429 USD_million; BAC-Q3-COMMON=8040 USD_million.\",\"matches\":[{\"thesis_id\":\"th_cb21b27931874d288d7c\",\"title\":\"BAC source-bounded earnings thesis\",\"status\":\"active\",\"version\":1,\"match_score\":0,\"matched_terms\":[],\"match_reason\":\"symbol_match\"}],\"count\":1},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9091,\"flags\":[\"tenant_isolated\",\"deterministic_event_match\",\"model_review_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 2
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_VnjApnUvJsVbVaSvBv9o3720",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"thesis_id\": \"th_cb21b27931874d288d7c\", \"expected_version\": 1, \"alert_id\": \"fa_c98706d4f501444d941b\", \"decision\": \"needs_review\", \"impact\": \"mixed\", \"matched_terms\": [\"bac\", \"symbol_match\"], \"event\": {\"type\": \"earnings\", \"as_of\": \"2025-09-30\", \"summary\": \"BAC CY2025 Q3 (period ended 2025-09-30) SEC selected-fact packet, compared with the stored CY2025 Q2 baseline (period ended 2025-06-30). Sequential quarter-over-quarter displayed values: REV 26463 -> 28088 (+1625, +6.14% of baseline); NII 14670 -> 15233 (+563, +3.84%); NONINTINC 11793 -> 12855 (+1062, +9.01%); PROV 1592 -> 1295 (-297, -18.66%); OPEX 17183 -> 17337 (+154, +0.90%); PRETAX 7688 -> 9456 (+1768, +23.00%); TAX 572 -> 987 (+415, +72.55%); NET 7116 -> 8469 (+1353, +19.01%); PREF 291 -> 429 (+138, +47.42%); COMMON 6825 -> 8040 (+1215, +17.80%). All USD_million_rounded, GAAP basis as labeled in the packet. Revenue mix arithmetic: 563 + 1062 = 1625 with unlisted residual 0. No year-over-year comparison, no adjusted/non-GAAP measures, no segment detail, no rate/volume decomposition, and no causal driver are present in the supplied rows.\", \"sources\": [{\"id\": \"HOLDOUT-BAC-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\", \"sha256\": \"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\"}, {\"id\": \"HOLDOUT-BAC-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm\", \"sha256\": \"e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\"}]}, \"rationale\": \"Source-bounded replay of the Q3 packet against the Q2 baseline. All ten required event metrics are present in the stored alert, so the packet is complete on the thesis's own metric list, but the packet is a selected-fact extract with no causal attribution, no year-over-year comparator, no adjusted measures, and no segment or rate/volume detail. Supported implication (arithmetic only): sequential GAAP revenue rose 1625 USD_million, fully accounted for by NII (+563) and noninterest income (+1062) with a zero unlisted residual, and sequential GAAP net income applicable to common rose 1215 USD_million while the provision for credit losses fell 297 USD_million and noninterest expense rose only 154 USD_million. Material counterpoints: the tax line rose 415 USD_million (+72.55% of its baseline) and preferred dividends rose 138 USD_million (+47.42%), so the common-attributable increase (+1215) is smaller than the net income increase (+1353) and the pretax increase (+1768); the effective tax rate implied by the displayed rows (987/9456 vs 572/7688) is higher, which is a percentage-point shift, not a relative-percent statement about earnings quality. The revenue-to-common-earnings bridge is therefore not a clean pass-through and the packet does not explain why tax and preferred dividends moved. Missing evidence: no year-over-year figures, no adjusted/non-GAAP reconciliation, no net interest margin, deposit or loan balances, no segment (consumer, wealth, global markets, global banking) detail, no credit quality metrics beyond the single provision line, no share count or buyback data, and no management commentary. Because attribution of the revenue and earnings changes to any driver is unresolved in the supplied evidence, the review is recorded as needs_review: status and conviction are preserved and the thesis remains blocked from downstream decisions pending a sourced, complete, conflict-free follow-up for the same event period.\", \"evidence\": [{\"id\": \"HOLDOUT-BAC-EVENT-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\", \"sha256\": \"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\", \"note\": \"Event packet, CY2025 Q3 ended 2025-09-30, GAAP selected facts, USD_million_rounded.\"}, {\"id\": \"HOLDOUT-BAC-BASELINE-v1\", \"url\": \"https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm\", \"sha256\": \"e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\", \"note\": \"Baseline packet, CY2025 Q2 ended 2025-06-30, GAAP selected facts, USD_million_rounded.\"}], \"causal_claims\": []}",
+              "round": 3
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_VnjApnUvJsVbVaSvBv9o3720",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":false,\"request_id\":\"c2a5797c-29a2-4693-b204-2c7da12fe2dc\",\"as_of\":\"2026-10-24T09:27:14Z\",\"stale_after\":null,\"data\":null,\"sources\":[],\"quality\":{\"completeness\":0.0,\"flags\":[\"accounting_lineage_metadata_missing\"]},\"errors\":[{\"code\":\"accounting_lineage_metadata_missing\",\"message\":\"structured causal claims require trusted statement-line metadata in the stored alert\",\"retriable\":false}],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 3
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_TygN0WSpm20TnPWQ5FdX0646",
+              "name": "finance-tools__thesis_record_review",
+              "arguments": "{\"alert_id\": \"fa_c98706d4f501444d941b\", \"decision\": \"needs_review\", \"event\": {\"as_of\": \"2025-09-30\", \"sources\": [{\"id\": \"HOLDOUT-BAC-EVENT-v1\", \"sha256\": \"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\", \"url\": \"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\"}, {\"id\": \"HOLDOUT-BAC-BASELINE-v1\", \"sha256\": \"e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\", \"url\": \"https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm\"}], \"summary\": \"BAC CY2025 Q3 (period ended 2025-09-30) SEC selected-fact packet compared with the stored CY2025 Q2 baseline (period ended 2025-06-30). Sequential quarter-over-quarter displayed values, USD_million_rounded, GAAP basis as labeled: REV 26463 -> 28088 (+1625, +6.14% of baseline); NII 14670 -> 15233 (+563, +3.84%); NONINTINC 11793 -> 12855 (+1062, +9.01%); PROV 1592 -> 1295 (-297, -18.66%); OPEX 17183 -> 17337 (+154, +0.90%); PRETAX 7688 -> 9456 (+1768, +23.00%); TAX 572 -> 987 (+415, +72.55%); NET 7116 -> 8469 (+1353, +19.01%); PREF 291 -> 429 (+138, +47.42%); COMMON 6825 -> 8040 (+1215, +17.80%). Revenue mix arithmetic: 563 + 1062 = 1625 with unlisted residual 0. No year-over-year comparator, no adjusted/non-GAAP measures, no segment detail, no rate/volume decomposition, and no causal driver are present in the supplied rows.\", \"type\": \"earnings\"}, \"evidence\": [{\"id\": \"HOLDOUT-BAC-EVENT-v1\", \"note\": \"Event packet, CY2025 Q3 ended 2025-09-30, GAAP selected facts, USD_million_rounded.\", \"sha256\": \"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\", \"url\": \"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\"}, {\"id\": \"HOLDOUT-BAC-BASELINE-v1\", \"note\": \"Baseline packet, CY2025 Q2 ended 2025-06-30, GAAP selected facts, USD_million_rounded.\", \"sha256\": \"e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\", \"url\": \"https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm\"}], \"expected_version\": 1, \"impact\": \"mixed\", \"matched_terms\": [\"bac\", \"symbol_match\"], \"rationale\": \"Source-bounded replay of the Q3 packet against the Q2 baseline. All ten required event metrics are present in the stored alert, so the packet is complete on the thesis's own metric list, but it is a selected-fact extract with no causal attribution, no year-over-year comparator, no adjusted measures, and no segment or rate/volume detail. Supported implication (arithmetic only): sequential GAAP revenue rose 1625 USD_million, fully accounted for by NII (+563) and noninterest income (+1062) with a zero unlisted residual, and sequential GAAP net income applicable to common rose 1215 USD_million while the provision for credit losses fell 297 USD_million and noninterest expense rose only 154 USD_million. Material counterpoints: the tax line rose 415 USD_million (+72.55% of its baseline) and preferred dividends rose 138 USD_million (+47.42%), so the common-attributable increase (+1215) is smaller than the net income increase (+1353) and the pretax increase (+1768); the effective tax rate implied by the displayed rows (987/9456 versus 572/7688) is higher, which is a percentage-point shift, not a relative-percent statement about earnings quality. The revenue-to-common-earnings bridge is therefore not a clean pass-through and the packet does not explain why tax and preferred dividends moved. Missing evidence: no year-over-year figures, no adjusted/non-GAAP reconciliation, no net interest margin, deposit or loan balances, no segment (consumer, wealth, global markets, global banking) detail, no credit quality metrics beyond the single provision line, no share count or buyback data, and no management commentary. Because attribution of the revenue and earnings changes to any driver is unresolved in the supplied evidence, the review is recorded as needs_review: status and conviction are preserved and the thesis remains blocked from downstream decisions pending a sourced, complete, conflict-free follow-up for the same event period.\", \"thesis_id\": \"th_cb21b27931874d288d7c\"}",
+              "round": 4
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_TygN0WSpm20TnPWQ5FdX0646",
+              "name": "finance-tools__thesis_record_review",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"ced79633-d14e-464f-9046-080296f5bcbc\",\"as_of\":\"2026-10-24T09:27:19Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_cb21b27931874d288d7c\",\"market\":\"US\",\"symbol\":\"BAC\",\"title\":\"BAC source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: BAC-Q2-NII=14670 USD_million; BAC-Q2-NONINTINC=11793 USD_million; BAC-Q2-REV=26463 USD_million; BAC-Q2-PROV=1592 USD_million; BAC-Q2-OPEX=17183 USD_million; BAC-Q2-PRETAX=7688 USD_million; BAC-Q2-TAX=572 USD_million; BAC-Q2-NET=7116 USD_million; BAC-Q2-PREF=291 USD_million; BAC-Q2-COMMON=6825 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_c98706d4f501444d941b\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_income_before_income_taxes\",\"gaap_income_tax_expense\",\"gaap_net_income\",\"gaap_net_income_applicable_to_common\",\"gaap_net_interest_income\",\"gaap_noninterest_expense\",\"gaap_noninterest_income\",\"gaap_preferred_stock_dividends\",\"gaap_provision_for_credit_losses\",\"gaap_total_revenue_net_of_interest_expense\"],\"evidence\":[{\"id\":\"HOLDOUT-BAC-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm\",\"sha256\":\"e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-24T09:27:19Z\",\"created_at\":\"2026-10-24T09:27:04Z\",\"updated_at\":\"2026-10-24T09:27:19Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"review\":{\"id\":\"tr_71d5c681af384f998e84\",\"thesis_id\":\"th_cb21b27931874d288d7c\",\"alert_id\":\"fa_c98706d4f501444d941b\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-BAC-2025-Q3-REVENUE-TO-COMMON-EARNINGS-BRIDGE-r1\",\"event\":{\"type\":\"earnings\",\"summary\":\"BAC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: BAC-Q3-NII=15233 USD_million; BAC-Q3-NONINTINC=12855 USD_million; BAC-Q3-REV=28088 USD_million; BAC-Q3-PROV=1295 USD_million; BAC-Q3-OPEX=17337 USD_million; BAC-Q3-PRETAX=9456 USD_million; BAC-Q3-TAX=987 USD_million; BAC-Q3-NET=8469 USD_million; BAC-Q3-PREF=429 USD_million; BAC-Q3-COMMON=8040 USD_million.\",\"as_of\":\"2025-10-15\",\"sources\":[{\"id\":\"HOLDOUT-BAC-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\",\"sha256\":\"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Source-bounded replay of the Q3 packet against the Q2 baseline. All ten required event metrics are present in the stored alert, so the packet is complete on the thesis's own metric list, but it is a selected-fact extract with no causal attribution, no year-over-year comparator, no adjusted measures, and no segment or rate/volume detail. Supported implication (arithmetic only): sequential GAAP revenue rose 1625 USD_million, fully accounted for by NII (+563) and noninterest income (+1062) with a zero unlisted residual, and sequential GAAP net income applicable to common rose 1215 USD_million while the provision for credit losses fell 297 USD_million and noninterest expense rose only 154 USD_million. Material counterpoints: the tax line rose 415 USD_million (+72.55% of its baseline) and preferred dividends rose 138 USD_million (+47.42%), so the common-attributable increase (+1215) is smaller than the net income increase (+1353) and the pretax increase (+1768); the effective tax rate implied by the displayed rows (987/9456 versus 572/7688) is higher, which is a percentage-point shift, not a relative-percent statement about earnings quality. The revenue-to-common-earnings bridge is therefore not a clean pass-through and the packet does not explain why tax and preferred dividends moved. Missing evidence: no year-over-year figures, no adjusted/non-GAAP reconciliation, no net interest margin, deposit or loan balances, no segment (consumer, wealth, global markets, global banking) detail, no credit quality metrics beyond the single provision line, no share count or buyback data, and no management commentary. Because attribution of the revenue and earnings changes to any driver is unresolved in the supplied evidence, the review is recorded as needs_review: status and conviction are preserved and the thesis remains blocked from downstream decisions pending a sourced, complete, conflict-free follow-up for the same event period.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"bac\",\"symbol_match\"],\"evidence\":[{\"id\":\"HOLDOUT-BAC-EVENT-v1\",\"note\":\"Event packet, CY2025 Q3 ended 2025-09-30, GAAP selected facts, USD_million_rounded.\",\"sha256\":\"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\"},{\"id\":\"HOLDOUT-BAC-BASELINE-v1\",\"note\":\"Baseline packet, CY2025 Q2 ended 2025-06-30, GAAP selected facts, USD_million_rounded.\",\"sha256\":\"e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm\"}],\"created_at\":\"2026-10-24T09:27:19Z\"}},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9,\"flags\":[\"tenant_isolated\",\"research_state_only\",\"human_trading_decision_required\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 4
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_5bsjcqFlF595jIGk1fwj8681",
+              "name": "finance-tools__alert_update",
+              "arguments": "{\"alert_id\": \"fa_c98706d4f501444d941b\", \"expected_version\": 1, \"status\": \"acknowledged\"}",
+              "round": 5
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_5bsjcqFlF595jIGk1fwj8681",
+              "name": "finance-tools__alert_update",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"a2aa2996-187e-4f80-82e8-2807f2d93112\",\"as_of\":\"2026-10-24T09:27:20Z\",\"stale_after\":null,\"data\":{\"alert\":{\"id\":\"fa_c98706d4f501444d941b\",\"watchlist_id\":\"wl_638846c8ca644d6384c3\",\"thesis_id\":\"th_cb21b27931874d288d7c\",\"market\":\"US\",\"symbol\":\"BAC\",\"event_fingerprint\":\"a36e8fc15b8683c214cb6d219292805c7e755b598fbf7b14b5d48a25ebd25399\",\"event\":{\"external_id\":\"HOLDOUT-V2-BAC-EVENT\",\"type\":\"earnings\",\"summary\":\"BAC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: BAC-Q3-NII=15233 USD_million; BAC-Q3-NONINTINC=12855 USD_million; BAC-Q3-REV=28088 USD_million; BAC-Q3-PROV=1295 USD_million; BAC-Q3-OPEX=17337 USD_million; BAC-Q3-PRETAX=9456 USD_million; BAC-Q3-TAX=987 USD_million; BAC-Q3-NET=8469 USD_million; BAC-Q3-PREF=429 USD_million; BAC-Q3-COMMON=8040 USD_million.\",\"as_of\":\"2025-10-15\",\"sources\":[{\"id\":\"HOLDOUT-BAC-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\",\"sha256\":\"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\"}],\"observed_metrics\":{\"gaap_net_interest_income\":{\"value\":\"15233\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-NII\"},\"gaap_noninterest_income\":{\"value\":\"12855\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-NONINTINC\"},\"gaap_total_revenue_net_of_interest_expense\":{\"value\":\"28088\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-REV\"},\"gaap_provision_for_credit_losses\":{\"value\":\"1295\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-PROV\"},\"gaap_noninterest_expense\":{\"value\":\"17337\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-OPEX\"},\"gaap_income_before_income_taxes\":{\"value\":\"9456\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-PRETAX\"},\"gaap_income_tax_expense\":{\"value\":\"987\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-TAX\"},\"gaap_net_income\":{\"value\":\"8469\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-NET\"},\"gaap_preferred_stock_dividends\":{\"value\":\"429\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-PREF\"},\"gaap_net_income_applicable_to_common\":{\"value\":\"8040\",\"unit\":\"USD_million\",\"fact_id\":\"BAC-Q3-COMMON\"}},\"source_claims\":[],\"unresolved_conflicts\":[]},\"matched_terms\":[{\"bucket\":\"watchlist\",\"term\":\"bac\",\"weight\":1}],\"match_score\":1,\"status\":\"acknowledged\",\"duplicate_count\":1,\"first_seen_at\":\"2026-10-24T09:27:04Z\",\"last_seen_at\":\"2026-10-24T09:27:04Z\",\"created_at\":\"2026-10-24T09:27:04Z\",\"updated_at\":\"2026-10-24T09:27:20Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"operation\":\"updated\"},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9661,\"flags\":[\"tenant_isolated\",\"research_state_only\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 5
+            },
+            {
+              "type": "tool_call",
+              "id": "call_00_yisijAvJD7YphJ0eaA9e3795",
+              "name": "finance-tools__thesis_get",
+              "arguments": "{\"review_limit\": 5, \"thesis_id\": \"th_cb21b27931874d288d7c\"}",
+              "round": 6
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_yisijAvJD7YphJ0eaA9e3795",
+              "name": "finance-tools__thesis_get",
+              "result": "{\"schema_version\":\"finance.tool.v1\",\"ok\":true,\"request_id\":\"a990e9e9-1cf3-4dc5-8de5-86e471b07ca8\",\"as_of\":\"2026-10-24T09:27:21Z\",\"stale_after\":null,\"data\":{\"thesis\":{\"id\":\"th_cb21b27931874d288d7c\",\"market\":\"US\",\"symbol\":\"BAC\",\"title\":\"BAC source-bounded earnings thesis\",\"thesis\":\"Baseline CY2025 Q2 ended 2025-06-30: BAC-Q2-NII=14670 USD_million; BAC-Q2-NONINTINC=11793 USD_million; BAC-Q2-REV=26463 USD_million; BAC-Q2-PROV=1592 USD_million; BAC-Q2-OPEX=17183 USD_million; BAC-Q2-PRETAX=7688 USD_million; BAC-Q2-TAX=572 USD_million; BAC-Q2-NET=7116 USD_million; BAC-Q2-PREF=291 USD_million; BAC-Q2-COMMON=6825 USD_million. Review the next filing for changes, contrary evidence and missing context. No valuation or trading conclusion has been established.\",\"status\":\"active\",\"conviction\":3,\"decision_hold\":true,\"actionability\":\"blocked\",\"decision_hold_alert_id\":\"fa_c98706d4f501444d941b\",\"assumptions\":[],\"catalysts\":[],\"invalidations\":[],\"required_event_metrics\":[\"gaap_income_before_income_taxes\",\"gaap_income_tax_expense\",\"gaap_net_income\",\"gaap_net_income_applicable_to_common\",\"gaap_net_interest_income\",\"gaap_noninterest_expense\",\"gaap_noninterest_income\",\"gaap_preferred_stock_dividends\",\"gaap_provision_for_credit_losses\",\"gaap_total_revenue_net_of_interest_expense\"],\"evidence\":[{\"id\":\"HOLDOUT-BAC-BASELINE-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm\",\"sha256\":\"e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\"}],\"next_review_at\":null,\"last_review_at\":\"2026-10-24T09:27:19Z\",\"created_at\":\"2026-10-24T09:27:04Z\",\"updated_at\":\"2026-10-24T09:27:19Z\",\"version\":2,\"created_by_agent_id\":\"finance-coordinator\",\"created_in_session_id\":\"panel-seed\"},\"reviews\":[{\"id\":\"tr_71d5c681af384f998e84\",\"thesis_id\":\"th_cb21b27931874d288d7c\",\"alert_id\":\"fa_c98706d4f501444d941b\",\"agent_id\":\"finance-coordinator\",\"session_id\":\"finance-workflow-BAC-2025-Q3-REVENUE-TO-COMMON-EARNINGS-BRIDGE-r1\",\"event\":{\"type\":\"earnings\",\"summary\":\"BAC CY2025 Q3 ended 2025-09-30 SEC selected-fact packet: BAC-Q3-NII=15233 USD_million; BAC-Q3-NONINTINC=12855 USD_million; BAC-Q3-REV=28088 USD_million; BAC-Q3-PROV=1295 USD_million; BAC-Q3-OPEX=17337 USD_million; BAC-Q3-PRETAX=9456 USD_million; BAC-Q3-TAX=987 USD_million; BAC-Q3-NET=8469 USD_million; BAC-Q3-PREF=429 USD_million; BAC-Q3-COMMON=8040 USD_million.\",\"as_of\":\"2025-10-15\",\"sources\":[{\"id\":\"HOLDOUT-BAC-EVENT-v1\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\",\"sha256\":\"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\"}]},\"impact\":\"mixed\",\"decision\":\"needs_review\",\"rationale\":\"Source-bounded replay of the Q3 packet against the Q2 baseline. All ten required event metrics are present in the stored alert, so the packet is complete on the thesis's own metric list, but it is a selected-fact extract with no causal attribution, no year-over-year comparator, no adjusted measures, and no segment or rate/volume detail. Supported implication (arithmetic only): sequential GAAP revenue rose 1625 USD_million, fully accounted for by NII (+563) and noninterest income (+1062) with a zero unlisted residual, and sequential GAAP net income applicable to common rose 1215 USD_million while the provision for credit losses fell 297 USD_million and noninterest expense rose only 154 USD_million. Material counterpoints: the tax line rose 415 USD_million (+72.55% of its baseline) and preferred dividends rose 138 USD_million (+47.42%), so the common-attributable increase (+1215) is smaller than the net income increase (+1353) and the pretax increase (+1768); the effective tax rate implied by the displayed rows (987/9456 versus 572/7688) is higher, which is a percentage-point shift, not a relative-percent statement about earnings quality. The revenue-to-common-earnings bridge is therefore not a clean pass-through and the packet does not explain why tax and preferred dividends moved. Missing evidence: no year-over-year figures, no adjusted/non-GAAP reconciliation, no net interest margin, deposit or loan balances, no segment (consumer, wealth, global markets, global banking) detail, no credit quality metrics beyond the single provision line, no share count or buyback data, and no management commentary. Because attribution of the revenue and earnings changes to any driver is unresolved in the supplied evidence, the review is recorded as needs_review: status and conviction are preserved and the thesis remains blocked from downstream decisions pending a sourced, complete, conflict-free follow-up for the same event period.\",\"missing_metrics\":[],\"unresolved_conflicts\":[],\"matched_terms\":[\"bac\",\"symbol_match\"],\"evidence\":[{\"id\":\"HOLDOUT-BAC-EVENT-v1\",\"note\":\"Event packet, CY2025 Q3 ended 2025-09-30, GAAP selected facts, USD_million_rounded.\",\"sha256\":\"851bae63085610838a602483a5f83eaa1330555c12bb1943dbcc963214d0aa7a\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000390/bac093025ex991.htm\"},{\"id\":\"HOLDOUT-BAC-BASELINE-v1\",\"note\":\"Baseline packet, CY2025 Q2 ended 2025-06-30, GAAP selected facts, USD_million_rounded.\",\"sha256\":\"e1766549f4962f89eaafbd4fe5a9276a1966c73c9dbb91c4db5014936da79d2c\",\"url\":\"https://www.sec.gov/Archives/edgar/data/70858/000007085825000254/bac063025ex991.htm\"}],\"created_at\":\"2026-10-24T09:27:19Z\"}]},\"sources\":[{\"name\":\"finance-tools-ledger\",\"kind\":\"user_research_state\"}],\"quality\":{\"completeness\":0.9,\"flags\":[\"tenant_isolated\"]},\"errors\":[],\"cache\":{\"hit\":false,\"ttl_seconds\":0}}",
+              "round": 6
+            }
+          ],
+          "model_calls": [
+            {
+              "sequence": 1,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 4219,
+              "completion_tokens": 148,
+              "total_tokens": 4367,
+              "estimated_cost_usd": 0.0014433,
+              "priced": true,
+              "latency_ms": 1245.473
+            },
+            {
+              "sequence": 2,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6016,
+              "completion_tokens": 236,
+              "total_tokens": 6252,
+              "cache_read_tokens": 4352,
+              "estimated_cost_usd": 0.000808512,
+              "priced": true,
+              "latency_ms": 1214.644
+            },
+            {
+              "sequence": 3,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 6620,
+              "completion_tokens": 1406,
+              "total_tokens": 8026,
+              "cache_read_tokens": 6144,
+              "estimated_cost_usd": 0.001866864,
+              "priced": true,
+              "latency_ms": 7304.008
+            },
+            {
+              "sequence": 4,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 8185,
+              "completion_tokens": 1380,
+              "total_tokens": 9565,
+              "cache_read_tokens": 7936,
+              "estimated_cost_usd": 0.0017783159999999998,
+              "priced": true,
+              "latency_ms": 5197.236
+            },
+            {
+              "sequence": 5,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 11311,
+              "completion_tokens": 113,
+              "total_tokens": 11424,
+              "cache_read_tokens": 9472,
+              "estimated_cost_usd": 0.0007441319999999999,
+              "priced": true,
+              "latency_ms": 1086.927
+            },
+            {
+              "sequence": 6,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 12406,
+              "completion_tokens": 73,
+              "total_tokens": 12479,
+              "cache_read_tokens": 11392,
+              "estimated_cost_usd": 0.00046015199999999997,
+              "priced": true,
+              "latency_ms": 685.473
+            },
+            {
+              "sequence": 7,
+              "agent_id": "finance-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-flash",
+              "prompt_tokens": 14223,
+              "completion_tokens": 1317,
+              "total_tokens": 15540,
+              "cache_read_tokens": 12416,
+              "estimated_cost_usd": 0.0021969959999999997,
+              "priced": true,
+              "latency_ms": 7995.61
+            }
+          ]
+        }
+      },
+      "error": null,
+      "elapsed_seconds": 24.786,
+      "tool_calls": [
+        "finance-tools__thesis_get",
+        "finance-tools__alert_list",
+        "finance-tools__thesis_match_event",
+        "finance-tools__thesis_record_review",
+        "finance-tools__thesis_record_review",
+        "finance-tools__alert_update",
+        "finance-tools__thesis_get"
+      ],
+      "model_calls": 7,
+      "priced_usage": true,
+      "estimated_cost_usd": 0.009298272
+    }
+  ],
+  "estimated_cost_usd": 0.009298272
+}
