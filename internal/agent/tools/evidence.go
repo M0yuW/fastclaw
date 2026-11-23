@@ -32,10 +32,13 @@ type evidenceInput struct {
 	Events  []int  `json:"eventVersions"`
 }
 type taskEvidence struct {
-	mu          sync.Mutex
-	owner, root string
-	events      []evidenceEvent
-	inputs      []evidenceInput
+	reviewInputs map[string]int
+	mu           sync.Mutex
+	owner, root  string
+	events       []evidenceEvent
+	inputs       []evidenceInput
+	results      map[string]reviewSource
+	reviews      subAgentDedup
 }
 
 // StartTaskEvidence establishes a fresh scope only at an external turn.
@@ -47,7 +50,7 @@ func StartTaskEvidence(ctx context.Context, owner string, internal bool) context
 	if root == "" {
 		return ctx
 	}
-	return context.WithValue(ctx, evidenceKey{}, &taskEvidence{owner: owner, root: root})
+	return context.WithValue(ctx, evidenceKey{}, &taskEvidence{reviewInputs: make(map[string]int), owner: owner, root: root, results: make(map[string]reviewSource), reviews: subAgentDedup{results: make(map[string]*subAgentResult)}})
 }
 func evidenceFor(ctx context.Context) (*taskEvidence, ExecutionScope) {
 	scope, _ := ExecutionScopeFromContext(ctx)
@@ -122,7 +125,7 @@ func PrepareEvidenceInput(ctx context.Context, msgs []provider.Message) []provid
 	if len(state.events) == 0 {
 		return msgs
 	}
-	data, _ := json.Marshal(map[string]any{"root": state.root, "cutoff": len(state.events) + 1, "evidence": state.events, "specialistInputs": state.inputs})
+	data, _ := json.Marshal(map[string]any{"root": state.root, "cutoff": len(state.events) + 1, "evidence": state.events, "specialistInputs": state.inputs, "resultsForReview": state.results})
 	out := append([]provider.Message(nil), msgs...)
 	out[last].Content += "\nTask evidence:\n" + string(data)
 	return out
@@ -138,7 +141,7 @@ func RecordEvidenceInput(ctx context.Context, msgs []provider.Message, round int
 	for _, event := range state.events {
 		data, _ := json.Marshal(event)
 		for _, msg := range msgs {
-			if msg.Role == "tool" && msg.Name == "publish_evidence" && msg.Content == string(data) {
+			if (msg.Role == "tool" && msg.Name == "publish_evidence" && msg.Content == string(data)) || (msg.Role == "user" && state.reviewInputs[msg.Content] == event.Version) {
 				input.Events = append(input.Events, event.Version)
 				break
 			}

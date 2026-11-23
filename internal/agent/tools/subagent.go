@@ -20,6 +20,7 @@ type SubAgentSpawner interface {
 }
 
 type spawnSubagentArgs struct {
+	Review        *reviewRequest            `json:"review,omitempty"`
 	AgentID       string                    `json:"agentId"`
 	Task          string                    `json:"task"`
 	SharedContext string                    `json:"sharedContext"`
@@ -144,6 +145,7 @@ func RegisterSubAgent(r *Registry, spawner SubAgentSpawner, callerAgentID string
 	r.Register("spawn_subagent", "Delegate one task or a batch of independent tasks. Batch mode sends sharedContext to every delegation once at runtime and executes distinct targets concurrently. Identical repeated target/task calls within one parent turn reuse the first result.", map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
+			"review": reviewSchema(),
 			"agentId": map[string]interface{}{
 				"type":        "string",
 				"description": "The ID of the agent to spawn",
@@ -173,6 +175,7 @@ func RegisterSubAgent(r *Registry, spawner SubAgentSpawner, callerAgentID string
 		},
 		"anyOf": []map[string]interface{}{
 			{"required": []string{"agentId", "task"}},
+			{"required": []string{"review"}},
 			{"required": []string{"sharedContext", "delegations"}},
 		},
 	}, makeSubAgentTool(spawner, callerAgentID))
@@ -183,6 +186,12 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 		var args spawnSubagentArgs
 		if err := json.Unmarshal(rawArgs, &args); err != nil {
 			return "", fmt.Errorf("parse args: %w", err)
+		}
+		if args.Review != nil {
+			if args.AgentID != "" || args.Task != "" || len(args.Delegations) > 0 || args.SharedContext != "" {
+				return "", errors.New("review must be submitted alone")
+			}
+			return runReview(ctx, spawner, callerAgentID, *args.Review)
 		}
 		if len(args.Delegations) > 0 {
 			if args.AgentID != "" || args.Task != "" {
@@ -354,6 +363,11 @@ func spawnSubAgent(
 	result, err := spawner.SpawnSubAgent(ctx, args.AgentID, msg)
 	if err != nil {
 		return "", fmt.Errorf("spawn sub-agent %q: %w", args.AgentID, err)
+	}
+	if state, _ := evidenceFor(ctx); state != nil && len(bus.InternalCallPathFromContext(ctx)) <= 1 && args.Review == nil && strings.TrimSpace(result) != "" {
+		state.mu.Lock()
+		state.results[msg.ChatID] = reviewSource{args.AgentID, result}
+		state.mu.Unlock()
 	}
 	return result, nil
 }
