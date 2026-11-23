@@ -540,6 +540,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		AgentID:   a.name,
 		SessionID: msg.ChatID,
 	})
+	ctx = tools.StartTaskEvidence(ctx, a.ownerUserID, msg.Source == bus.SourceSubAgent)
 	ctx = tools.ContextWithSubAgentDedup(ctx)
 	events := newTurnEventEmitter(ctx)
 	// Check for slash commands first
@@ -642,6 +643,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	messages = append(messages, applyContextIsolation(sessionMsgs)...)
 
 	turnRegistry := toolRegistryFromContext(ctx, a.registry)
+	turnRegistry = tools.WithEvidencePublisher(ctx, turnRegistry)
 	if a.policyEngine != nil {
 		turnRegistry = turnRegistry.Filter(func(name string) bool {
 			return a.policyEngine.CheckTool(name) == nil
@@ -679,9 +681,9 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		a.hooks.Run(ctx, hcBefore)
 
 		// PII scrubbing: redact sensitive data before sending to LLM
-		llmMessages := messages
+		llmMessages := tools.PrepareEvidenceInput(ctx, messages)
 		if a.piiScrubEnabled {
-			llmMessages = privacy.ScrubMessages(messages)
+			llmMessages = privacy.ScrubMessages(llmMessages)
 		}
 
 		if a.provider == nil {
@@ -699,6 +701,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		modelCallSequence := BeginModelCall(ctx)
 		modelCallStarted := time.Now()
 		providerContext := provider.ContextWithThinkingMode(ctx, a.thinking)
+		tools.RecordEvidenceInput(ctx, llmMessages, round)
 		stream, err := a.provider.ChatStream(providerContext, llmMessages, toolDefs, activeModel, a.maxTokens, a.temperature)
 		if err == nil && stream == nil {
 			err = fmt.Errorf("LLM provider returned a nil stream")
