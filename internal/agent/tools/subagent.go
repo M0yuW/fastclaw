@@ -20,6 +20,7 @@ type SubAgentSpawner interface {
 }
 
 type spawnSubagentArgs struct {
+	Delivery      *deliveryOptions          `json:"delivery,omitempty"`
 	Review        *reviewRequest            `json:"review,omitempty"`
 	AgentID       string                    `json:"agentId"`
 	Task          string                    `json:"task"`
@@ -145,7 +146,8 @@ func RegisterSubAgent(r *Registry, spawner SubAgentSpawner, callerAgentID string
 	r.Register("spawn_subagent", "Delegate one task or a batch of independent tasks. Batch mode sends sharedContext to every delegation once at runtime and executes distinct targets concurrently. Identical repeated target/task calls within one parent turn reuse the first result.", map[string]interface{}{
 		"type": "object",
 		"properties": map[string]interface{}{
-			"review": reviewSchema(),
+			"delivery": deliverySchema(),
+			"review":   reviewSchema(),
 			"agentId": map[string]interface{}{
 				"type":        "string",
 				"description": "The ID of the agent to spawn",
@@ -176,6 +178,7 @@ func RegisterSubAgent(r *Registry, spawner SubAgentSpawner, callerAgentID string
 		"anyOf": []map[string]interface{}{
 			{"required": []string{"agentId", "task"}},
 			{"required": []string{"review"}},
+			{"required": []string{"delivery"}},
 			{"required": []string{"sharedContext", "delegations"}},
 		},
 	}, makeSubAgentTool(spawner, callerAgentID))
@@ -186,6 +189,12 @@ func makeSubAgentTool(spawner SubAgentSpawner, callerAgentID string) ToolFunc {
 		var args spawnSubagentArgs
 		if err := json.Unmarshal(rawArgs, &args); err != nil {
 			return "", fmt.Errorf("parse args: %w", err)
+		}
+		if args.Delivery != nil {
+			if args.Review != nil || args.AgentID != "" || args.Task != "" || len(args.Delegations) > 0 || args.SharedContext != "" {
+				return "", errors.New("submit delivery alone")
+			}
+			return configureDelivery(ctx, *args.Delivery)
 		}
 		if args.Review != nil {
 			if args.AgentID != "" || args.Task != "" || len(args.Delegations) > 0 || args.SharedContext != "" {
@@ -350,6 +359,11 @@ func spawnSubAgent(
 	callerAgentID string,
 	args spawnSubagentArgs,
 ) (string, error) {
+	if state, _ := evidenceFor(ctx); state != nil {
+		state.mu.Lock()
+		state.started = true
+		state.mu.Unlock()
+	}
 	callID := fmt.Sprintf("%d-%d", time.Now().UnixNano(), atomic.AddUint64(&subAgentCallCounter, 1))
 	msg := bus.InboundMessage{
 		Channel:   "subagent",

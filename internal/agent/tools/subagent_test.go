@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -14,6 +15,7 @@ import (
 )
 
 type fakeSubAgentSpawner struct {
+	mu       sync.Mutex
 	messages []bus.InboundMessage
 	result   string
 	err      error
@@ -41,6 +43,8 @@ func (s *concurrentSubAgentSpawner) SpawnSubAgent(_ context.Context, agentID str
 }
 
 func (f *fakeSubAgentSpawner) SpawnSubAgent(_ context.Context, _ string, msg bus.InboundMessage) (string, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.messages = append(f.messages, msg)
 	return f.result, f.err
 }

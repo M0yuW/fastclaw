@@ -407,80 +407,99 @@ func TestIntegrationSubagentCancellationPropagatesToTask(t *testing.T) {
 }
 
 func TestEvidenceArrivesDuringBatch(t *testing.T) {
-	f := newSubagentGatewayFixture(t, "owner", []string{"coordinator", "a", "b"}, map[string]string{"coordinator": "owner", "a": "owner", "b": "owner"}, false)
-	started, published := make(chan struct{}), make(chan struct{})
-	call := func(name, args string) *provider.Response {
-		return &provider.Response{ToolCalls: []provider.ToolCall{{ID: name, Type: "function", Function: provider.FunctionCall{Name: name, Arguments: args}}}}
-	}
-	f.provider.script = func(ctx context.Context, msgs []provider.Message, model string) (*provider.Response, error) {
-		last := msgs[len(msgs)-1]
-		switch model {
-		case "test/coordinator":
-			if last.Role == "tool" {
-				return &provider.Response{Content: last.Content}, nil
+	for _, live := range []bool{false, true} {
+		t.Run(fmt.Sprintf("targeted-%t", live), func(t *testing.T) {
+			f := newSubagentGatewayFixture(t, "owner", []string{"coordinator", "a", "b"}, map[string]string{"coordinator": "owner", "a": "owner", "b": "owner"}, false)
+			started, published := make(chan struct{}), make(chan struct{})
+			call := func(name, args string) *provider.Response {
+				return &provider.Response{ToolCalls: []provider.ToolCall{{ID: name, Type: "function", Function: provider.FunctionCall{Name: name, Arguments: args}}}}
 			}
-			return call("spawn_subagent", `{"sharedContext":"initial fixture","delegations":[{"agentId":"a","task":"inspect"},{"agentId":"b","task":"inspect"}]}`), nil
-		case "test/a":
-			if last.Role == "tool" {
-				if !strings.Contains(last.Content, "unique test announcement") {
-					return nil, errors.New(last.Content)
+			f.provider.script = func(ctx context.Context, msgs []provider.Message, model string) (*provider.Response, error) {
+				last := msgs[len(msgs)-1]
+				switch model {
+				case "test/coordinator":
+					if live && last.Role == "user" {
+						return call("spawn_subagent", `{"delivery":{"mode":"targeted","targets":["b"]}}`), nil
+					}
+					if last.Role == "tool" && last.Content != "Evidence delivery configured" {
+						return &provider.Response{Content: last.Content}, nil
+					}
+					return call("spawn_subagent", `{"sharedContext":"initial fixture","delegations":[{"agentId":"a","task":"inspect"},{"agentId":"b","task":"inspect"}]}`), nil
+				case "test/a":
+					if last.Role == "tool" {
+						if !strings.Contains(last.Content, "unique test announcement") {
+							return nil, errors.New(last.Content)
+						}
+						close(published)
+						return &provider.Response{Content: "result A"}, nil
+					}
+					select {
+					case <-started:
+					case <-ctx.Done():
+						return nil, ctx.Err()
+					}
+					return call("publish_evidence", `{"key":"event","source":"fixture","content":"unique test announcement"}`), nil
+				case "test/b":
+					if last.Role == "tool" {
+						if !strings.Contains(last.Content, "unique test announcement") {
+							return nil, errors.New("missing next-round update")
+						}
+						return &provider.Response{Content: "original B"}, nil
+					}
+					if !strings.Contains(last.Content, "initial fixture") || strings.Contains(last.Content, "unique test announcement") {
+						return nil, errors.New("unexpected B input")
+					}
+					close(started)
+					select {
+					case <-published:
+						if live {
+							return call("read_file", `{"path":"fixture.txt"}`), nil
+						}
+					case <-ctx.Done():
+						return nil, ctx.Err()
+					}
+					return &provider.Response{Content: "original B"}, nil
 				}
-				close(published)
-				return &provider.Response{Content: "result A"}, nil
+				return nil, errors.New("unexpected model")
 			}
-			select {
-			case <-started:
-			case <-ctx.Done():
-				return nil, ctx.Err()
+			ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
+			defer cancel()
+			ctx = bus.ContextWithInternalExecution(ctx, "test-root")
+			result := f.agents.AgentByID("coordinator").HandleMessage(ctx, bus.InboundMessage{OwnerUserID: "owner", Channel: "test", ChatID: "batch", Text: "delegate", PeerKind: "dm"})
+			parts := strings.Split(result, "\nTask evidence:\n")
+			if len(parts) != 2 || !strings.Contains(parts[0], "original B") {
+				t.Fatal(result)
 			}
-			return call("publish_evidence", `{"key":"event","source":"fixture","content":"unique test announcement"}`), nil
-		case "test/b":
-			if !strings.Contains(last.Content, "initial fixture") || strings.Contains(last.Content, "unique test announcement") {
-				return nil, errors.New("unexpected B input")
+			var summary struct {
+				Cutoff           int
+				Evidence         []struct{ Content string }
+				SpecialistInputs []struct {
+					Agent         string
+					Round         int
+					EventVersions []int
+				}
 			}
-			close(started)
-			select {
-			case <-published:
-			case <-ctx.Done():
-				return nil, ctx.Err()
+			if err := json.Unmarshal([]byte(parts[1]), &summary); err != nil {
+				t.Fatal(err)
 			}
-			return &provider.Response{Content: "original B"}, nil
-		}
-		return nil, errors.New("unexpected model")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Second)
-	defer cancel()
-	ctx = bus.ContextWithInternalExecution(ctx, "test-root")
-	result := f.agents.AgentByID("coordinator").HandleMessage(ctx, bus.InboundMessage{OwnerUserID: "owner", Channel: "test", ChatID: "batch", Text: "delegate", PeerKind: "dm"})
-	parts := strings.Split(result, "\nTask evidence:\n")
-	if len(parts) != 2 || !strings.Contains(parts[0], "original B") {
-		t.Fatal(result)
-	}
-	var summary struct {
-		Cutoff           int
-		Evidence         []struct{ Content string }
-		SpecialistInputs []struct {
-			Agent         string
-			Round         int
-			EventVersions []int
-		}
-	}
-	if err := json.Unmarshal([]byte(parts[1]), &summary); err != nil {
-		t.Fatal(err)
-	}
-	if summary.Cutoff != 2 || len(summary.Evidence) != 1 || summary.Evidence[0].Content != "unique test announcement" {
-		t.Fatal(result)
-	}
-	var old, new bool
-	for _, input := range summary.SpecialistInputs {
-		if input.Agent == "b" && input.Round == 1 && len(input.EventVersions) == 0 {
-			old = true
-		}
-		if input.Agent == "a" && input.Round == 2 && len(input.EventVersions) == 1 && input.EventVersions[0] == 2 {
-			new = true
-		}
-	}
-	if !old || !new {
-		t.Fatal(result)
+			if summary.Cutoff != 2 || len(summary.Evidence) != 1 || summary.Evidence[0].Content != "unique test announcement" {
+				t.Fatal(result)
+			}
+			var old, new, updatedB bool
+			for _, input := range summary.SpecialistInputs {
+				if input.Agent == "b" && input.Round == 2 && len(input.EventVersions) == 1 && input.EventVersions[0] == 2 {
+					updatedB = true
+				}
+				if input.Agent == "b" && input.Round == 1 && len(input.EventVersions) == 0 {
+					old = true
+				}
+				if input.Agent == "a" && input.Round == 2 && len(input.EventVersions) == 1 && input.EventVersions[0] == 2 {
+					new = true
+				}
+			}
+			if !old || !new || updatedB != live {
+				t.Fatal(result)
+			}
+		})
 	}
 }

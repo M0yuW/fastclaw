@@ -541,6 +541,9 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		SessionID: msg.ChatID,
 	})
 	ctx = tools.StartTaskEvidence(ctx, a.ownerUserID, msg.Source == bus.SourceSubAgent)
+	if msg.Source != bus.SourceSubAgent {
+		defer tools.CloseTaskEvidence(ctx)
+	}
 	ctx = tools.ContextWithSubAgentDedup(ctx)
 	events := newTurnEventEmitter(ctx)
 	// Check for slash commands first

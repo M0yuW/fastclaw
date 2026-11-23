@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -32,13 +33,16 @@ type evidenceInput struct {
 	Events  []int  `json:"eventVersions"`
 }
 type taskEvidence struct {
-	reviewInputs map[string]int
-	mu           sync.Mutex
-	owner, root  string
-	events       []evidenceEvent
-	inputs       []evidenceInput
-	results      map[string]reviewSource
-	reviews      subAgentDedup
+	delivery        deliveryOptions
+	asOf            time.Time
+	started, sealed bool
+	reviewInputs    map[string]int
+	mu              sync.Mutex
+	owner, root     string
+	events          []evidenceEvent
+	inputs          []evidenceInput
+	results         map[string]reviewSource
+	reviews         subAgentDedup
 }
 
 // StartTaskEvidence establishes a fresh scope only at an external turn.
@@ -104,6 +108,15 @@ func publishEvidence(ctx context.Context, args json.RawMessage) (string, error) 
 			return string(data), nil
 		}
 	}
+	if state.sealed {
+		return "", errors.New("evidence cutoff reached")
+	}
+	if state.delivery.AsOf != "" {
+		published, err := time.Parse(time.RFC3339, f.PublishedAt)
+		if err != nil || published.After(state.asOf) {
+			return "", errors.New("publication outside the research cutoff")
+		}
+	}
 	event := evidenceEvent{f, len(state.events) + 2, scope.AgentID, time.Now().UTC()}
 	state.events = append(state.events, event)
 	data, _ := json.Marshal(event)
@@ -112,8 +125,8 @@ func publishEvidence(ctx context.Context, args json.RawMessage) (string, error) 
 
 // PrepareEvidenceInput adds the frozen summary before scrubbing, without writing evidence to session history.
 func PrepareEvidenceInput(ctx context.Context, msgs []provider.Message) []provider.Message {
-	state, _ := evidenceFor(ctx)
-	if state == nil || len(bus.InternalCallPathFromContext(ctx)) > 1 || len(msgs) == 0 {
+	state, scope := evidenceFor(ctx)
+	if state == nil || len(msgs) == 0 {
 		return msgs
 	}
 	last := len(msgs) - 1
@@ -124,6 +137,20 @@ func PrepareEvidenceInput(ctx context.Context, msgs []provider.Message) []provid
 	defer state.mu.Unlock()
 	if len(state.events) == 0 {
 		return msgs
+	}
+	if len(bus.InternalCallPathFromContext(ctx)) > 1 {
+		if state.delivery.Mode != "broadcast" && !(state.delivery.Mode == "targeted" && slices.Contains(state.delivery.Targets, scope.AgentID)) {
+			return msgs
+		}
+		out := append([]provider.Message(nil), msgs...)
+		for _, event := range state.events {
+			if event.Agent == scope.AgentID {
+				continue
+			}
+			data, _ := json.Marshal(event)
+			out[last].Content += "\nTask update: " + string(data)
+		}
+		return out
 	}
 	data, _ := json.Marshal(map[string]any{"root": state.root, "cutoff": len(state.events) + 1, "evidence": state.events, "specialistInputs": state.inputs, "resultsForReview": state.results})
 	out := append([]provider.Message(nil), msgs...)
@@ -141,7 +168,7 @@ func RecordEvidenceInput(ctx context.Context, msgs []provider.Message, round int
 	for _, event := range state.events {
 		data, _ := json.Marshal(event)
 		for _, msg := range msgs {
-			if (msg.Role == "tool" && msg.Name == "publish_evidence" && msg.Content == string(data)) || (msg.Role == "user" && state.reviewInputs[msg.Content] == event.Version) {
+			if (msg.Role == "tool" && slices.Contains(strings.Split(msg.Content, "\n"), "Task update: "+string(data))) || (msg.Role == "tool" && msg.Name == "publish_evidence" && (msg.Content == string(data) || strings.HasPrefix(msg.Content, string(data)+"\nTask update: "))) || (msg.Role == "user" && state.reviewInputs[msg.Content] == event.Version) {
 				input.Events = append(input.Events, event.Version)
 				break
 			}
