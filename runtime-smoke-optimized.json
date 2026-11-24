@@ -1,0 +1,498 @@
+{
+  "version": 1,
+  "suite": "fastclaw-fixed-runtime-tenant",
+  "description": "Eight fixed-evidence tasks executed through real coordinator and sub-agent Gateway routing.",
+  "source": "evals/multiagent-runtime-tenant.yaml",
+  "started_at": "2026-07-28T12:05:55.789097+08:00",
+  "finished_at": "2026-07-28T12:07:10.870633+08:00",
+  "duration_ms": 75081.249,
+  "metrics": {
+    "total_cases": 2,
+    "total_runs": 2,
+    "passed_runs": 1,
+    "failed_runs": 1,
+    "run_pass_rate": 0.5,
+    "pass_at_1": 0.5,
+    "pass_at_k": 0.5,
+    "consistency_rate": 1,
+    "latency_p50_ms": 38376.553,
+    "latency_p95_ms": 38376.553,
+    "prompt_tokens": 10508,
+    "completion_tokens": 5875,
+    "total_tokens": 16383,
+    "tokens_per_passed_run": 16383,
+    "total_tool_calls": 6,
+    "invalid_tool_calls": 0,
+    "invalid_tool_call_rate": 0,
+    "tool_trace_graders": 0,
+    "passed_tool_trace_graders": 0,
+    "tool_trace_accuracy": 0,
+    "state_graders": 0,
+    "passed_state_graders": 0,
+    "state_accuracy": 0,
+    "communication_graders": 0,
+    "passed_communication_graders": 0,
+    "communication_accuracy": 0,
+    "policy_graders": 0,
+    "passed_policy_graders": 0,
+    "policy_compliance_rate": 0,
+    "end_to_end_task_success": 0.5,
+    "average_turns": 0,
+    "swe_submitted_instances": 0,
+    "swe_completed_instances": 0,
+    "swe_resolved_instances": 0,
+    "swe_resolution_rate": 0,
+    "swe_patches_generated": 0,
+    "swe_patch_generation_rate": 0,
+    "swe_test_execution_rate": 0,
+    "multi_agent_attempts": 2,
+    "multi_agent_team_success_rate": 0.5,
+    "multi_agent_solo_evaluated": 2,
+    "multi_agent_solo_success_rate": 0,
+    "multi_agent_collaboration_gain": 0.5,
+    "multi_agent_milestone_kpi": 0.8333333333333334,
+    "multi_agent_delegation_precision": 1,
+    "multi_agent_delegation_recall": 1,
+    "multi_agent_delegation_f1": 1,
+    "multi_agent_contribution_utilization": 0.8333333333333334,
+    "multi_agent_coordination_score": 0.9166666666666667,
+    "multi_agent_average_delegations": 3,
+    "multi_agent_unexpected_delegations": 0,
+    "multi_agent_total_estimated_cost_usd": 0.005412396000000001,
+    "multi_agent_solo_estimated_cost_usd": 0.001644822,
+    "multi_agent_team_estimated_cost_usd": 0.003767574,
+    "multi_agent_coordinator_tokens": 6867,
+    "multi_agent_subagent_tokens": 6973,
+    "multi_agent_coordinator_estimated_cost_usd": 0.002501134,
+    "multi_agent_subagent_estimated_cost_usd": 0.0012664400000000002,
+    "multi_agent_coordinator_model_latency_ms": 15094.520499999999,
+    "multi_agent_subagent_model_latency_ms": 9234.655,
+    "multi_agent_cost_per_successful_run_usd": 0.003767574,
+    "multi_agent_model_calls": 12,
+    "multi_agent_priced_model_calls": 12,
+    "multi_agent_pricing_coverage": 1
+  },
+  "cases": [
+    {
+      "id": "checkout-incident",
+      "description": "Diagnose a release-induced checkout failure.",
+      "tags": [
+        "runtime",
+        "incident",
+        "root-cause"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "passed": false,
+          "output": "---\n\n# BENCH-01 — Checkout Incident Investigation Report\n\n## Decision\n\n**The root cause is a nil-pointer defect in coupon validation**, introduced by normalization change **N-42** in **build 842**. The database is ruled out as a contributing factor. The prescribed remediation is an immediate rollback from build 842 to build 841, with an expected recovery window of **four minutes**.\n\n---\n\n## Evidence\n\n| Evidence ID | Source | Material Fact |\n|---|---|---|\n| **OBS-101** | bench-observer (telemetry \u0026 DB) | Checkout errors rose immediately after deployment of build 842. Database latency remained normal throughout the incident, ruling out a database-related cause. |\n| **INV-111** | bench-investigator (logs \u0026 code) | Checkout application logs reveal a nil-pointer exception in the coupon validation path, traced directly to normalization change N-42, which was shipped in build 842. |\n| **OPS-121** | bench-operator (remediation) | Safe rollback procedure: revert build 842 → build 841. Expected recovery time is four minutes. |\n\n---\n\n## Remediation\n\n1. **Immediate action:** Roll back build 842 to the last known-good build, **build 841**. This will remove the defective normalization change N-42 from the checkout path.\n2. **Expected recovery time:** Four minutes from initiation.\n3. **Post-recovery:** The development team should correct the nil-pointer in coupon validation introduced by N-42 before any attempt to re-deploy the normalization change. A code review and pre-release test covering the coupon validation code path is strongly recommended prior to the next deployment.",
+          "latency_ms": 36700.201,
+          "model": "deepseek/deepseek-v4-pro",
+          "usage": {
+            "prompt_tokens": 5210,
+            "completion_tokens": 2847,
+            "total_tokens": 8057
+          },
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_H76qqcCam05wcKZHqYL73856",
+              "name": "spawn_subagent",
+              "arguments": "{\"agentId\": \"bench-observer\", \"task\": \"BENCH-01: Inspect checkout telemetry and database behavior. Identify any anomalies in the checkout flow metrics and database performance. Report all evidence IDs, timestamps, and material facts observed. Return your findings as a JSON object with an \\\"evidence\\\" field.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_8Crv6jIn21XlMU95HIhl5519",
+              "name": "spawn_subagent",
+              "arguments": "{\"agentId\": \"bench-investigator\", \"task\": \"BENCH-01: Inspect application logs and identify the responsible code change for the checkout incident. Trace the root cause through logs, deployments, and code diffs. Report all evidence IDs, commit hashes, log entries, and material facts. Return your findings as a JSON object with an \\\"evidence\\\" field.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_02_4szSDHOuLYg2l5L3IOVx1114",
+              "name": "spawn_subagent",
+              "arguments": "{\"agentId\": \"bench-operator\", \"task\": \"BENCH-01: Determine the safe rollback action and expected recovery time for the checkout incident. Reference the evidence and root cause findings to recommend a specific rollback procedure. Report all evidence IDs and material facts. Return your findings as a JSON object with an \\\"evidence\\\" field.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_H76qqcCam05wcKZHqYL73856",
+              "name": "spawn_subagent",
+              "result": "{\"case_id\":\"BENCH-01\",\"role\":\"observer\",\"evidence\":\"OBS-101: checkout errors rose immediately after build 842; database latency stayed normal.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_8Crv6jIn21XlMU95HIhl5519",
+              "name": "spawn_subagent",
+              "result": "{\"case_id\":\"BENCH-01\",\"role\":\"investigator\",\"evidence\":\"INV-111: checkout logs show a nil pointer in coupon validation introduced by normalization change N-42.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_02_4szSDHOuLYg2l5L3IOVx1114",
+              "name": "spawn_subagent",
+              "result": "{\"case_id\":\"BENCH-01\",\"role\":\"operator\",\"evidence\":\"OPS-121: rollback build 842 to build 841; expected recovery time is four minutes.\"}",
+              "round": 1
+            }
+          ],
+          "graders": [
+            {
+              "type": "ma_milestone",
+              "passed": true
+            },
+            {
+              "type": "ma_milestone",
+              "passed": false,
+              "message": "milestone \"ruled-out-cause\" was not achieved"
+            },
+            {
+              "type": "ma_milestone",
+              "passed": true
+            },
+            {
+              "type": "ma_delegation",
+              "passed": true
+            },
+            {
+              "type": "ma_contribution",
+              "passed": false,
+              "message": "utilized 2/3 specialist contributions"
+            },
+            {
+              "type": "ma_efficiency",
+              "passed": true
+            }
+          ],
+          "kind": "multiagent",
+          "baseline_output": "Decision:\nUnable to determine the root cause of the checkout incident. As the Runtime Benchmark Coordinator, I am required to delegate the investigation to specialists listed in the task prompt and to base my decision solely on their returned evidence. No specialists were listed, and no specialist reports or evidence (with evidence IDs) are available. Without that evidence, I cannot identify a root cause, cannot rule out an unrelated database issue, and cannot provide a rollback action or expected recovery time.\n\nEvidence:\nNone. No specialist reports were delegated, so no evidence IDs or material facts were supplied.\n\nRemediation:\nNone. Without root-cause identification, no remediative rollback can be specified.",
+          "model_calls": [
+            {
+              "sequence": 1,
+              "phase": "solo",
+              "agent_id": "bench-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 466,
+              "completion_tokens": 846,
+              "total_tokens": 1312,
+              "estimated_cost_usd": 0.00093873,
+              "priced": true,
+              "latency_ms": 13625.398
+            },
+            {
+              "sequence": 1,
+              "phase": "team",
+              "agent_id": "bench-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 879,
+              "completion_tokens": 414,
+              "total_tokens": 1293,
+              "cache_read_tokens": 384,
+              "estimated_cost_usd": 0.000576897,
+              "priced": true,
+              "latency_ms": 5077.829
+            },
+            {
+              "sequence": 2,
+              "phase": "team",
+              "agent_id": "bench-observer",
+              "role": "subagent",
+              "model": "deepseek/deepseek-v4-flash",
+              "call_path": [
+                "bench-coordinator",
+                "bench-observer"
+              ],
+              "prompt_tokens": 810,
+              "completion_tokens": 407,
+              "total_tokens": 1217,
+              "estimated_cost_usd": 0.00022736000000000002,
+              "priced": true,
+              "latency_ms": 3789.66
+            },
+            {
+              "sequence": 3,
+              "phase": "team",
+              "agent_id": "bench-investigator",
+              "role": "subagent",
+              "model": "deepseek/deepseek-v4-flash",
+              "call_path": [
+                "bench-coordinator",
+                "bench-investigator"
+              ],
+              "prompt_tokens": 812,
+              "completion_tokens": 343,
+              "total_tokens": 1155,
+              "estimated_cost_usd": 0.00020972000000000002,
+              "priced": true,
+              "latency_ms": 3145.52
+            },
+            {
+              "sequence": 4,
+              "phase": "team",
+              "agent_id": "bench-operator",
+              "role": "subagent",
+              "model": "deepseek/deepseek-v4-flash",
+              "call_path": [
+                "bench-coordinator",
+                "bench-operator"
+              ],
+              "prompt_tokens": 810,
+              "completion_tokens": 321,
+              "total_tokens": 1131,
+              "estimated_cost_usd": 0.00020328000000000002,
+              "priced": true,
+              "latency_ms": 3036.843
+            },
+            {
+              "sequence": 5,
+              "phase": "team",
+              "agent_id": "bench-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 1433,
+              "completion_tokens": 516,
+              "total_tokens": 1949,
+              "cache_read_tokens": 1280,
+              "estimated_cost_usd": 0.000520115,
+              "priced": true,
+              "latency_ms": 7588.857
+            }
+          ],
+          "multi_agent": {
+            "solo_evaluated": true,
+            "solo_passed": false,
+            "total_milestones": 3,
+            "passed_milestones": 2,
+            "expected_delegations": 3,
+            "valid_delegations": 3,
+            "total_delegations": 3,
+            "unexpected_delegations": 0,
+            "delegation_precision": 1,
+            "delegation_recall": 1,
+            "delegation_f1": 1,
+            "contributions_expected": 3,
+            "contributions_utilized": 2,
+            "contribution_utilization": 0.6666666666666666,
+            "coordination_score": 0.8333333333333333
+          }
+        }
+      ],
+      "pass_at_1": false,
+      "pass_at_k": false,
+      "consistent": true
+    },
+    {
+      "id": "pipeline-schema-regression",
+      "description": "Diagnose and repair a fixed data-pipeline schema regression.",
+      "tags": [
+        "runtime",
+        "data",
+        "operations"
+      ],
+      "attempts": [
+        {
+          "attempt": 1,
+          "passed": true,
+          "output": "All three specialists have returned their evidence. Here is the synthesized final report.\n\n---\n\n## Decision\n\nThe pipeline freshness regression was caused by an incompatible field rename introduced in schema release **S-19**. The field `tier` was renamed to `customer_tier`, but the downstream transform **T-31** was not updated to match. As a result, the parser rejected every record referencing the new field name, causing records to be dropped and the pipeline's end-to-end freshness to degrade from **8 minutes to 94 minutes** — a **10.75× regression**. The degradation began at deployment of S-19 and persisted until the mismatch is repaired.\n\n---\n\n## Evidence\n\n| Evidence ID | Source | Material Fact |\n|---|---|---|\n| **OBS-404** | bench-observer | Pipeline freshness dropped from 8 minutes to 94 minutes after schema release S-19. |\n| **INV-414** | bench-investigator | Parser logs reject the renamed field `customer_tier` because transform T-31 still expects `tier`. The incompatible field change is the rename of `tier` → `customer_tier` without a corresponding transform update. |\n| **OPS-434** | bench-operator | The repair is to deploy transform T-32 with a `customer_tier` mapping, then replay all affected partitions starting from 06:00 UTC (the time of S-19 deployment). |\n\n---\n\n## Remediation\n\n1. **Deploy transform T-32** — This transform maps the new field name `customer_tier` to the downstream consumers, replacing the broken T-31. The mapping must alias `customer_tier` appropriately so that all downstream logic expecting `tier` continues to function.\n\n2. **Replay affected partitions** — Replay all partitions from 06:00 UTC onward (the time of S-19's deployment) to backfill the records that were rejected by T-31. This ensures no data loss from the regression window.\n\n3. **Validate** — After replay, confirm that pipeline freshness returns to the pre-regression baseline of ≤8 minutes. Monitor parser logs to verify zero further rejections on the `customer_tier` field.\n\n4. **Prevent recurrence** — Add a schema-compatibility gate that blocks schema releases when active transforms reference the old field name, preventing this class of mismatch from reaching production.",
+          "latency_ms": 38376.553,
+          "model": "deepseek/deepseek-v4-pro",
+          "usage": {
+            "prompt_tokens": 5298,
+            "completion_tokens": 3028,
+            "total_tokens": 8326
+          },
+          "trace": [
+            {
+              "type": "tool_call",
+              "id": "call_00_2n0VlhvyIquaWEgDPjvP1198",
+              "name": "spawn_subagent",
+              "arguments": "{\"agentId\": \"bench-observer\", \"task\": \"BENCH-04: Quantify the pipeline freshness regression and timing. Identify when the freshness degradation began, measure the magnitude of the regression (e.g., latency increase, staleness duration), and provide any timeline or metrics that characterize the scope of the problem. Return your findings as a JSON object with an \\\"evidence\\\" field containing all relevant evidence IDs and material facts.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_01_yOKolwbMHUQHCZFVBtq93707",
+              "name": "spawn_subagent",
+              "arguments": "{\"agentId\": \"bench-investigator\", \"task\": \"BENCH-04: Find the parser and schema mismatch causing the pipeline freshness regression. Identify the incompatible field change (e.g., renamed column, type change, missing field), locate the specific parser or schema definition involved, and trace the root cause. Return your findings as a JSON object with an \\\"evidence\\\" field containing all relevant evidence IDs and material facts.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_call",
+              "id": "call_02_HQmu8txzjqksJOKtMUpe8401",
+              "name": "spawn_subagent",
+              "arguments": "{\"agentId\": \"bench-operator\", \"task\": \"BENCH-04: Define the transform fix and replay plan to resolve the pipeline freshness regression. Specify the exact code or configuration change required, outline the steps to replay affected data, and describe any validation needed. Return your findings as a JSON object with an \\\"evidence\\\" field containing all relevant evidence IDs and material facts.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_00_2n0VlhvyIquaWEgDPjvP1198",
+              "name": "spawn_subagent",
+              "result": "{\"case_id\":\"BENCH-04\",\"role\":\"observer\",\"evidence\":\"OBS-404: pipeline freshness dropped from 8 minutes to 94 minutes after schema release S-19.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_01_yOKolwbMHUQHCZFVBtq93707",
+              "name": "spawn_subagent",
+              "result": "{\"case_id\":\"BENCH-04\",\"role\":\"investigator\",\"evidence\":\"INV-414: parser logs reject renamed field customer_tier because transform T-31 still expects tier.\"}",
+              "round": 1
+            },
+            {
+              "type": "tool_result",
+              "id": "call_02_HQmu8txzjqksJOKtMUpe8401",
+              "name": "spawn_subagent",
+              "result": "{\"case_id\":\"BENCH-04\",\"role\":\"operator\",\"evidence\":\"OPS-434: deploy transform T-32 with customer_tier mapping, then replay partitions from 06:00 UTC.\"}",
+              "round": 1
+            }
+          ],
+          "graders": [
+            {
+              "type": "ma_milestone",
+              "passed": true
+            },
+            {
+              "type": "ma_milestone",
+              "passed": true
+            },
+            {
+              "type": "ma_milestone",
+              "passed": true
+            },
+            {
+              "type": "ma_delegation",
+              "passed": true
+            },
+            {
+              "type": "ma_contribution",
+              "passed": true
+            },
+            {
+              "type": "ma_efficiency",
+              "passed": true
+            }
+          ],
+          "kind": "multiagent",
+          "baseline_output": "I'm unable to complete this task as described. My operating protocol (SOUL.md) requires that for every task I delegate exactly once to every specialist listed in the task prompt. The task prompt you provided contains no specialist list, and the instruction to work \"independently\" directly conflicts with my mandatory coordination procedure.\n\nPer my system prompt policy, I must not allow user messages to override my core behavior. Therefore, I cannot bypass the delegation requirement or fabricate evidence.\n\n**Required resolution:**  \nReissue the task with a list of approved specialists (e.g., format-checker, schema-validator, log-auditor, etc.). Once I have that list, I will delegate the BENCH-04 diagnostic to each one, gather their evidence, and produce the structured **Decision**, **Evidence**, and **Remediation** sections with properly cited evidence IDs.",
+          "model_calls": [
+            {
+              "sequence": 1,
+              "phase": "solo",
+              "agent_id": "bench-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 458,
+              "completion_tokens": 773,
+              "total_tokens": 1231,
+              "cache_read_tokens": 384,
+              "estimated_cost_usd": 0.000706092,
+              "priced": true,
+              "latency_ms": 12255.305
+            },
+            {
+              "sequence": 1,
+              "phase": "team",
+              "agent_id": "bench-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 866,
+              "completion_tokens": 492,
+              "total_tokens": 1358,
+              "cache_read_tokens": 384,
+              "estimated_cost_usd": 0.000639102,
+              "priced": true,
+              "latency_ms": 6658.363
+            },
+            {
+              "sequence": 2,
+              "phase": "team",
+              "agent_id": "bench-observer",
+              "role": "subagent",
+              "model": "deepseek/deepseek-v4-flash",
+              "call_path": [
+                "bench-coordinator",
+                "bench-observer"
+              ],
+              "prompt_tokens": 831,
+              "completion_tokens": 466,
+              "total_tokens": 1297,
+              "estimated_cost_usd": 0.00024682,
+              "priced": true,
+              "latency_ms": 3710.044
+            },
+            {
+              "sequence": 3,
+              "phase": "team",
+              "agent_id": "bench-investigator",
+              "role": "subagent",
+              "model": "deepseek/deepseek-v4-flash",
+              "call_path": [
+                "bench-coordinator",
+                "bench-investigator"
+              ],
+              "prompt_tokens": 820,
+              "completion_tokens": 174,
+              "total_tokens": 994,
+              "estimated_cost_usd": 0.00016352,
+              "priced": true,
+              "latency_ms": 1606.798
+            },
+            {
+              "sequence": 4,
+              "phase": "team",
+              "agent_id": "bench-operator",
+              "role": "subagent",
+              "model": "deepseek/deepseek-v4-flash",
+              "call_path": [
+                "bench-coordinator",
+                "bench-operator"
+              ],
+              "prompt_tokens": 817,
+              "completion_tokens": 362,
+              "total_tokens": 1179,
+              "estimated_cost_usd": 0.00021574000000000002,
+              "priced": true,
+              "latency_ms": 3180.445
+            },
+            {
+              "sequence": 5,
+              "phase": "team",
+              "agent_id": "bench-coordinator",
+              "role": "coordinator",
+              "model": "deepseek/deepseek-v4-pro",
+              "prompt_tokens": 1506,
+              "completion_tokens": 761,
+              "total_tokens": 2267,
+              "cache_read_tokens": 1280,
+              "estimated_cost_usd": 0.00076502,
+              "priced": true,
+              "latency_ms": 10863.992
+            }
+          ],
+          "multi_agent": {
+            "solo_evaluated": true,
+            "solo_passed": false,
+            "total_milestones": 3,
+            "passed_milestones": 3,
+            "expected_delegations": 3,
+            "valid_delegations": 3,
+            "total_delegations": 3,
+            "unexpected_delegations": 0,
+            "delegation_precision": 1,
+            "delegation_recall": 1,
+            "delegation_f1": 1,
+            "contributions_expected": 3,
+            "contributions_utilized": 3,
+            "contribution_utilization": 1,
+            "coordination_score": 1
+          }
+        }
+      ],
+      "pass_at_1": true,
+      "pass_at_k": true,
+      "consistent": true
+    }
+  ]
+}

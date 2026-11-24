@@ -51,8 +51,12 @@ type Agent struct {
 	subAgentSpawner   tools.SubAgentSpawner
 	ftsStore          *store.FTSStore
 	piiScrubEnabled   bool
-	policyEngine      *policy.Engine
-	memoryCfg         config.MemoryCfg
+	// policyEngine gates which registered tools this agent may see and run.
+	// Built from rc.PolicyPreset at construction and rebuilt on UpdateConfig;
+	// nil is treated as "no restriction" for callers that build an Agent
+	// without going through NewAgentWithSkillsCfg.
+	policyEngine *policy.Engine
+	memoryCfg    config.MemoryCfg
 	// memoryStore is the optional Store-backed source of identity files
 	// (SOUL.md, IDENTITY.md, ...). Kept on the Agent so ReloadWorkspaceFiles
 	// can rewire a fresh ContextBuilder to keep reading from the Store
@@ -233,6 +237,12 @@ func NewAgentWithSkillsCfg(rc config.ResolvedAgent, prov provider.Provider, mb *
 
 	eng := newSDKEngine(rc.ID)
 	policyEngine := policy.NewEngine(policy.LoadPreset(rc.PolicyPreset))
+	if rc.PolicyPreset != "" {
+		slog.Info("agent tool policy loaded",
+			"agent", rc.ID,
+			"preset", policyEngine.Policy().Name,
+		)
+	}
 	contextBuilder := newContextBuilderWithSandbox(
 		rc.Home,
 		workspace,
@@ -378,8 +388,49 @@ func (a *Agent) SetSubAgentSpawner(spawner tools.SubAgentSpawner) {
 }
 
 // ToolRegistry returns the agent's tool registry for external registration.
+// This is the unfiltered registry — callers register tools onto it, and the
+// policy filter is applied per turn by allowedRegistry.
 func (a *Agent) ToolRegistry() *tools.Registry {
 	return a.registry
+}
+
+// filterByPolicy narrows base to the tools this agent's policy allows. A nil
+// policyEngine means no restriction, which is what every agent without a
+// `policy` config key gets.
+func (a *Agent) filterByPolicy(base *tools.Registry) *tools.Registry {
+	if a.policyEngine == nil {
+		return base
+	}
+	return base.Filter(func(name string) bool {
+		return a.policyEngine.CheckTool(name) == nil
+	})
+}
+
+// allowedRegistry returns the policy-filtered view of the agent's own tool
+// registry: the set of tools this agent may both see and run outside of a
+// request that supplied its own registry.
+func (a *Agent) allowedRegistry() *tools.Registry {
+	return a.filterByPolicy(a.registry)
+}
+
+// PolicyName reports the active tool-policy preset name, for diagnostics and
+// contract tests.
+func (a *Agent) PolicyName() string {
+	if a.policyEngine == nil || a.policyEngine.Policy() == nil {
+		return "permissive"
+	}
+	return a.policyEngine.Policy().Name
+}
+
+// AllowedToolNames lists the tool names this agent will advertise to the model
+// under its current policy.
+func (a *Agent) AllowedToolNames() []string {
+	defs := a.allowedRegistry().Definitions()
+	names := make([]string, 0, len(defs))
+	for _, def := range defs {
+		names = append(names, def.Function.Name)
+	}
+	return names
 }
 
 // SetOwnerUserID tags this agent with the owning user ID. The value is
@@ -628,12 +679,13 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	messages = append(messages, provider.Message{Role: "system", Content: systemPrompt})
 	messages = append(messages, applyContextIsolation(sessionMsgs)...)
 
-	turnRegistry := toolRegistryFromContext(ctx, a.registry)
-	if a.policyEngine != nil {
-		turnRegistry = turnRegistry.Filter(func(name string) bool {
-			return a.policyEngine.CheckTool(name) == nil
-		})
-	}
+	// turnRegistry is the policy-filtered view of the tools available for this
+	// turn. The base is request-scoped when a caller supplied one (evaluation
+	// harness) and the agent's shared registry otherwise. Both the definitions
+	// we advertise to the model and the registry we execute against come from
+	// it, so a forged call to a denied tool fails with "unknown tool" instead
+	// of running.
+	turnRegistry := a.filterByPolicy(toolRegistryFromContext(ctx, a.registry))
 	toolDefs := turnRegistry.Definitions()
 
 	// Loop detection: track consecutive identical tool calls
@@ -785,15 +837,21 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			break
 		}
 
-		// Fire BeforeToolCall hooks
+		// Fire BeforeToolCall hooks. Stamp StartTime here rather than relying
+		// on a hook to set it, so the AfterToolCall side always has a real
+		// baseline even when LoggingHook isn't registered.
+		toolCallStarted := make(map[string]time.Time, len(resp.ToolCalls))
 		for _, tc := range resp.ToolCalls {
-			a.hooks.Run(ctx, &HookContext{
+			hookContext := &HookContext{
 				AgentName: a.name,
 				Point:     BeforeToolCall,
 				ToolName:  tc.Function.Name,
 				ToolArgs:  tc.Function.Arguments,
+				StartTime: time.Now(),
 				UserID:    a.ownerUserID,
-			})
+			}
+			a.hooks.Run(ctx, hookContext)
+			toolCallStarted[tc.ID] = hookContext.StartTime
 		}
 
 		// Execute tools concurrently via SDK engine
@@ -842,6 +900,8 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 				ToolName:   r.toolName,
 				ToolResult: resultContent,
 				Error:      r.err,
+				StartTime:  toolCallStarted[tc.ID],
+				Duration:   r.duration,
 				UserID:     a.ownerUserID,
 			})
 

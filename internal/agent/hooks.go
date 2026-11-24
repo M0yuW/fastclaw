@@ -31,12 +31,13 @@ type HookContext struct {
 	ToolResult    string // for AfterToolCall
 	Response      *provider.Response
 	Error         error
-	StartTime     time.Time // set at BeforeModelCall/BeforeToolCall for timing
-	TurnCount     int       // incremented each agent turn (for PostTurn)
-	ToolCallCount int       // total tool calls in this turn (for PostTurn)
-	Workspace     string    // agent workspace path (for PostTurn)
-	ChatID        string    // chat/session identifier (for mem0 user isolation)
-	UserID        string    // owning user ID for multi-user namespace isolation
+	StartTime     time.Time     // set at BeforeModelCall/BeforeToolCall for timing
+	Duration      time.Duration // measured tool wall time, set at AfterToolCall
+	TurnCount     int           // incremented each agent turn (for PostTurn)
+	ToolCallCount int           // total tool calls in this turn (for PostTurn)
+	Workspace     string        // agent workspace path (for PostTurn)
+	ChatID        string        // chat/session identifier (for mem0 user isolation)
+	UserID        string        // owning user ID for multi-user namespace isolation
 }
 
 // HookFunc is a function that runs at a hook point.
@@ -89,7 +90,14 @@ func LoggingHook() HookFunc {
 				"tool", hc.ToolName,
 			)
 		case AfterToolCall:
-			elapsed := time.Since(hc.StartTime)
+			// Prefer the measured duration the loop hands us. Fall back to
+			// StartTime only when it was actually set — a zero StartTime
+			// would otherwise render as 2562047h47m (time.Since of the zero
+			// Time), which is what the logs used to show.
+			elapsed := hc.Duration
+			if elapsed <= 0 && !hc.StartTime.IsZero() {
+				elapsed = time.Since(hc.StartTime)
+			}
 			slog.Info("hook: after tool call",
 				"agent", hc.AgentName,
 				"tool", hc.ToolName,
