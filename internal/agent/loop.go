@@ -586,6 +586,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		return "Request cancelled before the agent turn could start."
 	}
 	defer a.releaseTurn()
+	steering := bus.SteeringFrom(ctx)
 	ctx = tools.ContextWithExecutionScope(ctx, tools.ExecutionScope{UserID: a.ownerUserID, AgentID: a.name, SessionID: msg.ChatID})
 	ctx = tools.StartTaskEvidence(ctx, a.ownerUserID, msg.Source == bus.SourceSubAgent)
 	if msg.Source != bus.SourceSubAgent {
@@ -704,7 +705,8 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	lastRound := 0
 
 	// ReAct loop
-	for i := 0; i < a.maxToolIterations; i++ {
+	discarded := 0
+	for i := 0; i < a.maxToolIterations+discarded; i++ {
 		round := i + 1
 		lastRound = round
 		messageID := events.messageID()
@@ -721,6 +723,13 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 
 		// PII scrubbing: redact sensitive data before sending to LLM
 		llmMessages := tools.PrepareEvidenceInput(ctx, messages)
+		updates := steering.Snapshot()
+		if len(updates) > 0 {
+			llmMessages = append([]provider.Message(nil), llmMessages...)
+			for _, text := range updates {
+				llmMessages = append(llmMessages, provider.Message{Role: "user", Content: text})
+			}
+		}
 		if a.piiScrubEnabled {
 			llmMessages = privacy.ScrubMessages(llmMessages)
 		}
@@ -780,7 +789,15 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			return "Sorry, I encountered an error processing your request."
 		}
 
+		if resp.HasToolCalls() && !steering.Current(len(updates)) {
+			discarded++
+			continue
+		}
 		if !resp.HasToolCalls() {
+			if !steering.Finish(len(updates)) {
+				discarded++
+				continue
+			}
 			assistantMsg := provider.Message{Role: "assistant", Content: resp.Content, Thinking: resp.Thinking, Timestamp: time.Now().UnixMilli(), RawAssistant: resp.RawAssistant}
 			sess.Append(assistantMsg)
 			messages = append(messages, assistantMsg)
@@ -940,7 +957,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 			messages = append(messages, toolMsg)
 			events.toolResult(tc.ID, r.toolName, resultContent, messageID, round, meta)
 
-			if shouldDirectReturnToolResult(r.toolName, tc.Function.Arguments) {
+			if shouldDirectReturnToolResult(r.toolName, tc.Function.Arguments) && steering.Finish(len(updates)) {
 				finalMessageID := events.messageID()
 				assistantMsg := provider.Message{Role: "assistant", Content: resultContent}
 				sess.Append(assistantMsg)
@@ -955,6 +972,9 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 				events.finish(finalMessageID, round)
 				return resultContent
 			}
+		}
+		if i+1 == a.maxToolIterations+discarded && !steering.Finish(len(updates)) {
+			discarded++
 		}
 	}
 

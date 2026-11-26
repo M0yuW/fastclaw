@@ -63,6 +63,14 @@ func (g *Gateway) processInbound(ctx context.Context) {
 				g.routeDM(ctx, msg)
 				continue
 			}
+			if receipt, ok := g.taskQueue.SteerReply(msg); ok {
+				select {
+				case g.bus.Outbound <- bus.OutboundMessage{Channel: msg.Channel, AccountID: msg.AccountID, ChatID: msg.ChatID, ReplyToMsgID: msg.MessageID, Text: receipt}:
+				case <-ctx.Done():
+					return
+				}
+				continue
+			}
 			if g.isDuplicate(msg) {
 				slog.Info("dropping duplicate group message",
 					"channel", msg.Channel, "chat_id", msg.ChatID, "message_id", msg.MessageID)
