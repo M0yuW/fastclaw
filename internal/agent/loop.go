@@ -586,6 +586,11 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		return "Request cancelled before the agent turn could start."
 	}
 	defer a.releaseTurn()
+	ctx = tools.ContextWithExecutionScope(ctx, tools.ExecutionScope{UserID: a.ownerUserID, AgentID: a.name, SessionID: msg.ChatID})
+	ctx = tools.StartTaskEvidence(ctx, a.ownerUserID, msg.Source == bus.SourceSubAgent)
+	if msg.Source != bus.SourceSubAgent {
+		defer tools.CloseTaskEvidence(ctx)
+	}
 	events := newTurnEventEmitter(ctx)
 	// Check for slash commands first
 	if result := a.handleSlashCommand(msg); result.handled {
@@ -685,7 +690,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 	// we advertise to the model and the registry we execute against come from
 	// it, so a forged call to a denied tool fails with "unknown tool" instead
 	// of running.
-	turnRegistry := a.filterByPolicy(toolRegistryFromContext(ctx, a.registry))
+	turnRegistry := a.filterByPolicy(tools.WithEvidencePublisher(ctx, toolRegistryFromContext(ctx, a.registry)))
 	toolDefs := turnRegistry.Definitions()
 
 	// Loop detection: track consecutive identical tool calls
@@ -715,9 +720,9 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 		a.hooks.Run(ctx, hcBefore)
 
 		// PII scrubbing: redact sensitive data before sending to LLM
-		llmMessages := messages
+		llmMessages := tools.PrepareEvidenceInput(ctx, messages)
 		if a.piiScrubEnabled {
-			llmMessages = privacy.ScrubMessages(messages)
+			llmMessages = privacy.ScrubMessages(llmMessages)
 		}
 
 		if a.provider == nil {
@@ -732,6 +737,7 @@ func (a *Agent) runTurn(ctx context.Context, msg bus.InboundMessage) string {
 
 		var resp *provider.Response
 		modelCallStarted := time.Now()
+		tools.RecordEvidenceInput(ctx, llmMessages, i+1)
 		stream, err := a.provider.ChatStream(ctx, llmMessages, toolDefs, a.model, a.maxTokens, a.temperature)
 		if err == nil && stream == nil {
 			err = fmt.Errorf("LLM provider returned a nil stream")
