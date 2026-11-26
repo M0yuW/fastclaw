@@ -177,6 +177,7 @@ func (t *Telegram) buildInboundMessage(msg *tgbotapi.Message) *bus.InboundMessag
 		SenderName:   senderName,
 		Mentions:     mentions,
 		IsBotMessage: isBot,
+		SentAsChat:   msg.SenderChat != nil,
 		PhotoURL:     photoURL,
 		ReplyToMsgID: replyToMsgID,
 	}

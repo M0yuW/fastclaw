@@ -49,6 +49,7 @@ type InternalTaskSpec struct {
 
 // Task represents a unit of work to be processed.
 type Task struct {
+	steering      *bus.Steering
 	ID            string
 	AgentID       string
 	OwnerUserID   string // owner of the agent (for user-space lookup)
@@ -81,6 +82,14 @@ type chatQueue struct {
 	lastUsed time.Time
 }
 
+type telegramMessageKey struct {
+	owner, account, chat, message string
+}
+
+func telegramKey(msg bus.InboundMessage, messageID string) telegramMessageKey {
+	return telegramMessageKey{msg.OwnerUserID, msg.AccountID, msg.ChatID, messageID}
+}
+
 // Queue manages task submission, per-chat serialization, and global concurrency.
 type Queue struct {
 	maxConcurrent int
@@ -88,6 +97,7 @@ type Queue struct {
 	idleTimeout   time.Duration
 
 	mu            sync.Mutex
+	telegramTasks map[telegramMessageKey]*Task
 	tasks         map[string]*Task      // taskID -> Task
 	chatQueues    map[string]*chatQueue // chatKey -> chatQueue
 	sem           chan struct{}         // counting semaphore for root executions
@@ -114,6 +124,7 @@ func NewQueue(maxConcurrent int, taskTimeout time.Duration, handler TaskHandler)
 		taskTimeout:   taskTimeout,
 		idleTimeout:   5 * time.Minute,
 		tasks:         make(map[string]*Task),
+		telegramTasks: make(map[telegramMessageKey]*Task),
 		chatQueues:    make(map[string]*chatQueue),
 		sem:           make(chan struct{}, maxConcurrent),
 		internalSlots: make(chan struct{}, 256),
@@ -138,8 +149,32 @@ func (q *Queue) Submit(agentID, chatKey string, msg bus.InboundMessage, accountI
 		AccountID:    accountID,
 		ResponseMode: ResponseExternal,
 	}
+	if msg.Channel == "telegram" && msg.PeerKind == "group" && msg.MessageID != "" && msg.UserID != "" && !msg.IsBotMessage && !msg.SentAsChat {
+		task.steering = &bus.Steering{}
+	}
 	id, _ := q.submit(context.Background(), task)
 	return id
+}
+
+// SteerReply resolves a Telegram reply within its original bot account and group.
+func (q *Queue) SteerReply(msg bus.InboundMessage) (string, bool) {
+	if msg.Channel != "telegram" || msg.PeerKind != "group" || msg.IsBotMessage || msg.ReplyToMsgID == "" {
+		return "", false
+	}
+	q.mu.Lock()
+	defer q.mu.Unlock()
+	task := q.telegramTasks[telegramKey(msg, msg.ReplyToMsgID)]
+	if task == nil {
+		return "", false
+	}
+	if msg.SentAsChat || task.Message.UserID != msg.UserID {
+		return "只有任务发起人可以补充这项任务", true
+	}
+	n, err := task.steering.Add(msg.MessageID, msg.Text)
+	if err != nil {
+		return err.Error(), true
+	}
+	return fmt.Sprintf("任务 %s 已接收第 %d 条补充", task.ID, n), true
 }
 
 // SubmitInternal queues a trusted internal task and completes it exactly once.
@@ -194,6 +229,14 @@ func (q *Queue) submit(ctx context.Context, task *Task) (string, error) {
 	default:
 	}
 
+	if task.steering != nil {
+		key := telegramKey(task.Message, task.Message.MessageID)
+		if prior := q.telegramTasks[key]; prior != nil {
+			q.mu.Unlock()
+			return prior.ID, nil
+		}
+		q.telegramTasks[key] = task
+	}
 	q.seq++
 	taskID := fmt.Sprintf("task-%d-%d", time.Now().UnixMilli(), q.seq)
 	task.ID = taskID
@@ -293,6 +336,7 @@ func (q *Queue) executeTask(task *Task) {
 	}()
 	ctx, cancel := context.WithTimeout(baseCtx, q.taskTimeout)
 	defer cancel()
+	ctx = bus.WithSteering(ctx, task.steering)
 	ctx = bus.ContextWithInternalExecution(ctx, inheritedExecution)
 	if len(task.CallPath) > 0 {
 		ctx = bus.ContextWithInternalCallPath(ctx, task.CallPath)
@@ -316,6 +360,7 @@ func (q *Queue) executeTask(task *Task) {
 
 func (q *Queue) finishTask(task *Task, result string, err error) {
 	task.completeOnce.Do(func() {
+		task.steering.Close()
 		doneAt := time.Now()
 		q.mu.Lock()
 		task.DoneAt = &doneAt
@@ -476,6 +521,10 @@ func (q *Queue) pruneOldTasks() {
 	// Remove oldest completed tasks to get below 200
 	toRemove := len(q.tasks) - 200
 	for i := 0; i < toRemove && i < len(completed); i++ {
+		task := q.tasks[completed[i].id]
+		if task.steering != nil {
+			delete(q.telegramTasks, telegramKey(task.Message, task.Message.MessageID))
+		}
 		delete(q.tasks, completed[i].id)
 	}
 }

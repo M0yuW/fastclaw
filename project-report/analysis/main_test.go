@@ -13,7 +13,7 @@ func TestCurrentGraderReanalysisMatchesAuditedCounts(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	suite, err := evalpkg.LoadMultiAgentSuite(filepath.Join(root, "evals", "multiagent-finance-runtime.yaml"))
+	suite, err := loadAnalysisSuite(filepath.Join(root, "evals", "multiagent-finance-runtime.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func TestCurrentGraderReanalysisMatchesAuditedCounts(t *testing.T) {
 
 	wantPasses := map[string]int{
 		evalpkg.MultiAgentBaselineSoloOpenBook: 15,
-		evalpkg.MultiAgentBaselineSoloTwoPass:  16,
+		soloTwoPass:                            16,
 		evalpkg.MultiAgentBaselineTeam:         18,
 		evalpkg.MultiAgentBaselineOracleTeam:   18,
 	}
@@ -47,7 +47,7 @@ func TestCurrentGraderReanalysisQuantifiesStoredDrift(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	suite, err := evalpkg.LoadMultiAgentSuite(filepath.Join(root, "evals", "multiagent-finance-runtime.yaml"))
+	suite, err := loadAnalysisSuite(filepath.Join(root, "evals", "multiagent-finance-runtime.yaml"))
 	if err != nil {
 		t.Fatal(err)
 	}

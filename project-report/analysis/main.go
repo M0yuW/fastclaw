@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"math"
@@ -10,13 +11,41 @@ import (
 	"strings"
 
 	evalpkg "github.com/fastclaw-ai/fastclaw/internal/eval"
+	"gopkg.in/yaml.v3"
 )
 
 const maxAssertionTokenGap = 8
 
+// The archived study includes a baseline and grading fields specific to its dataset.
+const soloTwoPass = "solo_two_pass"
+
+type analysisSuite struct {
+	Name         string         `yaml:"name"`
+	Cases        []analysisCase `yaml:"cases"`
+	SourceSHA256 string         `yaml:"-"`
+}
+
+type analysisCase struct {
+	evalpkg.MultiAgentCase `yaml:",inline"`
+	ForbiddenOutputValues  []string `yaml:"forbidden_output_values"`
+}
+
+func loadAnalysisSuite(path string) (analysisSuite, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return analysisSuite{}, err
+	}
+	var suite analysisSuite
+	if err := yaml.Unmarshal(data, &suite); err != nil {
+		return analysisSuite{}, err
+	}
+	suite.SourceSHA256 = fmt.Sprintf("%x", sha256.Sum256(data))
+	return suite, nil
+}
+
 var modes = []string{
 	evalpkg.MultiAgentBaselineSoloOpenBook,
-	evalpkg.MultiAgentBaselineSoloTwoPass,
+	soloTwoPass,
 	evalpkg.MultiAgentBaselineTeam,
 	evalpkg.MultiAgentBaselineOracleTeam,
 }
@@ -83,7 +112,7 @@ func main() {
 	root, err := findRoot()
 	check(err)
 	suitePath := filepath.Join(root, "evals", "multiagent-finance-runtime.yaml")
-	suite, err := evalpkg.LoadMultiAgentSuite(suitePath)
+	suite, err := loadAnalysisSuite(suitePath)
 	check(err)
 
 	allArtifacts := artifactPaths(root, 1, 5)
@@ -102,7 +131,7 @@ func main() {
 		CurrentGrader: summarizeModes(pooledOutcomes),
 		PairedComparisons: []pairedSummary{
 			paired(pooledOutcomes, evalpkg.MultiAgentBaselineTeam, evalpkg.MultiAgentBaselineSoloOpenBook),
-			paired(pooledOutcomes, evalpkg.MultiAgentBaselineTeam, evalpkg.MultiAgentBaselineSoloTwoPass),
+			paired(pooledOutcomes, evalpkg.MultiAgentBaselineTeam, soloTwoPass),
 			paired(pooledOutcomes, evalpkg.MultiAgentBaselineTeam, evalpkg.MultiAgentBaselineOracleTeam),
 		},
 		Cases:        summarizeCases(pooledOutcomes),
@@ -177,7 +206,7 @@ func currentOptions() matcherOptions {
 	}
 }
 
-func calculateAblations(suite evalpkg.MultiAgentSuite, paths []string) []ablationSummary {
+func calculateAblations(suite analysisSuite, paths []string) []ablationSummary {
 	options := []matcherOptions{currentOptions()}
 	for _, change := range []func(*matcherOptions){
 		func(option *matcherOptions) { option.Name = "without_negation_scope"; option.NegationScope = false },
@@ -213,7 +242,7 @@ func calculateAblations(suite evalpkg.MultiAgentSuite, paths []string) []ablatio
 	return result
 }
 
-func calculateDrift(suite evalpkg.MultiAgentSuite, paths []string, options matcherOptions) []runSummary {
+func calculateDrift(suite analysisSuite, paths []string, options matcherOptions) []runSummary {
 	result := make([]runSummary, 0, len(paths))
 	for _, path := range paths {
 		report := loadReport(path)
@@ -237,7 +266,7 @@ func calculateDrift(suite evalpkg.MultiAgentSuite, paths []string, options match
 	return result
 }
 
-func regradeArtifacts(suite evalpkg.MultiAgentSuite, paths []string, options matcherOptions) (map[string]map[string][]bool, error) {
+func regradeArtifacts(suite analysisSuite, paths []string, options matcherOptions) (map[string]map[string][]bool, error) {
 	combined := make(map[string]map[string][]bool)
 	for _, path := range paths {
 		report := loadReport(path)
@@ -257,8 +286,8 @@ func regradeArtifacts(suite evalpkg.MultiAgentSuite, paths []string, options mat
 	return combined, nil
 }
 
-func regradeReport(suite evalpkg.MultiAgentSuite, report evalpkg.Report, options matcherOptions) (map[string]map[string][]bool, error) {
-	cases := make(map[string]evalpkg.MultiAgentCase, len(suite.Cases))
+func regradeReport(suite analysisSuite, report evalpkg.Report, options matcherOptions) (map[string]map[string][]bool, error) {
+	cases := make(map[string]analysisCase, len(suite.Cases))
 	for _, evalCase := range suite.Cases {
 		cases[evalCase.ID] = evalCase
 	}
@@ -291,7 +320,7 @@ func regradeReport(suite evalpkg.MultiAgentSuite, report evalpkg.Report, options
 	return result, nil
 }
 
-func outcomePass(evalCase evalpkg.MultiAgentCase, output string, options matcherOptions) bool {
+func outcomePass(evalCase analysisCase, output string, options matcherOptions) bool {
 	for _, milestone := range evalCase.Milestones {
 		if !containsAllAssertions(output, milestone.Values, options) {
 			return false
@@ -300,7 +329,7 @@ func outcomePass(evalCase evalpkg.MultiAgentCase, output string, options matcher
 	return groundingViolations(output, evalCase.ForbiddenOutputValues, options) == 0
 }
 
-func teamPass(evalCase evalpkg.MultiAgentCase, output string, trace []evalpkg.TraceEvent, options matcherOptions) bool {
+func teamPass(evalCase analysisCase, output string, trace []evalpkg.TraceEvent, options matcherOptions) bool {
 	if !outcomePass(evalCase, output, options) {
 		return false
 	}

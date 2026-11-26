@@ -16,14 +16,15 @@ type dedupEntry struct {
 }
 
 // isDuplicate returns true if this group message has already been seen.
-// Uses channel:chatID:messageID as the dedup key.
 func (g *Gateway) isDuplicate(msg bus.InboundMessage) bool {
-	// In Telegram supergroups, each bot gets a different message_id for the same message.
-	// So we deduplicate using chatID + userID + text hash instead.
+	// Telegram supplies a stable message ID. Other adapters retain their text-based fallback.
 	if msg.PeerKind != "group" {
 		return false
 	}
 	key := fmt.Sprintf("%s:%s:%s:%x", msg.Channel, msg.ChatID, msg.UserID, hashString(msg.Text))
+	if msg.Channel == "telegram" && msg.MessageID != "" {
+		key = fmt.Sprintf("%q/%q/%q/%q/%q", msg.OwnerUserID, msg.Channel, msg.AccountID, msg.ChatID, msg.MessageID)
+	}
 	_, loaded := g.dedup.LoadOrStore(key, dedupEntry{seenAt: time.Now()})
 	return loaded
 }

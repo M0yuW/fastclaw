@@ -25,6 +25,7 @@ type InboundMessage struct {
 	PeerKind     string        // "group" or "dm"
 	SenderName   string        // display name of the sender
 	Mentions     []string      // @usernames mentioned in the message
+	SentAsChat   bool          // Telegram anonymous administrator or channel sender
 	IsBotMessage bool          // true if the message was sent by a bot
 	PhotoURL     string        // URL of attached photo (if any) — single-image legacy field
 	PhotoURLs    []string      // URLs of attached photos. Independent of PhotoURL so old single-image callers (Telegram bridge etc.) keep working untouched; new web-chat path uses this for multi-image attachments.
